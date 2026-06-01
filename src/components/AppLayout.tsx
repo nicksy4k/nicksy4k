@@ -50,6 +50,7 @@ export function AppLayout() {
       <main className="flex-1 min-w-0">
         <Outlet />
       </main>
+      <Toaster richColors position="top-right" />
     </div>
   );
 }
