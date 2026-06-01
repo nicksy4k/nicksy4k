@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { AppLayout } from "@/components/AppLayout";
 import { useTransactions } from "@/lib/store";
 import type { Category, LineItem, Transaction } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -243,11 +242,3 @@ const tooltipStyle = {
 export function fmt(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
-
-// AppLayout wraps via parent in __root, but we keep page-local wrapping for simplicity below
-DashboardPage.displayName = "DashboardPage";
-
-// Wrap with AppLayout
-const _Inner = DashboardPage;
-function _Wrapped() { return <AppLayout />; }
-void _Wrapped;
