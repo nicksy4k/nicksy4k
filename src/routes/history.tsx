@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useTransactions } from "@/lib/store";
-import { CATEGORIES, type Category } from "@/lib/types";
+import { useTransactions, useCategories } from "@/lib/store";
+import type { Category } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/history")({
 
 function HistoryPage() {
   const { items, remove } = useTransactions();
+  const { list: categories } = useCategories();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "all">("all");
 
@@ -62,7 +63,7 @@ function HistoryPage() {
           <SelectTrigger className="sm:w-[200px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
-            {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {categories.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>

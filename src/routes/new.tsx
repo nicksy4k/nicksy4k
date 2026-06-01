@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useTransactions } from "@/lib/store";
-import { CATEGORIES, RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
+import { useTransactions, useCategories } from "@/lib/store";
+import { RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,13 +29,14 @@ interface DraftItem {
   notes: string;
 }
 
-function emptyItem(): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", category: "Other", return_window_expiry: "", notes: "" };
+function emptyItem(defaultCat: Category = "Other"): DraftItem {
+  return { id: crypto.randomUUID(), item_name: "", price: "", category: defaultCat, return_window_expiry: "", notes: "" };
 }
 
 function NewTransactionPage() {
   const navigate = useNavigate();
   const { add } = useTransactions();
+  const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -44,7 +45,7 @@ function NewTransactionPage() {
   const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
 
   const total = useMemo(
     () => items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0),
@@ -114,7 +115,7 @@ function NewTransactionPage() {
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
               <Field label="Retailer / shop">
-                <Input placeholder="e.g. Apple Store" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+                <Input placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
               </Field>
             </div>
 
@@ -175,16 +176,16 @@ function NewTransactionPage() {
                   <Field label="Item name">
                     <Input placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
                   </Field>
-                  <Field label="Price">
+                  <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
                   </Field>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Category">
-                    <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v as Category })}>
+                    <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </Field>
@@ -199,7 +200,7 @@ function NewTransactionPage() {
             </Card>
           ))}
 
-          <Button variant="outline" className="w-full" onClick={() => setItems((a) => [...a, emptyItem()])}>
+          <Button variant="outline" className="w-full" onClick={() => setItems((a) => [...a, emptyItem(categories[0] ?? "Other")])}>
             <Plus className="h-4 w-4" /> Add another item
           </Button>
 
