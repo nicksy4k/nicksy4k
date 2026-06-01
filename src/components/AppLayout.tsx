@@ -2,12 +2,13 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Plus, Receipt, Settings, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const nav = [
+type NavItem = { to: "/" | "/new" | "/history" | "/settings"; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/new", label: "Log Transaction", icon: Plus },
   { to: "/history", label: "History", icon: Receipt },
   { to: "/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
