@@ -1,5 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Plus, Receipt, Settings, Wallet } from "lucide-react";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: "/" | "/new" | "/history" | "/settings"; label: string; icon: typeof LayoutDashboard; exact?: boolean };
