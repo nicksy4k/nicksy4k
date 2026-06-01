@@ -119,8 +119,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* AppLayout renders the <Outlet /> for child routes */}
       <AppLayout />
-      <Outlet />
     </QueryClientProvider>
   );
 }
