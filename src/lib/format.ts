@@ -1,3 +1,3 @@
 export function fmt(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+  return n.toLocaleString("en-GB", { style: "currency", currency: "GBP" });
 }

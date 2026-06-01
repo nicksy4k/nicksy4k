@@ -1,122 +1,235 @@
 import { useEffect, useState, useCallback } from "react";
-import type { Transaction } from "./types";
+import type {
+  IncomeEntry,
+  SavingsEntry,
+  Transaction,
+} from "./types";
+import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "./types";
 
-const KEY = "iet_transactions_v1";
+const TX_KEY = "iet_transactions_v1";
+const INCOME_KEY = "iet_incomes_v1";
+const SAVINGS_KEY = "iet_savings_v1";
+const CATS_KEY = "iet_categories_v1";
+const INCOME_CATS_KEY = "iet_income_categories_v1";
+const SEED_CLEANUP_KEY = "iet_seed_cleared_v2";
 
-function read(): Transaction[] {
-  if (typeof window === "undefined") return [];
+const SEED_RETAILERS = new Set(["Apple Store", "Whole Foods", "Uniqlo", "Netflix"]);
+
+const TX_EVENT = "iet:tx";
+const INCOME_EVENT = "iet:income";
+const SAVINGS_EVENT = "iet:savings";
+const CATS_EVENT = "iet:cats";
+const INCOME_CATS_EVENT = "iet:incomecats";
+
+function isBrowser() {
+  return typeof window !== "undefined";
+}
+
+function readJson<T>(key: string, fallback: T): T {
+  if (!isBrowser()) return fallback;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return seed();
-    return JSON.parse(raw) as Transaction[];
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-function write(items: Transaction[]) {
-  localStorage.setItem(KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event("iet:update"));
+function writeJson<T>(key: string, value: T, event: string) {
+  if (!isBrowser()) return;
+  localStorage.setItem(key, JSON.stringify(value));
+  window.dispatchEvent(new Event(event));
 }
 
-function seed(): Transaction[] {
-  const today = new Date();
-  const d = (offset: number) => {
-    const dt = new Date(today);
-    dt.setDate(dt.getDate() + offset);
-    return dt.toISOString().slice(0, 10);
-  };
-  const seeded: Transaction[] = [
-    {
-      id: crypto.randomUUID(),
-      date: d(-2),
-      retailer: "Apple Store",
-      total_amount: 1398,
-      receipt_attached: true,
-      receipt_type: "Digital",
-      receipt_location: "Google Drive / Receipts / 2026",
-      notes: "Work upgrade",
-      items: [
-        { id: crypto.randomUUID(), item_name: 'MacBook Air 13"', price: 1299, category: "Tech", return_window_expiry: d(12) },
-        { id: crypto.randomUUID(), item_name: "USB-C Hub", price: 49, category: "Tech", return_window_expiry: d(28) },
-        { id: crypto.randomUUID(), item_name: "AppleCare+", price: 50, category: "Tech" },
-      ],
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: crypto.randomUUID(),
-      date: d(-5),
-      retailer: "Whole Foods",
-      total_amount: 86.42,
-      receipt_attached: true,
-      receipt_type: "Physical",
-      receipt_location: "Kitchen drawer shoebox",
-      items: [
-        { id: crypto.randomUUID(), item_name: "Weekly groceries", price: 72.4, category: "Groceries" },
-        { id: crypto.randomUUID(), item_name: "Cleaning supplies", price: 14.02, category: "Household" },
-      ],
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: crypto.randomUUID(),
-      date: d(-10),
-      retailer: "Uniqlo",
-      total_amount: 134,
-      receipt_attached: true,
-      receipt_type: "Physical",
-      receipt_location: "Wallet",
-      items: [
-        { id: crypto.randomUUID(), item_name: "Wool overshirt", price: 89, category: "Clothing", return_window_expiry: d(4) },
-        { id: crypto.randomUUID(), item_name: "Crewneck tee 2-pack", price: 45, category: "Clothing", return_window_expiry: d(4) },
-      ],
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: crypto.randomUUID(),
-      date: d(-1),
-      retailer: "Netflix",
-      total_amount: 22.99,
-      receipt_attached: false,
-      receipt_type: "None",
-      receipt_location: "",
-      items: [
-        { id: crypto.randomUUID(), item_name: "Premium plan — monthly", price: 22.99, category: "Subscriptions" },
-      ],
-      created_at: new Date().toISOString(),
-    },
-  ];
-  localStorage.setItem(KEY, JSON.stringify(seeded));
-  return seeded;
+// One-time cleanup: remove originally-seeded demo transactions.
+function cleanupSeedsOnce() {
+  if (!isBrowser()) return;
+  if (localStorage.getItem(SEED_CLEANUP_KEY)) return;
+  try {
+    const raw = localStorage.getItem(TX_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Transaction[];
+      const kept = parsed.filter((t) => !SEED_RETAILERS.has(t.retailer));
+      localStorage.setItem(TX_KEY, JSON.stringify(kept));
+    }
+  } catch {
+    /* ignore */
+  }
+  localStorage.setItem(SEED_CLEANUP_KEY, "1");
 }
 
-export function useTransactions() {
-  const [items, setItems] = useState<Transaction[]>([]);
+function useLocalCollection<T>(key: string, event: string) {
+  const [items, setItems] = useState<T[]>([]);
 
   useEffect(() => {
-    setItems(read());
-    const handler = () => setItems(read());
-    window.addEventListener("iet:update", handler);
+    cleanupSeedsOnce();
+    setItems(readJson<T[]>(key, []));
+    const handler = () => setItems(readJson<T[]>(key, []));
+    window.addEventListener(event, handler);
     window.addEventListener("storage", handler);
     return () => {
-      window.removeEventListener("iet:update", handler);
+      window.removeEventListener(event, handler);
       window.removeEventListener("storage", handler);
     };
-  }, []);
+  }, [key, event]);
 
-  const add = useCallback((t: Omit<Transaction, "id" | "created_at">) => {
-    const next: Transaction = { ...t, id: crypto.randomUUID(), created_at: new Date().toISOString() };
-    write([next, ...read()]);
-    return next;
-  }, []);
+  const write = useCallback(
+    (next: T[]) => {
+      writeJson(key, next, event);
+    },
+    [key, event],
+  );
 
-  const remove = useCallback((id: string) => {
-    write(read().filter((t) => t.id !== id));
-  }, []);
+  return [items, write] as const;
+}
+
+// ===== Transactions =====
+export function useTransactions() {
+  const [items, write] = useLocalCollection<Transaction>(TX_KEY, TX_EVENT);
+
+  const add = useCallback(
+    (t: Omit<Transaction, "id" | "created_at">) => {
+      const next: Transaction = {
+        ...t,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      write([next, ...readJson<Transaction[]>(TX_KEY, [])]);
+      return next;
+    },
+    [write],
+  );
+
+  const remove = useCallback(
+    (id: string) => {
+      write(readJson<Transaction[]>(TX_KEY, []).filter((t) => t.id !== id));
+    },
+    [write],
+  );
 
   const clear = useCallback(() => {
-    localStorage.removeItem(KEY);
-    window.dispatchEvent(new Event("iet:update"));
-  }, []);
+    write([]);
+  }, [write]);
 
   return { items, add, remove, clear };
+}
+
+// ===== Incomes =====
+export function useIncomes() {
+  const [items, write] = useLocalCollection<IncomeEntry>(INCOME_KEY, INCOME_EVENT);
+
+  const add = useCallback(
+    (i: Omit<IncomeEntry, "id" | "created_at">) => {
+      const next: IncomeEntry = {
+        ...i,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      write([next, ...readJson<IncomeEntry[]>(INCOME_KEY, [])]);
+      return next;
+    },
+    [write],
+  );
+
+  const remove = useCallback(
+    (id: string) => {
+      write(readJson<IncomeEntry[]>(INCOME_KEY, []).filter((i) => i.id !== id));
+    },
+    [write],
+  );
+
+  return { items, add, remove };
+}
+
+// ===== Savings =====
+export function useSavings() {
+  const [items, write] = useLocalCollection<SavingsEntry>(SAVINGS_KEY, SAVINGS_EVENT);
+
+  const add = useCallback(
+    (s: Omit<SavingsEntry, "id" | "created_at">) => {
+      const next: SavingsEntry = {
+        ...s,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      write([next, ...readJson<SavingsEntry[]>(SAVINGS_KEY, [])]);
+      return next;
+    },
+    [write],
+  );
+
+  const remove = useCallback(
+    (id: string) => {
+      write(readJson<SavingsEntry[]>(SAVINGS_KEY, []).filter((s) => s.id !== id));
+    },
+    [write],
+  );
+
+  return { items, add, remove };
+}
+
+// ===== Categories (item categories) =====
+function useStringList(key: string, event: string, defaults: string[]) {
+  const [list, setList] = useState<string[]>(defaults);
+
+  useEffect(() => {
+    const existing = readJson<string[] | null>(key, null);
+    if (!existing) {
+      writeJson(key, defaults, event);
+      setList(defaults);
+    } else {
+      setList(existing);
+    }
+    const handler = () => setList(readJson<string[]>(key, defaults));
+    window.addEventListener(event, handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener(event, handler);
+      window.removeEventListener("storage", handler);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, event]);
+
+  const add = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const current = readJson<string[]>(key, defaults);
+      if (current.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return;
+      writeJson(key, [...current, trimmed], event);
+    },
+    [key, event, defaults],
+  );
+
+  const remove = useCallback(
+    (name: string) => {
+      const current = readJson<string[]>(key, defaults);
+      writeJson(key, current.filter((c) => c !== name), event);
+    },
+    [key, event, defaults],
+  );
+
+  const reset = useCallback(() => {
+    writeJson(key, defaults, event);
+  }, [key, event, defaults]);
+
+  return { list, add, remove, reset };
+}
+
+export function useCategories() {
+  return useStringList(CATS_KEY, CATS_EVENT, DEFAULT_CATEGORIES);
+}
+
+export function useIncomeCategories() {
+  return useStringList(INCOME_CATS_KEY, INCOME_CATS_EVENT, DEFAULT_INCOME_CATEGORIES);
+}
+
+// ===== Global clear =====
+export function clearAllData() {
+  if (!isBrowser()) return;
+  [TX_KEY, INCOME_KEY, SAVINGS_KEY].forEach((k) => localStorage.removeItem(k));
+  window.dispatchEvent(new Event(TX_EVENT));
+  window.dispatchEvent(new Event(INCOME_EVENT));
+  window.dispatchEvent(new Event(SAVINGS_EVENT));
 }

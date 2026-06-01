@@ -1,13 +1,20 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet } from "lucide-react";
+import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: "/" | "/new" | "/history" | "/settings"; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+type NavItem = {
+  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/settings";
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
 const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/new", label: "Log Transaction", icon: Plus },
   { to: "/history", label: "History", icon: Receipt },
+  { to: "/income", label: "Income", icon: TrendingUp },
+  { to: "/savings", label: "Savings", icon: PiggyBank },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

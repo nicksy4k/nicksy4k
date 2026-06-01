@@ -1,15 +1,8 @@
 export type ReceiptType = "Physical" | "Digital" | "None";
 
-export type Category =
-  | "Tech"
-  | "Clothing"
-  | "Groceries"
-  | "Subscriptions"
-  | "Household"
-  | "Entertainment"
-  | "Other";
-
-export const CATEGORIES: Category[] = [
+// Categories are now user-managed via the categories store.
+// These defaults seed first-run state.
+export const DEFAULT_CATEGORIES: string[] = [
   "Tech",
   "Clothing",
   "Groceries",
@@ -19,6 +12,18 @@ export const CATEGORIES: Category[] = [
   "Other",
 ];
 
+export const DEFAULT_INCOME_CATEGORIES: string[] = [
+  "Salary",
+  "Freelance",
+  "Investment",
+  "Gift",
+  "Refund",
+  "Other",
+];
+
+// Kept as `string` so user-added categories work everywhere.
+export type Category = string;
+
 export const RECEIPT_TYPES: ReceiptType[] = ["Physical", "Digital", "None"];
 
 export interface LineItem {
@@ -26,13 +31,13 @@ export interface LineItem {
   item_name: string;
   price: number;
   category: Category;
-  return_window_expiry?: string | null; // ISO date
+  return_window_expiry?: string | null;
   notes?: string;
 }
 
 export interface Transaction {
   id: string;
-  date: string; // ISO date
+  date: string;
   retailer: string;
   total_amount: number;
   receipt_attached: boolean;
@@ -40,5 +45,27 @@ export interface Transaction {
   receipt_location: string;
   notes?: string;
   items: LineItem[];
+  created_at: string;
+}
+
+export interface IncomeEntry {
+  id: string;
+  date: string;
+  source: string;
+  amount: number;
+  category: string;
+  notes?: string;
+  created_at: string;
+}
+
+export type SavingsKind = "deposit" | "withdrawal";
+
+export interface SavingsEntry {
+  id: string;
+  date: string;
+  kind: SavingsKind;
+  amount: number;
+  account: string;
+  notes?: string;
   created_at: string;
 }
