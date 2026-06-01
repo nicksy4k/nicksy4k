@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useTransactions } from "@/lib/store";
-import type { Category, LineItem, Transaction } from "@/lib/types";
+import { useTransactions, useIncomes, useSavings } from "@/lib/store";
+import type { LineItem, Transaction } from "@/lib/types";
+import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,14 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
-import { AlertTriangle, ArrowUpRight, Plus, Receipt, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — Ledgerly Expense Tracker" },
-      { name: "description", content: "Track itemized purchases, receipts, warranties, and return windows." },
+      { name: "description", content: "Track itemized purchases, receipts, warranties, income and savings." },
     ],
   }),
   component: DashboardPage,
@@ -34,22 +35,23 @@ const CHART_COLORS = [
 
 function DashboardPage() {
   const { items } = useTransactions();
+  const { items: incomes } = useIncomes();
+  const { items: savings } = useSavings();
 
   const stats = useMemo(() => {
-    const total = items.reduce((s, t) => s + t.total_amount, 0);
+    const totalExpenses = items.reduce((s, t) => s + t.total_amount, 0);
+    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
+    const savingsBalance = savings.reduce(
+      (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
+      0,
+    );
     const itemCount = items.reduce((s, t) => s + t.items.length, 0);
-    const now = new Date();
-    const thisMonth = items
-      .filter((t) => {
-        const d = parseISO(t.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      })
-      .reduce((s, t) => s + t.total_amount, 0);
-    return { total, itemCount, thisMonth, count: items.length };
-  }, [items]);
+    const netIncome = totalIncome - totalExpenses;
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, netIncome, count: items.length };
+  }, [items, incomes, savings]);
 
   const byCategory = useMemo(() => {
-    const map = new Map<Category, number>();
+    const map = new Map<string, number>();
     items.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
@@ -93,9 +95,15 @@ function DashboardPage() {
       </header>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard label="This month" value={fmt(stats.thisMonth)} icon={<Wallet className="h-4 w-4" />} accent />
-        <StatCard label="All time" value={fmt(stats.total)} icon={<ArrowUpRight className="h-4 w-4" />} />
-        <StatCard label="Transactions" value={String(stats.count)} icon={<Receipt className="h-4 w-4" />} />
+        <StatCard
+          label="Net income"
+          value={fmt(stats.netIncome)}
+          icon={stats.netIncome >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+          accent
+          tone={stats.netIncome >= 0 ? "positive" : "negative"}
+        />
+        <StatCard label="Total expenses" value={fmt(stats.totalExpenses)} icon={<ArrowUpRight className="h-4 w-4" />} />
+        <StatCard label="Savings balance" value={fmt(stats.savingsBalance)} icon={<PiggyBank className="h-4 w-4" />} />
         <StatCard label="Items tracked" value={String(stats.itemCount)} icon={<Receipt className="h-4 w-4" />} />
       </div>
 
@@ -213,15 +221,25 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: React.ReactNode; accent?: boolean }) {
+function StatCard({
+  label, value, icon, accent, tone,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  accent?: boolean;
+  tone?: "positive" | "negative";
+}) {
+  const toneClass =
+    tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
     <Card className={accent ? "border-primary/30 bg-primary/5" : ""}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between text-muted-foreground mb-2">
           <span className="text-xs uppercase tracking-wider">{label}</span>
-          <span className={accent ? "text-primary" : ""}>{icon}</span>
+          <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>
         </div>
-        <p className="text-2xl font-semibold tabular-nums">{value}</p>
+        <p className={`text-2xl font-semibold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
       </CardContent>
     </Card>
   );
@@ -238,7 +256,3 @@ const tooltipStyle = {
   color: "var(--popover-foreground)",
   fontSize: 12,
 };
-
-export function fmt(n: number) {
-  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
-}
