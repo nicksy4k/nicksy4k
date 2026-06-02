@@ -17,7 +17,7 @@ import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/savings")({
-  head: () => ({ meta: [{ title: "Savings — Ledgerly" }] }),
+  head: () => ({ meta: [{ title: "Savings & Pockets — Ledgerly" }] }),
   component: SavingsPage,
 });
 
@@ -66,8 +66,8 @@ function SavingsPage() {
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Track your reserves</p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Savings</h1>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Track your reserves & pockets</p>
+        <h1 className="text-3xl md:text-4xl font-semibold">Savings & Pockets</h1>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3 mb-6">

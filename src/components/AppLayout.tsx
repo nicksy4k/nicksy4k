@@ -14,7 +14,7 @@ const nav: NavItem[] = [
   { to: "/new", label: "Log Transaction", icon: Plus },
   { to: "/history", label: "History", icon: Receipt },
   { to: "/income", label: "Income", icon: TrendingUp },
-  { to: "/savings", label: "Savings", icon: PiggyBank },
+  { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
