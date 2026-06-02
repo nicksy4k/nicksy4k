@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import type {
+  Commitment,
   IncomeEntry,
   SavingsEntry,
   Transaction,
@@ -9,17 +10,21 @@ import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "./types";
 const TX_KEY = "iet_transactions_v1";
 const INCOME_KEY = "iet_incomes_v1";
 const SAVINGS_KEY = "iet_savings_v1";
+const COMMITMENTS_KEY = "iet_commitments_v1";
 const CATS_KEY = "iet_categories_v1";
 const INCOME_CATS_KEY = "iet_income_categories_v1";
 const SEED_CLEANUP_KEY = "iet_seed_cleared_v2";
+const COMMITMENTS_SEED_KEY = "iet_commitments_seeded_v1";
 
 const SEED_RETAILERS = new Set(["Apple Store", "Whole Foods", "Uniqlo", "Netflix"]);
 
 const TX_EVENT = "iet:tx";
 const INCOME_EVENT = "iet:income";
 const SAVINGS_EVENT = "iet:savings";
+const COMMITMENTS_EVENT = "iet:commitments";
 const CATS_EVENT = "iet:cats";
 const INCOME_CATS_EVENT = "iet:incomecats";
+
 
 function isBrowser() {
   return typeof window !== "undefined";
