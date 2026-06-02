@@ -14,6 +14,7 @@ import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -41,6 +42,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommitmentsRoute = CommitmentsRouteImport.update({
+  id: '/commitments',
+  path: '/commitments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/commitments': typeof CommitmentsRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/commitments': typeof CommitmentsRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/commitments': typeof CommitmentsRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -74,12 +83,27 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/income' | '/new' | '/savings' | '/settings'
+  fullPaths:
+    | '/'
+    | '/commitments'
+    | '/history'
+    | '/income'
+    | '/new'
+    | '/savings'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/income' | '/new' | '/savings' | '/settings'
+  to:
+    | '/'
+    | '/commitments'
+    | '/history'
+    | '/income'
+    | '/new'
+    | '/savings'
+    | '/settings'
   id:
     | '__root__'
     | '/'
+    | '/commitments'
     | '/history'
     | '/income'
     | '/new'
@@ -89,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CommitmentsRoute: typeof CommitmentsRoute
   HistoryRoute: typeof HistoryRoute
   IncomeRoute: typeof IncomeRoute
   NewRoute: typeof NewRoute
@@ -133,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/commitments': {
+      id: '/commitments'
+      path: '/commitments'
+      fullPath: '/commitments'
+      preLoaderRoute: typeof CommitmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -145,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CommitmentsRoute: CommitmentsRoute,
   HistoryRoute: HistoryRoute,
   IncomeRoute: IncomeRoute,
   NewRoute: NewRoute,
@@ -154,3 +187,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
