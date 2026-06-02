@@ -83,23 +83,9 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/commitments'
-    | '/history'
-    | '/income'
-    | '/new'
-    | '/savings'
-    | '/settings'
+  fullPaths: '/' | '/commitments' | '/history' | '/income' | '/new' | '/savings' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/commitments'
-    | '/history'
-    | '/income'
-    | '/new'
-    | '/savings'
-    | '/settings'
+  to: '/' | '/commitments' | '/history' | '/income' | '/new' | '/savings' | '/settings'
   id:
     | '__root__'
     | '/'
