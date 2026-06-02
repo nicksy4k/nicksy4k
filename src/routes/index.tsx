@@ -46,9 +46,20 @@ function DashboardPage() {
       0,
     );
     const itemCount = items.reduce((s, t) => s + t.items.length, 0);
-    const netIncome = totalIncome - totalExpenses;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, netIncome, count: items.length };
+    const leftToSpend = totalIncome - totalExpenses - savingsBalance;
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: items.length };
   }, [items, incomes, savings]);
+
+  const pocketBalances = useMemo(() => {
+    const map = new Map<string, number>();
+    savings.forEach((s) => {
+      const delta = s.kind === "deposit" ? s.amount : -s.amount;
+      map.set(s.account, (map.get(s.account) ?? 0) + delta);
+    });
+    return Array.from(map.entries())
+      .filter(([, v]) => Math.abs(v) > 0.0001)
+      .sort((a, b) => b[1] - a[1]);
+  }, [savings]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
