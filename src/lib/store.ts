@@ -64,6 +64,31 @@ function cleanupSeedsOnce() {
   localStorage.setItem(SEED_CLEANUP_KEY, "1");
 }
 
+function seedCommitmentsOnce() {
+  if (!isBrowser()) return;
+  if (localStorage.getItem(COMMITMENTS_SEED_KEY)) return;
+  const existing = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+  if (existing.length === 0) {
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const offset = (days: number) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + days);
+      return iso(d);
+    };
+    const seed: Commitment[] = [
+      { id: crypto.randomUUID(), item_name: "Netflix", store: "Netflix", payment_method: "Direct Debit", amount: 12.99, last_paid_date: offset(-20), next_due_date: offset(8), notes: "Standard plan", paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Spotify", store: "Spotify", payment_method: "Card", amount: 11.99, last_paid_date: offset(-15), next_due_date: offset(15), notes: "Family plan", paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Council Tax", store: "Local Council", payment_method: "Direct Debit", amount: 145.00, last_paid_date: offset(-25), next_due_date: offset(5), notes: undefined, paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Broadband", store: "BT", payment_method: "Direct Debit", amount: 32.50, last_paid_date: offset(-10), next_due_date: offset(18), notes: undefined, paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Mobile Phone", store: "EE", payment_method: "Direct Debit", amount: 24.00, last_paid_date: offset(-7), next_due_date: offset(21), notes: undefined, paid: false, created_at: new Date().toISOString() },
+    ];
+    localStorage.setItem(COMMITMENTS_KEY, JSON.stringify(seed));
+  }
+  localStorage.setItem(COMMITMENTS_SEED_KEY, "1");
+}
+
+
 function useLocalCollection<T>(key: string, event: string) {
   const [items, setItems] = useState<T[]>([]);
 
