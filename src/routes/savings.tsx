@@ -17,7 +17,7 @@ import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/savings")({
-  head: () => ({ meta: [{ title: "Savings — Ledgerly" }] }),
+  head: () => ({ meta: [{ title: "Savings & Pockets — Ledgerly" }] }),
   component: SavingsPage,
 });
 
