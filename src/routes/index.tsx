@@ -107,16 +107,42 @@ function DashboardPage() {
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard
-          label="Net income"
-          value={fmt(stats.netIncome)}
-          icon={stats.netIncome >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+          label="Left to spend"
+          value={fmt(stats.leftToSpend)}
+          icon={stats.leftToSpend >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
           accent
-          tone={stats.netIncome >= 0 ? "positive" : "negative"}
+          tone={stats.leftToSpend >= 0 ? "positive" : "negative"}
         />
         <StatCard label="Total expenses" value={fmt(stats.totalExpenses)} icon={<ArrowUpRight className="h-4 w-4" />} />
-        <StatCard label="Savings balance" value={fmt(stats.savingsBalance)} icon={<PiggyBank className="h-4 w-4" />} />
+        <Card className="col-span-2">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between text-muted-foreground mb-2">
+              <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
+              <PiggyBank className="h-4 w-4" />
+            </div>
+            <p className={`text-2xl font-semibold tabular-nums ${stats.savingsBalance < 0 ? "text-destructive" : ""}`}>
+              {fmt(stats.savingsBalance)}
+            </p>
+            {pocketBalances.length > 0 ? (
+              <ul className="mt-3 space-y-1.5 max-h-28 overflow-auto pr-1">
+                {pocketBalances.map(([name, bal]) => (
+                  <li key={name} className="flex items-center justify-between text-xs">
+                    <span className="truncate text-muted-foreground">{name}</span>
+                    <span className={`tabular-nums font-medium ${bal < 0 ? "text-destructive" : ""}`}>{fmt(bal)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">No pockets yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+        <StatCard label="Total income" value={fmt(stats.totalIncome)} icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard label="Items tracked" value={String(stats.itemCount)} icon={<Receipt className="h-4 w-4" />} />
       </div>
+
 
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
         <Card className="lg:col-span-2">
