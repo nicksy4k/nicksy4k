@@ -255,6 +255,47 @@ export function useIncomeCategories() {
   return useStringList(INCOME_CATS_KEY, INCOME_CATS_EVENT, DEFAULT_INCOME_CATEGORIES);
 }
 
+// ===== Commitments =====
+export function useCommitments() {
+  const [items, setItems] = useState<Commitment[]>([]);
+
+  useEffect(() => {
+    seedCommitmentsOnce();
+    setItems(readJson<Commitment[]>(COMMITMENTS_KEY, []));
+    const handler = () => setItems(readJson<Commitment[]>(COMMITMENTS_KEY, []));
+    window.addEventListener(COMMITMENTS_EVENT, handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener(COMMITMENTS_EVENT, handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
+
+  const add = useCallback((c: Omit<Commitment, "id" | "created_at">) => {
+    const next: Commitment = { ...c, id: crypto.randomUUID(), created_at: new Date().toISOString() };
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(COMMITMENTS_KEY, [next, ...current], COMMITMENTS_EVENT);
+    return next;
+  }, []);
+
+  const update = useCallback((id: string, patch: Partial<Omit<Commitment, "id" | "created_at">>) => {
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(
+      COMMITMENTS_KEY,
+      current.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      COMMITMENTS_EVENT,
+    );
+  }, []);
+
+  const remove = useCallback((id: string) => {
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(COMMITMENTS_KEY, current.filter((c) => c.id !== id), COMMITMENTS_EVENT);
+  }, []);
+
+  return { items, add, update, remove };
+}
+
+
 // ===== Global clear =====
 export function clearAllData() {
   if (!isBrowser()) return;
