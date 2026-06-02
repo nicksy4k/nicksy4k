@@ -1,10 +1,10 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank } from "lucide-react";
+import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
-  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/settings";
+  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/settings";
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
@@ -15,8 +15,10 @@ const nav: NavItem[] = [
   { to: "/history", label: "History", icon: Receipt },
   { to: "/income", label: "Income", icon: TrendingUp },
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
+  { to: "/commitments", label: "Commitments", icon: CalendarClock },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
+
 
 export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
