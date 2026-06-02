@@ -69,3 +69,17 @@ export interface SavingsEntry {
   notes?: string;
   created_at: string;
 }
+
+export interface Commitment {
+  id: string;
+  item_name: string;
+  store: string;
+  payment_method: string;
+  amount: number;
+  last_paid_date?: string | null;
+  next_due_date?: string | null;
+  notes?: string;
+  paid: boolean;
+  created_at: string;
+}
+

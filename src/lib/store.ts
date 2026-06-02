@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import type {
+  Commitment,
   IncomeEntry,
   SavingsEntry,
   Transaction,
@@ -9,17 +10,21 @@ import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "./types";
 const TX_KEY = "iet_transactions_v1";
 const INCOME_KEY = "iet_incomes_v1";
 const SAVINGS_KEY = "iet_savings_v1";
+const COMMITMENTS_KEY = "iet_commitments_v1";
 const CATS_KEY = "iet_categories_v1";
 const INCOME_CATS_KEY = "iet_income_categories_v1";
 const SEED_CLEANUP_KEY = "iet_seed_cleared_v2";
+const COMMITMENTS_SEED_KEY = "iet_commitments_seeded_v1";
 
 const SEED_RETAILERS = new Set(["Apple Store", "Whole Foods", "Uniqlo", "Netflix"]);
 
 const TX_EVENT = "iet:tx";
 const INCOME_EVENT = "iet:income";
 const SAVINGS_EVENT = "iet:savings";
+const COMMITMENTS_EVENT = "iet:commitments";
 const CATS_EVENT = "iet:cats";
 const INCOME_CATS_EVENT = "iet:incomecats";
+
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -58,6 +63,31 @@ function cleanupSeedsOnce() {
   }
   localStorage.setItem(SEED_CLEANUP_KEY, "1");
 }
+
+function seedCommitmentsOnce() {
+  if (!isBrowser()) return;
+  if (localStorage.getItem(COMMITMENTS_SEED_KEY)) return;
+  const existing = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+  if (existing.length === 0) {
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const offset = (days: number) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + days);
+      return iso(d);
+    };
+    const seed: Commitment[] = [
+      { id: crypto.randomUUID(), item_name: "Netflix", store: "Netflix", payment_method: "Direct Debit", amount: 12.99, last_paid_date: offset(-20), next_due_date: offset(8), notes: "Standard plan", paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Spotify", store: "Spotify", payment_method: "Card", amount: 11.99, last_paid_date: offset(-15), next_due_date: offset(15), notes: "Family plan", paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Council Tax", store: "Local Council", payment_method: "Direct Debit", amount: 145.00, last_paid_date: offset(-25), next_due_date: offset(5), notes: undefined, paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Broadband", store: "BT", payment_method: "Direct Debit", amount: 32.50, last_paid_date: offset(-10), next_due_date: offset(18), notes: undefined, paid: false, created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), item_name: "Mobile Phone", store: "EE", payment_method: "Direct Debit", amount: 24.00, last_paid_date: offset(-7), next_due_date: offset(21), notes: undefined, paid: false, created_at: new Date().toISOString() },
+    ];
+    localStorage.setItem(COMMITMENTS_KEY, JSON.stringify(seed));
+  }
+  localStorage.setItem(COMMITMENTS_SEED_KEY, "1");
+}
+
 
 function useLocalCollection<T>(key: string, event: string) {
   const [items, setItems] = useState<T[]>([]);
@@ -224,6 +254,47 @@ export function useCategories() {
 export function useIncomeCategories() {
   return useStringList(INCOME_CATS_KEY, INCOME_CATS_EVENT, DEFAULT_INCOME_CATEGORIES);
 }
+
+// ===== Commitments =====
+export function useCommitments() {
+  const [items, setItems] = useState<Commitment[]>([]);
+
+  useEffect(() => {
+    seedCommitmentsOnce();
+    setItems(readJson<Commitment[]>(COMMITMENTS_KEY, []));
+    const handler = () => setItems(readJson<Commitment[]>(COMMITMENTS_KEY, []));
+    window.addEventListener(COMMITMENTS_EVENT, handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener(COMMITMENTS_EVENT, handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
+
+  const add = useCallback((c: Omit<Commitment, "id" | "created_at">) => {
+    const next: Commitment = { ...c, id: crypto.randomUUID(), created_at: new Date().toISOString() };
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(COMMITMENTS_KEY, [next, ...current], COMMITMENTS_EVENT);
+    return next;
+  }, []);
+
+  const update = useCallback((id: string, patch: Partial<Omit<Commitment, "id" | "created_at">>) => {
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(
+      COMMITMENTS_KEY,
+      current.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      COMMITMENTS_EVENT,
+    );
+  }, []);
+
+  const remove = useCallback((id: string) => {
+    const current = readJson<Commitment[]>(COMMITMENTS_KEY, []);
+    writeJson(COMMITMENTS_KEY, current.filter((c) => c.id !== id), COMMITMENTS_EVENT);
+  }, []);
+
+  return { items, add, update, remove };
+}
+
 
 // ===== Global clear =====
 export function clearAllData() {
