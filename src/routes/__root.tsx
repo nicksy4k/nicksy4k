@@ -118,11 +118,62 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      {/* AppLayout renders the <Outlet /> for child routes */}
-      <AppLayout />
+      <AuthGate />
     </QueryClientProvider>
   );
 }
+
+function AuthGate() {
+  const router = useRouter();
+  const pathname = router.state.location.pathname;
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<"loading" | "in" | "out">("loading");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setStatus(data.session ? "in" : "out");
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setStatus(session ? "in" : "out");
+      queryClient.invalidateQueries();
+      router.invalidate();
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [queryClient, router]);
+
+  if (status === "loading") {
+    return <div className="min-h-screen bg-background" />;
+  }
+  if (status === "out") {
+    // Render the auth page regardless of requested route.
+    return <AuthOnly />;
+  }
+  if (pathname === "/auth") {
+    // Signed in but on /auth — bounce home.
+    if (typeof window !== "undefined") router.navigate({ to: "/" });
+    return null;
+  }
+  return <AppLayout />;
+}
+
+function AuthOnly() {
+  // Render the /auth route's component without the app chrome.
+  return (
+    <div>
+      <AuthPageMount />
+    </div>
+  );
+}
+
+function AuthPageMount() {
+  // Lazy import to avoid a circular dep with the route file at module load.
+  const Comp = require("./auth").Route.options.component as React.ComponentType;
+  return <Comp />;
+}
+
