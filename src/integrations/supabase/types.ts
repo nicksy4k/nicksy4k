@@ -14,7 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      commitments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          item_name: string
+          last_paid_date: string | null
+          next_due_date: string | null
+          notes: string | null
+          paid: boolean
+          payment_method: string
+          store: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          item_name: string
+          last_paid_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          paid?: boolean
+          payment_method?: string
+          store?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          item_name?: string
+          last_paid_date?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          paid?: boolean
+          payment_method?: string
+          store?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      incomes: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings: {
+        Row: {
+          account: string
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          kind: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          account: string
+          amount?: number
+          created_at?: string
+          date: string
+          id?: string
+          kind: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          account?: string
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          items: Json
+          notes: string | null
+          receipt_attached: boolean
+          receipt_location: string
+          receipt_type: string
+          retailer: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          receipt_attached?: boolean
+          receipt_location?: string
+          receipt_type?: string
+          retailer: string
+          total_amount?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          receipt_attached?: boolean
+          receipt_location?: string
+          receipt_type?: string
+          retailer?: string
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
