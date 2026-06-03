@@ -153,29 +153,13 @@ function AuthGate() {
     return <div className="min-h-screen bg-background" />;
   }
   if (status === "out") {
-    // Render the auth page regardless of requested route.
-    return <AuthOnly />;
+    return <AuthPage />;
   }
   if (pathname === "/auth") {
-    // Signed in but on /auth — bounce home.
     if (typeof window !== "undefined") router.navigate({ to: "/" });
     return null;
   }
   return <AppLayout />;
 }
 
-function AuthOnly() {
-  // Render the /auth route's component without the app chrome.
-  return (
-    <div>
-      <AuthPageMount />
-    </div>
-  );
-}
-
-function AuthPageMount() {
-  // Lazy import to avoid a circular dep with the route file at module load.
-  const Comp = require("./auth").Route.options.component as React.ComponentType;
-  return <Comp />;
-}
 
