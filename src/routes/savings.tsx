@@ -30,6 +30,11 @@ function SavingsPage() {
   const [account, setAccount] = useState("");
   const [notes, setNotes] = useState("");
 
+  const pocketNames = useMemo(() => {
+    const names = Array.from(new Set(items.map((s) => s.account)));
+    return names.sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
   const { balance, deposits, withdrawals, byAccount } = useMemo(() => {
     let d = 0, w = 0;
     const acc = new Map<string, number>();
