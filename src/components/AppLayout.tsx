@@ -56,6 +56,14 @@ export function AppLayout() {
               </Link>
             );
           })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:mt-2 justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent"
+            onClick={() => supabase.auth.signOut()}
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
         </nav>
       </aside>
       <main className="flex-1 min-w-0">
