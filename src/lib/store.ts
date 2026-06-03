@@ -40,7 +40,7 @@ export function useTransactions() {
         receipt_type: t.receipt_type,
         receipt_location: t.receipt_location,
         notes: t.notes,
-        items: t.items as unknown as object,
+        items: t.items as never,
       });
       if (error) throw error;
       await invalidate();
