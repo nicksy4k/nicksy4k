@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   Link,
   createRootRouteWithContext,
@@ -6,11 +6,13 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppLayout } from "../components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { AuthPage } from "./auth";
 
 function NotFoundComponent() {
   return (
@@ -118,11 +120,46 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
-      {/* AppLayout renders the <Outlet /> for child routes */}
-      <AppLayout />
+      <AuthGate />
     </QueryClientProvider>
   );
 }
+
+function AuthGate() {
+  const router = useRouter();
+  const pathname = router.state.location.pathname;
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<"loading" | "in" | "out">("loading");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setStatus(data.session ? "in" : "out");
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setStatus(session ? "in" : "out");
+      queryClient.invalidateQueries();
+      router.invalidate();
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [queryClient, router]);
+
+  if (status === "loading") {
+    return <div className="min-h-screen bg-background" />;
+  }
+  if (status === "out") {
+    return <AuthPage />;
+  }
+  if (pathname === "/auth") {
+    if (typeof window !== "undefined") router.navigate({ to: "/" });
+    return null;
+  }
+  return <AppLayout />;
+}
+
+

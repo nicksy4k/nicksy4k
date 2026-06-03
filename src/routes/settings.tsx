@@ -70,25 +70,16 @@ function SettingsPage() {
               <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Database className="h-5 w-5 text-primary" /></div>
               <div>
                 <CardTitle>Storage</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">Currently using local browser storage</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Synced to your account in the cloud</p>
               </div>
             </div>
-            <Badge variant="secondary">localStorage</Badge>
+            <Badge variant="secondary">Cloud</Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-2">
-              <p className="font-medium">Connecting to Supabase</p>
+              <p className="font-medium">Your data is private</p>
               <p className="text-muted-foreground">
-                Your data is stored on this device only. To sync across devices, connect a Supabase project. The shapes in <code className="text-xs bg-background px-1.5 py-0.5 rounded">src/lib/types.ts</code> mirror what you'll need:
-              </p>
-              <ul className="text-muted-foreground text-xs list-disc list-inside space-y-1 ml-1">
-                <li><code className="text-xs">transactions</code> + <code className="text-xs">line_items</code> (parent/child)</li>
-                <li><code className="text-xs">incomes</code> — id, date, source, amount, category, notes</li>
-                <li><code className="text-xs">savings_entries</code> — id, date, kind (deposit/withdrawal), amount, account, notes</li>
-                <li><code className="text-xs">categories</code> / <code className="text-xs">income_categories</code> — id, name, user_id</li>
-              </ul>
-              <p className="text-muted-foreground pt-1">
-                Then swap the hooks in <code className="text-xs bg-background px-1.5 py-0.5 rounded">src/lib/store.ts</code> to read/write through your Supabase client — the UI doesn't change.
+                Transactions, pockets, commitments, and categories are stored against your user account and protected by row-level security — only you can read or write them.
               </p>
             </div>
 
@@ -106,12 +97,12 @@ function SettingsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear all data?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This deletes every transaction, income entry, and savings record from this browser. Export first if you want a backup.
+                      This permanently deletes every transaction, income entry, savings entry, and commitment on your account. Export first if you want a backup.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { clearAllData(); toast.success("All data cleared"); }}>Clear everything</AlertDialogAction>
+                    <AlertDialogAction onClick={async () => { await clearAllData(); toast.success("All data cleared"); }}>Clear everything</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

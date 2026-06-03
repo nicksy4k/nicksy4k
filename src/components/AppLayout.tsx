@@ -1,7 +1,9 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock } from "lucide-react";
+import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 type NavItem = {
   to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/settings";
@@ -54,6 +56,14 @@ export function AppLayout() {
               </Link>
             );
           })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:mt-2 justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent"
+            onClick={() => supabase.auth.signOut()}
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
         </nav>
       </aside>
       <main className="flex-1 min-w-0">
