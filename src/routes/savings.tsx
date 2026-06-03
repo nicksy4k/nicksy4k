@@ -138,7 +138,20 @@ function SavingsPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-            <Field label="Account"><Input placeholder="e.g. Monzo Pot, ISA" value={account} onChange={(e) => setAccount(e.target.value)} /></Field>
+            <Field label="Account">
+              {pocketNames.length > 0 ? (
+                <Select value={account} onValueChange={(v) => setAccount(v)}>
+                  <SelectTrigger><SelectValue placeholder="Select a pocket" /></SelectTrigger>
+                  <SelectContent>
+                    {pocketNames.map((name) => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input placeholder="e.g. Monzo Pot, ISA" value={account} onChange={(e) => setAccount(e.target.value)} />
+              )}
+            </Field>
           </div>
           <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
           <div className="flex justify-end">
