@@ -154,18 +154,60 @@ function SavingsPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
             <Field label="Account">
-              {pocketNames.length > 0 ? (
-                <Select value={account} onValueChange={(v) => setAccount(v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a pocket" /></SelectTrigger>
-                  <SelectContent>
-                    {pocketNames.map((name) => (
-                      <SelectItem key={name} value={name}>{name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input placeholder="e.g. Monzo Pot, ISA" value={account} onChange={(e) => setAccount(e.target.value)} />
-              )}
+              <div className="relative">
+                <Input
+                  placeholder="e.g. Monzo Pot, ISA"
+                  value={account}
+                  onChange={(e) => setAccount(e.target.value)}
+                  className={cn(pocketNames.length > 0 && "pr-10")}
+                />
+                {pocketNames.length > 0 && (
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                      >
+                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0"
+                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                    >
+                      <Command>
+                        <CommandInput placeholder="Search pockets..." />
+                        <CommandList>
+                          <CommandEmpty className="py-3 text-center text-sm">
+                            No matching pocket.
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {pocketNames.map((name) => (
+                              <CommandItem
+                                key={name}
+                                value={name}
+                                onSelect={(currentValue) => {
+                                  setAccount(currentValue);
+                                  setOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    account === name ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </Field>
           </div>
           <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
