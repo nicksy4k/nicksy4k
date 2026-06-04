@@ -43,6 +43,7 @@ function SavingsPage() {
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("");
   const [notes, setNotes] = useState("");
+  const [open, setOpen] = useState(false);
 
   const pocketNames = useMemo(() => {
     const names = Array.from(new Set(items.map((s) => s.account)));
