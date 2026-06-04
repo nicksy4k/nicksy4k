@@ -13,11 +13,11 @@ type NavItem = {
 };
 const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/new", label: "Log Transaction", icon: Plus },
-  { to: "/history", label: "History", icon: Receipt },
+  { to: "/new", label: "+ New Spend", icon: Plus },
+  { to: "/commitments", label: "Commitments", icon: CalendarClock },
   { to: "/income", label: "Income", icon: TrendingUp },
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
-  { to: "/commitments", label: "Commitments", icon: CalendarClock },
+  { to: "/history", label: "History", icon: Receipt },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
