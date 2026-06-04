@@ -9,12 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle } from "lucide-react";
-import { format, parseISO, addDays } from "date-fns";
+import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check, X } from "lucide-react";
+import { format, parseISO, addDays, addMonths } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/commitments")({
@@ -59,16 +58,17 @@ function CommitmentsPage() {
 
   const shortfall = leftToPay - billPocketBalance;
 
-  const [open, setOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const detailsItem = useMemo(
+    () => items.find((i) => i.id === detailsId) ?? null,
+    [items, detailsId],
+  );
 
   function openNew() {
     setEditing(null);
-    setOpen(true);
-  }
-  function openEdit(c: Commitment) {
-    setEditing(c);
-    setOpen(true);
+    setFormOpen(true);
   }
 
   return (
@@ -144,59 +144,43 @@ function CommitmentsPage() {
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No commitments yet.</p>
           ) : (
-            <ul className="divide-y divide-border">
-              {items.map((c) => {
-                const dueBeforeReset = c.next_due_date && c.next_due_date < resetDate;
-                return (
-                  <li key={c.id} className="flex items-center justify-between gap-3 py-3 flex-wrap">
+            <ul className="space-y-2">
+              {items.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => setDetailsId(c.id)}
+                    className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
+                  >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium truncate">{c.item_name}</p>
-                        {c.paid ? (
-                          <Badge variant="secondary" className="font-normal">Paid</Badge>
-                        ) : dueBeforeReset ? (
-                          <Badge variant="destructive" className="font-normal">Due before reset</Badge>
-                        ) : null}
-                      </div>
+                      <p className="font-medium truncate">{c.item_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {c.store} · {c.payment_method}
-                        {c.last_paid_date ? ` · Last paid ${format(parseISO(c.last_paid_date), "MMM d")}` : ""}
-                        {c.next_due_date ? ` · Next ${format(parseISO(c.next_due_date), "MMM d")}` : ""}
+                        {c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}
                       </p>
-                      {c.notes && <p className="text-xs text-muted-foreground mt-0.5 italic">{c.notes}</p>}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
-                      <div className="flex items-center gap-1.5">
-                        <Label className="text-xs text-muted-foreground">Paid</Label>
-                        <Switch
-                          checked={c.paid}
-                          onCheckedChange={(v) => {
-                            update(c.id, {
-                              paid: v,
-                              last_paid_date: v ? todayISO() : c.last_paid_date,
-                            });
-                          }}
-                        />
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { remove(c.id); toast.success("Removed"); }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {c.paid ? (
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                          <Check className="h-4 w-4" />
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+                          <X className="h-4 w-4" />
+                        </span>
+                      )}
                     </div>
-                  </li>
-                );
-              })}
+                  </button>
+                </li>
+              ))}
             </ul>
           )}
         </CardContent>
       </Card>
 
       <CommitmentDialog
-        open={open}
-        onOpenChange={setOpen}
+        open={formOpen}
+        onOpenChange={setFormOpen}
         editing={editing}
         onSave={(data) => {
           if (editing) {
@@ -206,9 +190,170 @@ function CommitmentsPage() {
             add(data);
             toast.success("Added");
           }
-          setOpen(false);
+          setFormOpen(false);
         }}
       />
+
+      <DetailsDialog
+        item={detailsItem}
+        onClose={() => setDetailsId(null)}
+        onEdit={(c) => {
+          setDetailsId(null);
+          setEditing(c);
+          setFormOpen(true);
+        }}
+        onDelete={(id) => {
+          remove(id);
+          setDetailsId(null);
+          toast.success("Removed");
+        }}
+        onConfirmReset={async (c, newDue) => {
+          await update(c.id, {
+            paid: false,
+            last_paid_date: todayISO(),
+            next_due_date: newDue,
+          });
+          toast.success("Payment reset");
+          setDetailsId(null);
+        }}
+        onUnmarkPaid={async (c) => {
+          await update(c.id, { paid: false });
+          setDetailsId(null);
+        }}
+      />
+    </div>
+  );
+}
+
+function DetailsDialog({
+  item, onClose, onEdit, onDelete, onConfirmReset, onUnmarkPaid,
+}: {
+  item: Commitment | null;
+  onClose: () => void;
+  onEdit: (c: Commitment) => void;
+  onDelete: (id: string) => void;
+  onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
+  onUnmarkPaid: (c: Commitment) => void | Promise<void>;
+}) {
+  const [mode, setMode] = useState<"details" | "confirm">("details");
+  const [pickerDate, setPickerDate] = useState("");
+
+  useEffect(() => {
+    if (item) {
+      setMode("details");
+      setPickerDate(item.next_due_date ?? todayISO());
+    }
+  }, [item]);
+
+  const open = !!item;
+
+  function handlePaidToggle(checked: boolean) {
+    if (!item) return;
+    if (checked) {
+      setMode("confirm");
+    } else {
+      onUnmarkPaid(item);
+    }
+  }
+
+  function confirmWith(newDue: string) {
+    if (!item) return;
+    onConfirmReset(item, newDue);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        {item && mode === "details" && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{item.item_name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <Row label="Amount" value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>} />
+              <Row label="Store / provider" value={item.store || "—"} />
+              <Row label="Payment method" value={item.payment_method || "—"} />
+              <Row label="Next due" value={item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"} />
+              <Row label="Last paid" value={item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"} />
+              {item.notes && <Row label="Notes" value={<span className="italic text-muted-foreground">{item.notes}</span>} />}
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                <Label htmlFor="paid-toggle">Paid</Label>
+                <Switch id="paid-toggle" checked={item.paid} onCheckedChange={handlePaidToggle} />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}>
+                <Trash2 className="h-4 w-4" /> Delete
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
+                <Pencil className="h-4 w-4" /> Edit
+              </Button>
+              <Button size="sm" onClick={onClose}>Close</Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {item && mode === "confirm" && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Confirm payment reset?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Marking <span className="font-medium text-foreground">{item.item_name}</span> as paid will advance its next due date.
+                Choose how to roll it forward:
+              </p>
+              <div className="grid gap-2">
+                <Button
+                  variant="outline"
+                  className="justify-between"
+                  onClick={() => {
+                    const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
+                    confirmWith(addDays(base, 28).toISOString().slice(0, 10));
+                  }}
+                >
+                  <span>+4 Weeks</span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(addDays(item.next_due_date ? parseISO(item.next_due_date) : new Date(), 28), "d MMM yyyy")}
+                  </span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-between"
+                  onClick={() => {
+                    const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
+                    confirmWith(addMonths(base, 1).toISOString().slice(0, 10));
+                  }}
+                >
+                  <span>+1 Month</span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(addMonths(item.next_due_date ? parseISO(item.next_due_date) : new Date(), 1), "d MMM yyyy")}
+                  </span>
+                </Button>
+                <div className="rounded-md border border-border p-3 space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Pick a date</Label>
+                  <div className="flex gap-2">
+                    <Input type="date" value={pickerDate} onChange={(e) => setPickerDate(e.target.value)} />
+                    <Button onClick={() => pickerDate && confirmWith(pickerDate)}>Set</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => { setMode("details"); onClose(); }}>Cancel</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-sm text-right">{value}</span>
     </div>
   );
 }
