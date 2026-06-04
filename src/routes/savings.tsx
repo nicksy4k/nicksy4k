@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
 import type { SavingsKind } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,20 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus, Trash2 } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ArrowDownCircle, ArrowUpCircle, Check, ChevronsUpDown, PiggyBank, Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
