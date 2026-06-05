@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
 import { format, parseISO, addDays, addMonths } from "date-fns";
 import { toast } from "sonner";
 
@@ -57,6 +57,35 @@ function CommitmentsPage() {
   }, [items, resetDate]);
 
   const shortfall = leftToPay - billPocketBalance;
+
+  // Waterfall: order unpaid bills by due date, allocate Bill Money down the list.
+  // funded[id] = true means the current pocket balance covers this bill in priority order.
+  const fundedMap = useMemo(() => {
+    const unpaidSorted = items
+      .filter((i) => !i.paid)
+      .slice()
+      .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
+    let remaining = billPocketBalance;
+    const map: Record<string, boolean> = {};
+    for (const c of unpaidSorted) {
+      if (remaining >= c.amount) {
+        map[c.id] = true;
+        remaining -= c.amount;
+      } else {
+        map[c.id] = false;
+      }
+    }
+    return map;
+  }, [items, billPocketBalance]);
+
+  // Auto-revert: when today reaches the app-wide reset date, clear all paid flags
+  // so the next cycle starts fresh. Paid bills stay green until this triggers.
+  useEffect(() => {
+    if (todayISO() < resetDate) return;
+    const stillPaid = items.filter((i) => i.paid);
+    if (stillPaid.length === 0) return;
+    stillPaid.forEach((c) => { update(c.id, { paid: false }); });
+  }, [resetDate, items, update]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
@@ -161,13 +190,20 @@ function CommitmentsPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
                       {c.paid ? (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                        <span
+                          title="Paid"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
+                        >
                           <Check className="h-4 w-4" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-                          <X className="h-4 w-4" />
-                        </span>
+                        <span
+                          title={fundedMap[c.id] ? "Unpaid · funded" : "Unpaid · shortfall"}
+                          className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                            fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"
+                          }`}
+                          aria-label={fundedMap[c.id] ? "Funded" : "Shortfall"}
+                        />
                       )}
                     </div>
                   </button>
@@ -209,11 +245,11 @@ function CommitmentsPage() {
         }}
         onConfirmReset={async (c, newDue) => {
           await update(c.id, {
-            paid: false,
+            paid: true,
             last_paid_date: todayISO(),
             next_due_date: newDue,
           });
-          toast.success("Payment reset");
+          toast.success("Marked paid · next due " + format(parseISO(newDue), "d MMM"));
           setDetailsId(null);
         }}
         onUnmarkPaid={async (c) => {
