@@ -115,6 +115,32 @@ function IncomePage() {
         <h1 className="text-3xl md:text-4xl font-semibold">Income</h1>
       </header>
 
+      {/* Add income — at the very top for quick mobile entry */}
+      <Card className="mb-6">
+        <CardHeader><CardTitle>Add income</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={source} onChange={(e) => setSource(e.target.value)} /></Field>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+            <Field label="Category">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <div className="flex justify-end">
+            <Button onClick={save}><Plus className="h-4 w-4" /> Add income</Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
         <Card className="border-primary/30 bg-primary/5">
@@ -147,32 +173,6 @@ function IncomePage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Add income — moved to the top, above history */}
-      <Card className="mb-6">
-        <CardHeader><CardTitle>Add income</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-            <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={source} onChange={(e) => setSource(e.target.value)} /></Field>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-            <Field label="Category">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-          <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          <div className="flex justify-end">
-            <Button onClick={save}><Plus className="h-4 w-4" /> Add income</Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader><CardTitle>Income history</CardTitle></CardHeader>
