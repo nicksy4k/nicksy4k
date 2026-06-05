@@ -58,6 +58,35 @@ function CommitmentsPage() {
 
   const shortfall = leftToPay - billPocketBalance;
 
+  // Waterfall: order unpaid bills by due date, allocate Bill Money down the list.
+  // funded[id] = true means the current pocket balance covers this bill in priority order.
+  const fundedMap = useMemo(() => {
+    const unpaidSorted = items
+      .filter((i) => !i.paid)
+      .slice()
+      .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
+    let remaining = billPocketBalance;
+    const map: Record<string, boolean> = {};
+    for (const c of unpaidSorted) {
+      if (remaining >= c.amount) {
+        map[c.id] = true;
+        remaining -= c.amount;
+      } else {
+        map[c.id] = false;
+      }
+    }
+    return map;
+  }, [items, billPocketBalance]);
+
+  // Auto-revert: when today reaches the app-wide reset date, clear all paid flags
+  // so the next cycle starts fresh. Paid bills stay green until this triggers.
+  useEffect(() => {
+    if (todayISO() < resetDate) return;
+    const stillPaid = items.filter((i) => i.paid);
+    if (stillPaid.length === 0) return;
+    stillPaid.forEach((c) => { update(c.id, { paid: false }); });
+  }, [resetDate, items, update]);
+
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
   const [detailsId, setDetailsId] = useState<string | null>(null);
