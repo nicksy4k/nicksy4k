@@ -245,11 +245,11 @@ function CommitmentsPage() {
         }}
         onConfirmReset={async (c, newDue) => {
           await update(c.id, {
-            paid: false,
+            paid: true,
             last_paid_date: todayISO(),
             next_due_date: newDue,
           });
-          toast.success("Payment reset");
+          toast.success("Marked paid · next due " + format(parseISO(newDue), "d MMM"));
           setDetailsId(null);
         }}
         onUnmarkPaid={async (c) => {
