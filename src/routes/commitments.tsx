@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
 import { format, parseISO, addDays, addMonths } from "date-fns";
 import { toast } from "sonner";
 
