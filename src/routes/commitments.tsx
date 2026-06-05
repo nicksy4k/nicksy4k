@@ -190,13 +190,20 @@ function CommitmentsPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
                       {c.paid ? (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                        <span
+                          title="Paid"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
+                        >
                           <Check className="h-4 w-4" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-                          <X className="h-4 w-4" />
-                        </span>
+                        <span
+                          title={fundedMap[c.id] ? "Unpaid · funded" : "Unpaid · shortfall"}
+                          className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                            fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"
+                          }`}
+                          aria-label={fundedMap[c.id] ? "Funded" : "Shortfall"}
+                        />
                       )}
                     </div>
                   </button>
