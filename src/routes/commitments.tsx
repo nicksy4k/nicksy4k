@@ -245,12 +245,42 @@ function CommitmentsPage() {
           toast.success("Removed");
         }}
         onConfirmReset={async (c, newDue) => {
+          const paidDate = todayISO();
           await update(c.id, {
             paid: true,
-            last_paid_date: todayISO(),
+            last_paid_date: paidDate,
             next_due_date: newDue,
           });
-          toast.success("Marked paid · next due " + format(parseISO(newDue), "d MMM"));
+          // Auto-log expense transaction in the main ledger
+          try {
+            await addTransaction({
+              date: paidDate,
+              retailer: c.item_name,
+              total_amount: c.amount,
+              receipt_attached: false,
+              receipt_type: "None",
+              receipt_location: "",
+              notes: `Auto-logged from commitment: ${c.item_name}`,
+              items: [{
+                id: crypto.randomUUID(),
+                item_name: c.item_name,
+                price: c.amount,
+                category: "Subscriptions",
+              }],
+            });
+            // Auto-deduct from Bill Money pocket
+            await addSaving({
+              date: paidDate,
+              kind: "withdrawal",
+              amount: c.amount,
+              account: BILL_POCKET,
+              notes: `Auto-deducted for ${c.item_name}`,
+            });
+          } catch (err) {
+            console.error("Failed to auto-log paid commitment", err);
+            toast.error("Marked paid, but auto-logging failed.");
+          }
+          toast.success("Paid · logged & deducted from Bill Money");
           setDetailsId(null);
         }}
         onUnmarkPaid={async (c) => {
