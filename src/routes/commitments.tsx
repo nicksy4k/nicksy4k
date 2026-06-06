@@ -30,7 +30,7 @@ function todayISO() {
 function CommitmentsPage() {
   const { items, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
-  const { add: addTransaction } = useTransactions();
+  const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
 
   const [resetDate, setResetDate] = useState(() => {
     if (typeof window === "undefined") return addDays(new Date(), 28).toISOString().slice(0, 10);
