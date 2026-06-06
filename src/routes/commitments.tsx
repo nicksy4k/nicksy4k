@@ -285,7 +285,27 @@ function CommitmentsPage() {
           setDetailsId(null);
         }}
         onUnmarkPaid={async (c) => {
-          await update(c.id, { paid: false });
+          try {
+            // Delete the auto-logged expense transaction(s) linked to this commitment
+            const linked = transactions.filter((t) => t.commitment_id === c.id);
+            for (const t of linked) {
+              await removeTransaction(t.id);
+            }
+            // Refund the Bill Money pocket
+            const refundAmount = linked.reduce((s, t) => s + t.total_amount, 0) || c.amount;
+            await addSaving({
+              date: todayISO(),
+              kind: "deposit",
+              amount: refundAmount,
+              account: BILL_POCKET,
+              notes: `Refund — unmarked ${c.item_name}`,
+            });
+            await update(c.id, { paid: false, last_paid_date: null });
+            toast.success("Reversed · transaction removed & Bill Money refunded");
+          } catch (err) {
+            console.error("Failed to undo paid commitment", err);
+            toast.error("Could not fully undo. Check transactions & pocket.");
+          }
           setDetailsId(null);
         }}
       />
