@@ -1,0 +1,1 @@
+ALTER TABLE public.commitments ADD COLUMN IF NOT EXISTS prev_due_date DATE;

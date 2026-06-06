@@ -249,6 +249,7 @@ function CommitmentsPage() {
           await update(c.id, {
             paid: true,
             last_paid_date: paidDate,
+            prev_due_date: c.next_due_date ?? null,
             next_due_date: newDue,
           });
           // Auto-log expense transaction in the main ledger
@@ -300,7 +301,12 @@ function CommitmentsPage() {
               account: BILL_POCKET,
               notes: `Refund — unmarked ${c.item_name}`,
             });
-            await update(c.id, { paid: false, last_paid_date: null });
+            await update(c.id, {
+              paid: false,
+              last_paid_date: null,
+              next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
+              prev_due_date: null,
+            });
             toast.success("Reversed · transaction removed & Bill Money refunded");
           } catch (err) {
             console.error("Failed to undo paid commitment", err);
