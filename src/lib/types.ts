@@ -79,6 +79,7 @@ export interface Commitment {
   amount: number;
   last_paid_date?: string | null;
   next_due_date?: string | null;
+  prev_due_date?: string | null;
   notes?: string;
   paid: boolean;
   created_at: string;
