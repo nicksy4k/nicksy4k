@@ -148,6 +148,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          commitment_id: string | null
           created_at: string
           date: string
           id: string
@@ -161,6 +162,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          commitment_id?: string | null
           created_at?: string
           date: string
           id?: string
@@ -174,6 +176,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          commitment_id?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -186,7 +189,15 @@ export type Database = {
           total_amount?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_commitment_id_fkey"
+            columns: ["commitment_id"]
+            isOneToOne: false
+            referencedRelation: "commitments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
