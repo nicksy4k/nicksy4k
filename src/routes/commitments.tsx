@@ -261,6 +261,7 @@ function CommitmentsPage() {
               receipt_type: "None",
               receipt_location: "",
               notes: `Auto-logged from commitment: ${c.item_name}`,
+              commitment_id: c.id,
               items: [{
                 id: crypto.randomUUID(),
                 item_name: c.item_name,
