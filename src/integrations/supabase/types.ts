@@ -49,6 +49,7 @@ export type Database = {
           notes: string | null
           paid: boolean
           payment_method: string
+          prev_due_date: string | null
           store: string
           user_id: string
         }
@@ -62,6 +63,7 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           payment_method?: string
+          prev_due_date?: string | null
           store?: string
           user_id: string
         }
@@ -75,6 +77,7 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           payment_method?: string
+          prev_due_date?: string | null
           store?: string
           user_id?: string
         }
