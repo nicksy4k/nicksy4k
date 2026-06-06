@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useCommitments, useSavings } from "@/lib/store";
+import { useCommitments, useSavings, useTransactions } from "@/lib/store";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
