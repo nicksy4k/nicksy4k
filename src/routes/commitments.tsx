@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useCommitments, useSavings } from "@/lib/store";
+import { useCommitments, useSavings, useTransactions } from "@/lib/store";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,8 @@ function todayISO() {
 
 function CommitmentsPage() {
   const { items, add, update, remove } = useCommitments();
-  const { items: savings } = useSavings();
+  const { items: savings, add: addSaving } = useSavings();
+  const { add: addTransaction } = useTransactions();
 
   const [resetDate, setResetDate] = useState(() => {
     if (typeof window === "undefined") return addDays(new Date(), 28).toISOString().slice(0, 10);
@@ -244,12 +245,42 @@ function CommitmentsPage() {
           toast.success("Removed");
         }}
         onConfirmReset={async (c, newDue) => {
+          const paidDate = todayISO();
           await update(c.id, {
             paid: true,
-            last_paid_date: todayISO(),
+            last_paid_date: paidDate,
             next_due_date: newDue,
           });
-          toast.success("Marked paid · next due " + format(parseISO(newDue), "d MMM"));
+          // Auto-log expense transaction in the main ledger
+          try {
+            await addTransaction({
+              date: paidDate,
+              retailer: c.item_name,
+              total_amount: c.amount,
+              receipt_attached: false,
+              receipt_type: "None",
+              receipt_location: "",
+              notes: `Auto-logged from commitment: ${c.item_name}`,
+              items: [{
+                id: crypto.randomUUID(),
+                item_name: c.item_name,
+                price: c.amount,
+                category: "Subscriptions",
+              }],
+            });
+            // Auto-deduct from Bill Money pocket
+            await addSaving({
+              date: paidDate,
+              kind: "withdrawal",
+              amount: c.amount,
+              account: BILL_POCKET,
+              notes: `Auto-deducted for ${c.item_name}`,
+            });
+          } catch (err) {
+            console.error("Failed to auto-log paid commitment", err);
+            toast.error("Marked paid, but auto-logging failed.");
+          }
+          toast.success("Paid · logged & deducted from Bill Money");
           setDetailsId(null);
         }}
         onUnmarkPaid={async (c) => {
