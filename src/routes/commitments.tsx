@@ -249,6 +249,7 @@ function CommitmentsPage() {
           await update(c.id, {
             paid: true,
             last_paid_date: paidDate,
+            prev_due_date: c.next_due_date ?? null,
             next_due_date: newDue,
           });
           // Auto-log expense transaction in the main ledger
