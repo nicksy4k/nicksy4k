@@ -1,0 +1,2 @@
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS commitment_id UUID REFERENCES public.commitments(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS transactions_commitment_id_idx ON public.transactions(commitment_id);

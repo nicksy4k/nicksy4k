@@ -41,7 +41,8 @@ export function useTransactions() {
         receipt_location: t.receipt_location,
         notes: t.notes,
         items: t.items as never,
-      });
+        commitment_id: t.commitment_id ?? null,
+      } as never);
       if (error) throw error;
       await invalidate();
     },

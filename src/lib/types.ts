@@ -45,6 +45,7 @@ export interface Transaction {
   receipt_location: string;
   notes?: string;
   items: LineItem[];
+  commitment_id?: string | null;
   created_at: string;
 }
 
