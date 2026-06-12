@@ -173,8 +173,8 @@ function SavingsPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="p-0"
-                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                      className="p-0 w-[280px]"
+                      align="end"
                     >
                       <Command>
                         <CommandInput placeholder="Search pockets..." />
