@@ -185,7 +185,7 @@ function NewTransactionPage() {
                     <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </Field>
