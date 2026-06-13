@@ -63,7 +63,7 @@ function NewTransactionPage() {
 
   function save() {
     const cleanItems: LineItem[] = items
-      .filter((i) => i.item_name.trim() && parseFloat(i.price) > 0)
+      .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
       .map((i) => ({
         id: i.id,
         item_name: i.item_name.trim(),
