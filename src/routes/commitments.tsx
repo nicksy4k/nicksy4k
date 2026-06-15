@@ -24,7 +24,8 @@ export const Route = createFileRoute("/commitments")({
 const BILL_POCKET = "Bill Money";
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  // FIXED: Using date-fns format to prevent UTC timezone shift
+  return format(new Date(), "yyyy-MM-dd");
 }
 
 function CommitmentsPage() {
@@ -33,8 +34,9 @@ function CommitmentsPage() {
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
 
   const [resetDate, setResetDate] = useState(() => {
-    if (typeof window === "undefined") return addDays(new Date(), 28).toISOString().slice(0, 10);
-    return localStorage.getItem("iet_reset_date") || addDays(new Date(), 28).toISOString().slice(0, 10);
+    // FIXED: Using date-fns format to prevent UTC timezone shift on reset date
+    if (typeof window === "undefined") return format(addDays(new Date(), 28), "yyyy-MM-dd");
+    return localStorage.getItem("iet_reset_date") || format(addDays(new Date(), 28), "yyyy-MM-dd");
   });
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("iet_reset_date", resetDate);
@@ -398,12 +400,13 @@ function DetailsDialog({
                 Choose how to roll it forward:
               </p>
               <div className="grid gap-2">
+                {/* FIXED: +4 Weeks button now uses format to prevent timezone offset */}
                 <Button
                   variant="outline"
                   className="justify-between"
                   onClick={() => {
                     const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
-                    confirmWith(addDays(base, 28).toISOString().slice(0, 10));
+                    confirmWith(format(addDays(base, 28), "yyyy-MM-dd"));
                   }}
                 >
                   <span>+4 Weeks</span>
@@ -411,12 +414,13 @@ function DetailsDialog({
                     {format(addDays(item.next_due_date ? parseISO(item.next_due_date) : new Date(), 28), "d MMM yyyy")}
                   </span>
                 </Button>
+                {/* FIXED: +1 Month button now uses format to prevent timezone offset */}
                 <Button
                   variant="outline"
                   className="justify-between"
                   onClick={() => {
                     const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
-                    confirmWith(addMonths(base, 1).toISOString().slice(0, 10));
+                    confirmWith(format(addMonths(base, 1), "yyyy-MM-dd"));
                   }}
                 >
                   <span>+1 Month</span>
