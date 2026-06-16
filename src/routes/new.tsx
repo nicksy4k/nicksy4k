@@ -198,7 +198,12 @@ function NewTransactionPage() {
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-[1fr_140px] gap-4">
                   <Field label="Item name">
-                    <Input placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
+                    <Combobox
+                      value={item.item_name}
+                      onChange={(v) => updateItem(item.id, { item_name: v })}
+                      options={itemNameSuggestions}
+                      placeholder="e.g. Wool overshirt"
+                    />
                   </Field>
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
