@@ -203,7 +203,7 @@ function NewTransactionPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-[1fr_140px] gap-4">
+                <div className="grid sm:grid-cols-[1fr_110px_90px] gap-4">
                   <Field label="Item name">
                     <Combobox
                       value={item.item_name}
@@ -215,7 +215,16 @@ function NewTransactionPage() {
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
                   </Field>
+                  <Field label="Qty">
+                    <Input inputMode="numeric" placeholder="1" value={item.quantity} onChange={(e) => updateItem(item.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                  </Field>
                 </div>
+                {(parseFloat(item.quantity) || 1) > 1 && (
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Line total: <span className="tabular-nums font-medium text-foreground">{fmt(lineTotal(item))}</span>
+                    {" "}({item.price || "0"} × {item.quantity || "1"})
+                  </p>
+                )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Category">
                     <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
