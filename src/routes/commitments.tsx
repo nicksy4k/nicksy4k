@@ -78,14 +78,18 @@ function CommitmentsPage() {
     return map;
   }, [items, billPocketBalance]);
 
-  // Auto-revert: when today reaches the app-wide reset date, clear all paid flags
-  // so the next cycle starts fresh. Paid bills stay green until this triggers.
+  // Auto-revert: when the active cycle window advances (new cycle starts),
+  // clear all paid flags so the next cycle begins fresh.
   useEffect(() => {
-    if (todayISO() < resetDate) return;
-    const stillPaid = items.filter((i) => i.paid);
-    if (stillPaid.length === 0) return;
-    stillPaid.forEach((c) => { update(c.id, { paid: false }); });
-  }, [resetDate, items, update]);
+    if (typeof window === "undefined") return;
+    const key = "ledgerly.commitments.lastCycleStart";
+    const last = localStorage.getItem(key);
+    if (last && last !== cycle.startISO) {
+      const stillPaid = items.filter((i) => i.paid);
+      stillPaid.forEach((c) => { update(c.id, { paid: false }); });
+    }
+    localStorage.setItem(key, cycle.startISO);
+  }, [cycle.startISO, items, update]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
