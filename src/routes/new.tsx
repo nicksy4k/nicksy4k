@@ -204,20 +204,28 @@ function NewTransactionPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-[1fr_110px_90px] gap-4">
-                  <Field label="Item name">
-                    <Combobox
-                      value={item.item_name}
-                      onChange={(v) => updateItem(item.id, { item_name: v })}
-                      options={itemNameSuggestions}
-                      placeholder="e.g. Wool overshirt"
-                    />
-                  </Field>
+                <Field label="Item name">
+                  <Combobox
+                    value={item.item_name}
+                    onChange={(v) => updateItem(item.id, { item_name: v })}
+                    options={itemNameSuggestions}
+                    placeholder="e.g. Wool overshirt"
+                    autoFocus={item.id === lastAddedId}
+                  />
+                </Field>
+                <div className="grid grid-cols-[1fr_90px] gap-4">
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
                   </Field>
                   <Field label="Qty">
-                    <Input inputMode="numeric" placeholder="1" value={item.quantity} onChange={(e) => updateItem(item.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                    <Select value={item.quantity} onValueChange={(v) => updateItem(item.id, { quantity: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 20 }, (_, i) => String(i + 1)).map((n) => (
+                          <SelectItem key={n} value={n}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </Field>
                 </div>
                 {(parseFloat(item.quantity) || 1) > 1 && (
@@ -246,7 +254,11 @@ function NewTransactionPage() {
             </Card>
           ))}
 
-          <Button variant="outline" className="w-full" onClick={() => setItems((a) => [...a, emptyItem(categories[0] ?? "Other")])}>
+          <Button variant="outline" className="w-full" onClick={() => {
+            const newItem = emptyItem(categories[0] ?? "Other");
+            setItems((a) => [...a, newItem]);
+            setLastAddedId(newItem.id);
+          }}>
             <Plus className="h-4 w-4" /> Add another item
           </Button>
 
