@@ -15,6 +15,8 @@ import {
 import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
 import { format, parseISO, addDays, addMonths } from "date-fns";
 import { toast } from "sonner";
+import { useActiveCycle } from "@/lib/cycle";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({ meta: [{ title: "Commitments — Ledgerly" }] }),
@@ -33,14 +35,9 @@ function CommitmentsPage() {
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
 
-  const [resetDate, setResetDate] = useState(() => {
-    // FIXED: Using date-fns format to prevent UTC timezone shift on reset date
-    if (typeof window === "undefined") return format(addDays(new Date(), 28), "yyyy-MM-dd");
-    return localStorage.getItem("iet_reset_date") || format(addDays(new Date(), 28), "yyyy-MM-dd");
-  });
-  useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("iet_reset_date", resetDate);
-  }, [resetDate]);
+  const cycle = useActiveCycle();
+  // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
+  const resetDate = format(addDays(cycle.end, 1), "yyyy-MM-dd");
 
   const billPocketBalance = useMemo(() => {
     return savings
@@ -118,15 +115,20 @@ function CommitmentsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <CalendarClock className="h-5 w-5 text-primary shrink-0" />
             <div className="flex-1 min-w-[200px]">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Next Payment Reset Date</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Bills due before this date count toward your shortfall.</p>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Active cycle</Label>
+              <p className="text-sm mt-0.5">
+                <span className="font-medium tabular-nums">
+                  {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
+                </span>
+                {cycle.isOverridden && <span className="ml-2 text-xs text-amber-600">· override</span>}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Bills due on or before {format(cycle.end, "d MMM")} count toward this cycle's shortfall.
+              </p>
             </div>
-            <Input
-              type="date"
-              value={resetDate}
-              onChange={(e) => setResetDate(e.target.value)}
-              className="w-auto"
-            />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/settings">Change cycle</Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
