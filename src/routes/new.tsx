@@ -134,7 +134,12 @@ function NewTransactionPage() {
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
               <Field label="Retailer / shop">
-                <Input placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+                <Combobox
+                  value={retailer}
+                  onChange={setRetailer}
+                  options={retailerSuggestions}
+                  placeholder="e.g. Asda"
+                />
               </Field>
             </div>
 
