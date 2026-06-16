@@ -49,8 +49,10 @@ function NewTransactionPage() {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
 
+  const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
+
   const total = useMemo(
-    () => items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0),
+    () => items.reduce((s, i) => s + lineTotal(i), 0),
     [items]
   );
 
