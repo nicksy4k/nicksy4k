@@ -23,6 +23,7 @@ export interface ComboboxProps {
   placeholder?: string;
   emptyHint?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
 export function Combobox({
@@ -32,9 +33,22 @@ export function Combobox({
   placeholder = "Select…",
   emptyHint = "Press Enter to add",
   className,
+  autoFocus = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const didAutoFocus = React.useRef(false);
+
+  React.useEffect(() => {
+    if (autoFocus && !didAutoFocus.current) {
+      didAutoFocus.current = true;
+      setOpen(true);
+      requestAnimationFrame(() => {
+        const input = document.querySelector('[cmdk-input]') as HTMLInputElement | null;
+        input?.focus();
+      });
+    }
+  }, [autoFocus]);
 
   const normalized = query.trim();
   const lowerQuery = normalized.toLowerCase();
