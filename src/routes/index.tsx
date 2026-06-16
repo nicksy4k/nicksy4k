@@ -158,7 +158,7 @@ function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Spending by category</CardTitle>
-            <span className="text-xs text-muted-foreground">All time</span>
+            <span className="text-xs text-muted-foreground">This cycle</span>
           </CardHeader>
           <CardContent>
             {byCategory.length === 0 ? (
