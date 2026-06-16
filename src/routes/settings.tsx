@@ -14,6 +14,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Ledgerly" }] }),
@@ -46,6 +47,8 @@ function SettingsPage() {
       </header>
 
       <div className="space-y-6">
+        <CycleSettingsCard />
+
         <CategoryManager
           title="Expense categories"
           description="Used when itemizing a transaction."
