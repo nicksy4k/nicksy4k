@@ -49,6 +49,17 @@ export function useTransactions() {
     [qc],
   );
 
+  const update = useCallback(
+    async (id: string, patch: Partial<Omit<Transaction, "id" | "created_at">>) => {
+      const clean: Record<string, unknown> = { ...patch };
+      if (patch.items) clean.items = patch.items as never;
+      const { error } = await supabase.from("transactions").update(clean as never).eq("id", id);
+      if (error) throw error;
+      await invalidate();
+    },
+    [qc],
+  );
+
   const remove = useCallback(
     async (id: string) => {
       await supabase.from("transactions").delete().eq("id", id);
@@ -64,7 +75,7 @@ export function useTransactions() {
     await invalidate();
   }, [qc]);
 
-  return { items: data ?? [], add, remove, clear };
+  return { items: data ?? [], add, update, remove, clear };
 }
 
 // ===== Incomes =====
