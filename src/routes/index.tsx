@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { AlertTriangle, ArrowUpRight, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { useActiveCycle, isInCycle } from "@/lib/cycle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,18 +38,24 @@ function DashboardPage() {
   const { items } = useTransactions();
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
+  const cycle = useActiveCycle();
+
+  // Cycle-scoped slices — drive every summary, chart, and alert below.
+  const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
+  const cycleIncomes = useMemo(() => incomes.filter((i) => isInCycle(i.date, cycle)), [incomes, cycle]);
+  const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
 
   const stats = useMemo(() => {
-    const totalExpenses = items.reduce((s, t) => s + t.total_amount, 0);
-    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
-    const savingsBalance = savings.reduce(
+    const totalExpenses = cycleItems.reduce((s, t) => s + t.total_amount, 0);
+    const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
+    const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
       0,
     );
-    const itemCount = items.reduce((s, t) => s + t.items.length, 0);
+    const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: items.length };
-  }, [items, incomes, savings]);
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
+  }, [cycleItems, cycleIncomes, cycleSavings]);
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
@@ -63,20 +70,20 @@ function DashboardPage() {
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
-    items.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
+    cycleItems.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [items]);
+  }, [cycleItems]);
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
-    items.forEach((t) => map.set(t.retailer, (map.get(t.retailer) ?? 0) + t.total_amount));
+    cycleItems.forEach((t) => map.set(t.retailer, (map.get(t.retailer) ?? 0) + t.total_amount));
     return Array.from(map.entries())
       .map(([name, total]) => ({ name, total: Math.round(total * 100) / 100 }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
-  }, [items]);
+  }, [cycleItems]);
 
   const alerts = useMemo(() => {
     const now = new Date();
@@ -97,7 +104,10 @@ function DashboardPage() {
     <div className="p-6 md:p-10 max-w-7xl mx-auto">
       <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Overview</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
+            {cycle.isOverridden && <span className="ml-1 text-amber-600">· override</span>}
+          </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
         </div>
         <Button asChild>
@@ -148,7 +158,7 @@ function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Spending by category</CardTitle>
-            <span className="text-xs text-muted-foreground">All time</span>
+            <span className="text-xs text-muted-foreground">This cycle</span>
           </CardHeader>
           <CardContent>
             {byCategory.length === 0 ? (
