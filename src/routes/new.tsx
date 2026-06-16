@@ -138,7 +138,7 @@ function NewTransactionPage() {
                 </datalist>
 
                 {/* Added list="retailers-list" to link the input to the invisible menu */}
-                <Input list="retailers-list" placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+                <Input list="retailers-list" autoComplete="off" placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
               </Field>
             </div>
 
@@ -198,7 +198,7 @@ function NewTransactionPage() {
                 <div className="grid sm:grid-cols-[1fr_140px] gap-4">
                   <Field label="Item name">
                     {/* Added list="items-list" to link to the second datalist */}
-                    <Input list="items-list" placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
+                    <Input list="items-list" autoComplete="off" placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
                   </Field>
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
