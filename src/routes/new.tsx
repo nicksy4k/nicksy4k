@@ -48,6 +48,7 @@ function NewTransactionPage() {
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
