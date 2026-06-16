@@ -25,13 +25,14 @@ interface DraftItem {
   id: string;
   item_name: string;
   price: string;
+  quantity: string;
   category: Category;
   return_window_expiry: string;
   notes: string;
 }
 
 function emptyItem(defaultCat: Category = "Other"): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", category: defaultCat, return_window_expiry: "", notes: "" };
+  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, return_window_expiry: "", notes: "" };
 }
 
 function NewTransactionPage() {
