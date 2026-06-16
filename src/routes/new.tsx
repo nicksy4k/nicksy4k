@@ -36,7 +36,7 @@ function emptyItem(defaultCat: Category = "Other"): DraftItem {
 
 function NewTransactionPage() {
   const navigate = useNavigate();
-  const { add } = useTransactions();
+  const { add, items: pastTransactions } = useTransactions();
   const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
