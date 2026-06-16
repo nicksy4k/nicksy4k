@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { AlertTriangle, ArrowUpRight, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { useActiveCycle, isInCycle } from "@/lib/cycle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,18 +38,24 @@ function DashboardPage() {
   const { items } = useTransactions();
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
+  const cycle = useActiveCycle();
+
+  // Cycle-scoped slices — drive every summary, chart, and alert below.
+  const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
+  const cycleIncomes = useMemo(() => incomes.filter((i) => isInCycle(i.date, cycle)), [incomes, cycle]);
+  const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
 
   const stats = useMemo(() => {
-    const totalExpenses = items.reduce((s, t) => s + t.total_amount, 0);
-    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
-    const savingsBalance = savings.reduce(
+    const totalExpenses = cycleItems.reduce((s, t) => s + t.total_amount, 0);
+    const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
+    const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
       0,
     );
-    const itemCount = items.reduce((s, t) => s + t.items.length, 0);
+    const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: items.length };
-  }, [items, incomes, savings]);
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
+  }, [cycleItems, cycleIncomes, cycleSavings]);
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
