@@ -39,8 +39,6 @@ export function Combobox({
   const [query, setQuery] = React.useState("");
   const didAutoFocus = React.useRef(false);
 
-  const didAutoFocus = React.useRef(false);
-
   React.useEffect(() => {
     if (autoFocus && !didAutoFocus.current) {
       didAutoFocus.current = true;
