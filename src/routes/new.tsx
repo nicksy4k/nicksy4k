@@ -53,6 +53,24 @@ function NewTransactionPage() {
     [items]
   );
 
+  const retailerSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.retailer?.trim()) set.add(t.retailer.trim());
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pastTransactions]);
+
+  const itemNameSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      for (const it of t.items ?? []) {
+        if (it.item_name?.trim()) set.add(it.item_name.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pastTransactions]);
+
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
   function updateItem(id: string, patch: Partial<DraftItem>) {
