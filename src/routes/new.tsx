@@ -25,13 +25,14 @@ interface DraftItem {
   id: string;
   item_name: string;
   price: string;
+  quantity: string;
   category: Category;
   return_window_expiry: string;
   notes: string;
 }
 
 function emptyItem(defaultCat: Category = "Other"): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", category: defaultCat, return_window_expiry: "", notes: "" };
+  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, return_window_expiry: "", notes: "" };
 }
 
 function NewTransactionPage() {
@@ -48,8 +49,10 @@ function NewTransactionPage() {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
 
+  const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
+
   const total = useMemo(
-    () => items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0),
+    () => items.reduce((s, i) => s + lineTotal(i), 0),
     [items]
   );
 
@@ -83,14 +86,18 @@ function NewTransactionPage() {
   function save() {
     const cleanItems: LineItem[] = items
       .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
-      .map((i) => ({
-        id: i.id,
-        item_name: i.item_name.trim(),
-        price: parseFloat(i.price),
-        category: i.category,
-        return_window_expiry: i.return_window_expiry || null,
-        notes: i.notes.trim() || undefined,
-      }));
+      .map((i) => {
+        const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
+        return {
+          id: i.id,
+          item_name: i.item_name.trim(),
+          price: parseFloat(i.price),
+          quantity: qty,
+          category: i.category,
+          return_window_expiry: i.return_window_expiry || null,
+          notes: i.notes.trim() || undefined,
+        };
+      });
 
     if (cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
@@ -100,7 +107,7 @@ function NewTransactionPage() {
     add({
       date,
       retailer: retailer.trim(),
-      total_amount: cleanItems.reduce((s, i) => s + i.price, 0),
+      total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
       receipt_attached: receiptAttached,
       receipt_type: receiptAttached ? receiptType : "None",
       receipt_location: receiptAttached ? receiptLocation.trim() : "",
@@ -196,7 +203,7 @@ function NewTransactionPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-[1fr_140px] gap-4">
+                <div className="grid sm:grid-cols-[1fr_110px_90px] gap-4">
                   <Field label="Item name">
                     <Combobox
                       value={item.item_name}
@@ -208,7 +215,16 @@ function NewTransactionPage() {
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
                   </Field>
+                  <Field label="Qty">
+                    <Input inputMode="numeric" placeholder="1" value={item.quantity} onChange={(e) => updateItem(item.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                  </Field>
                 </div>
+                {(parseFloat(item.quantity) || 1) > 1 && (
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Line total: <span className="tabular-nums font-medium text-foreground">{fmt(lineTotal(item))}</span>
+                    {" "}({item.price || "0"} × {item.quantity || "1"})
+                  </p>
+                )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Category">
                     <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>

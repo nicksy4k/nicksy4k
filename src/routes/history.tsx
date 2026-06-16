@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTransactions, useCategories } from "@/lib/store";
-import type { Category } from "@/lib/types";
+import type { Category, LineItem, ReceiptType, Transaction } from "@/lib/types";
+import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -17,7 +21,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronDown, FileText, MapPin, Search, Trash2 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronDown, FileText, MapPin, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
@@ -31,6 +38,7 @@ function HistoryPage() {
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "all">("all");
+  const [editing, setEditing] = useState<Transaction | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -96,6 +104,16 @@ function HistoryPage() {
                     <div className="text-right">
                       <p className="font-semibold tabular-nums">{fmt(t.total_amount)}</p>
                     </div>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Edit transaction"
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
+                      className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </span>
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
@@ -118,11 +136,14 @@ function HistoryPage() {
                             <th className="font-medium py-2 pr-3">Item</th>
                             <th className="font-medium py-2 pr-3">Category</th>
                             <th className="font-medium py-2 pr-3">Return by</th>
-                            <th className="font-medium py-2 text-right">Price</th>
+                            <th className="font-medium py-2 pr-3 text-right">Qty</th>
+                            <th className="font-medium py-2 pr-3 text-right">Unit</th>
+                            <th className="font-medium py-2 text-right">Total</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                           {t.items.map((i) => {
+                            const qty = i.quantity ?? 1;
                             const days = i.return_window_expiry ? differenceInCalendarDays(parseISO(i.return_window_expiry), new Date()) : null;
                             return (
                               <tr key={i.id}>
@@ -139,7 +160,9 @@ function HistoryPage() {
                                     </span>
                                   ) : "—"}
                                 </td>
-                                <td className="py-2.5 text-right tabular-nums">{fmt(i.price)}</td>
+                                <td className="py-2.5 pr-3 text-right tabular-nums">{qty}</td>
+                                <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{fmt(i.price)}</td>
+                                <td className="py-2.5 text-right tabular-nums">{fmt(i.price * qty)}</td>
                               </tr>
                             );
                           })}
@@ -149,7 +172,10 @@ function HistoryPage() {
 
                     {t.notes && <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>}
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
+                        <Pencil className="h-4 w-4" /> Edit
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
@@ -177,6 +203,250 @@ function HistoryPage() {
           ))}
         </div>
       )}
+
+      <EditTransactionDialog
+        transaction={editing}
+        categories={categories}
+        onClose={() => setEditing(null)}
+      />
+    </div>
+  );
+}
+
+interface DraftRow {
+  id: string;
+  item_name: string;
+  price: string;
+  quantity: string;
+  category: Category;
+  return_window_expiry: string;
+  notes: string;
+}
+
+function toDraft(i: LineItem): DraftRow {
+  return {
+    id: i.id,
+    item_name: i.item_name,
+    price: String(i.price ?? ""),
+    quantity: String(i.quantity ?? 1),
+    category: i.category,
+    return_window_expiry: i.return_window_expiry ?? "",
+    notes: i.notes ?? "",
+  };
+}
+
+function EditTransactionDialog({
+  transaction,
+  categories,
+  onClose,
+}: {
+  transaction: Transaction | null;
+  categories: string[];
+  onClose: () => void;
+}) {
+  const { update } = useTransactions();
+  const open = transaction !== null;
+
+  const [date, setDate] = useState("");
+  const [retailer, setRetailer] = useState("");
+  const [receiptAttached, setReceiptAttached] = useState(true);
+  const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");
+  const [receiptLocation, setReceiptLocation] = useState("");
+  const [notes, setNotes] = useState("");
+  const [rows, setRows] = useState<DraftRow[]>([]);
+  const [initialized, setInitialized] = useState<string | null>(null);
+
+  if (transaction && initialized !== transaction.id) {
+    setInitialized(transaction.id);
+    setDate(transaction.date);
+    setRetailer(transaction.retailer);
+    setReceiptAttached(transaction.receipt_attached);
+    setReceiptType(transaction.receipt_type === "None" ? "Digital" : transaction.receipt_type);
+    setReceiptLocation(transaction.receipt_location ?? "");
+    setNotes(transaction.notes ?? "");
+    setRows(transaction.items.map(toDraft));
+  }
+  if (!transaction && initialized !== null) {
+    setInitialized(null);
+  }
+
+  const total = rows.reduce(
+    (s, r) => s + (parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0),
+    0,
+  );
+
+  function updateRow(id: string, patch: Partial<DraftRow>) {
+    setRows((arr) => arr.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+  function removeRow(id: string) {
+    setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
+  }
+  function addRow() {
+    setRows((arr) => [
+      ...arr,
+      {
+        id: crypto.randomUUID(),
+        item_name: "",
+        price: "",
+        quantity: "1",
+        category: categories[0] ?? "Other",
+        return_window_expiry: "",
+        notes: "",
+      },
+    ]);
+  }
+
+  async function save() {
+    if (!transaction) return;
+    if (!retailer.trim()) {
+      toast.error("Retailer is required");
+      return;
+    }
+    const cleanItems: LineItem[] = rows
+      .filter((r) => r.item_name.trim() && !isNaN(parseFloat(r.price)))
+      .map((r) => ({
+        id: r.id,
+        item_name: r.item_name.trim(),
+        price: parseFloat(r.price),
+        quantity: Math.max(1, parseInt(r.quantity, 10) || 1),
+        category: r.category,
+        return_window_expiry: r.return_window_expiry || null,
+        notes: r.notes.trim() || undefined,
+      }));
+
+    if (cleanItems.length === 0) {
+      toast.error("Add at least one line item with a price.");
+      return;
+    }
+
+    try {
+      await update(transaction.id, {
+        date,
+        retailer: retailer.trim(),
+        total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
+        receipt_attached: receiptAttached,
+        receipt_type: receiptAttached ? receiptType : "None",
+        receipt_location: receiptAttached ? receiptLocation.trim() : "",
+        notes: notes.trim() || undefined,
+        items: cleanItems,
+      });
+      toast.success("Transaction updated");
+      onClose();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit transaction</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Date">
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+            <Field label="Retailer / shop">
+              <Input value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+            </Field>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Receipt attached</Label>
+              <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
+            </div>
+            {receiptAttached && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Type">
+                  <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Stored at">
+                  <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                </Field>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
+            {rows.map((r, idx) => (
+              <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
+                  <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
+                  <Field label="Name">
+                    <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
+                  </Field>
+                  <Field label="Price (£)">
+                    <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
+                  </Field>
+                  <Field label="Qty">
+                    <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                  </Field>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Category">
+                    <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Return / warranty expiry">
+                    <Input type="date" value={r.return_window_expiry} onChange={(e) => updateRow(r.id, { return_window_expiry: e.target.value })} />
+                  </Field>
+                </div>
+                <Field label="Notes">
+                  <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
+                </Field>
+                <p className="text-xs text-muted-foreground text-right">
+                  Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
+                </p>
+              </div>
+            ))}
+            <Button variant="outline" className="w-full" onClick={addRow}>
+              <Plus className="h-4 w-4" /> Add item
+            </Button>
+          </div>
+
+          <Field label="Notes (optional)">
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </Field>
+
+          <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+            <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={save}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      {children}
     </div>
   );
 }
