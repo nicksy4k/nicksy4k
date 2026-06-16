@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTransactions, useCategories } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
 import { fmt } from "@/lib/format";
