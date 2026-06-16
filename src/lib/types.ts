@@ -30,6 +30,7 @@ export interface LineItem {
   id: string;
   item_name: string;
   price: number;
+  quantity?: number;
   category: Category;
   return_window_expiry?: string | null;
   notes?: string;
