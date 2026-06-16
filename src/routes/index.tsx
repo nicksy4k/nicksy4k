@@ -70,20 +70,20 @@ function DashboardPage() {
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
-    items.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
+    cycleItems.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [items]);
+  }, [cycleItems]);
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
-    items.forEach((t) => map.set(t.retailer, (map.get(t.retailer) ?? 0) + t.total_amount));
+    cycleItems.forEach((t) => map.set(t.retailer, (map.get(t.retailer) ?? 0) + t.total_amount));
     return Array.from(map.entries())
       .map(([name, total]) => ({ name, total: Math.round(total * 100) / 100 }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
-  }, [items]);
+  }, [cycleItems]);
 
   const alerts = useMemo(() => {
     const now = new Date();
@@ -104,7 +104,10 @@ function DashboardPage() {
     <div className="p-6 md:p-10 max-w-7xl mx-auto">
       <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Overview</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
+            {cycle.isOverridden && <span className="ml-1 text-amber-600">· override</span>}
+          </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
         </div>
         <Button asChild>
