@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,7 +36,7 @@ function emptyItem(defaultCat: Category = "Other"): DraftItem {
 
 function NewTransactionPage() {
   const navigate = useNavigate();
-  const { add } = useTransactions();
+  const { add, items: pastTransactions } = useTransactions();
   const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -51,6 +52,24 @@ function NewTransactionPage() {
     () => items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0),
     [items]
   );
+
+  const retailerSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.retailer?.trim()) set.add(t.retailer.trim());
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pastTransactions]);
+
+  const itemNameSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      for (const it of t.items ?? []) {
+        if (it.item_name?.trim()) set.add(it.item_name.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pastTransactions]);
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
@@ -115,7 +134,12 @@ function NewTransactionPage() {
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
               <Field label="Retailer / shop">
-                <Input placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+                <Combobox
+                  value={retailer}
+                  onChange={setRetailer}
+                  options={retailerSuggestions}
+                  placeholder="e.g. Asda"
+                />
               </Field>
             </div>
 
@@ -174,7 +198,12 @@ function NewTransactionPage() {
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-[1fr_140px] gap-4">
                   <Field label="Item name">
-                    <Input placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
+                    <Combobox
+                      value={item.item_name}
+                      onChange={(v) => updateItem(item.id, { item_name: v })}
+                      options={itemNameSuggestions}
+                      placeholder="e.g. Wool overshirt"
+                    />
                   </Field>
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
