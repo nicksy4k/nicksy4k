@@ -35,7 +35,8 @@ function emptyItem(defaultCat: Category = "Other"): DraftItem {
 
 function NewTransactionPage() {
   const navigate = useNavigate();
-  const { add } = useTransactions();
+  // Added 'list: pastTransactions' so we can read your history for the autocomplete!
+  const { add, list: pastTransactions = [] } = useTransactions();
   const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -51,6 +52,19 @@ function NewTransactionPage() {
     () => items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0),
     [items]
   );
+
+  // NEW: Extract unique retailers and items from history for our datalists
+  const uniqueRetailers = useMemo(() => {
+    if (!pastTransactions) return [];
+    const retailers = pastTransactions.map((t: any) => t.retailer).filter(Boolean);
+    return Array.from(new Set(retailers)).sort();
+  }, [pastTransactions]);
+
+  const uniqueItemNames = useMemo(() => {
+    if (!pastTransactions) return [];
+    const names = pastTransactions.flatMap((t: any) => t.items?.map((i: any) => i.item_name) || []).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [pastTransactions]);
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
@@ -115,7 +129,16 @@ function NewTransactionPage() {
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
               <Field label="Retailer / shop">
-                <Input placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+                {/* The invisible datalists that power our autocomplete! */}
+                <datalist id="retailers-list">
+                  {uniqueRetailers.map((r, i) => <option key={i} value={r as string} />)}
+                </datalist>
+                <datalist id="items-list">
+                  {uniqueItemNames.map((name, i) => <option key={i} value={name as string} />)}
+                </datalist>
+
+                {/* Added list="retailers-list" to link the input to the invisible menu */}
+                <Input list="retailers-list" placeholder="e.g. Asda" value={retailer} onChange={(e) => setRetailer(e.target.value)} />
               </Field>
             </div>
 
@@ -174,7 +197,8 @@ function NewTransactionPage() {
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-[1fr_140px] gap-4">
                   <Field label="Item name">
-                    <Input placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
+                    {/* Added list="items-list" to link to the second datalist */}
+                    <Input list="items-list" placeholder="e.g. Wool overshirt" value={item.item_name} onChange={(e) => updateItem(item.id, { item_name: e.target.value })} />
                   </Field>
                   <Field label="Price (£)">
                     <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
