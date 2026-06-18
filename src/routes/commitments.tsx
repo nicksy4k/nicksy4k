@@ -468,17 +468,19 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function CommitmentDialog({
-  open, onOpenChange, editing, onSave,
+  open, onOpenChange, editing, categories, onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Commitment | null;
+  categories: string[];
   onSave: (data: Omit<Commitment, "id" | "created_at">) => void;
 }) {
   const [itemName, setItemName] = useState("");
   const [store, setStore] = useState("");
   const [payment, setPayment] = useState("");
   const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Subscriptions");
   const [lastPaid, setLastPaid] = useState("");
   const [nextDue, setNextDue] = useState("");
   const [notes, setNotes] = useState("");
@@ -490,11 +492,12 @@ function CommitmentDialog({
     setStore(editing?.store ?? "");
     setPayment(editing?.payment_method ?? "");
     setAmount(editing ? String(editing.amount) : "");
+    setCategory(editing?.category ?? (categories.includes("Subscriptions") ? "Subscriptions" : categories[0] ?? "Subscriptions"));
     setLastPaid(editing?.last_paid_date ?? "");
     setNextDue(editing?.next_due_date ?? "");
     setNotes(editing?.notes ?? "");
     setPaid(editing?.paid ?? false);
-  }, [open, editing]);
+  }, [open, editing, categories]);
 
   function submit() {
     const amt = parseFloat(amount);
@@ -507,6 +510,7 @@ function CommitmentDialog({
       store: store.trim(),
       payment_method: payment.trim(),
       amount: amt,
+      category: category || "Subscriptions",
       last_paid_date: lastPaid || null,
       next_due_date: nextDue || null,
       notes: notes.trim() || undefined,
@@ -526,18 +530,32 @@ function CommitmentDialog({
             <Field label="Store / provider"><Input value={store} onChange={(e) => setStore(e.target.value)} placeholder="Netflix Inc." /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Category">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="Payment method"><Input value={payment} onChange={(e) => setPayment(e.target.value)} placeholder="Direct Debit" /></Field>
-            <Field label="Amount (£)"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Amount (£)"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></Field>
             <Field label="Last paid date"><Input type="date" value={lastPaid} onChange={(e) => setLastPaid(e.target.value)} /></Field>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Next due date"><Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} /></Field>
+            <div className="flex items-end pb-1">
+              <div className="flex items-center gap-2">
+                <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
+                <Label htmlFor="paid">Marked as paid</Label>
+              </div>
+            </div>
           </div>
           <Field label="Notes"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          <div className="flex items-center gap-2">
-            <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
-            <Label htmlFor="paid">Marked as paid</Label>
-          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
