@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Plus, Trash2, HandCoins, CreditCard as CreditIcon, Wallet, ChevronRight } from "lucide-react";
+import {
+  Plus, Trash2, HandCoins, CreditCard as CreditIcon, Wallet,
+  ChevronRight, ArrowUpRight, History,
+} from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +20,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
 
-import { useDebts, useLoans } from "@/lib/store";
-import type { Debt, Loan } from "@/lib/types";
+import {
+  useDebts, useIncomes, useLoans, useSavings, useTransactions,
+} from "@/lib/store";
+import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 
 export const Route = createFileRoute("/credit")({
@@ -32,7 +40,9 @@ function todayISO() {
 }
 
 function loanPaid(l: Loan) {
-  return (l.payments ?? []).reduce((s, p) => s + p.amount, 0);
+  return (l.payments ?? [])
+    .filter((p) => p.type !== "topup")
+    .reduce((s, p) => s + p.amount, 0);
 }
 function loanRemaining(l: Loan) {
   return Math.max(0, l.total_amount - loanPaid(l));
@@ -43,6 +53,169 @@ function debtPaid(d: Debt) {
 function debtRemaining(d: Debt) {
   return Math.max(0, d.total_amount - debtPaid(d));
 }
+
+// ============ Funding-source helper ============
+
+type SourceChoice = { kind: "main" } | { kind: "pocket"; name: string } | { kind: "other" };
+
+function sourceLabel(source?: string): string {
+  if (!source || source === "main") return "Main balance";
+  if (source === "other") return "Other (not deducted)";
+  if (source.startsWith("pocket:")) return `Pocket · ${source.slice(7)}`;
+  return source;
+}
+function encodeSource(c: SourceChoice): string {
+  if (c.kind === "main") return "main";
+  if (c.kind === "other") return "other";
+  return `pocket:${c.name}`;
+}
+
+function usePockets(): string[] {
+  const { items } = useSavings();
+  return useMemo(() => {
+    const map = new Map<string, number>();
+    items.forEach((s) => {
+      const d = s.kind === "deposit" ? s.amount : -s.amount;
+      map.set(s.account, (map.get(s.account) ?? 0) + d);
+    });
+    return Array.from(map.keys()).sort((a, b) => a.localeCompare(b));
+  }, [items]);
+}
+
+function FundingSourceDialog({
+  open, onOpenChange, title, description, direction, onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  description?: string;
+  /** "out" = money leaving (expense / loan-out), "in" = money arriving (repayment) */
+  direction: "in" | "out";
+  onConfirm: (choice: SourceChoice) => void | Promise<void>;
+}) {
+  const pockets = usePockets();
+  const [value, setValue] = useState<string>("main");
+
+  useEffect(() => {
+    if (open) setValue("main");
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {description ??
+              (direction === "out"
+                ? "Where should this money come from?"
+                : "Where should this money go?")}
+          </p>
+          <Select value={value} onValueChange={setValue}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="main">Main balance</SelectItem>
+              {pockets.map((p) => (
+                <SelectItem key={p} value={`pocket:${p}`}>Pocket · {p}</SelectItem>
+              ))}
+              <SelectItem value="other">Other / Do not deduct</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            "Other" only updates this module — your balances won't change.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              const choice: SourceChoice =
+                value === "main" ? { kind: "main" }
+                : value === "other" ? { kind: "other" }
+                : { kind: "pocket", name: value.slice(7) };
+              onConfirm(choice);
+            }}
+          >
+            Continue
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ Ledger sync helpers ============
+
+function useLedgerSync() {
+  const { add: addTransaction } = useTransactions();
+  const { add: addIncome } = useIncomes();
+  const { add: addSaving } = useSavings();
+
+  /** Money leaves the user's funds. */
+  async function debit(
+    source: SourceChoice,
+    args: { amount: number; date: string; label: string; category?: string; notes?: string },
+  ) {
+    if (source.kind === "other") return;
+    if (source.kind === "pocket") {
+      await addSaving({
+        date: args.date,
+        kind: "withdrawal",
+        amount: args.amount,
+        account: source.name,
+        notes: args.notes ?? args.label,
+      });
+      return;
+    }
+    await addTransaction({
+      date: args.date,
+      retailer: args.label,
+      total_amount: args.amount,
+      receipt_attached: false,
+      receipt_type: "None",
+      receipt_location: "",
+      notes: args.notes,
+      items: [{
+        id: crypto.randomUUID(),
+        item_name: args.label,
+        price: args.amount,
+        quantity: 1,
+        category: args.category ?? "Debt",
+      }],
+    });
+  }
+
+  /** Money arrives in the user's funds. */
+  async function credit(
+    source: SourceChoice,
+    args: { amount: number; date: string; label: string; category?: string; notes?: string },
+  ) {
+    if (source.kind === "other") return;
+    if (source.kind === "pocket") {
+      await addSaving({
+        date: args.date,
+        kind: "deposit",
+        amount: args.amount,
+        account: source.name,
+        notes: args.notes ?? args.label,
+      });
+      return;
+    }
+    await addIncome({
+      date: args.date,
+      source: args.label,
+      amount: args.amount,
+      category: args.category ?? "Loan repayment",
+      notes: args.notes,
+    });
+  }
+
+  return { debit, credit };
+}
+
+// ============ Page ============
 
 function CreditPage() {
   const { items: loans } = useLoans();
@@ -100,13 +273,55 @@ function CreditPage() {
   );
 }
 
+// ============ History list (shared) ============
+
+function HistoryList({ payments }: { payments: LedgerPayment[] }) {
+  if (!payments || payments.length === 0) {
+    return <p className="text-xs text-muted-foreground py-2">No activity yet.</p>;
+  }
+  const sorted = [...payments].sort((a, b) => (a.date < b.date ? 1 : -1));
+  return (
+    <ul className="divide-y divide-border/60">
+      {sorted.map((p) => (
+        <li key={p.id} className="py-2 flex items-start justify-between gap-3 text-sm">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              {p.type === "topup" && (
+                <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                  Top-up
+                </span>
+              )}
+              <span className="font-medium tabular-nums">
+                {p.type === "topup" ? "+" : "−"}{fmt(p.amount)}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {format(new Date(p.date), "d MMM yyyy")} · {sourceLabel(p.source)}
+            </p>
+            {p.notes && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{p.notes}</p>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // ============ OWED TO ME ============
 
 function OwedToMeTab() {
-  const { items, add, update, remove, addPayment } = useLoans();
+  const { items, add, update, remove } = useLoans();
+  const ledger = useLedgerSync();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Loan | null>(null);
-  const [payFor, setPayFor] = useState<Loan | null>(null);
+
+  // Pending action awaiting a funding-source choice.
+  const [pending, setPending] = useState<
+    | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
+    | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
+    | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string }
+    | null
+  >(null);
 
   return (
     <div className="space-y-4">
@@ -135,6 +350,7 @@ function OwedToMeTab() {
                       <p className="font-semibold truncate">{l.person_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Loan: <span className="tabular-nums">{fmt(l.total_amount)}</span>
+                        {l.start_date && <> · {format(new Date(l.start_date), "d MMM yyyy")}</>}
                       </p>
                     </div>
                     <button
@@ -155,15 +371,37 @@ function OwedToMeTab() {
                       {fmt(paid)} of {fmt(l.total_amount)} repaid
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      disabled={settled}
-                      onClick={() => setPayFor(l)}
-                    >
-                      <Wallet className="h-4 w-4" /> Log Repayment
-                    </Button>
+
+                  <RepaymentLauncher
+                    disabled={settled}
+                    label={`Log repayment from ${l.person_name}`}
+                    max={remaining}
+                    onSubmit={({ amount, date, notes }) =>
+                      setPending({ kind: "repay", loan: l, amount, date, notes })
+                    }
+                  />
+
+                  <TopUpLauncher
+                    label={`Top up ${l.person_name}'s loan`}
+                    onSubmit={({ amount, date, notes }) =>
+                      setPending({ kind: "topup", loan: l, amount, date, notes })
+                    }
+                  />
+
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="hist" className="border-none">
+                      <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                        <span className="flex items-center gap-1.5">
+                          <History className="h-3.5 w-3.5" /> View history ({(l.payments ?? []).length})
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <HistoryList payments={l.payments ?? []} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  <div className="flex justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -188,31 +426,146 @@ function OwedToMeTab() {
         open={open}
         onOpenChange={setOpen}
         editing={editing}
-        onSave={async (data) => {
+        onSave={async (draft) => {
           if (editing) {
-            await update(editing.id, data);
-            toast.success("Updated");
+            await update(editing.id, draft);
+            toast.success("Loan updated");
+            setOpen(false);
           } else {
-            await add({ ...data, payments: [] });
-            toast.success("Loan added");
+            // New loan = money going OUT — ask for funding source.
+            setOpen(false);
+            setPending({ kind: "create", draft });
           }
-          setOpen(false);
         }}
       />
 
-      <PaymentDialog
-        open={!!payFor}
-        onOpenChange={(v) => { if (!v) setPayFor(null); }}
-        title={payFor ? `Log repayment from ${payFor.person_name}` : ""}
-        max={payFor ? loanRemaining(payFor) : 0}
-        onSave={async ({ amount, date, notes }) => {
-          if (!payFor) return;
-          await addPayment(payFor, { amount, date, notes });
-          toast.success("Repayment logged");
-          setPayFor(null);
+      <FundingSourceDialog
+        open={!!pending}
+        onOpenChange={(v) => { if (!v) setPending(null); }}
+        title={
+          pending?.kind === "create" ? "Loan funded from"
+          : pending?.kind === "topup" ? "Top-up funded from"
+          : pending?.kind === "repay" ? "Repayment goes to"
+          : ""
+        }
+        direction={pending?.kind === "repay" ? "in" : "out"}
+        onConfirm={async (choice) => {
+          if (!pending) return;
+          try {
+            if (pending.kind === "create") {
+              const date = pending.draft.start_date ?? todayISO();
+              await add({ ...pending.draft, payments: [] });
+              await ledger.debit(choice, {
+                amount: pending.draft.total_amount,
+                date,
+                label: `Loan to ${pending.draft.person_name}`,
+                category: "Loans",
+              });
+              toast.success("Loan added");
+            } else if (pending.kind === "topup") {
+              const next: LedgerPayment[] = [
+                ...(pending.loan.payments ?? []),
+                {
+                  id: crypto.randomUUID(),
+                  date: pending.date,
+                  amount: pending.amount,
+                  notes: pending.notes,
+                  type: "topup",
+                  source: encodeSource(choice),
+                },
+              ];
+              await update(pending.loan.id, {
+                total_amount: pending.loan.total_amount + pending.amount,
+                payments: next,
+              });
+              await ledger.debit(choice, {
+                amount: pending.amount,
+                date: pending.date,
+                label: `Top-up loan · ${pending.loan.person_name}`,
+                category: "Loans",
+                notes: pending.notes,
+              });
+              toast.success("Top-up logged");
+            } else if (pending.kind === "repay") {
+              const next: LedgerPayment[] = [
+                ...(pending.loan.payments ?? []),
+                {
+                  id: crypto.randomUUID(),
+                  date: pending.date,
+                  amount: pending.amount,
+                  notes: pending.notes,
+                  type: "payment",
+                  source: encodeSource(choice),
+                },
+              ];
+              await update(pending.loan.id, { payments: next });
+              await ledger.credit(choice, {
+                amount: pending.amount,
+                date: pending.date,
+                label: `Repayment · ${pending.loan.person_name}`,
+                category: "Loan repayment",
+                notes: pending.notes,
+              });
+              toast.success("Repayment logged");
+            }
+          } catch (e) {
+            console.error(e);
+            toast.error("Something went wrong");
+          } finally {
+            setPending(null);
+          }
         }}
       />
     </div>
+  );
+}
+
+function RepaymentLauncher({
+  disabled, label, max, onSubmit,
+}: {
+  disabled: boolean;
+  label: string;
+  max: number;
+  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" className="w-full" disabled={disabled} onClick={() => setOpen(true)}>
+        <Wallet className="h-4 w-4" /> Log Repayment
+      </Button>
+      <PaymentDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={label}
+        max={max}
+        onSave={(v) => { setOpen(false); onSubmit(v); }}
+      />
+    </>
+  );
+}
+
+function TopUpLauncher({
+  label, onSubmit,
+}: {
+  label: string;
+  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen(true)}>
+        <ArrowUpRight className="h-4 w-4" /> Top Up Loan
+      </Button>
+      <PaymentDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={label}
+        max={Number.POSITIVE_INFINITY}
+        hideRemaining
+        onSave={(v) => { setOpen(false); onSubmit(v); }}
+      />
+    </>
   );
 }
 
@@ -226,13 +579,14 @@ function LoanDialog({
 }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [startDate, setStartDate] = useState(todayISO());
   const [notes, setNotes] = useState("");
 
-  // reset on open
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setName(editing?.person_name ?? "");
       setAmount(editing ? String(editing.total_amount) : "");
+      setStartDate(editing?.start_date ?? todayISO());
       setNotes(editing?.notes ?? "");
     }
   }, [open, editing]);
@@ -246,9 +600,17 @@ function LoanDialog({
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Person</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex" />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Total loan (£)</Label>
-            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                {editing ? "Total (£)" : "Starting amount (£)"}
+              </Label>
+              <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Loan date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
@@ -264,10 +626,15 @@ function LoanDialog({
                 toast.error("Name and a valid amount are required.");
                 return;
               }
-              onSave({ person_name: name.trim(), total_amount: amt, notes: notes.trim() || undefined });
+              onSave({
+                person_name: name.trim(),
+                total_amount: amt,
+                start_date: startDate || null,
+                notes: notes.trim() || undefined,
+              });
             }}
           >
-            {editing ? "Save" : "Add"}
+            {editing ? "Save" : "Next"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -278,10 +645,15 @@ function LoanDialog({
 // ============ DEBTS & BNPL ============
 
 function DebtsTab() {
-  const { items, add, update, remove, addPayment } = useDebts();
+  const { items, add, update, remove } = useDebts();
+  const ledger = useLedgerSync();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Debt | null>(null);
-  const [payFor, setPayFor] = useState<{ debt: Debt; amount?: number } | null>(null);
+  const [pending, setPending] = useState<
+    | { debt: Debt; amount: number; date: string; notes?: string }
+    | null
+  >(null);
 
   const standard = items.filter((d) => d.kind === "standard");
   const bnpl = items.filter((d) => d.kind === "bnpl");
@@ -332,15 +704,28 @@ function DebtsTab() {
                       <p className="text-xs uppercase tracking-wider text-muted-foreground">Running balance</p>
                       <p className="text-2xl font-semibold tabular-nums">{fmt(remaining)}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        disabled={settled}
-                        onClick={() => setPayFor({ debt: d })}
-                      >
-                        <Plus className="h-4 w-4" /> Add Payment
-                      </Button>
+
+                    <DebtPaymentLauncher
+                      disabled={settled}
+                      label={`Add payment — ${d.name}`}
+                      max={remaining}
+                      onSubmit={(v) => setPending({ debt: d, ...v })}
+                    />
+
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="hist" className="border-none">
+                        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                          <span className="flex items-center gap-1.5">
+                            <History className="h-3.5 w-3.5" /> View history ({(d.payments ?? []).length})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <HistoryList payments={d.payments ?? []} />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    <div className="flex justify-end">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -376,11 +761,13 @@ function DebtsTab() {
           <div className="grid gap-3 sm:grid-cols-2">
             {bnpl.map((d) => {
               const totalInstallments = Math.max(1, d.installments_total ?? 4);
-              const installmentAmount = d.total_amount / totalInstallments;
+              const defaultAmount = d.total_amount / totalInstallments;
               const paidCount = Math.min(totalInstallments, (d.payments ?? []).length);
               const remaining = debtRemaining(d);
               const pct = (paidCount / totalInstallments) * 100;
               const settled = paidCount >= totalInstallments;
+              const dates = d.installment_dates ?? [];
+              const nextDate = dates[paidCount] ?? todayISO();
               return (
                 <Card key={d.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
                   <CardContent className="p-5 space-y-4">
@@ -388,7 +775,10 @@ function DebtsTab() {
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{d.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-                          {fmt(installmentAmount)} × {totalInstallments}
+                          {fmt(defaultAmount)} × {totalInstallments}
+                          {dates[paidCount] && (
+                            <> · next {format(new Date(dates[paidCount]), "d MMM")}</>
+                          )}
                         </p>
                       </div>
                       <button
@@ -408,15 +798,32 @@ function DebtsTab() {
                       </div>
                       <Progress value={pct} />
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        disabled={settled}
-                        onClick={() => setPayFor({ debt: d, amount: installmentAmount })}
-                      >
-                        <ChevronRight className="h-4 w-4" /> Pay Next Installment
-                      </Button>
+
+                    <DebtPaymentLauncher
+                      disabled={settled}
+                      label={`Pay installment — ${d.name}`}
+                      defaultAmount={defaultAmount}
+                      defaultDate={nextDate}
+                      max={remaining}
+                      buttonIcon={<ChevronRight className="h-4 w-4" />}
+                      buttonLabel="Pay Next Installment"
+                      onSubmit={(v) => setPending({ debt: d, ...v })}
+                    />
+
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="hist" className="border-none">
+                        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                          <span className="flex items-center gap-1.5">
+                            <History className="h-3.5 w-3.5" /> View history ({(d.payments ?? []).length})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <HistoryList payments={d.payments ?? []} />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    <div className="flex justify-end">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -454,20 +861,77 @@ function DebtsTab() {
         }}
       />
 
-      <PaymentDialog
-        open={!!payFor}
-        onOpenChange={(v) => { if (!v) setPayFor(null); }}
-        title={payFor ? `Add payment — ${payFor.debt.name}` : ""}
-        defaultAmount={payFor?.amount}
-        max={payFor ? debtRemaining(payFor.debt) : 0}
-        onSave={async ({ amount, date, notes }) => {
-          if (!payFor) return;
-          await addPayment(payFor.debt, { amount, date, notes });
-          toast.success("Payment logged");
-          setPayFor(null);
+      <FundingSourceDialog
+        open={!!pending}
+        onOpenChange={(v) => { if (!v) setPending(null); }}
+        title={pending ? `Payment funded from` : ""}
+        direction="out"
+        onConfirm={async (choice) => {
+          if (!pending) return;
+          try {
+            const next: LedgerPayment[] = [
+              ...(pending.debt.payments ?? []),
+              {
+                id: crypto.randomUUID(),
+                date: pending.date,
+                amount: pending.amount,
+                notes: pending.notes,
+                type: "payment",
+                source: encodeSource(choice),
+              },
+            ];
+            await update(pending.debt.id, { payments: next });
+            await ledger.debit(choice, {
+              amount: pending.amount,
+              date: pending.date,
+              label: pending.debt.kind === "bnpl"
+                ? `BNPL · ${pending.debt.name}`
+                : `Debt · ${pending.debt.name}`,
+              category: "Debt",
+              notes: pending.notes,
+            });
+            toast.success("Payment logged");
+          } catch (e) {
+            console.error(e);
+            toast.error("Something went wrong");
+          } finally {
+            setPending(null);
+          }
         }}
       />
     </div>
+  );
+}
+
+function DebtPaymentLauncher({
+  disabled, label, defaultAmount, defaultDate, max, onSubmit,
+  buttonIcon, buttonLabel,
+}: {
+  disabled?: boolean;
+  label: string;
+  defaultAmount?: number;
+  defaultDate?: string;
+  max: number;
+  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+  buttonIcon?: React.ReactNode;
+  buttonLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" className="w-full" disabled={disabled} onClick={() => setOpen(true)}>
+        {buttonIcon ?? <Plus className="h-4 w-4" />} {buttonLabel ?? "Add Payment"}
+      </Button>
+      <PaymentDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={label}
+        defaultAmount={defaultAmount}
+        defaultDate={defaultDate}
+        max={max}
+        onSave={(v) => { setOpen(false); onSubmit(v); }}
+      />
+    </>
   );
 }
 
@@ -483,21 +947,41 @@ function DebtDialog({
   const [kind, setKind] = useState<"standard" | "bnpl">("standard");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("4");
+  const [startDate, setStartDate] = useState(todayISO());
+  const [dates, setDates] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
 
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setName(editing?.name ?? "");
       setKind(editing?.kind ?? "standard");
       setAmount(editing ? String(editing.total_amount) : "");
       setInstallments(editing?.installments_total ? String(editing.installments_total) : "4");
+      setStartDate(editing?.start_date ?? todayISO());
+      setDates(editing?.installment_dates ?? []);
       setNotes(editing?.notes ?? "");
     }
   }, [open, editing]);
 
+  // Keep date array length aligned with installments count.
+  const n = parseInt(installments, 10) || 4;
+  useEffect(() => {
+    if (kind !== "bnpl") return;
+    setDates((prev) => {
+      const out = [...prev];
+      while (out.length < n) {
+        // Default each missing slot to monthly cadence from start date.
+        const base = new Date(startDate || todayISO());
+        base.setMonth(base.getMonth() + out.length);
+        out.push(format(base, "yyyy-MM-dd"));
+      }
+      return out.slice(0, n);
+    });
+  }, [kind, n, startDate]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{editing ? "Edit debt" : "New debt"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -520,18 +1004,43 @@ function DebtDialog({
               <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Start date</Label>
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </div>
           {kind === "bnpl" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Installments</Label>
-              <Select value={installments} onValueChange={setInstallments}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[2, 3, 4, 6, 8, 12].map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Installments</Label>
+                <Select value={installments} onValueChange={setInstallments}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[2, 3, 4, 6, 8, 12].map((nn) => (
+                      <SelectItem key={nn} value={String(nn)}>{nn}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Scheduled due dates</Label>
+                <div className="space-y-2">
+                  {dates.map((d, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-12">#{i + 1}</span>
+                      <Input
+                        type="date"
+                        value={d}
+                        onChange={(e) => {
+                          const next = [...dates];
+                          next[i] = e.target.value;
+                          setDates(next);
+                        }}
+                      />
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+              </div>
+            </>
           )}
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
@@ -551,7 +1060,9 @@ function DebtDialog({
                 name: name.trim(),
                 kind,
                 total_amount: amt,
-                installments_total: kind === "bnpl" ? parseInt(installments, 10) || 4 : null,
+                installments_total: kind === "bnpl" ? n : null,
+                installment_dates: kind === "bnpl" ? dates.slice(0, n) : [],
+                start_date: startDate || null,
                 notes: notes.trim() || undefined,
               });
             }}
@@ -567,26 +1078,28 @@ function DebtDialog({
 // ============ Shared payment dialog ============
 
 function PaymentDialog({
-  open, onOpenChange, title, defaultAmount, max, onSave,
+  open, onOpenChange, title, defaultAmount, defaultDate, max, hideRemaining, onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   title: string;
   defaultAmount?: number;
+  defaultDate?: string;
   max: number;
+  hideRemaining?: boolean;
   onSave: (data: { amount: number; date: string; notes?: string }) => void | Promise<void>;
 }) {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
   const [notes, setNotes] = useState("");
 
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setAmount(defaultAmount != null ? defaultAmount.toFixed(2) : "");
-      setDate(todayISO());
+      setDate(defaultDate ?? todayISO());
       setNotes("");
     }
-  }, [open, defaultAmount]);
+  }, [open, defaultAmount, defaultDate]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -596,7 +1109,9 @@ function PaymentDialog({
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount (£)</Label>
             <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
-            <p className="text-[11px] text-muted-foreground">Remaining: {fmt(max)}</p>
+            {!hideRemaining && Number.isFinite(max) && (
+              <p className="text-[11px] text-muted-foreground">Remaining: {fmt(max)}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date</Label>
