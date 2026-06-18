@@ -231,6 +231,7 @@ function CommitmentsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editing={editing}
+        categories={categories}
         onSave={(data) => {
           if (editing) {
             update(editing.id, data);
