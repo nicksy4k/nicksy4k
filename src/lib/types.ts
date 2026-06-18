@@ -78,11 +78,41 @@ export interface Commitment {
   store: string;
   payment_method: string;
   amount: number;
+  category: string;
   last_paid_date?: string | null;
   next_due_date?: string | null;
   prev_due_date?: string | null;
   notes?: string;
   paid: boolean;
+  created_at: string;
+}
+
+export interface LedgerPayment {
+  id: string;
+  date: string;
+  amount: number;
+  notes?: string;
+}
+
+export interface Loan {
+  id: string;
+  person_name: string;
+  total_amount: number;
+  notes?: string;
+  payments: LedgerPayment[];
+  created_at: string;
+}
+
+export type DebtKind = "standard" | "bnpl";
+
+export interface Debt {
+  id: string;
+  name: string;
+  kind: DebtKind;
+  total_amount: number;
+  installments_total?: number | null;
+  notes?: string;
+  payments: LedgerPayment[];
   created_at: string;
 }
 
