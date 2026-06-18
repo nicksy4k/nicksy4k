@@ -282,6 +282,7 @@ export function useLoans() {
       user_id: u.user.id,
       person_name: l.person_name,
       total_amount: l.total_amount,
+      start_date: l.start_date ?? null,
       notes: l.notes,
       payments: (l.payments ?? []) as never,
     } as never);
