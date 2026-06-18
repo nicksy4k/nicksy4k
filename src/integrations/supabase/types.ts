@@ -41,6 +41,7 @@ export type Database = {
       commitments: {
         Row: {
           amount: number
+          category: string
           created_at: string
           id: string
           item_name: string
@@ -55,6 +56,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          category?: string
           created_at?: string
           id?: string
           item_name: string
@@ -69,6 +71,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category?: string
           created_at?: string
           id?: string
           item_name?: string
@@ -79,6 +82,42 @@ export type Database = {
           payment_method?: string
           prev_due_date?: string | null
           store?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debts: {
+        Row: {
+          created_at: string
+          id: string
+          installments_total: number | null
+          kind: string
+          name: string
+          notes: string | null
+          payments: Json
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          installments_total?: number | null
+          kind?: string
+          name: string
+          notes?: string | null
+          payments?: Json
+          total_amount?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          installments_total?: number | null
+          kind?: string
+          name?: string
+          notes?: string | null
+          payments?: Json
+          total_amount?: number
           user_id?: string
         }
         Relationships: []
@@ -112,6 +151,36 @@ export type Database = {
           id?: string
           notes?: string | null
           source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loans: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          payments: Json
+          person_name: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payments?: Json
+          person_name: string
+          total_amount?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payments?: Json
+          person_name?: string
+          total_amount?: number
           user_id?: string
         }
         Relationships: []
