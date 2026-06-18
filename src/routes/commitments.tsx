@@ -196,8 +196,9 @@ function CommitmentsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{c.item_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{c.category || "—"}</span>
+                        <span>{c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}</span>
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
