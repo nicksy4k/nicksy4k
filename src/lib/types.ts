@@ -92,12 +92,17 @@ export interface LedgerPayment {
   date: string;
   amount: number;
   notes?: string;
+  /** "payment" (default) or "topup" — top-ups increase a loan's total */
+  type?: "payment" | "topup";
+  /** "main", "pocket:<name>", or "other" — money source/destination */
+  source?: string;
 }
 
 export interface Loan {
   id: string;
   person_name: string;
   total_amount: number;
+  start_date?: string | null;
   notes?: string;
   payments: LedgerPayment[];
   created_at: string;
@@ -111,6 +116,8 @@ export interface Debt {
   kind: DebtKind;
   total_amount: number;
   installments_total?: number | null;
+  installment_dates?: string[];
+  start_date?: string | null;
   notes?: string;
   payments: LedgerPayment[];
   created_at: string;
