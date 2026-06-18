@@ -336,6 +336,8 @@ export function useDebts() {
       kind: d.kind,
       total_amount: d.total_amount,
       installments_total: d.installments_total ?? null,
+      installment_dates: (d.installment_dates ?? []) as never,
+      start_date: d.start_date ?? null,
       notes: d.notes,
       payments: (d.payments ?? []) as never,
     } as never);
