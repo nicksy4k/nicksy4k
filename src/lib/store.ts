@@ -348,6 +348,7 @@ export function useDebts() {
   const update = useCallback(async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
     const clean: Record<string, unknown> = { ...patch };
     if (patch.payments) clean.payments = patch.payments as never;
+    if (patch.installment_dates) clean.installment_dates = patch.installment_dates as never;
     await supabase.from("debts").update(clean as never).eq("id", id);
     await invalidate();
   }, [qc]);
