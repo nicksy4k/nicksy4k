@@ -90,33 +90,39 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          installment_dates: Json
           installments_total: number | null
           kind: string
           name: string
           notes: string | null
           payments: Json
+          start_date: string | null
           total_amount: number
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          installment_dates?: Json
           installments_total?: number | null
           kind?: string
           name: string
           notes?: string | null
           payments?: Json
+          start_date?: string | null
           total_amount?: number
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          installment_dates?: Json
           installments_total?: number | null
           kind?: string
           name?: string
           notes?: string | null
           payments?: Json
+          start_date?: string | null
           total_amount?: number
           user_id?: string
         }
@@ -162,6 +168,7 @@ export type Database = {
           notes: string | null
           payments: Json
           person_name: string
+          start_date: string | null
           total_amount: number
           user_id: string
         }
@@ -171,6 +178,7 @@ export type Database = {
           notes?: string | null
           payments?: Json
           person_name: string
+          start_date?: string | null
           total_amount?: number
           user_id: string
         }
@@ -180,6 +188,7 @@ export type Database = {
           notes?: string | null
           payments?: Json
           person_name?: string
+          start_date?: string | null
           total_amount?: number
           user_id?: string
         }
