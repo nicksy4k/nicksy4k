@@ -280,7 +280,7 @@ function CommitmentsPage() {
                 id: crypto.randomUUID(),
                 item_name: c.item_name,
                 price: c.amount,
-                category: "Subscriptions",
+                category: c.category || "Subscriptions",
               }],
             });
             // Auto-deduct from Bill Money pocket
