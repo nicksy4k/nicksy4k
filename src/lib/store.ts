@@ -282,6 +282,7 @@ export function useLoans() {
       user_id: u.user.id,
       person_name: l.person_name,
       total_amount: l.total_amount,
+      start_date: l.start_date ?? null,
       notes: l.notes,
       payments: (l.payments ?? []) as never,
     } as never);
@@ -335,6 +336,8 @@ export function useDebts() {
       kind: d.kind,
       total_amount: d.total_amount,
       installments_total: d.installments_total ?? null,
+      installment_dates: (d.installment_dates ?? []) as never,
+      start_date: d.start_date ?? null,
       notes: d.notes,
       payments: (d.payments ?? []) as never,
     } as never);
@@ -345,6 +348,7 @@ export function useDebts() {
   const update = useCallback(async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
     const clean: Record<string, unknown> = { ...patch };
     if (patch.payments) clean.payments = patch.payments as never;
+    if (patch.installment_dates) clean.installment_dates = patch.installment_dates as never;
     await supabase.from("debts").update(clean as never).eq("id", id);
     await invalidate();
   }, [qc]);
