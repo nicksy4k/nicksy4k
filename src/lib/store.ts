@@ -3,7 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   Commitment,
+  Debt,
   IncomeEntry,
+  LedgerPayment,
+  Loan,
   SavingsEntry,
   Transaction,
 } from "./types";
