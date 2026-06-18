@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useCommitments, useSavings, useTransactions } from "@/lib/store";
+import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,6 +37,7 @@ function CommitmentsPage() {
   const { items, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
+  const { list: categories } = useCategories();
 
   const cycle = useActiveCycle();
   // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
@@ -192,8 +196,9 @@ function CommitmentsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{c.item_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{c.category || "—"}</span>
+                        <span>{c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}</span>
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -227,6 +232,7 @@ function CommitmentsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editing={editing}
+        categories={categories}
         onSave={(data) => {
           if (editing) {
             update(editing.id, data);
@@ -275,7 +281,7 @@ function CommitmentsPage() {
                 id: crypto.randomUUID(),
                 item_name: c.item_name,
                 price: c.amount,
-                category: "Subscriptions",
+                category: c.category || "Subscriptions",
               }],
             });
             // Auto-deduct from Bill Money pocket
@@ -373,6 +379,7 @@ function DetailsDialog({
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <Row label="Amount" value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>} />
+              <Row label="Category" value={item.category || "—"} />
               <Row label="Store / provider" value={item.store || "—"} />
               <Row label="Payment method" value={item.payment_method || "—"} />
               <Row label="Next due" value={item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"} />
@@ -463,17 +470,19 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function CommitmentDialog({
-  open, onOpenChange, editing, onSave,
+  open, onOpenChange, editing, categories, onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Commitment | null;
+  categories: string[];
   onSave: (data: Omit<Commitment, "id" | "created_at">) => void;
 }) {
   const [itemName, setItemName] = useState("");
   const [store, setStore] = useState("");
   const [payment, setPayment] = useState("");
   const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Subscriptions");
   const [lastPaid, setLastPaid] = useState("");
   const [nextDue, setNextDue] = useState("");
   const [notes, setNotes] = useState("");
@@ -485,11 +494,12 @@ function CommitmentDialog({
     setStore(editing?.store ?? "");
     setPayment(editing?.payment_method ?? "");
     setAmount(editing ? String(editing.amount) : "");
+    setCategory(editing?.category ?? (categories.includes("Subscriptions") ? "Subscriptions" : categories[0] ?? "Subscriptions"));
     setLastPaid(editing?.last_paid_date ?? "");
     setNextDue(editing?.next_due_date ?? "");
     setNotes(editing?.notes ?? "");
     setPaid(editing?.paid ?? false);
-  }, [open, editing]);
+  }, [open, editing, categories]);
 
   function submit() {
     const amt = parseFloat(amount);
@@ -502,6 +512,7 @@ function CommitmentDialog({
       store: store.trim(),
       payment_method: payment.trim(),
       amount: amt,
+      category: category || "Subscriptions",
       last_paid_date: lastPaid || null,
       next_due_date: nextDue || null,
       notes: notes.trim() || undefined,
@@ -521,18 +532,32 @@ function CommitmentDialog({
             <Field label="Store / provider"><Input value={store} onChange={(e) => setStore(e.target.value)} placeholder="Netflix Inc." /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Category">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="Payment method"><Input value={payment} onChange={(e) => setPayment(e.target.value)} placeholder="Direct Debit" /></Field>
-            <Field label="Amount (£)"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Amount (£)"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></Field>
             <Field label="Last paid date"><Input type="date" value={lastPaid} onChange={(e) => setLastPaid(e.target.value)} /></Field>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Next due date"><Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} /></Field>
+            <div className="flex items-end pb-1">
+              <div className="flex items-center gap-2">
+                <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
+                <Label htmlFor="paid">Marked as paid</Label>
+              </div>
+            </div>
           </div>
           <Field label="Notes"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          <div className="flex items-center gap-2">
-            <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
-            <Label htmlFor="paid">Marked as paid</Label>
-          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

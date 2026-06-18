@@ -3,7 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   Commitment,
+  Debt,
   IncomeEntry,
+  LedgerPayment,
+  Loan,
   SavingsEntry,
   Transaction,
 } from "./types";
@@ -256,6 +259,110 @@ export function useCommitments() {
   return { items: data ?? [], add, update, remove };
 }
 
+// ===== Loans (Owed to me) =====
+export function useLoans() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["loans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loans")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Loan[];
+    },
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["loans"] });
+
+  const add = useCallback(async (l: Omit<Loan, "id" | "created_at">) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("Not signed in");
+    const { error } = await supabase.from("loans").insert({
+      user_id: u.user.id,
+      person_name: l.person_name,
+      total_amount: l.total_amount,
+      notes: l.notes,
+      payments: (l.payments ?? []) as never,
+    } as never);
+    if (error) throw error;
+    await invalidate();
+  }, [qc]);
+
+  const update = useCallback(async (id: string, patch: Partial<Omit<Loan, "id" | "created_at">>) => {
+    const clean: Record<string, unknown> = { ...patch };
+    if (patch.payments) clean.payments = patch.payments as never;
+    await supabase.from("loans").update(clean as never).eq("id", id);
+    await invalidate();
+  }, [qc]);
+
+  const remove = useCallback(async (id: string) => {
+    await supabase.from("loans").delete().eq("id", id);
+    await invalidate();
+  }, [qc]);
+
+  const addPayment = useCallback(async (loan: Loan, p: Omit<LedgerPayment, "id">) => {
+    const next = [...(loan.payments ?? []), { id: crypto.randomUUID(), ...p }];
+    await supabase.from("loans").update({ payments: next as never } as never).eq("id", loan.id);
+    await invalidate();
+  }, [qc]);
+
+  return { items: data ?? [], add, update, remove, addPayment };
+}
+
+// ===== Debts (My debts & BNPL) =====
+export function useDebts() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["debts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("debts")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Debt[];
+    },
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["debts"] });
+
+  const add = useCallback(async (d: Omit<Debt, "id" | "created_at">) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("Not signed in");
+    const { error } = await supabase.from("debts").insert({
+      user_id: u.user.id,
+      name: d.name,
+      kind: d.kind,
+      total_amount: d.total_amount,
+      installments_total: d.installments_total ?? null,
+      notes: d.notes,
+      payments: (d.payments ?? []) as never,
+    } as never);
+    if (error) throw error;
+    await invalidate();
+  }, [qc]);
+
+  const update = useCallback(async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
+    const clean: Record<string, unknown> = { ...patch };
+    if (patch.payments) clean.payments = patch.payments as never;
+    await supabase.from("debts").update(clean as never).eq("id", id);
+    await invalidate();
+  }, [qc]);
+
+  const remove = useCallback(async (id: string) => {
+    await supabase.from("debts").delete().eq("id", id);
+    await invalidate();
+  }, [qc]);
+
+  const addPayment = useCallback(async (debt: Debt, p: Omit<LedgerPayment, "id">) => {
+    const next = [...(debt.payments ?? []), { id: crypto.randomUUID(), ...p }];
+    await supabase.from("debts").update({ payments: next as never } as never).eq("id", debt.id);
+    await invalidate();
+  }, [qc]);
+
+  return { items: data ?? [], add, update, remove, addPayment };
+}
+
 // ===== Global clear =====
 export async function clearAllData() {
   const { data: u } = await supabase.auth.getUser();
@@ -266,5 +373,7 @@ export async function clearAllData() {
     supabase.from("incomes").delete().eq("user_id", uid),
     supabase.from("savings").delete().eq("user_id", uid),
     supabase.from("commitments").delete().eq("user_id", uid),
+    supabase.from("loans").delete().eq("user_id", uid),
+    supabase.from("debts").delete().eq("user_id", uid),
   ]);
 }

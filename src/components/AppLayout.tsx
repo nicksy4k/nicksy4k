@@ -1,12 +1,12 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut } from "lucide-react";
+import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut, CreditCard } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 type NavItem = {
-  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/settings";
+  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/settings";
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
@@ -17,6 +17,7 @@ const nav: NavItem[] = [
   { to: "/commitments", label: "Commitments", icon: CalendarClock },
   { to: "/income", label: "Income", icon: TrendingUp },
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
+  { to: "/credit", label: "Credit & Debt", icon: CreditCard },
   { to: "/history", label: "History", icon: Receipt },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

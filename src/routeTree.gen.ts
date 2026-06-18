@@ -14,6 +14,7 @@ import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as CreditRouteImport } from './routes/credit'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,6 +44,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreditRoute = CreditRouteImport.update({
+  id: '/credit',
+  path: '/credit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CommitmentsRoute = CommitmentsRouteImport.update({
   id: '/commitments',
   path: '/commitments',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/commitments': typeof CommitmentsRoute
+  '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/commitments': typeof CommitmentsRoute
+  '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/commitments': typeof CommitmentsRoute
+  '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/commitments'
+    | '/credit'
     | '/history'
     | '/income'
     | '/new'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/commitments'
+    | '/credit'
     | '/history'
     | '/income'
     | '/new'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/commitments'
+    | '/credit'
     | '/history'
     | '/income'
     | '/new'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   CommitmentsRoute: typeof CommitmentsRoute
+  CreditRoute: typeof CreditRoute
   HistoryRoute: typeof HistoryRoute
   IncomeRoute: typeof IncomeRoute
   NewRoute: typeof NewRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/credit': {
+      id: '/credit'
+      path: '/credit'
+      fullPath: '/credit'
+      preLoaderRoute: typeof CreditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/commitments': {
       id: '/commitments'
       path: '/commitments'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   CommitmentsRoute: CommitmentsRoute,
+  CreditRoute: CreditRoute,
   HistoryRoute: HistoryRoute,
   IncomeRoute: IncomeRoute,
   NewRoute: NewRoute,
