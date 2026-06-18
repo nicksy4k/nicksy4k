@@ -37,6 +37,7 @@ function CommitmentsPage() {
   const { items, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
+  const { list: categories } = useCategories();
 
   const cycle = useActiveCycle();
   // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
