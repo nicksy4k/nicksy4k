@@ -378,6 +378,7 @@ function DetailsDialog({
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <Row label="Amount" value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>} />
+              <Row label="Category" value={item.category || "—"} />
               <Row label="Store / provider" value={item.store || "—"} />
               <Row label="Payment method" value={item.payment_method || "—"} />
               <Row label="Next due" value={item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"} />
