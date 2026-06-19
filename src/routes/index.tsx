@@ -130,20 +130,19 @@ function DashboardPage() {
               <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
               <PiggyBank className="h-4 w-4" />
             </div>
-            <p className={`text-2xl font-semibold tabular-nums ${stats.savingsBalance < 0 ? "text-destructive" : ""}`}>
-              {fmt(stats.savingsBalance)}
-            </p>
             {pocketBalances.length > 0 ? (
-              <ul className="mt-3 space-y-1.5 max-h-28 overflow-auto pr-1">
+              <ul className="mt-1 space-y-1 overflow-auto pr-1">
                 {pocketBalances.map(([name, bal]) => (
-                  <li key={name} className="flex items-center justify-between text-xs">
-                    <span className="truncate text-muted-foreground">{name}</span>
-                    <span className={`tabular-nums font-medium ${bal < 0 ? "text-destructive" : ""}`}>{fmt(bal)}</span>
+                  <li key={name} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                    <span className="font-medium text-foreground text-sm truncate">{name}</span>
+                    <span className={`text-sm font-semibold tabular-nums bg-secondary/40 px-2.5 py-1 rounded-md ${bal < 0 ? "text-destructive" : "text-foreground"}`}>
+                      {fmt(bal)}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-xs text-muted-foreground">No pockets yet.</p>
+              <p className="mt-3 text-sm text-muted-foreground">No pockets yet.</p>
             )}
           </CardContent>
         </Card>
