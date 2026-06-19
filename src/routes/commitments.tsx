@@ -406,34 +406,21 @@ function DetailsDialog({
                 Choose how to roll it forward:
               </p>
               <div className="grid gap-2">
-                {/* FIXED: +4 Weeks button now uses format to prevent timezone offset */}
+                {/* Cycle-aware advance — uses the SAME engine as the global rollover. */}
                 <Button
                   variant="outline"
                   className="justify-between"
                   onClick={() => {
-                    const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
-                    confirmWith(format(addDays(base, 28), "yyyy-MM-dd"));
+                    const base = item.next_due_date ?? todayISO();
+                    confirmWith(advanceDueDate(base, cycle));
                   }}
                 >
-                  <span>+4 Weeks</span>
+                  <span>Advance one cycle ({cycle.type === "four-weekly" ? "+4 weeks" : "+1 month"})</span>
                   <span className="text-xs text-muted-foreground">
-                    {format(addDays(item.next_due_date ? parseISO(item.next_due_date) : new Date(), 28), "d MMM yyyy")}
+                    {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), cycle)), "d MMM yyyy")}
                   </span>
                 </Button>
-                {/* FIXED: +1 Month button now uses format to prevent timezone offset */}
-                <Button
-                  variant="outline"
-                  className="justify-between"
-                  onClick={() => {
-                    const base = item.next_due_date ? parseISO(item.next_due_date) : new Date();
-                    confirmWith(format(addMonths(base, 1), "yyyy-MM-dd"));
-                  }}
-                >
-                  <span>+1 Month</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(addMonths(item.next_due_date ? parseISO(item.next_due_date) : new Date(), 1), "d MMM yyyy")}
-                  </span>
-                </Button>
+
                 <div className="rounded-md border border-border p-3 space-y-2">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground">Pick a date</Label>
                   <div className="flex gap-2">
