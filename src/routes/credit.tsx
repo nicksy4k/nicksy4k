@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -25,10 +28,12 @@ import {
 } from "@/components/ui/accordion";
 
 import {
-  useDebts, useIncomes, useLoans, useSavings, useTransactions,
+  useCommitments, useDebts, useIncomes, useLoans, useSavings, useTransactions,
 } from "@/lib/store";
 import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { addMonths } from "date-fns";
+
 
 export const Route = createFileRoute("/credit")({
   head: () => ({ meta: [{ title: "Credit & Debt — Ledgerly" }] }),
@@ -645,8 +650,11 @@ function LoanDialog({
 // ============ DEBTS & BNPL ============
 
 function DebtsTab() {
-  const { items, add, update, remove } = useDebts();
+  const { items, update, remove } = useDebts();
+  const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
+  const qc = useQueryClient();
   const ledger = useLedgerSync();
+
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Debt | null>(null);
@@ -654,6 +662,15 @@ function DebtsTab() {
     | { debt: Debt; amount: number; date: string; notes?: string }
     | null
   >(null);
+
+  // Kill-switch: when a BNPL/debt is fully repaid, drop any linked
+  // recurring commitment so it stops appearing in future bills.
+  async function maybeKillCommitment(debtId: string, settled: boolean) {
+    if (!settled) return;
+    const linked = commitments.filter((c) => c.debt_id === debtId);
+    for (const c of linked) await removeCommitment(c.id);
+  }
+
 
   const standard = items.filter((d) => d.kind === "standard");
   const bnpl = items.filter((d) => d.kind === "bnpl");
@@ -849,14 +866,89 @@ function DebtsTab() {
         open={open}
         onOpenChange={setOpen}
         editing={editing}
-        onSave={async (data) => {
+        onSave={async (data, extras) => {
           if (editing) {
             await update(editing.id, data);
             toast.success("Updated");
-          } else {
-            await add({ ...data, payments: [] });
-            toast.success("Added");
+            setOpen(false);
+            return;
           }
+
+          // ===== New debt =====
+          const { data: u } = await supabase.auth.getUser();
+          if (!u.user) { toast.error("Not signed in"); return; }
+
+          const n = Math.max(1, data.installments_total ?? 1);
+          const per = data.kind === "bnpl" && n > 0 ? data.total_amount / n : 0;
+          const today = todayISO();
+
+          const initialPayments: LedgerPayment[] = [];
+          if (extras.payFirstNow && extras.firstPaymentSource && data.kind === "bnpl") {
+            initialPayments.push({
+              id: crypto.randomUUID(),
+              date: today,
+              amount: per,
+              type: "payment",
+              source: encodeSource(extras.firstPaymentSource),
+              notes: "1st installment",
+            });
+          }
+
+          // Insert returning id so we can link a commitment to it.
+          const { data: created, error } = await supabase
+            .from("debts")
+            .insert({
+              user_id: u.user.id,
+              name: data.name,
+              kind: data.kind,
+              total_amount: data.total_amount,
+              installments_total: data.installments_total ?? null,
+              installment_dates: (data.installment_dates ?? []) as never,
+              start_date: data.start_date ?? null,
+              notes: data.notes,
+              payments: initialPayments as never,
+            } as never)
+            .select("id")
+            .single();
+          if (error || !created) {
+            console.error(error);
+            toast.error("Could not save debt");
+            return;
+          }
+          const debtId = (created as { id: string }).id;
+
+          // Side-effects when "Pay 1st now" was chosen.
+          if (extras.payFirstNow && extras.firstPaymentSource && data.kind === "bnpl") {
+            await ledger.debit(extras.firstPaymentSource, {
+              amount: per,
+              date: today,
+              label: `BNPL · ${data.name} (1/${n})`,
+              category: "Debt",
+              notes: "1st installment",
+            });
+
+            // Auto-create commitment for the remaining installments.
+            const remainingCount = n - 1;
+            if (remainingCount > 0) {
+              const firstDue = format(addMonths(new Date(today), 1), "yyyy-MM-dd");
+              await addCommitment({
+                item_name: `${data.name} Installment`,
+                store: data.name,
+                payment_method: "BNPL",
+                amount: per,
+                category: "Debt",
+                next_due_date: firstDue,
+                last_paid_date: today,
+                prev_due_date: null,
+                notes: `Auto-linked to BNPL plan (${remainingCount} of ${n} remaining).`,
+                paid: false,
+                debt_id: debtId,
+              } as never);
+            }
+          }
+
+          await qc.invalidateQueries({ queryKey: ["debts"] });
+          toast.success(extras.payFirstNow ? "Debt added · 1st installment paid" : "Added");
           setOpen(false);
         }}
       />
@@ -890,6 +982,16 @@ function DebtsTab() {
               category: "Debt",
               notes: pending.notes,
             });
+
+            // Kill-switch: drop the linked recurring commitment when settled.
+            const updatedDebt: Debt = { ...pending.debt, payments: next };
+            const remainingAfter = debtRemaining(updatedDebt);
+            const installmentsDone =
+              pending.debt.kind === "bnpl" &&
+              pending.debt.installments_total != null &&
+              next.filter((p) => p.type !== "topup").length >= pending.debt.installments_total;
+            await maybeKillCommitment(pending.debt.id, remainingAfter <= 0.001 || installmentsDone);
+
             toast.success("Payment logged");
           } catch (e) {
             console.error(e);
@@ -899,6 +1001,7 @@ function DebtsTab() {
           }
         }}
       />
+
     </div>
   );
 }
@@ -941,8 +1044,12 @@ function DebtDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Debt | null;
-  onSave: (data: Omit<Debt, "id" | "created_at" | "payments">) => void | Promise<void>;
+  onSave: (
+    data: Omit<Debt, "id" | "created_at" | "payments">,
+    extras: { payFirstNow: boolean; firstPaymentSource: SourceChoice | null },
+  ) => void | Promise<void>;
 }) {
+  const pockets = usePockets();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"standard" | "bnpl">("standard");
   const [amount, setAmount] = useState("");
@@ -950,6 +1057,8 @@ function DebtDialog({
   const [startDate, setStartDate] = useState(todayISO());
   const [dates, setDates] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [payFirstNow, setPayFirstNow] = useState(false);
+  const [sourceValue, setSourceValue] = useState<string>("main");
 
   useEffect(() => {
     if (open) {
@@ -960,6 +1069,8 @@ function DebtDialog({
       setStartDate(editing?.start_date ?? todayISO());
       setDates(editing?.installment_dates ?? []);
       setNotes(editing?.notes ?? "");
+      setPayFirstNow(false);
+      setSourceValue("main");
     }
   }, [open, editing]);
 
@@ -970,7 +1081,6 @@ function DebtDialog({
     setDates((prev) => {
       const out = [...prev];
       while (out.length < n) {
-        // Default each missing slot to monthly cadence from start date.
         const base = new Date(startDate || todayISO());
         base.setMonth(base.getMonth() + out.length);
         out.push(format(base, "yyyy-MM-dd"));
@@ -978,6 +1088,10 @@ function DebtDialog({
       return out.slice(0, n);
     });
   }, [kind, n, startDate]);
+
+  const showPayFirst = !editing && kind === "bnpl";
+  const amtNum = parseFloat(amount);
+  const perInstallment = showPayFirst && amtNum > 0 ? amtNum / n : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1042,6 +1156,45 @@ function DebtDialog({
               </div>
             </>
           )}
+
+          {showPayFirst && (
+            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 space-y-3">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 accent-primary"
+                  checked={payFirstNow}
+                  onChange={(e) => setPayFirstNow(e.target.checked)}
+                />
+                <span className="text-sm">
+                  <span className="font-medium">Pay 1st installment now</span>
+                  {perInstallment > 0 && (
+                    <span className="block text-xs text-muted-foreground tabular-nums">
+                      {fmt(perInstallment)} taken today · remaining {n - 1} added to Commitments
+                    </span>
+                  )}
+                </span>
+              </label>
+              {payFirstNow && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Source pocket
+                  </Label>
+                  <Select value={sourceValue} onValueChange={setSourceValue}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">Main balance</SelectItem>
+                      {pockets.map((p) => (
+                        <SelectItem key={p} value={`pocket:${p}`}>Pocket · {p}</SelectItem>
+                      ))}
+                      <SelectItem value="other">Other / Do not deduct</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -1056,15 +1209,23 @@ function DebtDialog({
                 toast.error("Name and a valid amount are required.");
                 return;
               }
-              onSave({
-                name: name.trim(),
-                kind,
-                total_amount: amt,
-                installments_total: kind === "bnpl" ? n : null,
-                installment_dates: kind === "bnpl" ? dates.slice(0, n) : [],
-                start_date: startDate || null,
-                notes: notes.trim() || undefined,
-              });
+              const firstPaymentSource: SourceChoice | null = showPayFirst && payFirstNow
+                ? (sourceValue === "main" ? { kind: "main" }
+                  : sourceValue === "other" ? { kind: "other" }
+                  : { kind: "pocket", name: sourceValue.slice(7) })
+                : null;
+              onSave(
+                {
+                  name: name.trim(),
+                  kind,
+                  total_amount: amt,
+                  installments_total: kind === "bnpl" ? n : null,
+                  installment_dates: kind === "bnpl" ? dates.slice(0, n) : [],
+                  start_date: startDate || null,
+                  notes: notes.trim() || undefined,
+                },
+                { payFirstNow: showPayFirst && payFirstNow, firstPaymentSource },
+              );
             }}
           >
             {editing ? "Save" : "Add"}
@@ -1074,6 +1235,7 @@ function DebtDialog({
     </Dialog>
   );
 }
+
 
 // ============ Shared payment dialog ============
 

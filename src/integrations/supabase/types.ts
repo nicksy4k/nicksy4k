@@ -43,6 +43,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string
+          debt_id: string | null
           id: string
           item_name: string
           last_paid_date: string | null
@@ -58,6 +59,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          debt_id?: string | null
           id?: string
           item_name: string
           last_paid_date?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          debt_id?: string | null
           id?: string
           item_name?: string
           last_paid_date?: string | null
@@ -84,7 +87,15 @@ export type Database = {
           store?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "commitments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       debts: {
         Row: {
