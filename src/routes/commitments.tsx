@@ -16,9 +16,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
-import { format, parseISO, addDays, addMonths } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
-import { useActiveCycle } from "@/lib/cycle";
+import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/commitments")({
