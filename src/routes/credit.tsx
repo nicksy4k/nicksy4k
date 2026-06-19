@@ -943,8 +943,12 @@ function DebtDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Debt | null;
-  onSave: (data: Omit<Debt, "id" | "created_at" | "payments">) => void | Promise<void>;
+  onSave: (
+    data: Omit<Debt, "id" | "created_at" | "payments">,
+    extras: { payFirstNow: boolean; firstPaymentSource: SourceChoice | null },
+  ) => void | Promise<void>;
 }) {
+  const pockets = usePockets();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"standard" | "bnpl">("standard");
   const [amount, setAmount] = useState("");
@@ -952,6 +956,8 @@ function DebtDialog({
   const [startDate, setStartDate] = useState(todayISO());
   const [dates, setDates] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [payFirstNow, setPayFirstNow] = useState(false);
+  const [sourceValue, setSourceValue] = useState<string>("main");
 
   useEffect(() => {
     if (open) {
@@ -962,6 +968,8 @@ function DebtDialog({
       setStartDate(editing?.start_date ?? todayISO());
       setDates(editing?.installment_dates ?? []);
       setNotes(editing?.notes ?? "");
+      setPayFirstNow(false);
+      setSourceValue("main");
     }
   }, [open, editing]);
 
@@ -972,7 +980,6 @@ function DebtDialog({
     setDates((prev) => {
       const out = [...prev];
       while (out.length < n) {
-        // Default each missing slot to monthly cadence from start date.
         const base = new Date(startDate || todayISO());
         base.setMonth(base.getMonth() + out.length);
         out.push(format(base, "yyyy-MM-dd"));
@@ -980,6 +987,10 @@ function DebtDialog({
       return out.slice(0, n);
     });
   }, [kind, n, startDate]);
+
+  const showPayFirst = !editing && kind === "bnpl";
+  const amtNum = parseFloat(amount);
+  const perInstallment = showPayFirst && amtNum > 0 ? amtNum / n : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1044,6 +1055,45 @@ function DebtDialog({
               </div>
             </>
           )}
+
+          {showPayFirst && (
+            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 space-y-3">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 accent-primary"
+                  checked={payFirstNow}
+                  onChange={(e) => setPayFirstNow(e.target.checked)}
+                />
+                <span className="text-sm">
+                  <span className="font-medium">Pay 1st installment now</span>
+                  {perInstallment > 0 && (
+                    <span className="block text-xs text-muted-foreground tabular-nums">
+                      {fmt(perInstallment)} taken today · remaining {n - 1} added to Commitments
+                    </span>
+                  )}
+                </span>
+              </label>
+              {payFirstNow && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Source pocket
+                  </Label>
+                  <Select value={sourceValue} onValueChange={setSourceValue}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">Main balance</SelectItem>
+                      {pockets.map((p) => (
+                        <SelectItem key={p} value={`pocket:${p}`}>Pocket · {p}</SelectItem>
+                      ))}
+                      <SelectItem value="other">Other / Do not deduct</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -1058,15 +1108,23 @@ function DebtDialog({
                 toast.error("Name and a valid amount are required.");
                 return;
               }
-              onSave({
-                name: name.trim(),
-                kind,
-                total_amount: amt,
-                installments_total: kind === "bnpl" ? n : null,
-                installment_dates: kind === "bnpl" ? dates.slice(0, n) : [],
-                start_date: startDate || null,
-                notes: notes.trim() || undefined,
-              });
+              const firstPaymentSource: SourceChoice | null = showPayFirst && payFirstNow
+                ? (sourceValue === "main" ? { kind: "main" }
+                  : sourceValue === "other" ? { kind: "other" }
+                  : { kind: "pocket", name: sourceValue.slice(7) })
+                : null;
+              onSave(
+                {
+                  name: name.trim(),
+                  kind,
+                  total_amount: amt,
+                  installments_total: kind === "bnpl" ? n : null,
+                  installment_dates: kind === "bnpl" ? dates.slice(0, n) : [],
+                  start_date: startDate || null,
+                  notes: notes.trim() || undefined,
+                },
+                { payFirstNow: showPayFirst && payFirstNow, firstPaymentSource },
+              );
             }}
           >
             {editing ? "Save" : "Add"}
@@ -1076,6 +1134,7 @@ function DebtDialog({
     </Dialog>
   );
 }
+
 
 // ============ Shared payment dialog ============
 
