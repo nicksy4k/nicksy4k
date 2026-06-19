@@ -154,13 +154,21 @@ export function isInCycle(dateISO: string, cycle: ActiveCycle): boolean {
 }
 
 /**
- * Advance a due-date by exactly one cycle step (used for commitment rollover
- * and the "next cycle" quick-button). Four-weekly → +28d, Monthly → +1 month.
+ * Advance a due-date by exactly one cycle step. Accepts either an
+ * `ActiveCycle` (uses its `type`) or an explicit `CycleType` so that
+ * individual bills with a different frequency than the global engine
+ * can still be rolled forward correctly.
+ * Four-weekly → +28d, Monthly → +1 calendar month.
  * This is the ONLY place rollover math lives.
  */
-export function advanceDueDate(dueISO: string, cycle: ActiveCycle): string {
+export function advanceDueDate(
+  dueISO: string,
+  cycleOrType: ActiveCycle | CycleType,
+): string {
+  const type: CycleType =
+    typeof cycleOrType === "string" ? cycleOrType : cycleOrType.type;
   const base = parseISO(dueISO);
-  const next = cycle.type === "four-weekly" ? addDays(base, 28) : addMonths(base, 1);
+  const next = type === "four-weekly" ? addDays(base, 28) : addMonths(base, 1);
   return fmt(next);
 }
 
