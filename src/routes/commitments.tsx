@@ -82,18 +82,11 @@ function CommitmentsPage() {
     return map;
   }, [items, billPocketBalance]);
 
-  // Auto-revert: when the active cycle window advances (new cycle starts),
-  // clear all paid flags so the next cycle begins fresh.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const key = "ledgerly.commitments.lastCycleStart";
-    const last = localStorage.getItem(key);
-    if (last && last !== cycle.startISO) {
-      const stillPaid = items.filter((i) => i.paid);
-      stillPaid.forEach((c) => { update(c.id, { paid: false }); });
-    }
-    localStorage.setItem(key, cycle.startISO);
-  }, [cycle.startISO, items, update]);
+  // NOTE: Page-level rollover logic intentionally removed.
+  // The single master rollover engine lives in `useCommitmentRollover`,
+  // mounted globally in <AppLayout/>. It advances next_due_date AND resets
+  // paid → false across ALL commitment rows whenever the cycle advances.
+
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
