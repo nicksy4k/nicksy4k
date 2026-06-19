@@ -647,8 +647,10 @@ function LoanDialog({
 // ============ DEBTS & BNPL ============
 
 function DebtsTab() {
-  const { items, add, update, remove } = useDebts();
+  const { items, update, remove } = useDebts();
+  const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
   const ledger = useLedgerSync();
+  const supabaseClient = useSupabaseClient();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Debt | null>(null);
@@ -656,6 +658,15 @@ function DebtsTab() {
     | { debt: Debt; amount: number; date: string; notes?: string }
     | null
   >(null);
+
+  // Kill-switch: when a BNPL/debt is fully repaid, drop any linked
+  // recurring commitment so it stops appearing in future bills.
+  async function maybeKillCommitment(debtId: string, settled: boolean) {
+    if (!settled) return;
+    const linked = commitments.filter((c) => c.debt_id === debtId);
+    for (const c of linked) await removeCommitment(c.id);
+  }
+
 
   const standard = items.filter((d) => d.kind === "standard");
   const bnpl = items.filter((d) => d.kind === "bnpl");
