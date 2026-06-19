@@ -153,6 +153,35 @@ export function isInCycle(dateISO: string, cycle: ActiveCycle): boolean {
   return dateISO >= cycle.startISO && dateISO <= cycle.endISO;
 }
 
+/**
+ * Advance a due-date by exactly one cycle step (used for commitment rollover
+ * and the "next cycle" quick-button). Four-weekly → +28d, Monthly → +1 month.
+ * This is the ONLY place rollover math lives.
+ */
+export function advanceDueDate(dueISO: string, cycle: ActiveCycle): string {
+  const base = parseISO(dueISO);
+  const next = cycle.type === "four-weekly" ? addDays(base, 28) : addMonths(base, 1);
+  return fmt(next);
+}
+
+/**
+ * Roll a due date forward in cycle-sized steps until it lands on or after
+ * the target ISO date. Handles bills that have been missed for several cycles.
+ */
+export function rollDueDateForward(
+  dueISO: string,
+  targetISO: string,
+  cycle: ActiveCycle,
+): string {
+  let cur = dueISO;
+  let guard = 0;
+  while (cur < targetISO && guard < 240) {
+    cur = advanceDueDate(cur, cycle);
+    guard++;
+  }
+  return cur;
+}
+
 // ---------- React hook ----------
 
 export function useCycleSettings() {
