@@ -408,23 +408,41 @@ function DetailsDialog({
                 Choose how to roll it forward:
               </p>
               <div className="grid gap-2">
-                {/* Cycle-aware advance — uses the SAME engine as the global rollover. */}
-                <Button
-                  variant="outline"
-                  className="justify-between"
-                  onClick={() => {
-                    const base = item.next_due_date ?? todayISO();
-                    confirmWith(advanceDueDate(base, cycle));
-                  }}
-                >
-                  <span>Advance one cycle ({cycle.type === "four-weekly" ? "+4 weeks" : "+1 month"})</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), cycle)), "d MMM yyyy")}
-                  </span>
-                </Button>
+                {/* Frequency-aware manual advance — choose the cadence that matches this specific bill. */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = item.next_due_date ?? todayISO();
+                      confirmWith(advanceDueDate(base, "monthly"));
+                    }}
+                  >
+                    <span className="text-sm">Advance +1 month</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "monthly")), "d MMM yyyy")}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = item.next_due_date ?? todayISO();
+                      confirmWith(advanceDueDate(base, "four-weekly"));
+                    }}
+                  >
+                    <span className="text-sm">Advance +4 weeks</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly")), "d MMM yyyy")}
+                    </span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Global cycle: {cycle.type === "four-weekly" ? "4-weekly" : "monthly"} — pick the cadence that matches this bill.
+                </p>
 
                 <div className="rounded-md border border-border p-3 space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Pick a date</Label>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Or pick a date</Label>
                   <div className="flex gap-2">
                     <Input type="date" value={pickerDate} onChange={(e) => setPickerDate(e.target.value)} />
                     <Button onClick={() => pickerDate && confirmWith(pickerDate)}>Set</Button>
