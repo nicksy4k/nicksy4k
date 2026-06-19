@@ -866,14 +866,89 @@ function DebtsTab() {
         open={open}
         onOpenChange={setOpen}
         editing={editing}
-        onSave={async (data) => {
+        onSave={async (data, extras) => {
           if (editing) {
             await update(editing.id, data);
             toast.success("Updated");
-          } else {
-            await add({ ...data, payments: [] });
-            toast.success("Added");
+            setOpen(false);
+            return;
           }
+
+          // ===== New debt =====
+          const { data: u } = await supabase.auth.getUser();
+          if (!u.user) { toast.error("Not signed in"); return; }
+
+          const n = Math.max(1, data.installments_total ?? 1);
+          const per = data.kind === "bnpl" && n > 0 ? data.total_amount / n : 0;
+          const today = todayISO();
+
+          const initialPayments: LedgerPayment[] = [];
+          if (extras.payFirstNow && extras.firstPaymentSource && data.kind === "bnpl") {
+            initialPayments.push({
+              id: crypto.randomUUID(),
+              date: today,
+              amount: per,
+              type: "payment",
+              source: encodeSource(extras.firstPaymentSource),
+              notes: "1st installment",
+            });
+          }
+
+          // Insert returning id so we can link a commitment to it.
+          const { data: created, error } = await supabase
+            .from("debts")
+            .insert({
+              user_id: u.user.id,
+              name: data.name,
+              kind: data.kind,
+              total_amount: data.total_amount,
+              installments_total: data.installments_total ?? null,
+              installment_dates: (data.installment_dates ?? []) as never,
+              start_date: data.start_date ?? null,
+              notes: data.notes,
+              payments: initialPayments as never,
+            } as never)
+            .select("id")
+            .single();
+          if (error || !created) {
+            console.error(error);
+            toast.error("Could not save debt");
+            return;
+          }
+          const debtId = (created as { id: string }).id;
+
+          // Side-effects when "Pay 1st now" was chosen.
+          if (extras.payFirstNow && extras.firstPaymentSource && data.kind === "bnpl") {
+            await ledger.debit(extras.firstPaymentSource, {
+              amount: per,
+              date: today,
+              label: `BNPL · ${data.name} (1/${n})`,
+              category: "Debt",
+              notes: "1st installment",
+            });
+
+            // Auto-create commitment for the remaining installments.
+            const remainingCount = n - 1;
+            if (remainingCount > 0) {
+              const firstDue = format(addMonths(new Date(today), 1), "yyyy-MM-dd");
+              await addCommitment({
+                item_name: `${data.name} Installment`,
+                store: data.name,
+                payment_method: "BNPL",
+                amount: per,
+                category: "Debt",
+                next_due_date: firstDue,
+                last_paid_date: today,
+                prev_due_date: null,
+                notes: `Auto-linked to BNPL plan (${remainingCount} of ${n} remaining).`,
+                paid: false,
+                debt_id: debtId,
+              } as never);
+            }
+          }
+
+          await qc.invalidateQueries({ queryKey: ["debts"] });
+          toast.success(extras.payFirstNow ? "Debt added · 1st installment paid" : "Added");
           setOpen(false);
         }}
       />
@@ -907,6 +982,16 @@ function DebtsTab() {
               category: "Debt",
               notes: pending.notes,
             });
+
+            // Kill-switch: drop the linked recurring commitment when settled.
+            const updatedDebt: Debt = { ...pending.debt, payments: next };
+            const remainingAfter = debtRemaining(updatedDebt);
+            const installmentsDone =
+              pending.debt.kind === "bnpl" &&
+              pending.debt.installments_total != null &&
+              next.filter((p) => p.type !== "topup").length >= pending.debt.installments_total;
+            await maybeKillCommitment(pending.debt.id, remainingAfter <= 0.001 || installmentsDone);
+
             toast.success("Payment logged");
           } catch (e) {
             console.error(e);
@@ -916,6 +1001,7 @@ function DebtsTab() {
           }
         }}
       />
+
     </div>
   );
 }
