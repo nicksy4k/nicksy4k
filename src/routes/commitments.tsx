@@ -240,6 +240,7 @@ function CommitmentsPage() {
 
       <DetailsDialog
         item={detailsItem}
+        cycle={cycle}
         onClose={() => setDetailsId(null)}
         onEdit={(c) => {
           setDetailsId(null);
