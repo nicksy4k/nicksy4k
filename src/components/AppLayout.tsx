@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useCommitmentRollover } from "@/lib/commitmentRollover";
 
 type NavItem = {
   to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/settings";
