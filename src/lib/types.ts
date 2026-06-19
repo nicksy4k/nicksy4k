@@ -84,8 +84,11 @@ export interface Commitment {
   prev_due_date?: string | null;
   notes?: string;
   paid: boolean;
+  /** When set, this commitment is auto-managed by a BNPL debt plan. */
+  debt_id?: string | null;
   created_at: string;
 }
+
 
 export interface LedgerPayment {
   id: string;
