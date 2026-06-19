@@ -139,13 +139,27 @@ function AuthGate() {
 
   useEffect(() => {
     let mounted = true;
+    let lastUserId: string | null = null;
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setStatus(data.session ? "in" : "out");
+      if (!mounted) return;
+      lastUserId = data.session?.user?.id ?? null;
+      setStatus(data.session ? "in" : "out");
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+      const userChanged = nextUserId !== lastUserId;
+
+      if (event === "SIGNED_OUT" || userChanged) {
+        // Hard-clear cached data so one user never sees another user's rows.
+        await queryClient.cancelQueries();
+        queryClient.clear();
+      }
+      lastUserId = nextUserId;
       setStatus(session ? "in" : "out");
-      queryClient.invalidateQueries();
       router.invalidate();
+      if (event !== "SIGNED_OUT" && session) {
+        queryClient.invalidateQueries();
+      }
     });
     return () => {
       mounted = false;
