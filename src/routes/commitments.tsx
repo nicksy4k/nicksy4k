@@ -328,9 +328,10 @@ function CommitmentsPage() {
 }
 
 function DetailsDialog({
-  item, onClose, onEdit, onDelete, onConfirmReset, onUnmarkPaid,
+  item, cycle, onClose, onEdit, onDelete, onConfirmReset, onUnmarkPaid,
 }: {
   item: Commitment | null;
+  cycle: ReturnType<typeof useActiveCycle>;
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
