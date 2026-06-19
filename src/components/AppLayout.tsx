@@ -26,6 +26,10 @@ const nav: NavItem[] = [
 
 export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Master cycle-rollover engine — runs globally on every page mount so it
+  // fires the moment a new cycle starts, regardless of which route is open.
+  useCommitmentRollover();
+
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
