@@ -1057,7 +1057,11 @@ function DebtDialog({
   editing: Debt | null;
   onSave: (
     data: Omit<Debt, "id" | "created_at" | "payments">,
-    extras: { payFirstNow: boolean; firstPaymentSource: SourceChoice | null },
+    extras: {
+      payFirstNow: boolean;
+      firstPaymentSource: SourceChoice | null;
+      items: Array<{ item_name: string; price: number; quantity: number }>;
+    },
   ) => void | Promise<void>;
 }) {
   const pockets = usePockets();
@@ -1070,6 +1074,8 @@ function DebtDialog({
   const [notes, setNotes] = useState("");
   const [payFirstNow, setPayFirstNow] = useState(false);
   const [sourceValue, setSourceValue] = useState<string>("main");
+  const [itemRows, setItemRows] = useState<Array<{ item_name: string; price: string; quantity: string }>>([]);
+  const [totalDirty, setTotalDirty] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -1082,8 +1088,28 @@ function DebtDialog({
       setNotes(editing?.notes ?? "");
       setPayFirstNow(false);
       setSourceValue("main");
+      setItemRows([]);
+      setTotalDirty(!!editing);
     }
   }, [open, editing]);
+
+  // Compute items total
+  const itemsTotal = useMemo(() => {
+    return itemRows.reduce((s, r) => {
+      const p = parseFloat(r.price) || 0;
+      const q = parseInt(r.quantity, 10) || 0;
+      return s + p * q;
+    }, 0);
+  }, [itemRows]);
+
+  // Auto-mirror total from items when user hasn't manually edited it.
+  useEffect(() => {
+    if (editing) return;
+    if (totalDirty) return;
+    if (itemRows.length === 0) return;
+    setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
+  }, [itemsTotal, totalDirty, editing, itemRows.length]);
+
 
   // Keep date array length aligned with installments count.
   const n = parseInt(installments, 10) || 4;
