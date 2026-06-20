@@ -909,6 +909,8 @@ function DebtsTab() {
                       onSubmit={(v) => setPending({ debt: d, ...v })}
                     />
 
+                    <DebtItemsSection debtId={d.id} />
+
                     <Accordion type="single" collapsible>
                       <AccordionItem value="hist" className="border-none">
                         <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
