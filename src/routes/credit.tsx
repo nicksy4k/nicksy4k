@@ -649,6 +649,85 @@ function LoanDialog({
 
 // ============ DEBTS & BNPL ============
 
+function DebtItemsSection({ debtId }: { debtId: string }) {
+  const { items, add, remove } = useDebtItems();
+  const rows = items.filter((it) => it.debt_id === debtId);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [qty, setQty] = useState("1");
+  const subtotal = rows.reduce((s, r) => s + r.price * r.quantity, 0);
+
+  async function submit() {
+    if (!name.trim()) return;
+    try {
+      await add(debtId, {
+        item_name: name.trim(),
+        price: parseFloat(price) || 0,
+        quantity: parseInt(qty, 10) || 1,
+      });
+      setName(""); setPrice(""); setQty("1"); setAdding(false);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not add item");
+    }
+  }
+
+  return (
+    <Accordion type="single" collapsible>
+      <AccordionItem value="items" className="border-none">
+        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+          <span className="flex items-center gap-1.5">
+            Items ({rows.length})
+            {rows.length > 0 && (
+              <span className="text-muted-foreground tabular-nums">· {fmt(subtotal)}</span>
+            )}
+          </span>
+        </AccordionTrigger>
+        <AccordionContent>
+          {rows.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-1">No items recorded.</p>
+          ) : (
+            <ul className="divide-y divide-border/60 text-xs">
+              {rows.map((it) => (
+                <li key={it.id} className="flex items-center justify-between py-1.5 gap-2">
+                  <span className="truncate">{it.item_name}</span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-muted-foreground tabular-nums">
+                      {it.quantity} × {fmt(it.price)} = {fmt(it.quantity * it.price)}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => remove(it.id)}
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {adding ? (
+            <div className="mt-2 grid grid-cols-12 gap-1.5 items-center">
+              <Input className="col-span-5 h-8 text-xs" placeholder="Item" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input className="col-span-3 h-8 text-xs" inputMode="decimal" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <Input className="col-span-2 h-8 text-xs" inputMode="numeric" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} />
+              <Button size="sm" className="col-span-2 h-8 text-xs px-2" onClick={submit}>Add</Button>
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs" onClick={() => setAdding(true)}>
+              <Plus className="h-3 w-3" /> Add item
+            </Button>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
+
 function DebtsTab() {
   const { items, update, remove } = useDebts();
   const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
