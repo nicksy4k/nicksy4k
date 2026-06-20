@@ -388,8 +388,12 @@ function EditTransactionDialog({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Stored at">
-                  <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
+                  {receiptType === "Physical" ? (
+                    <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                  ) : (
+                    <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
+                  )}
                 </Field>
               </div>
             )}
