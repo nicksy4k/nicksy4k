@@ -1152,7 +1152,24 @@ function DebtDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Total (£)</Label>
-              <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); setTotalDirty(true); }}
+                placeholder="0.00"
+              />
+              {!editing && itemRows.length > 0 && totalDirty && itemsTotal > 0 && Math.abs((parseFloat(amount) || 0) - itemsTotal) > 0.005 && (
+                <p className="text-[11px] text-amber-600">
+                  Items total {fmt(itemsTotal)} doesn't match.{" "}
+                  <button
+                    type="button"
+                    className="underline hover:no-underline"
+                    onClick={() => { setAmount(itemsTotal.toFixed(2)); setTotalDirty(false); }}
+                  >
+                    Use items total
+                  </button>
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">
