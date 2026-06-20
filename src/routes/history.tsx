@@ -124,9 +124,26 @@ function HistoryPage() {
                     {t.receipt_attached && (
                       <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
                         <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                        <div>
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Receipt stored at</p>
-                          <p>{t.receipt_location || <span className="text-muted-foreground italic">No location noted</span>}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Receipt</p>
+                          {isStoragePath(t.receipt_location) ? (
+                            <button
+                              type="button"
+                              className="text-primary hover:underline truncate inline-flex items-center gap-1"
+                              onClick={async () => {
+                                const { data, error } = await supabase.storage
+                                  .from("receipts")
+                                  .createSignedUrl(t.receipt_location, 3600);
+                                if (error || !data) { toast.error("Could not open receipt"); return; }
+                                window.open(data.signedUrl, "_blank", "noopener");
+                              }}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              {t.receipt_location.split("/").pop()}
+                            </button>
+                          ) : (
+                            <p>{t.receipt_location || <span className="text-muted-foreground italic">No location noted</span>}</p>
+                          )}
                         </div>
                       </div>
                     )}
