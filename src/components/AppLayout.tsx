@@ -31,6 +31,16 @@ export function AppLayout() {
   // fires the moment a new cycle starts, regardless of which route is open.
   useCommitmentRollover();
 
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setEmail(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+  const initial = (email?.[0] ?? "?").toUpperCase();
+
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
