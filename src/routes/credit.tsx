@@ -1249,6 +1249,79 @@ function DebtDialog({
             </div>
           )}
 
+          {!editing && (
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Items (optional)</Label>
+                {itemRows.length > 0 && (
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    Sum {fmt(itemsTotal)}
+                  </span>
+                )}
+              </div>
+              {itemRows.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Add line items to itemize this debt. Total auto-fills from the sum.
+                </p>
+              )}
+              <div className="space-y-2">
+                {itemRows.map((r, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    <Input
+                      className="col-span-6"
+                      placeholder="Item name"
+                      value={r.item_name}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], item_name: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Input
+                      className="col-span-3"
+                      inputMode="decimal"
+                      placeholder="Price"
+                      value={r.price}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], price: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Input
+                      className="col-span-2"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={r.quantity}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], quantity: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="col-span-1 h-9 w-9"
+                      onClick={() => setItemRows(itemRows.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setItemRows([...itemRows, { item_name: "", price: "", quantity: "1" }])}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add item
+              </Button>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
