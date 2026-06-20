@@ -113,6 +113,15 @@ export interface Loan {
 
 export type DebtKind = "standard" | "bnpl";
 
+export interface DebtItem {
+  id: string;
+  debt_id: string;
+  item_name: string;
+  price: number;
+  quantity: number;
+  created_at: string;
+}
+
 export interface Debt {
   id: string;
   name: string;

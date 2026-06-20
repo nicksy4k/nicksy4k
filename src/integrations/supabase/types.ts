@@ -97,6 +97,44 @@ export type Database = {
           },
         ]
       }
+      debt_items: {
+        Row: {
+          created_at: string
+          debt_id: string
+          id: string
+          item_name: string
+          price: number
+          quantity: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          debt_id: string
+          id?: string
+          item_name: string
+          price?: number
+          quantity?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          debt_id?: string
+          id?: string
+          item_name?: string
+          price?: number
+          quantity?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_items_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debts: {
         Row: {
           created_at: string

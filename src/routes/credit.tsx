@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/accordion";
 
 import {
-  useCommitments, useDebts, useIncomes, useLoans, useSavings, useTransactions,
+  useCommitments, useDebts, useDebtItems, useIncomes, useLoans, useSavings, useTransactions,
 } from "@/lib/store";
 import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
@@ -649,9 +649,89 @@ function LoanDialog({
 
 // ============ DEBTS & BNPL ============
 
+function DebtItemsSection({ debtId }: { debtId: string }) {
+  const { items, add, remove } = useDebtItems();
+  const rows = items.filter((it) => it.debt_id === debtId);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [qty, setQty] = useState("1");
+  const subtotal = rows.reduce((s, r) => s + r.price * r.quantity, 0);
+
+  async function submit() {
+    if (!name.trim()) return;
+    try {
+      await add(debtId, {
+        item_name: name.trim(),
+        price: parseFloat(price) || 0,
+        quantity: parseInt(qty, 10) || 1,
+      });
+      setName(""); setPrice(""); setQty("1"); setAdding(false);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not add item");
+    }
+  }
+
+  return (
+    <Accordion type="single" collapsible>
+      <AccordionItem value="items" className="border-none">
+        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+          <span className="flex items-center gap-1.5">
+            Items ({rows.length})
+            {rows.length > 0 && (
+              <span className="text-muted-foreground tabular-nums">· {fmt(subtotal)}</span>
+            )}
+          </span>
+        </AccordionTrigger>
+        <AccordionContent>
+          {rows.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-1">No items recorded.</p>
+          ) : (
+            <ul className="divide-y divide-border/60 text-xs">
+              {rows.map((it) => (
+                <li key={it.id} className="flex items-center justify-between py-1.5 gap-2">
+                  <span className="truncate">{it.item_name}</span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-muted-foreground tabular-nums">
+                      {it.quantity} × {fmt(it.price)} = {fmt(it.quantity * it.price)}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => remove(it.id)}
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {adding ? (
+            <div className="mt-2 grid grid-cols-12 gap-1.5 items-center">
+              <Input className="col-span-5 h-8 text-xs" placeholder="Item" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input className="col-span-3 h-8 text-xs" inputMode="decimal" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <Input className="col-span-2 h-8 text-xs" inputMode="numeric" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} />
+              <Button size="sm" className="col-span-2 h-8 text-xs px-2" onClick={submit}>Add</Button>
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs" onClick={() => setAdding(true)}>
+              <Plus className="h-3 w-3" /> Add item
+            </Button>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
+
 function DebtsTab() {
   const { items, update, remove } = useDebts();
   const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
+  const { addMany: addDebtItems } = useDebtItems();
   const qc = useQueryClient();
   const ledger = useLedgerSync();
 
@@ -728,6 +808,8 @@ function DebtsTab() {
                       max={remaining}
                       onSubmit={(v) => setPending({ debt: d, ...v })}
                     />
+
+                    <DebtItemsSection debtId={d.id} />
 
                     <Accordion type="single" collapsible>
                       <AccordionItem value="hist" className="border-none">
@@ -826,6 +908,8 @@ function DebtsTab() {
                       buttonLabel="Pay Next Installment"
                       onSubmit={(v) => setPending({ debt: d, ...v })}
                     />
+
+                    <DebtItemsSection debtId={d.id} />
 
                     <Accordion type="single" collapsible>
                       <AccordionItem value="hist" className="border-none">
@@ -947,6 +1031,16 @@ function DebtsTab() {
             }
           }
 
+          // Insert any line items captured in the modal.
+          if (extras.items && extras.items.length > 0) {
+            try {
+              await addDebtItems(debtId, extras.items);
+            } catch (e) {
+              console.error(e);
+              toast.warning("Debt saved, but items could not be added");
+            }
+          }
+
           await qc.invalidateQueries({ queryKey: ["debts"] });
           toast.success(extras.payFirstNow ? "Debt added · 1st installment paid" : "Added");
           setOpen(false);
@@ -1046,7 +1140,11 @@ function DebtDialog({
   editing: Debt | null;
   onSave: (
     data: Omit<Debt, "id" | "created_at" | "payments">,
-    extras: { payFirstNow: boolean; firstPaymentSource: SourceChoice | null },
+    extras: {
+      payFirstNow: boolean;
+      firstPaymentSource: SourceChoice | null;
+      items: Array<{ item_name: string; price: number; quantity: number }>;
+    },
   ) => void | Promise<void>;
 }) {
   const pockets = usePockets();
@@ -1059,6 +1157,8 @@ function DebtDialog({
   const [notes, setNotes] = useState("");
   const [payFirstNow, setPayFirstNow] = useState(false);
   const [sourceValue, setSourceValue] = useState<string>("main");
+  const [itemRows, setItemRows] = useState<Array<{ item_name: string; price: string; quantity: string }>>([]);
+  const [totalDirty, setTotalDirty] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -1071,8 +1171,28 @@ function DebtDialog({
       setNotes(editing?.notes ?? "");
       setPayFirstNow(false);
       setSourceValue("main");
+      setItemRows([]);
+      setTotalDirty(!!editing);
     }
   }, [open, editing]);
+
+  // Compute items total
+  const itemsTotal = useMemo(() => {
+    return itemRows.reduce((s, r) => {
+      const p = parseFloat(r.price) || 0;
+      const q = parseInt(r.quantity, 10) || 0;
+      return s + p * q;
+    }, 0);
+  }, [itemRows]);
+
+  // Auto-mirror total from items when user hasn't manually edited it.
+  useEffect(() => {
+    if (editing) return;
+    if (totalDirty) return;
+    if (itemRows.length === 0) return;
+    setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
+  }, [itemsTotal, totalDirty, editing, itemRows.length]);
+
 
   // Keep date array length aligned with installments count.
   const n = parseInt(installments, 10) || 4;
@@ -1115,7 +1235,24 @@ function DebtDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Total (£)</Label>
-              <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); setTotalDirty(true); }}
+                placeholder="0.00"
+              />
+              {!editing && itemRows.length > 0 && totalDirty && itemsTotal > 0 && Math.abs((parseFloat(amount) || 0) - itemsTotal) > 0.005 && (
+                <p className="text-[11px] text-amber-600">
+                  Items total {fmt(itemsTotal)} doesn't match.{" "}
+                  <button
+                    type="button"
+                    className="underline hover:no-underline"
+                    onClick={() => { setAmount(itemsTotal.toFixed(2)); setTotalDirty(false); }}
+                  >
+                    Use items total
+                  </button>
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">
@@ -1195,6 +1332,79 @@ function DebtDialog({
             </div>
           )}
 
+          {!editing && (
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Items (optional)</Label>
+                {itemRows.length > 0 && (
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    Sum {fmt(itemsTotal)}
+                  </span>
+                )}
+              </div>
+              {itemRows.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Add line items to itemize this debt. Total auto-fills from the sum.
+                </p>
+              )}
+              <div className="space-y-2">
+                {itemRows.map((r, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    <Input
+                      className="col-span-6"
+                      placeholder="Item name"
+                      value={r.item_name}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], item_name: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Input
+                      className="col-span-3"
+                      inputMode="decimal"
+                      placeholder="Price"
+                      value={r.price}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], price: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Input
+                      className="col-span-2"
+                      inputMode="numeric"
+                      placeholder="Qty"
+                      value={r.quantity}
+                      onChange={(e) => {
+                        const next = [...itemRows];
+                        next[i] = { ...next[i], quantity: e.target.value };
+                        setItemRows(next);
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="col-span-1 h-9 w-9"
+                      onClick={() => setItemRows(itemRows.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setItemRows([...itemRows, { item_name: "", price: "", quantity: "1" }])}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add item
+              </Button>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -1224,7 +1434,19 @@ function DebtDialog({
                   start_date: startDate || null,
                   notes: notes.trim() || undefined,
                 },
-                { payFirstNow: showPayFirst && payFirstNow, firstPaymentSource },
+                {
+                  payFirstNow: showPayFirst && payFirstNow,
+                  firstPaymentSource,
+                  items: editing
+                    ? []
+                    : itemRows
+                        .map((r) => ({
+                          item_name: r.item_name.trim(),
+                          price: parseFloat(r.price) || 0,
+                          quantity: parseInt(r.quantity, 10) || 1,
+                        }))
+                        .filter((r) => r.item_name.length > 0),
+                },
               );
             }}
           >
