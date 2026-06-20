@@ -434,6 +434,7 @@ export async function clearAllData() {
     supabase.from("savings").delete().eq("user_id", uid),
     supabase.from("commitments").delete().eq("user_id", uid),
     supabase.from("loans").delete().eq("user_id", uid),
+    supabase.from("debt_items").delete().eq("user_id", uid),
     supabase.from("debts").delete().eq("user_id", uid),
   ]);
 }
