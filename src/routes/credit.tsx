@@ -652,6 +652,7 @@ function LoanDialog({
 function DebtsTab() {
   const { items, update, remove } = useDebts();
   const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
+  const { addMany: addDebtItems } = useDebtItems();
   const qc = useQueryClient();
   const ledger = useLedgerSync();
 
