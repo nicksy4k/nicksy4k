@@ -28,9 +28,9 @@ import {
 } from "@/components/ui/accordion";
 
 import {
-  useCommitments, useDebts, useIncomes, useLoans, useSavings, useTransactions,
+  useCommitments, useDebts, useDebtItems, useIncomes, useLoans, useSavings, useTransactions,
 } from "@/lib/store";
-import type { Debt, LedgerPayment, Loan } from "@/lib/types";
+import type { Debt, DebtItem, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 
