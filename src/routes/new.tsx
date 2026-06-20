@@ -15,6 +15,7 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { ReceiptUpload } from "@/components/ReceiptUpload";
 
 export const Route = createFileRoute("/new")({
   head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
