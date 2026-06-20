@@ -1,5 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut, CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,16 @@ export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
   // fires the moment a new cycle starts, regardless of which route is open.
   useCommitmentRollover();
+
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setEmail(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+  const initial = (email?.[0] ?? "?").toUpperCase();
 
 
   return (
@@ -65,12 +76,46 @@ export function AppLayout() {
           <Button
             variant="ghost"
             size="sm"
-            className="md:mt-2 justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent"
+            className="md:mt-2 justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent hidden"
             onClick={() => supabase.auth.signOut()}
           >
             <LogOut className="h-4 w-4" /> Sign out
           </Button>
         </nav>
+        <div className="hidden md:flex items-center gap-2.5 mx-3 mt-4 mb-4 p-2 rounded-xl bg-sidebar-accent/40 ring-1 ring-sidebar-border">
+          <div className="h-8 w-8 rounded-lg bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-xs font-semibold text-primary">
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Signed in</div>
+            <div className="text-xs font-medium truncate" title={email ?? ""}>{email ?? "—"}</div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            onClick={() => supabase.auth.signOut()}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="md:hidden flex items-center gap-2 px-4 pb-3">
+          <div className="h-7 w-7 rounded-md bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-[11px] font-semibold text-primary">
+            {initial}
+          </div>
+          <div className="text-xs text-muted-foreground truncate flex-1" title={email ?? ""}>{email ?? "—"}</div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-sidebar-foreground/70"
+            onClick={() => supabase.auth.signOut()}
+            aria-label="Sign out"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </aside>
       <main className="flex-1 min-w-0">
         <Outlet />
