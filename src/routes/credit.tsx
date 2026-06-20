@@ -948,6 +948,16 @@ function DebtsTab() {
             }
           }
 
+          // Insert any line items captured in the modal.
+          if (extras.items && extras.items.length > 0) {
+            try {
+              await addDebtItems(debtId, extras.items);
+            } catch (e) {
+              console.error(e);
+              toast.warning("Debt saved, but items could not be added");
+            }
+          }
+
           await qc.invalidateQueries({ queryKey: ["debts"] });
           toast.success(extras.payFirstNow ? "Debt added · 1st installment paid" : "Added");
           setOpen(false);
