@@ -1,60 +1,31 @@
-## Goal
-Add itemization to debts: store line items in a new `debt_items` table, capture them in the Add Debt modal with auto-totaling, and show an expandable breakdown in the debt list.
+## Branding fixes + signed-in user identity
 
-## 1. Database (migration)
+### 1. Fix the "Monry" typo and align brand to "Ledgerly"
 
-New table `public.debt_items`:
-- `id uuid pk default gen_random_uuid()`
-- `debt_id uuid not null references public.debts(id) on delete cascade`
-- `user_id uuid not null` (denormalized so RLS can scope without a join)
-- `item_name text not null`
-- `price numeric(12,2) not null default 0`
-- `quantity integer not null default 1`
-- `created_at timestamptz not null default now()`
+In `src/routes/__root.tsx`, the head metadata still reads *"Nick's Monry Tracker"* in three places (title, `og:title`, `twitter:title`). Replace all three with `"Ledgerly — Personal Finance Tracker"` so the browser tab, link previews, and Twitter cards match the in-app brand the rest of the routes already use.
 
-Index on `debt_id`. GRANTs to `authenticated` + `service_role`. RLS enabled with policies scoping all actions to `auth.uid() = user_id` (mirrors existing `debts` policies).
+No other "Monry" references exist; every other route file is already on Ledgerly.
 
-No changes to existing `debts` table — `total_amount` stays the source of truth; items are additive context.
+### 2. Surface the signed-in user in the sidebar
 
-## 2. Types & store
+The sidebar currently shows the Ledgerly logo and a bare "Sign out" button — nothing tells you which account is active. Add a compact user block at the bottom of the sidebar (above/replacing the standalone Sign out button) that shows:
 
-- `src/lib/types.ts`: add `DebtItem` interface.
-- `src/lib/store.ts`: add `useDebtItems(debtId?)` hook following the same Supabase pattern used by other entities, with `add`, `addMany`, `update`, `remove`. Fetch all items for the user once; components filter by `debt_id`.
-- Regenerate `src/integrations/supabase/types.ts` (happens automatically after migration).
+- A small circular avatar with the user's initial (derived from email)
+- The user's email on one line, truncated if long
+- A small icon-only Sign out button next to it
 
-## 3. Add Debt modal updates (`src/routes/credit.tsx`)
+Data source: `supabase.auth.getUser()` on mount + subscribe to `onAuthStateChange` for updates. Keep it local to `AppLayout.tsx` — no new store, no new route.
 
-Inside the existing Add Debt dialog, below the existing fields, add an optional **Items** section styled like the line-item editor in the expense logging UI:
-- Rows of `item_name` / `price` / `quantity` with a trash button.
-- "+ Add item" button to append a row.
-- Computed `itemsTotal = sum(price * quantity)` shown beneath the list.
+Visual style: matches existing sidebar tokens (muted foreground, `bg-sidebar-accent/40` pill, same rounded-xl + ring treatment as the logo tile for the avatar). On mobile (sidebar collapses to a top bar), the user block sits inline at the right edge of the header row.
 
-Auto-total behavior:
-- While the user has not manually edited Total Amount, the Total field mirrors `itemsTotal` live.
-- Track `totalDirty` flag; flip to true on manual edit of Total.
-- If `totalDirty` and `itemsTotal > 0` and they differ, show an inline warning under the Total field: *"Items total £X doesn't match £Y. [Use items total]"* — the link resets to items total and clears the dirty flag.
+### 3. Forward-looking note (no code this turn)
 
-On submit:
-- Insert the debt as today (unchanged logic, including BNPL first-installment + commitment side effects).
-- If there are any non-empty item rows, insert them into `debt_items` with the new `debt_id`. Use `addMany` (single insert call). Failure to insert items rolls back via toast warning but keeps the debt (items are non-critical).
+Once other people use the app, the natural next steps are: a `profiles` table with `display_name` + `avatar_url`, a profile-edit screen in Settings, and swapping the email-initial avatar for the uploaded one. Flagging only — not building now since you said this is personal use.
 
-## 4. Debt list/detail view
+### Files touched
+- `src/routes/__root.tsx` — fix three "Monry" strings
+- `src/components/AppLayout.tsx` — add user identity block, wire `supabase.auth.getUser()` + `onAuthStateChange`, restyle sign-out
 
-In the debts list rendering (the existing Accordion per debt), add an **Items** subsection inside the expanded content:
-- If the debt has items: render a compact card with a small table (Item · Qty · Price · Line total) and a footer row showing the items subtotal vs the debt total (with a muted note if they differ).
-- If none: small "No items recorded" hint with an inline "+ Add items" button that opens a lightweight inline editor (same row component as the modal) to add/edit/remove items post-hoc.
-
-Edit/delete of individual items uses the `useDebtItems` mutations; no other debt fields are touched.
-
-## 5. Out of scope
-
-- No changes to existing debt totals, commitments, BNPL kill-switch, or RLS on other tables.
-- No itemization for `loans` (separate module).
-- No bulk import / receipt parsing.
-
-## Technical notes
-
-- Reuse `Input`, `Button`, `Card`, `Accordion` — no new UI primitives.
-- Component split: extract a small `DebtItemsEditor` component (used by both the Add modal and the inline post-hoc editor) and a `DebtItemsList` read-only view.
-- Money formatting via existing `fmt()`.
-- All Supabase calls go through the browser client already imported in `credit.tsx` / `store.ts`.
+### Out of scope
+- No profiles table, no avatar upload, no display-name editing
+- No changes to auth flow, routes, or any other page
