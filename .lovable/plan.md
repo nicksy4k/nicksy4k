@@ -1,31 +1,36 @@
-## Branding fixes + signed-in user identity
+# Receipt Attachment Upload
 
-### 1. Fix the "Monry" typo and align brand to "Ledgerly"
+Replace the free-text `receipt_location` input with a file upload. Files go to a private `receipts` bucket scoped per-user; the storage path is saved in `transactions.receipt_location`. A signed-URL preview/download link is shown when a receipt exists.
 
-In `src/routes/__root.tsx`, the head metadata still reads *"Nick's Monry Tracker"* in three places (title, `og:title`, `twitter:title`). Replace all three with `"Ledgerly — Personal Finance Tracker"` so the browser tab, link previews, and Twitter cards match the in-app brand the rest of the routes already use.
+## Storage
 
-No other "Monry" references exist; every other route file is already on Ledgerly.
+- Create private bucket `receipts` (not public).
+- RLS on `storage.objects` for bucket `receipts`: authenticated users can SELECT / INSERT / UPDATE / DELETE only when the first folder segment equals their `auth.uid()` (i.e. paths are `{user_id}/{transaction-or-uuid}.{ext}`).
+- Allowed file types enforced client-side: PDF, JPG, PNG, WEBP, HEIC. Max ~10 MB.
 
-### 2. Surface the signed-in user in the sidebar
+## Upload UI (new.tsx + history.tsx edit dialog)
 
-The sidebar currently shows the Ledgerly logo and a bare "Sign out" button — nothing tells you which account is active. Add a compact user block at the bottom of the sidebar (above/replacing the standalone Sign out button) that shows:
+When "Receipt attached" toggle is on and `receiptType` is `Digital` or `Email`:
+- Show a file input (`accept="application/pdf,image/*"`).
+- On select: upload to `receipts/{user_id}/{uuid}.{ext}` via `supabase.storage`, store the returned path in `receiptLocation` state.
+- Show filename + "View" (opens signed URL in new tab) + "Replace" / "Remove" controls.
+- For `Physical` receipt type, keep the existing free-text input (describes where the paper receipt is filed).
 
-- A small circular avatar with the user's initial (derived from email)
-- The user's email on one line, truncated if long
-- A small icon-only Sign out button next to it
+On submit: `receipt_location` is either the storage path (digital/email) or the free-text note (physical). No schema change needed — column stays `text`.
 
-Data source: `supabase.auth.getUser()` on mount + subscribe to `onAuthStateChange` for updates. Keep it local to `AppLayout.tsx` — no new store, no new route.
+## History page
 
-Visual style: matches existing sidebar tokens (muted foreground, `bg-sidebar-accent/40` pill, same rounded-xl + ring treatment as the logo tile for the avatar). On mobile (sidebar collapses to a top bar), the user block sits inline at the right edge of the header row.
+- Detect storage-path values (contain `/` and don't start with `http`) and render a "View receipt" signed-URL link instead of raw text.
+- Search still matches the stored string.
 
-### 3. Forward-looking note (no code this turn)
+## Out of scope
 
-Once other people use the app, the natural next steps are: a `profiles` table with `display_name` + `avatar_url`, a profile-edit screen in Settings, and swapping the email-initial avatar for the uploaded one. Flagging only — not building now since you said this is personal use.
+- No thumbnail preview grid.
+- No bulk migration of existing free-text values.
+- No email-ingestion automation — "Email" type just means the PDF originated from an emailed receipt.
 
-### Files touched
-- `src/routes/__root.tsx` — fix three "Monry" strings
-- `src/components/AppLayout.tsx` — add user identity block, wire `supabase.auth.getUser()` + `onAuthStateChange`, restyle sign-out
+## Technical notes
 
-### Out of scope
-- No profiles table, no avatar upload, no display-name editing
-- No changes to auth flow, routes, or any other page
+- All uploads use the browser `supabase` client; RLS enforces ownership.
+- Signed URLs generated on demand with 1-hour expiry via `supabase.storage.from('receipts').createSignedUrl(path, 3600)`.
+- File validation with a small zod schema (mime type + size) before upload.
