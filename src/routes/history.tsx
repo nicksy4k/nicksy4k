@@ -27,6 +27,8 @@ import {
 import { ChevronDown, FileText, MapPin, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
