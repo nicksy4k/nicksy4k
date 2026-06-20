@@ -170,12 +170,16 @@ function NewTransactionPage() {
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Stored at">
-                    <Input
-                      placeholder="e.g. Google Drive / Shoebox / Wallet"
-                      value={receiptLocation}
-                      onChange={(e) => setReceiptLocation(e.target.value)}
-                    />
+                  <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
+                    {receiptType === "Physical" ? (
+                      <Input
+                        placeholder="e.g. Shoebox / Filing cabinet"
+                        value={receiptLocation}
+                        onChange={(e) => setReceiptLocation(e.target.value)}
+                      />
+                    ) : (
+                      <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
+                    )}
                   </Field>
                 </div>
               )}
