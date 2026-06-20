@@ -1351,7 +1351,19 @@ function DebtDialog({
                   start_date: startDate || null,
                   notes: notes.trim() || undefined,
                 },
-                { payFirstNow: showPayFirst && payFirstNow, firstPaymentSource },
+                {
+                  payFirstNow: showPayFirst && payFirstNow,
+                  firstPaymentSource,
+                  items: editing
+                    ? []
+                    : itemRows
+                        .map((r) => ({
+                          item_name: r.item_name.trim(),
+                          price: parseFloat(r.price) || 0,
+                          quantity: parseInt(r.quantity, 10) || 1,
+                        }))
+                        .filter((r) => r.item_name.length > 0),
+                },
               );
             }}
           >
