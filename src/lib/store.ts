@@ -368,6 +368,61 @@ export function useDebts() {
   return { items: data ?? [], add, update, remove, addPayment };
 }
 
+// ===== Debt items =====
+export function useDebtItems() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["debt_items"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("debt_items")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as DebtItem[];
+    },
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["debt_items"] });
+
+  const addMany = useCallback(
+    async (debt_id: string, rows: Array<Omit<DebtItem, "id" | "created_at" | "debt_id">>) => {
+      const clean = rows.filter((r) => r.item_name.trim().length > 0);
+      if (clean.length === 0) return;
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const payload = clean.map((r) => ({
+        debt_id,
+        user_id: u.user!.id,
+        item_name: r.item_name.trim(),
+        price: r.price,
+        quantity: r.quantity,
+      }));
+      const { error } = await supabase.from("debt_items").insert(payload as never);
+      if (error) throw error;
+      await invalidate();
+    },
+    [qc],
+  );
+
+  const add = useCallback(
+    async (debt_id: string, row: Omit<DebtItem, "id" | "created_at" | "debt_id">) => {
+      await addMany(debt_id, [row]);
+    },
+    [addMany],
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from("debt_items").delete().eq("id", id);
+      if (error) throw error;
+      await invalidate();
+    },
+    [qc],
+  );
+
+  return { items: data ?? [], add, addMany, remove };
+}
+
 // ===== Global clear =====
 export async function clearAllData() {
   const { data: u } = await supabase.auth.getUser();
