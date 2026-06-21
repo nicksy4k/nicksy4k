@@ -273,6 +273,81 @@ function DashboardPage() {
   );
 }
 
+function AlertRow({ txn, onDismiss }: { txn: Transaction; onDismiss: () => void }) {
+  const type = (txn.protection_type as ProtectionType) ?? "Return Window";
+  const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
+
+  const itemSummary =
+    txn.items.length === 1
+      ? txn.items[0].item_name
+      : `${txn.items.length} items`;
+
+  const chipClass =
+    status === "expired"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : status === "warn"
+      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+
+  const chipLabel =
+    status === "expired"
+      ? "Expired"
+      : daysLeft === 0
+      ? "Today"
+      : `${daysLeft}d`;
+
+  const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
+
+  async function openReceipt() {
+    const { data, error } = await supabase.storage
+      .from("receipts")
+      .createSignedUrl(txn.receipt_location, 3600);
+    if (error || !data) { toast.error("Could not open receipt"); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  }
+
+  return (
+    <li className="flex items-start gap-2 rounded-lg border border-border/60 bg-card/40 p-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-medium truncate">{txn.retailer}</p>
+          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
+          {status === "expired" && (
+            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
+        </p>
+      </div>
+      <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>
+        {chipLabel}
+      </span>
+      {canOpenReceipt && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          title="Open receipt"
+          onClick={openReceipt}
+        >
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+        title="Mark handled"
+        onClick={onDismiss}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </Button>
+    </li>
+  );
+}
+
+
 function StatCard({
   label, value, icon, accent, tone,
 }: {
