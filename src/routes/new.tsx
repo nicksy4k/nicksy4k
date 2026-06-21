@@ -50,8 +50,10 @@ function NewTransactionPage() {
   const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
@@ -98,7 +100,6 @@ function NewTransactionPage() {
           price: parseFloat(i.price),
           quantity: qty,
           category: i.category,
-          return_window_expiry: i.return_window_expiry || null,
           notes: i.notes.trim() || undefined,
         };
       });
@@ -106,6 +107,17 @@ function NewTransactionPage() {
     if (cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) {
+        toast.error("Pick an expiration date for the protection.");
+        return;
+      }
+      if (protection.expiration < date) {
+        toast.error("Protection expiration must be on or after the transaction date.");
+        return;
+      }
     }
 
     add({
@@ -117,10 +129,14 @@ function NewTransactionPage() {
       receipt_location: receiptAttached ? receiptLocation.trim() : "",
       notes: notes.trim() || undefined,
       items: cleanItems,
+      protection_type: protection.enabled ? protection.type : null,
+      protection_duration: protection.enabled ? protection.duration : null,
+      expiration_date: protection.enabled ? protection.expiration : null,
     });
     toast.success("Transaction saved");
     navigate({ to: "/history" });
   }
+
 
   return (
     <div className="p-6 md:p-10 max-w-3xl mx-auto">
