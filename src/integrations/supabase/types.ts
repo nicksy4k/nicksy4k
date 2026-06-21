@@ -281,9 +281,13 @@ export type Database = {
           commitment_id: string | null
           created_at: string
           date: string
+          dismissed_at: string | null
+          expiration_date: string | null
           id: string
           items: Json
           notes: string | null
+          protection_duration: string | null
+          protection_type: string | null
           receipt_attached: boolean
           receipt_location: string
           receipt_type: string
@@ -295,9 +299,13 @@ export type Database = {
           commitment_id?: string | null
           created_at?: string
           date: string
+          dismissed_at?: string | null
+          expiration_date?: string | null
           id?: string
           items?: Json
           notes?: string | null
+          protection_duration?: string | null
+          protection_type?: string | null
           receipt_attached?: boolean
           receipt_location?: string
           receipt_type?: string
@@ -309,9 +317,13 @@ export type Database = {
           commitment_id?: string | null
           created_at?: string
           date?: string
+          dismissed_at?: string | null
+          expiration_date?: string | null
           id?: string
           items?: Json
           notes?: string | null
+          protection_duration?: string | null
+          protection_type?: string | null
           receipt_attached?: boolean
           receipt_location?: string
           receipt_type?: string
