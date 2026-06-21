@@ -203,9 +203,12 @@ function NewTransactionPage() {
               )}
             </div>
 
+            <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+
             <Field label="Notes (optional)">
               <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </Field>
+
 
             <div className="flex justify-end pt-2">
               <Button disabled={!canStep2} onClick={() => setStep(2)}>
@@ -257,19 +260,15 @@ function NewTransactionPage() {
                     {" "}({item.price || "0"} × {item.quantity || "1"})
                   </p>
                 )}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Category">
-                    <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Return / warranty expiry (optional)">
-                    <Input type="date" value={item.return_window_expiry} onChange={(e) => updateItem(item.id, { return_window_expiry: e.target.value })} />
-                  </Field>
-                </div>
+                <Field label="Category">
+                  <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
                 <Field label="Notes (optional)">
                   <Input placeholder="Serial #, color, size…" value={item.notes} onChange={(e) => updateItem(item.id, { notes: e.target.value })} />
                 </Field>
