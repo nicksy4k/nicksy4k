@@ -454,19 +454,15 @@ function EditTransactionDialog({
                     <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
                   </Field>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <Field label="Category">
-                    <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Return / warranty expiry">
-                    <Input type="date" value={r.return_window_expiry} onChange={(e) => updateRow(r.id, { return_window_expiry: e.target.value })} />
-                  </Field>
-                </div>
+                <Field label="Category">
+                  <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
                 <Field label="Notes">
                   <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
                 </Field>
