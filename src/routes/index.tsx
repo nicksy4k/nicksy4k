@@ -207,25 +207,23 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {alerts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No upcoming return windows.</p>
+              <div className="py-8 text-center space-y-2">
+                <p className="text-sm text-muted-foreground">No active protections.</p>
+                <p className="text-xs text-muted-foreground">
+                  Toggle "Add protection" when logging a transaction.
+                </p>
+              </div>
             ) : (
               <ul className="space-y-3">
-                {alerts.slice(0, 6).map(({ txn, item, daysLeft }) => (
-                  <li key={item.id} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-card/40 p-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{item.item_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{txn.retailer} · {fmt(item.price)}</p>
-                    </div>
-                    <Badge variant={daysLeft <= 3 ? "destructive" : daysLeft <= 7 ? "default" : "secondary"} className="shrink-0">
-                      {daysLeft < 0 ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`}
-                    </Badge>
-                  </li>
+                {alerts.slice(0, 6).map((t) => (
+                  <AlertRow key={t.id} txn={t} onDismiss={() => dismiss(t.id)} />
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
       </div>
+
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
