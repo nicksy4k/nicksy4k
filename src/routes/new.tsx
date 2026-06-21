@@ -16,6 +16,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+
 
 export const Route = createFileRoute("/new")({
   head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
@@ -28,13 +30,13 @@ interface DraftItem {
   price: string;
   quantity: string;
   category: Category;
-  return_window_expiry: string;
   notes: string;
 }
 
 function emptyItem(defaultCat: Category = "Other"): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, return_window_expiry: "", notes: "" };
+  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, notes: "" };
 }
+
 
 function NewTransactionPage() {
   const navigate = useNavigate();
@@ -48,8 +50,10 @@ function NewTransactionPage() {
   const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
@@ -96,7 +100,6 @@ function NewTransactionPage() {
           price: parseFloat(i.price),
           quantity: qty,
           category: i.category,
-          return_window_expiry: i.return_window_expiry || null,
           notes: i.notes.trim() || undefined,
         };
       });
@@ -104,6 +107,17 @@ function NewTransactionPage() {
     if (cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) {
+        toast.error("Pick an expiration date for the protection.");
+        return;
+      }
+      if (protection.expiration < date) {
+        toast.error("Protection expiration must be on or after the transaction date.");
+        return;
+      }
     }
 
     add({
@@ -115,10 +129,14 @@ function NewTransactionPage() {
       receipt_location: receiptAttached ? receiptLocation.trim() : "",
       notes: notes.trim() || undefined,
       items: cleanItems,
+      protection_type: protection.enabled ? protection.type : null,
+      protection_duration: protection.enabled ? protection.duration : null,
+      expiration_date: protection.enabled ? protection.expiration : null,
     });
     toast.success("Transaction saved");
     navigate({ to: "/history" });
   }
+
 
   return (
     <div className="p-6 md:p-10 max-w-3xl mx-auto">
@@ -185,9 +203,12 @@ function NewTransactionPage() {
               )}
             </div>
 
+            <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+
             <Field label="Notes (optional)">
               <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </Field>
+
 
             <div className="flex justify-end pt-2">
               <Button disabled={!canStep2} onClick={() => setStep(2)}>
@@ -239,19 +260,15 @@ function NewTransactionPage() {
                     {" "}({item.price || "0"} × {item.quantity || "1"})
                   </p>
                 )}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Category">
-                    <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Return / warranty expiry (optional)">
-                    <Input type="date" value={item.return_window_expiry} onChange={(e) => updateItem(item.id, { return_window_expiry: e.target.value })} />
-                  </Field>
-                </div>
+                <Field label="Category">
+                  <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
                 <Field label="Notes (optional)">
                   <Input placeholder="Serial #, color, size…" value={item.notes} onChange={(e) => updateItem(item.id, { notes: e.target.value })} />
                 </Field>

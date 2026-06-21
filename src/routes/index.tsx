@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTransactions, useIncomes, useSavings } from "@/lib/store";
-import type { LineItem, Transaction } from "@/lib/types";
+import type { Transaction } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +10,14 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
-import { AlertTriangle, ArrowUpRight, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Check, FileText, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
+import { protectionStatus, type ProtectionType } from "@/lib/protection";
+import { isStoragePath } from "@/components/ReceiptUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,10 +40,11 @@ const CHART_COLORS = [
 ];
 
 function DashboardPage() {
-  const { items } = useTransactions();
+  const { items, dismiss } = useTransactions();
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
   const cycle = useActiveCycle();
+
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
   const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
@@ -87,16 +93,18 @@ function DashboardPage() {
 
   const alerts = useMemo(() => {
     const now = new Date();
-    const rows: Array<{ txn: Transaction; item: LineItem; daysLeft: number }> = [];
-    items.forEach((t) =>
-      t.items.forEach((it) => {
-        if (!it.return_window_expiry) return;
-        const days = differenceInCalendarDays(parseISO(it.return_window_expiry), now);
-        if (days >= -1 && days <= 30) rows.push({ txn: t, item: it, daysLeft: days });
+    return items
+      .filter((t) => {
+        if (!t.protection_type || !t.expiration_date) return false;
+        if (t.dismissed_at) return false;
+        const days = differenceInCalendarDays(parseISO(t.expiration_date), now);
+        return days >= -1; // keep visible 1 day past expiry
       })
-    );
-    return rows.sort((a, b) => a.daysLeft - b.daysLeft);
+      .sort((a, b) =>
+        parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
+      );
   }, [items]);
+
 
   const recent = items.slice(0, 5);
 
@@ -199,25 +207,23 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {alerts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No upcoming return windows.</p>
+              <div className="py-8 text-center space-y-2">
+                <p className="text-sm text-muted-foreground">No active protections.</p>
+                <p className="text-xs text-muted-foreground">
+                  Toggle "Add protection" when logging a transaction.
+                </p>
+              </div>
             ) : (
               <ul className="space-y-3">
-                {alerts.slice(0, 6).map(({ txn, item, daysLeft }) => (
-                  <li key={item.id} className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-card/40 p-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{item.item_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{txn.retailer} · {fmt(item.price)}</p>
-                    </div>
-                    <Badge variant={daysLeft <= 3 ? "destructive" : daysLeft <= 7 ? "default" : "secondary"} className="shrink-0">
-                      {daysLeft < 0 ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`}
-                    </Badge>
-                  </li>
+                {alerts.slice(0, 6).map((t) => (
+                  <AlertRow key={t.id} txn={t} onDismiss={() => dismiss(t.id)} />
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
       </div>
+
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -266,6 +272,81 @@ function DashboardPage() {
     </div>
   );
 }
+
+function AlertRow({ txn, onDismiss }: { txn: Transaction; onDismiss: () => void }) {
+  const type = (txn.protection_type as ProtectionType) ?? "Return Window";
+  const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
+
+  const itemSummary =
+    txn.items.length === 1
+      ? txn.items[0].item_name
+      : `${txn.items.length} items`;
+
+  const chipClass =
+    status === "expired"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : status === "warn"
+      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+
+  const chipLabel =
+    status === "expired"
+      ? "Expired"
+      : daysLeft === 0
+      ? "Today"
+      : `${daysLeft}d`;
+
+  const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
+
+  async function openReceipt() {
+    const { data, error } = await supabase.storage
+      .from("receipts")
+      .createSignedUrl(txn.receipt_location, 3600);
+    if (error || !data) { toast.error("Could not open receipt"); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  }
+
+  return (
+    <li className="flex items-start gap-2 rounded-lg border border-border/60 bg-card/40 p-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-medium truncate">{txn.retailer}</p>
+          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
+          {status === "expired" && (
+            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
+        </p>
+      </div>
+      <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>
+        {chipLabel}
+      </span>
+      {canOpenReceipt && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          title="Open receipt"
+          onClick={openReceipt}
+        >
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+        title="Mark handled"
+        onClick={onDismiss}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </Button>
+    </li>
+  );
+}
+
 
 function StatCard({
   label, value, icon, accent, tone,

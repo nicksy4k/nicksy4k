@@ -32,7 +32,6 @@ export interface LineItem {
   price: number;
   quantity?: number;
   category: Category;
-  return_window_expiry?: string | null;
   notes?: string;
 }
 
@@ -47,8 +46,17 @@ export interface Transaction {
   notes?: string;
   items: LineItem[];
   commitment_id?: string | null;
+  /** "Return Window" | "Warranty" | null */
+  protection_type?: string | null;
+  /** Duration preset label (or "Custom Date") */
+  protection_duration?: string | null;
+  /** ISO date (yyyy-mm-dd) */
+  expiration_date?: string | null;
+  /** ISO timestamp — set when user marks the alert handled */
+  dismissed_at?: string | null;
   created_at: string;
 }
+
 
 export interface IncomeEntry {
   id: string;
