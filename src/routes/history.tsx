@@ -476,9 +476,12 @@ function EditTransactionDialog({
             </Button>
           </div>
 
+          <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+
           <Field label="Notes (optional)">
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
+
 
           <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
