@@ -1,36 +1,55 @@
-# Receipt Attachment Upload
+# Return & Warranty Alerts — confirmed scope
 
-Replace the free-text `receipt_location` input with a file upload. Files go to a private `receipts` bucket scoped per-user; the storage path is saved in `transactions.receipt_location`. A signed-URL preview/download link is shown when a receipt exists.
+## Database (will run as a migration)
 
-## Storage
+Add to `transactions`:
+- `protection_type` text — "Return Window" | "Warranty" | null
+- `protection_duration` text — "14 Days" / "30 Days" / "90 Days" / "1 Year" / "2 Years" / "Custom Date"
+- `expiration_date` date — calculated client-side from `date + duration`, or user-picked for Custom Date
+- `dismissed_at` timestamptz — set when the user marks an alert handled
 
-- Create private bucket `receipts` (not public).
-- RLS on `storage.objects` for bucket `receipts`: authenticated users can SELECT / INSERT / UPDATE / DELETE only when the first folder segment equals their `auth.uid()` (i.e. paths are `{user_id}/{transaction-or-uuid}.{ext}`).
-- Allowed file types enforced client-side: PDF, JPG, PNG, WEBP, HEIC. Max ~10 MB.
+Partial index `(user_id, expiration_date)` where not dismissed, for fast dashboard sort.
 
-## Upload UI (new.tsx + history.tsx edit dialog)
+Also: strip the deprecated `return_window_expiry` key from any existing `items` JSON.
 
-When "Receipt attached" toggle is on and `receiptType` is `Digital` or `Email`:
-- Show a file input (`accept="application/pdf,image/*"`).
-- On select: upload to `receipts/{user_id}/{uuid}.{ext}` via `supabase.storage`, store the returned path in `receiptLocation` state.
-- Show filename + "View" (opens signed URL in new tab) + "Replace" / "Remove" controls.
-- For `Physical` receipt type, keep the existing free-text input (describes where the paper receipt is filed).
+## New shared module `src/lib/protection.ts`
 
-On submit: `receipt_location` is either the storage path (digital/email) or the free-text note (physical). No schema change needed — column stays `text`.
+Constants for types/durations, `computeExpiration(date, duration)`, and `protectionStatus(type, expiration)` returning `ok | warn | expired` (warn = <7d for Return, <30d for Warranty).
 
-## History page
+## New shared component `src/components/ProtectionFields.tsx`
 
-- Detect storage-path values (contain `/` and don't start with `http`) and render a "View receipt" signed-URL link instead of raw text.
-- Search still matches the stored string.
+- Toggle "Add protection / warranty" (default off)
+- When on: Type dropdown + Duration dropdown + date input (auto-filled & disabled for presets; editable for Custom Date)
+- Live recomputes expiration when transaction date or duration changes
+- Inline error if Custom Date < transaction date
 
-## Out of scope
+## `src/routes/new.tsx`
 
-- No thumbnail preview grid.
-- No bulk migration of existing free-text values.
-- No email-ingestion automation — "Email" type just means the PDF originated from an emailed receipt.
+- Remove the per-item "Return / warranty expiry" input entirely
+- Add `<ProtectionFields>` below the receipt block in step 1
+- Persist `protection_type / protection_duration / expiration_date` on save (null when toggle off)
 
-## Technical notes
+## `src/routes/history.tsx`
 
-- All uploads use the browser `supabase` client; RLS enforces ownership.
-- Signed URLs generated on demand with 1-hour expiry via `supabase.storage.from('receipts').createSignedUrl(path, 3600)`.
-- File validation with a small zod schema (mime type + size) before upload.
+- Remove "Return by" column from the items table
+- Remove per-item return field in the edit dialog
+- Add `<ProtectionFields>` to the edit dialog
+- Drop `return_window_expiry` from drafts
+
+## `src/lib/types.ts` + `src/lib/store.ts`
+
+- Remove `return_window_expiry` from `LineItem`
+- Add the four new optional fields to `Transaction`
+- Persist them in `add` / accept in `update`
+- New `dismiss(id)` action that sets `dismissed_at = now()`
+
+## Dashboard card `src/routes/index.tsx`
+
+Replace the existing alerts memo + JSX with transaction-level alerts:
+
+- Source: transactions where `protection_type` is set AND `expiration_date >= today - 1 day` AND `dismissed_at` is null
+- Sort by `expiration_date` ascending; show up to 6
+- Each row: retailer + short summary, type badge, days-left chip color-coded (green / amber / red + "Expired" badge), Receipt button (signed URL via existing storage logic, only when receipt is a storage path), and a small "Mark handled" dismiss button
+- Empty state copy + link to `/new`
+
+Ready to build — please switch to build mode and I'll execute the writes.

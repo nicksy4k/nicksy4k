@@ -46,6 +46,10 @@ export function useTransactions() {
         notes: t.notes,
         items: t.items as never,
         commitment_id: t.commitment_id ?? null,
+        protection_type: t.protection_type ?? null,
+        protection_duration: t.protection_duration ?? null,
+        expiration_date: t.expiration_date ?? null,
+        dismissed_at: t.dismissed_at ?? null,
       } as never);
       if (error) throw error;
       await invalidate();
@@ -72,6 +76,18 @@ export function useTransactions() {
     [qc],
   );
 
+  const dismiss = useCallback(
+    async (id: string) => {
+      const { error } = await supabase
+        .from("transactions")
+        .update({ dismissed_at: new Date().toISOString() } as never)
+        .eq("id", id);
+      if (error) throw error;
+      await invalidate();
+    },
+    [qc],
+  );
+
   const clear = useCallback(async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
@@ -79,8 +95,9 @@ export function useTransactions() {
     await invalidate();
   }, [qc]);
 
-  return { items: data ?? [], add, update, remove, clear };
+  return { items: data ?? [], add, update, remove, dismiss, clear };
 }
+
 
 // ===== Incomes =====
 export function useIncomes() {
