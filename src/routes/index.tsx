@@ -10,9 +10,14 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
-import { AlertTriangle, ArrowUpRight, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Check, FileText, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
+import { protectionStatus, type ProtectionType } from "@/lib/protection";
+import { isStoragePath } from "@/components/ReceiptUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,10 +40,11 @@ const CHART_COLORS = [
 ];
 
 function DashboardPage() {
-  const { items } = useTransactions();
+  const { items, dismiss } = useTransactions();
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
   const cycle = useActiveCycle();
+
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
   const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
@@ -87,16 +93,18 @@ function DashboardPage() {
 
   const alerts = useMemo(() => {
     const now = new Date();
-    const rows: Array<{ txn: Transaction; item: LineItem; daysLeft: number }> = [];
-    items.forEach((t) =>
-      t.items.forEach((it) => {
-        if (!it.return_window_expiry) return;
-        const days = differenceInCalendarDays(parseISO(it.return_window_expiry), now);
-        if (days >= -1 && days <= 30) rows.push({ txn: t, item: it, daysLeft: days });
+    return items
+      .filter((t) => {
+        if (!t.protection_type || !t.expiration_date) return false;
+        if (t.dismissed_at) return false;
+        const days = differenceInCalendarDays(parseISO(t.expiration_date), now);
+        return days >= -1; // keep visible 1 day past expiry
       })
-    );
-    return rows.sort((a, b) => a.daysLeft - b.daysLeft);
+      .sort((a, b) =>
+        parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
+      );
   }, [items]);
+
 
   const recent = items.slice(0, 5);
 
