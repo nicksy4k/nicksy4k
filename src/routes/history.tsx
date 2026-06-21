@@ -24,11 +24,13 @@ import {
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, FileText, MapPin, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { ChevronDown, FileText, MapPin, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
@@ -148,13 +150,28 @@ function HistoryPage() {
                       </div>
                     )}
 
+                    {t.protection_type && t.expiration_date && (
+                      <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
+                        <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{t.protection_type}</p>
+                          <p>
+                            Expires {format(parseISO(t.expiration_date), "MMM d, yyyy")}
+                            {t.protection_duration && t.protection_duration !== "Custom Date" && (
+                              <span className="text-muted-foreground"> · {t.protection_duration}</span>
+                            )}
+                            {t.dismissed_at && <span className="ml-2 text-xs text-muted-foreground italic">(handled)</span>}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-xs uppercase tracking-wider text-muted-foreground text-left">
                             <th className="font-medium py-2 pr-3">Item</th>
                             <th className="font-medium py-2 pr-3">Category</th>
-                            <th className="font-medium py-2 pr-3">Return by</th>
                             <th className="font-medium py-2 pr-3 text-right">Qty</th>
                             <th className="font-medium py-2 pr-3 text-right">Unit</th>
                             <th className="font-medium py-2 text-right">Total</th>
@@ -163,7 +180,6 @@ function HistoryPage() {
                         <tbody className="divide-y divide-border">
                           {t.items.map((i) => {
                             const qty = i.quantity ?? 1;
-                            const days = i.return_window_expiry ? differenceInCalendarDays(parseISO(i.return_window_expiry), new Date()) : null;
                             return (
                               <tr key={i.id}>
                                 <td className="py-2.5 pr-3">
@@ -171,14 +187,6 @@ function HistoryPage() {
                                   {i.notes && <p className="text-xs text-muted-foreground">{i.notes}</p>}
                                 </td>
                                 <td className="py-2.5 pr-3"><Badge variant="secondary" className="font-normal">{i.category}</Badge></td>
-                                <td className="py-2.5 pr-3 text-muted-foreground">
-                                  {i.return_window_expiry ? (
-                                    <span className={days !== null && days <= 7 ? (days < 0 ? "text-destructive" : "text-warning") : ""}>
-                                      {format(parseISO(i.return_window_expiry), "MMM d, yyyy")}
-                                      {days !== null && days >= 0 && days <= 30 && <span className="ml-1.5 text-xs">({days}d)</span>}
-                                    </span>
-                                  ) : "—"}
-                                </td>
                                 <td className="py-2.5 pr-3 text-right tabular-nums">{qty}</td>
                                 <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{fmt(i.price)}</td>
                                 <td className="py-2.5 text-right tabular-nums">{fmt(i.price * qty)}</td>
@@ -188,6 +196,7 @@ function HistoryPage() {
                         </tbody>
                       </table>
                     </div>
+
 
                     {t.notes && <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>}
 
@@ -238,7 +247,6 @@ interface DraftRow {
   price: string;
   quantity: string;
   category: Category;
-  return_window_expiry: string;
   notes: string;
 }
 
@@ -249,10 +257,10 @@ function toDraft(i: LineItem): DraftRow {
     price: String(i.price ?? ""),
     quantity: String(i.quantity ?? 1),
     category: i.category,
-    return_window_expiry: i.return_window_expiry ?? "",
     notes: i.notes ?? "",
   };
 }
+
 
 function EditTransactionDialog({
   transaction,
