@@ -281,6 +281,7 @@ function EditTransactionDialog({
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [rows, setRows] = useState<DraftRow[]>([]);
+  const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
@@ -292,6 +293,16 @@ function EditTransactionDialog({
     setReceiptLocation(transaction.receipt_location ?? "");
     setNotes(transaction.notes ?? "");
     setRows(transaction.items.map(toDraft));
+    setProtection(
+      transaction.protection_type && transaction.expiration_date
+        ? {
+            enabled: true,
+            type: transaction.protection_type as ProtectionValue["type"],
+            duration: (transaction.protection_duration as ProtectionValue["duration"]) ?? "Custom Date",
+            expiration: transaction.expiration_date,
+          }
+        : emptyProtection(),
+    );
   }
   if (!transaction && initialized !== null) {
     setInitialized(null);
@@ -317,7 +328,6 @@ function EditTransactionDialog({
         price: "",
         quantity: "1",
         category: categories[0] ?? "Other",
-        return_window_expiry: "",
         notes: "",
       },
     ]);
@@ -337,13 +347,23 @@ function EditTransactionDialog({
         price: parseFloat(r.price),
         quantity: Math.max(1, parseInt(r.quantity, 10) || 1),
         category: r.category,
-        return_window_expiry: r.return_window_expiry || null,
         notes: r.notes.trim() || undefined,
       }));
 
     if (cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) {
+        toast.error("Pick an expiration date for the protection.");
+        return;
+      }
+      if (protection.expiration < date) {
+        toast.error("Protection expiration must be on or after the transaction date.");
+        return;
+      }
     }
 
     try {
@@ -356,6 +376,11 @@ function EditTransactionDialog({
         receipt_location: receiptAttached ? receiptLocation.trim() : "",
         notes: notes.trim() || undefined,
         items: cleanItems,
+        protection_type: protection.enabled ? protection.type : null,
+        protection_duration: protection.enabled ? protection.duration : null,
+        expiration_date: protection.enabled ? protection.expiration : null,
+        // Re-enabling protection on a previously-handled transaction clears the dismissal.
+        dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
       });
       toast.success("Transaction updated");
       onClose();
@@ -363,6 +388,7 @@ function EditTransactionDialog({
       toast.error(e instanceof Error ? e.message : "Failed to update");
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
