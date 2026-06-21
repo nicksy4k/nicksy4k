@@ -16,6 +16,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+
 
 export const Route = createFileRoute("/new")({
   head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
@@ -28,13 +30,13 @@ interface DraftItem {
   price: string;
   quantity: string;
   category: Category;
-  return_window_expiry: string;
   notes: string;
 }
 
 function emptyItem(defaultCat: Category = "Other"): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, return_window_expiry: "", notes: "" };
+  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, notes: "" };
 }
+
 
 function NewTransactionPage() {
   const navigate = useNavigate();
