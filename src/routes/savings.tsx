@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
 import type { SavingsKind } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { colorForKey } from "@/lib/colors";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -231,6 +232,7 @@ function SavingsPage() {
                 <li key={s.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
+                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(s.account) }} />
                       <p className="font-medium truncate">{s.account}</p>
                       <Badge variant={s.kind === "deposit" ? "default" : "secondary"} className="font-normal capitalize">{s.kind}</Badge>
                     </div>
