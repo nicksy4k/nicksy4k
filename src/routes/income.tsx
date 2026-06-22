@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useIncomes, useIncomeCategories } from "@/lib/store";
+import { useIncomes, useIncomeCategories, useSavings } from "@/lib/store";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator,
 } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Settings2 } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Settings2, Split, Wallet, PlusCircle } from "lucide-react";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { toast } from "sonner";
 
