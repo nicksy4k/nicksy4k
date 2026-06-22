@@ -154,6 +154,38 @@ export function isInCycle(dateISO: string, cycle: ActiveCycle): boolean {
 }
 
 /**
+ * Cycle window containing an arbitrary ISO date — used by the Archive
+ * lookup. Manual override is only returned when the target date sits
+ * inside it (same rule as `getActiveCycle`).
+ */
+export function getCycleAt(
+  settings: CycleSettings,
+  dateISO: string,
+): ActiveCycle {
+  return getActiveCycle(settings, parseISO(dateISO));
+}
+
+/**
+ * Returns the most recent `count` cycles (newest first), starting from
+ * the active cycle and stepping backwards by one cycle each iteration.
+ */
+export function listRecentCycles(
+  settings: CycleSettings,
+  count: number,
+  today: Date = new Date(),
+): ActiveCycle[] {
+  const out: ActiveCycle[] = [];
+  let cur = getActiveCycle(settings, today);
+  out.push(cur);
+  for (let i = 1; i < count; i++) {
+    const prevDay = addDays(cur.start, -1);
+    cur = getActiveCycle(settings, prevDay);
+    out.push(cur);
+  }
+  return out;
+}
+
+/**
  * Advance a due-date by exactly one cycle step. Accepts either an
  * `ActiveCycle` (uses its `type`) or an explicit `CycleType` so that
  * individual bills with a different frequency than the global engine

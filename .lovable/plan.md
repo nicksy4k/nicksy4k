@@ -1,55 +1,72 @@
-# Return & Warranty Alerts — confirmed scope
+# Already done — skipping
 
-## Database (will run as a migration)
+After scanning the codebase:
+- **Commitment Visual States** — already shipped (per your note).
+- **Category Selector on Commitments** — already in `src/routes/commitments.tsx` (state at line 485, `<Select>` at lines 535–545, persisted at line 515). No work needed.
 
-Add to `transactions`:
-- `protection_type` text — "Return Window" | "Warranty" | null
-- `protection_duration` text — "14 Days" / "30 Days" / "90 Days" / "1 Year" / "2 Years" / "Custom Date"
-- `expiration_date` date — calculated client-side from `date + duration`, or user-picked for Custom Date
-- `dismissed_at` timestamptz — set when the user marks an alert handled
+# In scope this round
 
-Partial index `(user_id, expiration_date)` where not dismissed, for fast dashboard sort.
+## 1. Past Cycle Archives
 
-Also: strip the deprecated `return_window_expiry` key from any existing `items` JSON.
+Add a historical lookup so you can review any previous cycle's performance without changing the active cycle.
 
-## New shared module `src/lib/protection.ts`
+**New helper** in `src/lib/cycle.ts`:
+- `getCycleAt(settings, isoDate)` — same maths as `getActiveCycle` but for an arbitrary date. Returns the same `ActiveCycle` shape.
+- `listRecentCycles(settings, count = 12, today?)` — returns the last N cycle windows (newest first) by stepping back 28 days / 1 month from the active cycle's start. Labels formatted `22 May – 18 Jun 2026`.
 
-Constants for types/durations, `computeExpiration(date, duration)`, and `protectionStatus(type, expiration)` returning `ok | warn | expired` (warn = <7d for Return, <30d for Warranty).
+**New route** `src/routes/archive.tsx` (`/archive`):
+- Dropdown of recent cycles (default 12, "Load older" button adds 12 more).
+- Picking a cycle shows the same KPI cards as the dashboard (Spent, Income, Saved, Items, Left to spend) plus:
+  - Category breakdown pie (reusing `CHART_COLORS`, see §3 below).
+  - Top retailers list.
+  - Commitments due in that window with their paid/unpaid state at the time (derived from `last_paid` history we already have).
+  - Transactions list with a Receipt button (reuses signed-URL helper from dashboard alerts).
+- Read-only — no edits from this view; "Edit in History" links jump to `/history` filtered to the cycle.
 
-## New shared component `src/components/ProtectionFields.tsx`
+**Nav**: add an "Archive" link to `src/components/AppLayout.tsx`.
 
-- Toggle "Add protection / warranty" (default off)
-- When on: Type dropdown + Duration dropdown + date input (auto-filled & disabled for presets; editable for Custom Date)
-- Live recomputes expiration when transaction date or duration changes
-- Inline error if Custom Date < transaction date
+## 2. Local-date default on date pickers (UTC drift fix)
 
-## `src/routes/new.tsx`
+Today the new-transaction / new-income / new-saving forms seed the date input with `new Date().toISOString().slice(0, 10)`, which is UTC. In UK time after midnight UTC (or any positive-offset zone in summer) this picks tomorrow / yesterday.
 
-- Remove the per-item "Return / warranty expiry" input entirely
-- Add `<ProtectionFields>` below the receipt block in step 1
-- Persist `protection_type / protection_duration / expiration_date` on save (null when toggle off)
+**New helper** `todayLocalISO()` in `src/lib/format.ts`:
+```ts
+export function todayLocalISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+```
 
-## `src/routes/history.tsx`
+Swap the call sites:
+- `src/routes/new.tsx:47`
+- `src/routes/income.tsx:70`
+- `src/routes/savings.tsx:41`
+- `src/routes/income.tsx:37,43` (cycle baseStart fallback)
 
-- Remove "Return by" column from the items table
-- Remove per-item return field in the edit dialog
-- Add `<ProtectionFields>` to the edit dialog
-- Drop `return_window_expiry` from drafts
+Leaves the existing `<Input type="date">` UI untouched.
 
-## `src/lib/types.ts` + `src/lib/store.ts`
+## 3. Pocket ↔ Category Pie color sync
 
-- Remove `return_window_expiry` from `LineItem`
-- Add the four new optional fields to `Transaction`
-- Persist them in `add` / accept in `update`
-- New `dismiss(id)` action that sets `dismissed_at = now()`
+Pull the hard-coded pie palette out of `src/routes/index.tsx` into a shared module so both views speak the same language.
 
-## Dashboard card `src/routes/index.tsx`
+**New module** `src/lib/colors.ts`:
+- Exports `CHART_COLORS` (move the existing array verbatim).
+- `colorForKey(key: string)` — deterministic hash → index into `CHART_COLORS`, so "Amazon Credit" always maps to the same swatch wherever it appears.
 
-Replace the existing alerts memo + JSX with transaction-level alerts:
+Updates:
+- `src/routes/index.tsx` — import from `@/lib/colors`; switch the category pie / legend to `colorForKey(category)` instead of positional indexing, so a pocket of the same name lights up the same colour.
+- `src/routes/savings.tsx` — render a small colour dot next to each pocket name (account header + deposit/withdraw rows) using `colorForKey(account)`.
+- `src/routes/income.tsx` — in the destination-pocket dropdown and split rows, replace the generic wallet icon tint with the pocket's token colour for instant visual recognition.
 
-- Source: transactions where `protection_type` is set AND `expiration_date >= today - 1 day` AND `dismissed_at` is null
-- Sort by `expiration_date` ascending; show up to 6
-- Each row: retailer + short summary, type badge, days-left chip color-coded (green / amber / red + "Expired" badge), Receipt button (signed URL via existing storage logic, only when receipt is a storage path), and a small "Mark handled" dismiss button
-- Empty state copy + link to `/new`
+No new colours introduced — purely re-using the existing palette so the same key produces the same swatch everywhere.
 
-Ready to build — please switch to build mode and I'll execute the writes.
+# Out of scope (still on the backlog, separate turn)
+
+- Manual Carry-Over Prep
+- Setup Wizard & Auth Polish
+
+# Files touched
+- new: `src/routes/archive.tsx`, `src/lib/colors.ts`
+- edit: `src/lib/cycle.ts`, `src/lib/format.ts`, `src/components/AppLayout.tsx`, `src/routes/index.tsx`, `src/routes/new.tsx`, `src/routes/income.tsx`, `src/routes/savings.tsx`
+
+No database changes required — archives read from existing transactions / incomes / savings filtered by date range.

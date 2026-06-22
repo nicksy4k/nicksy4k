@@ -29,15 +29,7 @@ export const Route = createFileRoute("/")({
   component: DashboardPage,
 });
 
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--muted-foreground)",
-];
+import { colorForKey } from "@/lib/colors";
 
 function DashboardPage() {
   const { items, dismiss } = useTransactions();
@@ -142,7 +134,10 @@ function DashboardPage() {
               <ul className="mt-1 space-y-1 overflow-auto pr-1">
                 {pocketBalances.map(([name, bal]) => (
                   <li key={name} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
-                    <span className="font-medium text-foreground text-sm truncate">{name}</span>
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                      <span className="font-medium text-foreground text-sm truncate">{name}</span>
+                    </span>
                     <span className={`text-sm font-semibold tabular-nums bg-secondary/40 px-2.5 py-1 rounded-md ${bal < 0 ? "text-destructive" : "text-foreground"}`}>
                       {fmt(bal)}
                     </span>
@@ -176,8 +171,8 @@ function DashboardPage() {
                   <ResponsiveContainer>
                     <PieChart>
                       <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
-                        {byCategory.map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        {byCategory.map((c) => (
+                          <Cell key={c.name} fill={colorForKey(c.name)} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
@@ -185,10 +180,10 @@ function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <ul className="space-y-2.5">
-                  {byCategory.map((c, i) => (
+                  {byCategory.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(c.name) }} />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>

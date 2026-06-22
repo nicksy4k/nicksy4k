@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTransactions, useCategories } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
-import { fmt } from "@/lib/format";
+import { fmt, todayLocalISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ function NewTransactionPage() {
   const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [retailer, setRetailer] = useState("");
   const [receiptAttached, setReceiptAttached] = useState(true);
   const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");

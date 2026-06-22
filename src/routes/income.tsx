@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings } from "@/lib/store";
-import { fmt } from "@/lib/format";
+import { fmt, todayLocalISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Settings2, Split, Wallet, PlusCircle } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Settings2, Split, PlusCircle } from "lucide-react";
+import { colorForKey } from "@/lib/colors";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { toast } from "sonner";
 
@@ -34,13 +35,13 @@ type CycleSettings = {
 
 function loadCycle(): CycleSettings {
   if (typeof window === "undefined") {
-    return { baseStart: new Date().toISOString().slice(0, 10), lengthDays: 28, overrides: {} };
+    return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
   }
   try {
     const raw = localStorage.getItem(CYCLE_KEY);
     if (raw) return { lengthDays: 28, overrides: {}, ...JSON.parse(raw) };
   } catch { /* noop */ }
-  return { baseStart: new Date().toISOString().slice(0, 10), lengthDays: 28, overrides: {} };
+  return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
 }
 
 function saveCycle(c: CycleSettings) {
@@ -67,7 +68,7 @@ function IncomePage() {
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [source, setSource] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<string>(categories[0] ?? "Other");
@@ -248,7 +249,7 @@ function IncomePage() {
                           pocketNames.map((p) => (
                             <SelectItem key={p} value={p}>
                               <span className="inline-flex items-center gap-2">
-                                <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(p) }} />
                                 {p}
                               </span>
                             </SelectItem>

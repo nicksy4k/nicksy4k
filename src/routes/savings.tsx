@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
 import type { SavingsKind } from "@/lib/types";
-import { fmt } from "@/lib/format";
+import { fmt, todayLocalISO } from "@/lib/format";
+import { colorForKey } from "@/lib/colors";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/savings")({
 function SavingsPage() {
   const { items, add, remove } = useSavings();
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [kind, setKind] = useState<SavingsKind>("deposit");
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("");
@@ -127,7 +128,10 @@ function SavingsPage() {
             <ul className="divide-y divide-border">
               {byAccount.map(([name, bal]) => (
                 <li key={name} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm font-medium">{name}</span>
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                    <span className="text-sm font-medium truncate">{name}</span>
+                  </span>
                   <span className={`text-sm tabular-nums ${bal < 0 ? "text-destructive" : ""}`}>{fmt(bal)}</span>
                 </li>
               ))}
@@ -228,6 +232,7 @@ function SavingsPage() {
                 <li key={s.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
+                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(s.account) }} />
                       <p className="font-medium truncate">{s.account}</p>
                       <Badge variant={s.kind === "deposit" ? "default" : "secondary"} className="font-normal capitalize">{s.kind}</Badge>
                     </div>
