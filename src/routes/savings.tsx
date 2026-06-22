@@ -127,7 +127,10 @@ function SavingsPage() {
             <ul className="divide-y divide-border">
               {byAccount.map(([name, bal]) => (
                 <li key={name} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm font-medium">{name}</span>
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                    <span className="text-sm font-medium truncate">{name}</span>
+                  </span>
                   <span className={`text-sm tabular-nums ${bal < 0 ? "text-destructive" : ""}`}>{fmt(bal)}</span>
                 </li>
               ))}
