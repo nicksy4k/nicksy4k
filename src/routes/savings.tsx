@@ -38,7 +38,7 @@ export const Route = createFileRoute("/savings")({
 function SavingsPage() {
   const { items, add, remove } = useSavings();
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [kind, setKind] = useState<SavingsKind>("deposit");
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("");

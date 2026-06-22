@@ -44,7 +44,7 @@ function NewTransactionPage() {
   const { list: categories } = useCategories();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [retailer, setRetailer] = useState("");
   const [receiptAttached, setReceiptAttached] = useState(true);
   const [receiptType, setReceiptType] = useState<ReceiptType>("Digital");
