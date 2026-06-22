@@ -64,6 +64,7 @@ function currentCycle(c: CycleSettings, today = new Date()) {
 
 function IncomePage() {
   const { items, add, remove } = useIncomes();
+  const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -71,6 +72,14 @@ function IncomePage() {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<string>(categories[0] ?? "Other");
   const [notes, setNotes] = useState("");
+
+  // Split income state — each line routes money into a pocket (savings account).
+  type Split = { id: string; pocket: string; amount: string };
+  const [splits, setSplits] = useState<Split[]>([]);
+  const [newPocketOpenFor, setNewPocketOpenFor] = useState<string | null>(null);
+  const [newPocketName, setNewPocketName] = useState("");
+  // Locally-created pockets that don't yet have any savings row.
+  const [draftPockets, setDraftPockets] = useState<string[]>([]);
 
   const [cycle, setCycle] = useState<CycleSettings>(() => loadCycle());
   const [cycleOpen, setCycleOpen] = useState(false);
@@ -82,6 +91,12 @@ function IncomePage() {
     [cycle],
   );
 
+  const pocketNames = useMemo(() => {
+    const set = new Set<string>(draftPockets);
+    savingsItems.forEach((s) => set.add(s.account));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [savingsItems, draftPockets]);
+
   const total = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
   const thisCycle = useMemo(() => {
     return items
@@ -92,21 +107,74 @@ function IncomePage() {
       .reduce((s, i) => s + i.amount, 0);
   }, [items, cStart, cEnd]);
 
-  function save() {
+  const totalAmt = parseFloat(amount) || 0;
+  const splitSum = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+  const remainder = +(totalAmt - splitSum).toFixed(2);
+  const overAllocated = splitSum > totalAmt + 0.0001;
+
+  function addSplitRow() {
+    setSplits((s) => [...s, { id: crypto.randomUUID(), pocket: "", amount: "" }]);
+  }
+  function updateSplit(id: string, patch: Partial<Split>) {
+    setSplits((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+  function removeSplit(id: string) {
+    setSplits((s) => s.filter((x) => x.id !== id));
+  }
+  function confirmNewPocket() {
+    const name = newPocketName.trim();
+    if (!name) return;
+    if (!draftPockets.includes(name) && !pocketNames.includes(name)) {
+      setDraftPockets((d) => [...d, name]);
+    }
+    if (newPocketOpenFor) updateSplit(newPocketOpenFor, { pocket: name });
+    setNewPocketName("");
+    setNewPocketOpenFor(null);
+  }
+
+  async function save() {
     const amt = parseFloat(amount);
     if (!source.trim() || !(amt > 0)) {
       toast.error("Enter a source and a positive amount.");
       return;
     }
-    add({
-      date,
-      source: source.trim(),
-      amount: amt,
-      category: category || "Other",
-      notes: notes.trim() || undefined,
-    });
-    setSource(""); setAmount(""); setNotes("");
-    toast.success("Income added");
+    const validSplits = splits.filter((s) => s.pocket && (parseFloat(s.amount) || 0) > 0);
+    const sum = validSplits.reduce((s, x) => s + parseFloat(x.amount), 0);
+    if (sum > amt + 0.0001) {
+      toast.error("Split total exceeds the income amount.");
+      return;
+    }
+
+    try {
+      const trimmedSource = source.trim();
+      await add({
+        date,
+        source: trimmedSource,
+        amount: amt,
+        category: category || "Other",
+        notes: notes.trim() || undefined,
+      });
+
+      for (const s of validSplits) {
+        await addSaving({
+          date,
+          kind: "deposit",
+          amount: parseFloat(s.amount),
+          account: s.pocket,
+          notes: `Routed from income: ${trimmedSource}`,
+        });
+      }
+
+      setSource(""); setAmount(""); setNotes("");
+      setSplits([]); setDraftPockets([]);
+      if (validSplits.length > 0) {
+        toast.success(`Income added · ${fmt(sum)} routed to ${validSplits.length} pocket${validSplits.length === 1 ? "" : "s"}, ${fmt(amt - sum)} to main`);
+      } else {
+        toast.success("Income added");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save income");
+    }
   }
 
   return (
@@ -136,11 +204,125 @@ function IncomePage() {
             </Field>
           </div>
           <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+
+          {/* Split income */}
+          <Separator />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Split className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Route to pockets</p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Any unallocated amount stays in your main balance.
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addSplitRow}>
+                <Plus className="h-4 w-4" /> Add split
+              </Button>
+            </div>
+
+            {splits.length > 0 && (
+              <div className="space-y-2">
+                {splits.map((s) => (
+                  <div key={s.id} className="grid grid-cols-[1fr_120px_auto] gap-2 items-start">
+                    <Select
+                      value={s.pocket || undefined}
+                      onValueChange={(v) => {
+                        if (v === "__new__") {
+                          setNewPocketName("");
+                          setNewPocketOpenFor(s.id);
+                          return;
+                        }
+                        updateSplit(s.id, { pocket: v });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Destination pocket" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pocketNames.length === 0 ? (
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">No pockets yet</div>
+                        ) : (
+                          pocketNames.map((p) => (
+                            <SelectItem key={p} value={p}>
+                              <span className="inline-flex items-center gap-2">
+                                <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                                {p}
+                              </span>
+                            </SelectItem>
+                          ))
+                        )}
+                        <SelectSeparator />
+                        <SelectItem value="__new__">
+                          <span className="inline-flex items-center gap-2 text-primary">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Create new pocket…
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={s.amount}
+                      onChange={(e) => updateSplit(s.id, { amount: e.target.value })}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeSplit(s.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span className="text-muted-foreground">Allocated</span>
+                  <span className="tabular-nums font-medium">{fmt(splitSum)} / {fmt(totalAmt)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Remainder to main balance</span>
+                  <span className={`tabular-nums font-semibold ${overAllocated ? "text-destructive" : remainder === 0 ? "text-muted-foreground" : "text-primary"}`}>
+                    {fmt(Math.max(0, remainder))}
+                  </span>
+                </div>
+                {overAllocated && (
+                  <p className="text-xs text-destructive">Splits exceed the income amount by {fmt(splitSum - totalAmt)}.</p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end">
-            <Button onClick={save}><Plus className="h-4 w-4" /> Add income</Button>
+            <Button onClick={save} disabled={overAllocated}><Plus className="h-4 w-4" /> Add income</Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Inline new pocket dialog */}
+      <Dialog open={newPocketOpenFor !== null} onOpenChange={(o) => { if (!o) { setNewPocketOpenFor(null); setNewPocketName(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create new pocket</DialogTitle>
+            <DialogDescription>
+              Pockets are savings buckets. The split amount is deposited here when you save the income.
+            </DialogDescription>
+          </DialogHeader>
+          <Field label="Pocket name">
+            <Input
+              autoFocus
+              placeholder="e.g. Amazon Credit"
+              value={newPocketName}
+              onChange={(e) => setNewPocketName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewPocket(); } }}
+            />
+          </Field>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setNewPocketOpenFor(null); setNewPocketName(""); }}>Cancel</Button>
+            <Button onClick={confirmNewPocket} disabled={!newPocketName.trim()}>Create & select</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
