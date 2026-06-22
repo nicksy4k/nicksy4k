@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut, CreditCard } from "lucide-react";
+import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut, CreditCard, Archive } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCommitmentRollover } from "@/lib/commitmentRollover";
 
 type NavItem = {
-  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/settings";
+  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/archive" | "/settings";
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
@@ -21,6 +21,7 @@ const nav: NavItem[] = [
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
   { to: "/credit", label: "Credit & Debt", icon: CreditCard },
   { to: "/history", label: "History", icon: Receipt },
+  { to: "/archive", label: "Past Cycles", icon: Archive },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
