@@ -29,7 +29,7 @@ export const Route = createFileRoute("/")({
   component: DashboardPage,
 });
 
-import { CHART_COLORS, colorForKey } from "@/lib/colors";
+import { colorForKey } from "@/lib/colors";
 
 function DashboardPage() {
   const { items, dismiss } = useTransactions();
