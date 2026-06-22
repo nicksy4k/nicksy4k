@@ -15,7 +15,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Settings2, Split, Wallet, PlusCircle } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Settings2, Split, PlusCircle } from "lucide-react";
+import { colorForKey } from "@/lib/colors";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { toast } from "sonner";
 
