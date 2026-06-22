@@ -134,7 +134,10 @@ function DashboardPage() {
               <ul className="mt-1 space-y-1 overflow-auto pr-1">
                 {pocketBalances.map(([name, bal]) => (
                   <li key={name} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
-                    <span className="font-medium text-foreground text-sm truncate">{name}</span>
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                      <span className="font-medium text-foreground text-sm truncate">{name}</span>
+                    </span>
                     <span className={`text-sm font-semibold tabular-nums bg-secondary/40 px-2.5 py-1 rounded-md ${bal < 0 ? "text-destructive" : "text-foreground"}`}>
                       {fmt(bal)}
                     </span>
