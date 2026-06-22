@@ -34,13 +34,13 @@ type CycleSettings = {
 
 function loadCycle(): CycleSettings {
   if (typeof window === "undefined") {
-    return { baseStart: new Date().toISOString().slice(0, 10), lengthDays: 28, overrides: {} };
+    return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
   }
   try {
     const raw = localStorage.getItem(CYCLE_KEY);
     if (raw) return { lengthDays: 28, overrides: {}, ...JSON.parse(raw) };
   } catch { /* noop */ }
-  return { baseStart: new Date().toISOString().slice(0, 10), lengthDays: 28, overrides: {} };
+  return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
 }
 
 function saveCycle(c: CycleSettings) {
@@ -67,7 +67,7 @@ function IncomePage() {
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocalISO());
   const [source, setSource] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<string>(categories[0] ?? "Other");
