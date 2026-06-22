@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
 import type { SavingsKind } from "@/lib/types";
-import { fmt } from "@/lib/format";
+import { fmt, todayLocalISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
