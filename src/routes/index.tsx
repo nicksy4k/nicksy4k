@@ -168,8 +168,8 @@ function DashboardPage() {
                   <ResponsiveContainer>
                     <PieChart>
                       <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
-                        {byCategory.map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        {byCategory.map((c) => (
+                          <Cell key={c.name} fill={colorForKey(c.name)} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
@@ -177,10 +177,10 @@ function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <ul className="space-y-2.5">
-                  {byCategory.map((c, i) => (
+                  {byCategory.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(c.name) }} />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>
