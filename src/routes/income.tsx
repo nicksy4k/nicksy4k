@@ -248,7 +248,7 @@ function IncomePage() {
                           pocketNames.map((p) => (
                             <SelectItem key={p} value={p}>
                               <span className="inline-flex items-center gap-2">
-                                <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(p) }} />
                                 {p}
                               </span>
                             </SelectItem>
