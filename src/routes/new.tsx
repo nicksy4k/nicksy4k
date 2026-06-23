@@ -379,12 +379,31 @@ function NewTransactionPage() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Payment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PaymentSplitEditor
+                total={total}
+                retailer={retailer}
+                transactionDate={date}
+                splits={splits}
+                onChange={setSplits}
+              />
+              <p className="text-xs text-muted-foreground mt-3">
+                Pocket splits auto-record a withdrawal. BNPL splits create a new debt plan. Any
+                unallocated remainder defaults to your main balance.
+              </p>
+            </CardContent>
+          </Card>
+
           <div className="flex justify-between pt-2">
-            <Button variant="ghost" onClick={() => setStep(1)}>
+            <Button variant="ghost" onClick={() => setStep(1)} disabled={saving}>
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
-            <Button onClick={save}>
-              <Check className="h-4 w-4" /> Save transaction
+            <Button onClick={save} disabled={saving}>
+              <Check className="h-4 w-4" /> {saving ? "Saving…" : "Save transaction"}
             </Button>
           </div>
         </div>
