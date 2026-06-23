@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useTransactions, useCategories } from "@/lib/store";
-import { RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
+import { useMemo, useState } from "react";
+import { useTransactions, useCategories, useSavings, useDebts } from "@/lib/store";
+import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,12 @@ import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
 import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+import {
+  PaymentSplitEditor,
+  emptySplit,
+  generateInstallmentDates,
+  type SplitDraft,
+} from "@/components/PaymentSplitEditor";
 
 
 export const Route = createFileRoute("/new")({
@@ -42,6 +48,8 @@ function NewTransactionPage() {
   const navigate = useNavigate();
   const { add, items: pastTransactions } = useTransactions();
   const { list: categories } = useCategories();
+  const { add: addSaving } = useSavings();
+  const { add: addDebt } = useDebts();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
@@ -53,7 +61,8 @@ function NewTransactionPage() {
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
-
+  const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
+  const [saving, setSaving] = useState(false);
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
@@ -89,7 +98,8 @@ function NewTransactionPage() {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
   }
 
-  function save() {
+  async function save() {
+    if (saving) return;
     const cleanItems: LineItem[] = items
       .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
       .map((i) => {
@@ -109,6 +119,8 @@ function NewTransactionPage() {
       return;
     }
 
+    const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+
     if (protection.enabled) {
       if (!protection.expiration) {
         toast.error("Pick an expiration date for the protection.");
@@ -120,21 +132,94 @@ function NewTransactionPage() {
       }
     }
 
-    add({
-      date,
-      retailer: retailer.trim(),
-      total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
-      receipt_attached: receiptAttached,
-      receipt_type: receiptAttached ? receiptType : "None",
-      receipt_location: receiptAttached ? receiptLocation.trim() : "",
-      notes: notes.trim() || undefined,
-      items: cleanItems,
-      protection_type: protection.enabled ? protection.type : null,
-      protection_duration: protection.enabled ? protection.duration : null,
-      expiration_date: protection.enabled ? protection.expiration : null,
-    });
-    toast.success("Transaction saved");
-    navigate({ to: "/history" });
+    // Validate splits
+    const allocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+    const remainder = +(totalAmt - allocated).toFixed(2);
+    if (remainder < 0) {
+      toast.error("Split amounts exceed the transaction total.");
+      return;
+    }
+    for (const s of splits) {
+      if (s.source === "bnpl:new" && s.bnpl) {
+        const n = parseInt(s.bnpl.installments, 10);
+        if (!s.bnpl.name.trim() || !(n > 0) || !s.bnpl.firstDate) {
+          toast.error("Complete the BNPL plan details (name, installments, first date).");
+          return;
+        }
+      }
+    }
+
+    setSaving(true);
+    try {
+      // Build effective splits: drop empty rows, add remainder→main if needed.
+      const effective = splits
+        .map((s) => ({ ...s, amt: parseFloat(s.amount) || 0 }))
+        .filter((s) => s.amt > 0);
+      if (remainder > 0) {
+        const mainIdx = effective.findIndex((s) => s.source === "main");
+        if (mainIdx >= 0) effective[mainIdx].amt += remainder;
+        else effective.push({ id: crypto.randomUUID(), source: "main", amount: "", amt: remainder });
+      }
+
+      const retailerName = retailer.trim();
+      const finalSplits: PaymentSplit[] = [];
+
+      for (const s of effective) {
+        if (s.source.startsWith("pocket:")) {
+          const account = s.source.slice(7);
+          await addSaving({
+            date,
+            kind: "withdrawal",
+            amount: s.amt,
+            account,
+            notes: `Auto: ${retailerName || "Transaction"}`,
+          });
+          finalSplits.push({ source: s.source, amount: s.amt, label: account });
+        } else if (s.source === "bnpl:new" && s.bnpl) {
+          const installments = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
+          const dates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
+          const newId = await addDebt({
+            name: s.bnpl.name.trim(),
+            kind: "bnpl",
+            total_amount: s.amt,
+            installments_total: installments,
+            installment_dates: dates,
+            start_date: date,
+            notes: `Auto-created from ${retailerName || "transaction"}`,
+            payments: [],
+          });
+          finalSplits.push({ source: `bnpl:${newId}`, amount: s.amt, label: s.bnpl.name.trim() });
+        } else {
+          finalSplits.push({
+            source: s.source,
+            amount: s.amt,
+            label: s.source === "main" ? "Main balance" : s.source === "other" ? "Other" : undefined,
+          });
+        }
+      }
+
+      await add({
+        date,
+        retailer: retailerName,
+        total_amount: totalAmt,
+        receipt_attached: receiptAttached,
+        receipt_type: receiptAttached ? receiptType : "None",
+        receipt_location: receiptAttached ? receiptLocation.trim() : "",
+        notes: notes.trim() || undefined,
+        items: cleanItems,
+        protection_type: protection.enabled ? protection.type : null,
+        protection_duration: protection.enabled ? protection.duration : null,
+        expiration_date: protection.enabled ? protection.expiration : null,
+        payment_splits: finalSplits,
+      });
+      toast.success("Transaction saved");
+      navigate({ to: "/history" });
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to save transaction");
+    } finally {
+      setSaving(false);
+    }
   }
 
 
@@ -294,12 +379,31 @@ function NewTransactionPage() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Payment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PaymentSplitEditor
+                total={total}
+                retailer={retailer}
+                transactionDate={date}
+                splits={splits}
+                onChange={setSplits}
+              />
+              <p className="text-xs text-muted-foreground mt-3">
+                Pocket splits auto-record a withdrawal. BNPL splits create a new debt plan. Any
+                unallocated remainder defaults to your main balance.
+              </p>
+            </CardContent>
+          </Card>
+
           <div className="flex justify-between pt-2">
-            <Button variant="ghost" onClick={() => setStep(1)}>
+            <Button variant="ghost" onClick={() => setStep(1)} disabled={saving}>
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
-            <Button onClick={save}>
-              <Check className="h-4 w-4" /> Save transaction
+            <Button onClick={save} disabled={saving}>
+              <Check className="h-4 w-4" /> {saving ? "Saving…" : "Save transaction"}
             </Button>
           </div>
         </div>

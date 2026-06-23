@@ -123,6 +123,27 @@ function HistoryPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="border-t border-border px-4 md:px-5 py-4 space-y-4 bg-muted/15">
+                    {t.payment_splits && t.payment_splits.length > 0 && (
+                      <div className="text-sm rounded-md bg-card/60 p-3 border border-border/60">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Paid with</p>
+                        <p className="text-sm">
+                          {t.payment_splits.map((sp, i) => {
+                            const label = sp.label
+                              ?? (sp.source === "main" ? "Main balance"
+                                : sp.source === "other" ? "Other"
+                                : sp.source.startsWith("pocket:") ? `Pocket · ${sp.source.slice(7)}`
+                                : sp.source.startsWith("bnpl:") ? "BNPL"
+                                : sp.source);
+                            return (
+                              <span key={i}>
+                                {i > 0 && <span className="text-muted-foreground"> · </span>}
+                                {label} <span className="tabular-nums font-medium">{fmt(sp.amount)}</span>
+                              </span>
+                            );
+                          })}
+                        </p>
+                      </div>
+                    )}
                     {t.receipt_attached && (
                       <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
                         <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />

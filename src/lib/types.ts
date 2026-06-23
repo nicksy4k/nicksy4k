@@ -35,6 +35,13 @@ export interface LineItem {
   notes?: string;
 }
 
+/** Source encoding: "main" | "pocket:<name>" | "bnpl:<debtId>" | "other" */
+export interface PaymentSplit {
+  source: string;
+  amount: number;
+  label?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -54,6 +61,8 @@ export interface Transaction {
   expiration_date?: string | null;
   /** ISO timestamp — set when user marks the alert handled */
   dismissed_at?: string | null;
+  /** How this transaction was paid — may be empty for older records. */
+  payment_splits?: PaymentSplit[];
   created_at: string;
 }
 
