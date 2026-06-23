@@ -98,7 +98,8 @@ function NewTransactionPage() {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
   }
 
-  function save() {
+  async function save() {
+    if (saving) return;
     const cleanItems: LineItem[] = items
       .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
       .map((i) => {
@@ -118,6 +119,8 @@ function NewTransactionPage() {
       return;
     }
 
+    const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+
     if (protection.enabled) {
       if (!protection.expiration) {
         toast.error("Pick an expiration date for the protection.");
@@ -129,21 +132,94 @@ function NewTransactionPage() {
       }
     }
 
-    add({
-      date,
-      retailer: retailer.trim(),
-      total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
-      receipt_attached: receiptAttached,
-      receipt_type: receiptAttached ? receiptType : "None",
-      receipt_location: receiptAttached ? receiptLocation.trim() : "",
-      notes: notes.trim() || undefined,
-      items: cleanItems,
-      protection_type: protection.enabled ? protection.type : null,
-      protection_duration: protection.enabled ? protection.duration : null,
-      expiration_date: protection.enabled ? protection.expiration : null,
-    });
-    toast.success("Transaction saved");
-    navigate({ to: "/history" });
+    // Validate splits
+    const allocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+    const remainder = +(totalAmt - allocated).toFixed(2);
+    if (remainder < 0) {
+      toast.error("Split amounts exceed the transaction total.");
+      return;
+    }
+    for (const s of splits) {
+      if (s.source === "bnpl:new" && s.bnpl) {
+        const n = parseInt(s.bnpl.installments, 10);
+        if (!s.bnpl.name.trim() || !(n > 0) || !s.bnpl.firstDate) {
+          toast.error("Complete the BNPL plan details (name, installments, first date).");
+          return;
+        }
+      }
+    }
+
+    setSaving(true);
+    try {
+      // Build effective splits: drop empty rows, add remainder→main if needed.
+      const effective = splits
+        .map((s) => ({ ...s, amt: parseFloat(s.amount) || 0 }))
+        .filter((s) => s.amt > 0);
+      if (remainder > 0) {
+        const mainIdx = effective.findIndex((s) => s.source === "main");
+        if (mainIdx >= 0) effective[mainIdx].amt += remainder;
+        else effective.push({ id: crypto.randomUUID(), source: "main", amount: "", amt: remainder });
+      }
+
+      const retailerName = retailer.trim();
+      const finalSplits: PaymentSplit[] = [];
+
+      for (const s of effective) {
+        if (s.source.startsWith("pocket:")) {
+          const account = s.source.slice(7);
+          await addSaving({
+            date,
+            kind: "withdrawal",
+            amount: s.amt,
+            account,
+            notes: `Auto: ${retailerName || "Transaction"}`,
+          });
+          finalSplits.push({ source: s.source, amount: s.amt, label: account });
+        } else if (s.source === "bnpl:new" && s.bnpl) {
+          const installments = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
+          const dates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
+          const newId = await addDebt({
+            name: s.bnpl.name.trim(),
+            kind: "bnpl",
+            total_amount: s.amt,
+            installments_total: installments,
+            installment_dates: dates,
+            start_date: date,
+            notes: `Auto-created from ${retailerName || "transaction"}`,
+            payments: [],
+          });
+          finalSplits.push({ source: `bnpl:${newId}`, amount: s.amt, label: s.bnpl.name.trim() });
+        } else {
+          finalSplits.push({
+            source: s.source,
+            amount: s.amt,
+            label: s.source === "main" ? "Main balance" : s.source === "other" ? "Other" : undefined,
+          });
+        }
+      }
+
+      await add({
+        date,
+        retailer: retailerName,
+        total_amount: totalAmt,
+        receipt_attached: receiptAttached,
+        receipt_type: receiptAttached ? receiptType : "None",
+        receipt_location: receiptAttached ? receiptLocation.trim() : "",
+        notes: notes.trim() || undefined,
+        items: cleanItems,
+        protection_type: protection.enabled ? protection.type : null,
+        protection_duration: protection.enabled ? protection.duration : null,
+        expiration_date: protection.enabled ? protection.expiration : null,
+        payment_splits: finalSplits,
+      });
+      toast.success("Transaction saved");
+      navigate({ to: "/history" });
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to save transaction");
+    } finally {
+      setSaving(false);
+    }
   }
 
 
