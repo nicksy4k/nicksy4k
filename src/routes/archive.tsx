@@ -127,7 +127,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
   );
 
   const stats = useMemo(() => {
-    const totalExpenses = cycleTxns.reduce((s, t) => s + t.total_amount, 0);
+    const totalExpenses = cycleTxns.reduce((s, t) => s + mainExpensePortion(t), 0);
     const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
     const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
