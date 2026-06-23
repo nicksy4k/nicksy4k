@@ -177,18 +177,60 @@ function NewTransactionPage() {
           finalSplits.push({ source: s.source, amount: s.amt, label: account });
         } else if (s.source === "bnpl:new" && s.bnpl) {
           const installments = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
-          const dates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
-          const newId = await addDebt({
-            name: s.bnpl.name.trim(),
-            kind: "bnpl",
-            total_amount: s.amt,
-            installments_total: installments,
-            installment_dates: dates,
-            start_date: date,
-            notes: `Auto-created from ${retailerName || "transaction"}`,
-            payments: [],
-          });
-          finalSplits.push({ source: `bnpl:${newId}`, amount: s.amt, label: s.bnpl.name.trim() });
+          const planName = s.bnpl.name.trim();
+
+          // "First payment due today" — peel installment #1 off the debt
+          // and record it as its own split deducted now.
+          if (s.bnpl.firstPaymentToday && installments > 1) {
+            const firstAmt = +(s.amt / installments).toFixed(2);
+            const remainingAmt = +(s.amt - firstAmt).toFixed(2);
+            const remainingCount = installments - 1;
+
+            // Today's installment as a normal split (main or pocket).
+            const firstSource = s.bnpl.firstSource || "main";
+            if (firstSource.startsWith("pocket:")) {
+              const account = firstSource.slice(7);
+              await addSaving({
+                date,
+                kind: "withdrawal",
+                amount: firstAmt,
+                account,
+                notes: `Auto: ${retailerName || "Transaction"} · ${planName} installment 1/${installments}`,
+              });
+              finalSplits.push({ source: firstSource, amount: firstAmt, label: `${account} · ${planName} 1/${installments}` });
+            } else {
+              finalSplits.push({ source: "main", amount: firstAmt, label: `${planName} 1/${installments} (today)` });
+            }
+
+            // Remaining installments live in the BNPL debt. Drop the first
+            // date (today) and keep the rest at the cadence.
+            const allDates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
+            const remainingDates = allDates.slice(1);
+            const newId = await addDebt({
+              name: planName,
+              kind: "bnpl",
+              total_amount: remainingAmt,
+              installments_total: remainingCount,
+              installment_dates: remainingDates,
+              start_date: remainingDates[0] ?? date,
+              notes: `Auto-created from ${retailerName || "transaction"} · 1/${installments} paid today`,
+              payments: [],
+            });
+            finalSplits.push({ source: `bnpl:${newId}`, amount: remainingAmt, label: planName });
+          } else {
+            const dates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
+            const newId = await addDebt({
+              name: planName,
+              kind: "bnpl",
+              total_amount: s.amt,
+              installments_total: installments,
+              installment_dates: dates,
+              start_date: date,
+              notes: `Auto-created from ${retailerName || "transaction"}`,
+              payments: [],
+            });
+            finalSplits.push({ source: `bnpl:${newId}`, amount: s.amt, label: planName });
+          }
         } else {
           finalSplits.push({
             source: s.source,
