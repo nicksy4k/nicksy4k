@@ -346,10 +346,10 @@ export function useDebts() {
   });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["debts"] });
 
-  const add = useCallback(async (d: Omit<Debt, "id" | "created_at">) => {
+  const add = useCallback(async (d: Omit<Debt, "id" | "created_at">): Promise<string> => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("debts").insert({
+    const { data: inserted, error } = await supabase.from("debts").insert({
       user_id: u.user.id,
       name: d.name,
       kind: d.kind,
@@ -359,9 +359,10 @@ export function useDebts() {
       start_date: d.start_date ?? null,
       notes: d.notes,
       payments: (d.payments ?? []) as never,
-    } as never);
+    } as never).select("id").single();
     if (error) throw error;
     await invalidate();
+    return (inserted as { id: string }).id;
   }, [qc]);
 
   const update = useCallback(async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
