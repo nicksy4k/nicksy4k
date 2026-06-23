@@ -286,6 +286,7 @@ export type Database = {
           id: string
           items: Json
           notes: string | null
+          payment_splits: Json
           protection_duration: string | null
           protection_type: string | null
           receipt_attached: boolean
@@ -304,6 +305,7 @@ export type Database = {
           id?: string
           items?: Json
           notes?: string | null
+          payment_splits?: Json
           protection_duration?: string | null
           protection_type?: string | null
           receipt_attached?: boolean
@@ -322,6 +324,7 @@ export type Database = {
           id?: string
           items?: Json
           notes?: string | null
+          payment_splits?: Json
           protection_duration?: string | null
           protection_type?: string | null
           receipt_attached?: boolean
