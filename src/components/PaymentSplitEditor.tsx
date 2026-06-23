@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useSavings } from "@/lib/store";
-import { fmt } from "@/lib/format";
+import { fmt, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -15,6 +16,10 @@ export interface BnplDetails {
   installments: string;
   firstDate: string;
   cadence: "weekly" | "fortnightly" | "monthly";
+  /** When true, installment #1 is deducted today and removed from the debt. */
+  firstPaymentToday: boolean;
+  /** Source for the today-deducted first installment. "main" | "pocket:<name>" */
+  firstSource: string;
 }
 
 export interface SplitDraft {
@@ -32,9 +37,11 @@ export function emptySplit(source = "main"): SplitDraft {
 export function defaultBnpl(retailer: string, firstDate: string): BnplDetails {
   return {
     name: retailer.trim() ? `${retailer.trim()} – BNPL` : "BNPL plan",
-    installments: "3",
+    installments: "4",
     firstDate,
-    cadence: "monthly",
+    cadence: "fortnightly",
+    firstPaymentToday: false,
+    firstSource: "main",
   };
 }
 
@@ -230,6 +237,66 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
                     </Select>
                   </div>
                 </div>
+
+                <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                  <div className="min-w-0">
+                    <Label className="text-sm">First payment due today</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      For "Pay in 4" plans (Clearpay, Klarna). Installment #1 is
+                      deducted today; the debt covers the remaining installments.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={s.bnpl.firstPaymentToday}
+                    onCheckedChange={(v) =>
+                      updateBnpl(s.id, {
+                        firstPaymentToday: v,
+                        firstDate: v ? todayLocalISO() : s.bnpl!.firstDate,
+                      })
+                    }
+                  />
+                </div>
+
+                {s.bnpl.firstPaymentToday && (() => {
+                  const splitAmt = parseFloat(s.amount) || 0;
+                  const n = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
+                  const firstAmt = +(splitAmt / n).toFixed(2);
+                  const remaining = +(splitAmt - firstAmt).toFixed(2);
+                  return (
+                    <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">First installment paid from</Label>
+                        <Select
+                          value={s.bnpl!.firstSource}
+                          onValueChange={(v) => updateBnpl(s.id, { firstSource: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="main">Main balance</SelectItem>
+                            {pockets.map(([name]) => (
+                              <SelectItem key={name} value={`pocket:${name}`}>
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-sm"
+                                    style={{ backgroundColor: colorForKey(name) }}
+                                  />
+                                  Pocket · {name}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        Today: <span className="font-medium text-foreground">{fmt(firstAmt)}</span>
+                        {" · "}Debt: <span className="font-medium text-foreground">{n - 1} × {fmt(+(remaining / Math.max(1, n - 1)).toFixed(2))}</span>
+                        {" "}({fmt(remaining)} total)
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
