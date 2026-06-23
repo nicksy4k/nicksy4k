@@ -50,6 +50,7 @@ export function useTransactions() {
         protection_duration: t.protection_duration ?? null,
         expiration_date: t.expiration_date ?? null,
         dismissed_at: t.dismissed_at ?? null,
+        payment_splits: (t.payment_splits ?? []) as never,
       } as never);
       if (error) throw error;
       await invalidate();
