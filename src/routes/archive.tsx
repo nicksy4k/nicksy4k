@@ -7,7 +7,7 @@ import {
 import { Archive, FileText, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 
 import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
-import { fmt } from "@/lib/format";
+import { fmt, mainExpensePortion } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
 import {
   useCycleSettings,
