@@ -62,7 +62,7 @@ function NewTransactionPage() {
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
-  const [saving, setSaving] = useState(false);
+  const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
   const total = useMemo(
     () => items.reduce((s, i) => s + lineTotal(i), 0),
