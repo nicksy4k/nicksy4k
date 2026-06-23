@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useTransactions, useCategories } from "@/lib/store";
-import { RECEIPT_TYPES, type Category, type LineItem, type ReceiptType } from "@/lib/types";
+import { useMemo, useState } from "react";
+import { useTransactions, useCategories, useSavings, useDebts } from "@/lib/store";
+import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,12 @@ import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
 import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+import {
+  PaymentSplitEditor,
+  emptySplit,
+  generateInstallmentDates,
+  type SplitDraft,
+} from "@/components/PaymentSplitEditor";
 
 
 export const Route = createFileRoute("/new")({
