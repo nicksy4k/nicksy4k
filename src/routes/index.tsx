@@ -44,7 +44,7 @@ function DashboardPage() {
   const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
 
   const stats = useMemo(() => {
-    const totalExpenses = cycleItems.reduce((s, t) => s + t.total_amount, 0);
+    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0);
     const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
     const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
