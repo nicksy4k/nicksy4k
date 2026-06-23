@@ -14,3 +14,20 @@ export function todayLocalISO(): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+/**
+ * Portion of a transaction that actually came out of (or will come out of)
+ * the main balance this cycle. BNPL splits are excluded because the money
+ * hasn't left main yet — it's debt scheduled for later. Pocket splits stay
+ * in because the auto-withdrawal we record credits main back, which the
+ * full `total_amount` then debits, so they net out correctly.
+ */
+export function mainExpensePortion(tx: {
+  total_amount: number;
+  payment_splits?: { source: string; amount: number }[];
+}): number {
+  const bnplOffset = (tx.payment_splits ?? [])
+    .filter((s) => s.source.startsWith("bnpl:"))
+    .reduce((sum, s) => sum + s.amount, 0);
+  return tx.total_amount - bnplOffset;
+}
