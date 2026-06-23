@@ -16,6 +16,10 @@ export interface BnplDetails {
   installments: string;
   firstDate: string;
   cadence: "weekly" | "fortnightly" | "monthly";
+  /** When true, installment #1 is deducted today and removed from the debt. */
+  firstPaymentToday: boolean;
+  /** Source for the today-deducted first installment. "main" | "pocket:<name>" */
+  firstSource: string;
 }
 
 export interface SplitDraft {
@@ -33,9 +37,11 @@ export function emptySplit(source = "main"): SplitDraft {
 export function defaultBnpl(retailer: string, firstDate: string): BnplDetails {
   return {
     name: retailer.trim() ? `${retailer.trim()} – BNPL` : "BNPL plan",
-    installments: "3",
+    installments: "4",
     firstDate,
-    cadence: "monthly",
+    cadence: "fortnightly",
+    firstPaymentToday: false,
+    firstSource: "main",
   };
 }
 
