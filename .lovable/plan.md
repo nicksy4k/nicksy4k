@@ -1,72 +1,79 @@
-# Already done — skipping
+## Goal
 
-After scanning the codebase:
-- **Commitment Visual States** — already shipped (per your note).
-- **Category Selector on Commitments** — already in `src/routes/commitments.tsx` (state at line 485, `<Select>` at lines 535–545, persisted at line 515). No work needed.
+Pay for a single transaction from multiple sources. Example: £120 Amazon order = £80 from "Amazon Credit" pocket + £40 on a new "Klarna – Amazon" BNPL plan. The app records both side-effects automatically and remembers the split.
 
-# In scope this round
+## UX — new "Payment" step on `/new`
 
-## 1. Past Cycle Archives
+Adds a step between **Receipt** and **Items**, so the wizard becomes **Receipt → Items → Payment**. (Putting it last means the total is already known.)
 
-Add a historical lookup so you can review any previous cycle's performance without changing the active cycle.
+The Payment step shows a stack of **split lines**. Each line has:
 
-**New helper** in `src/lib/cycle.ts`:
-- `getCycleAt(settings, isoDate)` — same maths as `getActiveCycle` but for an arbitrary date. Returns the same `ActiveCycle` shape.
-- `listRecentCycles(settings, count = 12, today?)` — returns the last N cycle windows (newest first) by stepping back 28 days / 1 month from the active cycle's start. Labels formatted `22 May – 18 Jun 2026`.
+- **Source** dropdown: `Main balance`, every Pocket (color-dotted, same tokens as Savings), `BNPL (new plan)`, `Other`.
+- **Amount** input.
 
-**New route** `src/routes/archive.tsx` (`/archive`):
-- Dropdown of recent cycles (default 12, "Load older" button adds 12 more).
-- Picking a cycle shows the same KPI cards as the dashboard (Spent, Income, Saved, Items, Left to spend) plus:
-  - Category breakdown pie (reusing `CHART_COLORS`, see §3 below).
-  - Top retailers list.
-  - Commitments due in that window with their paid/unpaid state at the time (derived from `last_paid` history we already have).
-  - Transactions list with a Receipt button (reuses signed-URL helper from dashboard alerts).
-- Read-only — no edits from this view; "Edit in History" links jump to `/history` filtered to the cycle.
+A live **Remainder** strip under the lines mirrors the Income page pattern:
+- `Allocated £X · Remainder £Y` against the calculated total.
+- If Remainder ≠ 0 on save → defaults to **Main balance** (same convention as Income). Negative remainder (over-allocated) blocks save.
 
-**Nav**: add an "Archive" link to `src/components/AppLayout.tsx`.
+### BNPL inline mini-form
 
-## 2. Local-date default on date pickers (UTC drift fix)
+Selecting `BNPL (new plan)` expands the row to capture what's needed to create the debt on save:
+- **Plan name** (default: `"<Retailer> – BNPL"`, editable, e.g. "Klarna – Amazon")
+- **Installments** (number, default 3)
+- **First payment date** (default = transaction date)
+- **Cadence** (Weekly / Fortnightly / Monthly — generates `installment_dates[]`)
 
-Today the new-transaction / new-income / new-saving forms seed the date input with `new Date().toISOString().slice(0, 10)`, which is UTC. In UK time after midnight UTC (or any positive-offset zone in summer) this picks tomorrow / yesterday.
+No "attach to existing debt" path in this build — chose **Create new BNPL debt inline** per your answer.
 
-**New helper** `todayLocalISO()` in `src/lib/format.ts`:
-```ts
-export function todayLocalISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
+### Pocket auto-deduct
+
+Per your answer, any pocket split writes a matching **Savings withdrawal** on save:
+- `account` = pocket name, `amount` = split amount, `date` = transaction date
+- `notes` = `"Auto: <Retailer> txn <short-id>"` so it's traceable in Savings → History.
+
+## Data model
+
+### Migration — `transactions.payment_splits` (JSONB)
+
+```sql
+ALTER TABLE public.transactions
+  ADD COLUMN payment_splits jsonb NOT NULL DEFAULT '[]'::jsonb;
 ```
 
-Swap the call sites:
-- `src/routes/new.tsx:47`
-- `src/routes/income.tsx:70`
-- `src/routes/savings.tsx:41`
-- `src/routes/income.tsx:37,43` (cycle baseStart fallback)
+Shape per entry:
+```ts
+{ source: "main" | "pocket:<name>" | "bnpl:<debtId>" | "other", amount: number, label?: string }
+```
 
-Leaves the existing `<Input type="date">` UI untouched.
+History and Archive can render this later (e.g. "Amazon Credit £80 · Klarna £40"). Not changing those screens in this build beyond a small line in the transaction row.
 
-## 3. Pocket ↔ Category Pie color sync
+No changes to `debts` / `savings` schemas — we reuse existing tables.
 
-Pull the hard-coded pie palette out of `src/routes/index.tsx` into a shared module so both views speak the same language.
+## Save-time flow
 
-**New module** `src/lib/colors.ts`:
-- Exports `CHART_COLORS` (move the existing array verbatim).
-- `colorForKey(key: string)` — deterministic hash → index into `CHART_COLORS`, so "Amazon Credit" always maps to the same swatch wherever it appears.
+In `save()` (order matters; all sequential awaits):
 
-Updates:
-- `src/routes/index.tsx` — import from `@/lib/colors`; switch the category pie / legend to `colorForKey(category)` instead of positional indexing, so a pocket of the same name lights up the same colour.
-- `src/routes/savings.tsx` — render a small colour dot next to each pocket name (account header + deposit/withdraw rows) using `colorForKey(account)`.
-- `src/routes/income.tsx` — in the destination-pocket dropdown and split rows, replace the generic wallet icon tint with the pocket's token colour for instant visual recognition.
+1. Validate splits sum == total (allowing remainder→main rule above).
+2. For each `pocket:*` split → `useSavings().add({ kind: "withdrawal", account, amount, date, notes })`.
+3. For each `bnpl:new` split → `useDebts().add({ kind: "bnpl", name, total_amount, installments_total, installment_dates, start_date: date })`, capture returned id, then rewrite that split's `source` to `bnpl:<newId>` before persisting to the transaction.
+4. `useTransactions().add({ ..., payment_splits })`.
+5. Toast + navigate to `/history`.
 
-No new colours introduced — purely re-using the existing palette so the same key produces the same swatch everywhere.
+Failure handling: if any step throws, surface the error toast and don't navigate. (No cross-table rollback — these are independent ledger records.)
 
-# Out of scope (still on the backlog, separate turn)
+## Files
 
-- Manual Carry-Over Prep
-- Setup Wizard & Auth Polish
+- **Migration** — add `payment_splits` jsonb column.
+- **`src/lib/types.ts`** — add `PaymentSplit` type and `payment_splits?: PaymentSplit[]` on `Transaction`.
+- **`src/lib/store.ts`** — pass `payment_splits` through `useTransactions().add`.
+- **`src/routes/new.tsx`** — add Payment step (3rd step), split editor, BNPL mini-form, remainder bar, orchestrated save.
+- **`src/components/PaymentSplitEditor.tsx`** (new) — encapsulates the split UI so `new.tsx` stays readable; reuses pocket color tokens from `src/lib/colors.ts`.
+- **`src/routes/history.tsx`** — small read-only "Paid with" line under each transaction (one-liner, e.g. `Pocket · Amazon Credit £80 · Klarna – Amazon £40`).
 
-# Files touched
-- new: `src/routes/archive.tsx`, `src/lib/colors.ts`
-- edit: `src/lib/cycle.ts`, `src/lib/format.ts`, `src/components/AppLayout.tsx`, `src/routes/index.tsx`, `src/routes/new.tsx`, `src/routes/income.tsx`, `src/routes/savings.tsx`
+## Out of scope (call out, don't build)
 
-No database changes required — archives read from existing transactions / incomes / savings filtered by date range.
+- Editing splits after save (will require recomputing/undoing the side-effects — separate task).
+- Splitting an **existing** transaction retroactively.
+- Attaching to an existing BNPL debt (you picked "create new" — easy to add later).
+- Changes to Archive / Dashboard visualisations.
+- Refund/return flows that reverse the auto-withdrawal.
