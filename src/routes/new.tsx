@@ -48,6 +48,8 @@ function NewTransactionPage() {
   const navigate = useNavigate();
   const { add, items: pastTransactions } = useTransactions();
   const { list: categories } = useCategories();
+  const { add: addSaving } = useSavings();
+  const { add: addDebt } = useDebts();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
@@ -59,9 +61,8 @@ function NewTransactionPage() {
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
-
-
-  const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
+  const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
+  const [saving, setSaving] = useState(false);
 
   const total = useMemo(
     () => items.reduce((s, i) => s + lineTotal(i), 0),
