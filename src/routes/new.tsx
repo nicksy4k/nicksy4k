@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useTransactions, useCategories, useSavings, useDebts } from "@/lib/store";
+import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +50,7 @@ function NewTransactionPage() {
   const { list: categories } = useCategories();
   const { add: addSaving } = useSavings();
   const { add: addDebt } = useDebts();
+  const { add: addCommitment } = useCommitments();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
@@ -216,6 +217,22 @@ function NewTransactionPage() {
               notes: `Auto-created from ${retailerName || "transaction"} · 1/${installments} paid today`,
               payments: [],
             });
+            if (remainingCount > 0 && remainingDates[0]) {
+              const perInstallment = +(remainingAmt / remainingCount).toFixed(2);
+              await addCommitment({
+                item_name: `${planName} Installment`,
+                store: planName,
+                payment_method: "BNPL",
+                amount: perInstallment,
+                category: "Debt",
+                next_due_date: remainingDates[0],
+                last_paid_date: date,
+                prev_due_date: null,
+                notes: `Auto-linked to BNPL plan (${remainingCount} of ${installments} remaining).`,
+                paid: false,
+                debt_id: newId,
+              } as never);
+            }
             finalSplits.push({ source: `bnpl:${newId}`, amount: remainingAmt, label: planName });
           } else {
             const dates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
@@ -229,6 +246,22 @@ function NewTransactionPage() {
               notes: `Auto-created from ${retailerName || "transaction"}`,
               payments: [],
             });
+            if (installments > 0 && dates[0]) {
+              const perInstallment = +(s.amt / installments).toFixed(2);
+              await addCommitment({
+                item_name: `${planName} Installment`,
+                store: planName,
+                payment_method: "BNPL",
+                amount: perInstallment,
+                category: "Debt",
+                next_due_date: dates[0],
+                last_paid_date: null,
+                prev_due_date: null,
+                notes: `Auto-linked to BNPL plan (${installments} of ${installments} remaining).`,
+                paid: false,
+                debt_id: newId,
+              } as never);
+            }
             finalSplits.push({ source: `bnpl:${newId}`, amount: s.amt, label: planName });
           }
         } else {

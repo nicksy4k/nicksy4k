@@ -1,79 +1,51 @@
 ## Goal
 
-Pay for a single transaction from multiple sources. Example: £120 Amazon order = £80 from "Amazon Credit" pocket + £40 on a new "Klarna – Amazon" BNPL plan. The app records both side-effects automatically and remembers the split.
+When a split-payment transaction creates a new BNPL plan, also auto-create a linked recurring **commitment** so the remaining installments show up in the active cycle tracker — matching the behaviour that already exists in the manual "Add BNPL debt" flow on `/credit`.
 
-## UX — new "Payment" step on `/new`
+## Why it's missing today
 
-Adds a step between **Receipt** and **Items**, so the wizard becomes **Receipt → Items → Payment**. (Putting it last means the total is already known.)
+`src/routes/new.tsx` calls `addDebt(...)` for the BNPL split and stops there. The `/credit` page's `BnplFormModal` save-handler creates the debt **and** an `addCommitment({...debt_id})` row; the split-payment path skipped that second step.
 
-The Payment step shows a stack of **split lines**. Each line has:
+## Behaviour
 
-- **Source** dropdown: `Main balance`, every Pocket (color-dotted, same tokens as Savings), `BNPL (new plan)`, `Other`.
-- **Amount** input.
+For every `bnpl:new` split saved from the Log Transaction flow:
 
-A live **Remainder** strip under the lines mirrors the Income page pattern:
-- `Allocated £X · Remainder £Y` against the calculated total.
-- If Remainder ≠ 0 on save → defaults to **Main balance** (same convention as Income). Negative remainder (over-allocated) blocks save.
+1. Create the debt (already happens) and capture `debtId`.
+2. Immediately create one linked commitment row:
+   - `item_name`: `"<Plan name> Installment"`
+   - `store`: plan name
+   - `payment_method`: `"BNPL"`
+   - `category`: `"Debt"`
+   - `amount`: per-installment amount (see table below)
+   - `next_due_date`: first **future** installment date (see table)
+   - `last_paid_date`: `null` for the no-pay-today branch; `today` when installment #1 was taken now
+   - `prev_due_date`: `null`
+   - `paid`: `false`
+   - `debt_id`: the new debt's id
+   - `notes`: `"Auto-linked to BNPL plan (<remaining> of <total> remaining)."`
+3. Skip the commitment when the plan has **0 remaining installments** after the today-deduction (i.e. user picked `installments = 1` and "first payment today" — nothing left to schedule).
 
-### BNPL inline mini-form
+### Per-installment amount + first due date
 
-Selecting `BNPL (new plan)` expands the row to capture what's needed to create the debt on save:
-- **Plan name** (default: `"<Retailer> – BNPL"`, editable, e.g. "Klarna – Amazon")
-- **Installments** (number, default 3)
-- **First payment date** (default = transaction date)
-- **Cadence** (Weekly / Fortnightly / Monthly — generates `installment_dates[]`)
+| Branch | Amount | next_due_date |
+|---|---|---|
+| Standard (no "pay today") | `s.amt / installments` | `dates[0]` (already the first scheduled date) |
+| "First payment today" | `remainingAmt / (installments − 1)` | `remainingDates[0]` (first date after today) |
 
-No "attach to existing debt" path in this build — chose **Create new BNPL debt inline** per your answer.
+Both rounded to 2dp, same convention as the existing BNPL math.
 
-### Pocket auto-deduct
+### Cycle integration
 
-Per your answer, any pocket split writes a matching **Savings withdrawal** on save:
-- `account` = pocket name, `amount` = split amount, `date` = transaction date
-- `notes` = `"Auto: <Retailer> txn <short-id>"` so it's traceable in Savings → History.
-
-## Data model
-
-### Migration — `transactions.payment_splits` (JSONB)
-
-```sql
-ALTER TABLE public.transactions
-  ADD COLUMN payment_splits jsonb NOT NULL DEFAULT '[]'::jsonb;
-```
-
-Shape per entry:
-```ts
-{ source: "main" | "pocket:<name>" | "bnpl:<debtId>" | "other", amount: number, label?: string }
-```
-
-History and Archive can render this later (e.g. "Amazon Credit £80 · Klarna £40"). Not changing those screens in this build beyond a small line in the transaction row.
-
-No changes to `debts` / `savings` schemas — we reuse existing tables.
-
-## Save-time flow
-
-In `save()` (order matters; all sequential awaits):
-
-1. Validate splits sum == total (allowing remainder→main rule above).
-2. For each `pocket:*` split → `useSavings().add({ kind: "withdrawal", account, amount, date, notes })`.
-3. For each `bnpl:new` split → `useDebts().add({ kind: "bnpl", name, total_amount, installments_total, installment_dates, start_date: date })`, capture returned id, then rewrite that split's `source` to `bnpl:<newId>` before persisting to the transaction.
-4. `useTransactions().add({ ..., payment_splits })`.
-5. Toast + navigate to `/history`.
-
-Failure handling: if any step throws, surface the error toast and don't navigate. (No cross-table rollback — these are independent ledger records.)
+No extra code needed — `useCommitmentRollover` walks all commitments and advances `next_due_date` whenever the cycle rolls, so the new row participates automatically. The existing "settled debt → drop linked commitment" kill-switch on `/credit` already keys off `debt_id`, so cleanup keeps working.
 
 ## Files
 
-- **Migration** — add `payment_splits` jsonb column.
-- **`src/lib/types.ts`** — add `PaymentSplit` type and `payment_splits?: PaymentSplit[]` on `Transaction`.
-- **`src/lib/store.ts`** — pass `payment_splits` through `useTransactions().add`.
-- **`src/routes/new.tsx`** — add Payment step (3rd step), split editor, BNPL mini-form, remainder bar, orchestrated save.
-- **`src/components/PaymentSplitEditor.tsx`** (new) — encapsulates the split UI so `new.tsx` stays readable; reuses pocket color tokens from `src/lib/colors.ts`.
-- **`src/routes/history.tsx`** — small read-only "Paid with" line under each transaction (one-liner, e.g. `Pocket · Amazon Credit £80 · Klarna – Amazon £40`).
+- **`src/routes/new.tsx`** — in the `bnpl:new` branch of `save()`, after each `addDebt(...)` resolves, call `addCommitment({...})` with the fields above. Pull `useCommitments` from `@/lib/store` and destructure `add: addCommitment` alongside the existing hooks.
 
-## Out of scope (call out, don't build)
+No schema changes. No changes to `PaymentSplitEditor`, `/credit`, `/commitments`, or the rollover engine.
 
-- Editing splits after save (will require recomputing/undoing the side-effects — separate task).
-- Splitting an **existing** transaction retroactively.
-- Attaching to an existing BNPL debt (you picked "create new" — easy to add later).
-- Changes to Archive / Dashboard visualisations.
-- Refund/return flows that reverse the auto-withdrawal.
+## Out of scope
+
+- Letting the user customise the commitment name/category from the split editor (uses the same defaults as `/credit`).
+- Back-filling commitments for BNPL plans created **before** this change — only new split-payment BNPL plans get one.
+- Changing commitment cadence storage (commitments don't store cadence today; rollover is cycle-driven).
