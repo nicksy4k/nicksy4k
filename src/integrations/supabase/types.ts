@@ -284,6 +284,7 @@ export type Database = {
           dismissed_at: string | null
           expiration_date: string | null
           id: string
+          is_pending: boolean
           items: Json
           notes: string | null
           payment_splits: Json
@@ -303,6 +304,7 @@ export type Database = {
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
+          is_pending?: boolean
           items?: Json
           notes?: string | null
           payment_splits?: Json
@@ -322,6 +324,7 @@ export type Database = {
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
+          is_pending?: boolean
           items?: Json
           notes?: string | null
           payment_splits?: Json
