@@ -103,6 +103,53 @@ function NewTransactionPage() {
 
   async function save() {
     if (saving) return;
+
+    // Fast-path: pending pre-authorization hold.
+    if (isPending) {
+      const estimate = parseFloat(pendingEstimate);
+      if (!retailer.trim()) {
+        toast.error("Retailer is required");
+        return;
+      }
+      if (!(estimate > 0)) {
+        toast.error("Enter an estimated total greater than zero.");
+        return;
+      }
+      setSaving(true);
+      try {
+        const placeholder: LineItem = {
+          id: crypto.randomUUID(),
+          item_name: "Pending estimate",
+          price: +estimate.toFixed(2),
+          quantity: 1,
+          category: categories[0] ?? "Other",
+        };
+        await add({
+          date,
+          retailer: retailer.trim(),
+          total_amount: +estimate.toFixed(2),
+          receipt_attached: false,
+          receipt_type: "None",
+          receipt_location: "",
+          notes: notes.trim() || undefined,
+          items: [placeholder],
+          protection_type: null,
+          protection_duration: null,
+          expiration_date: null,
+          payment_splits: [],
+          is_pending: true,
+        } as never);
+        toast.success("Pending hold logged");
+        navigate({ to: "/history" });
+      } catch (err) {
+        console.error(err);
+        toast.error(err instanceof Error ? err.message : "Failed to save");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const cleanItems: LineItem[] = items
       .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
       .map((i) => {
