@@ -100,24 +100,44 @@ function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium truncate">{t.retailer}</p>
+                        {t.is_pending && (
+                          <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
+                            Pending
+                          </Badge>
+                        )}
                         <Badge variant="secondary" className="font-normal">{t.items.length} item{t.items.length !== 1 ? "s" : ""}</Badge>
                         {t.receipt_attached && <Badge variant="outline" className="font-normal gap-1"><FileText className="h-3 w-3" />{t.receipt_type}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{format(parseISO(t.date), "MMM d, yyyy")}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold tabular-nums">{fmt(t.total_amount)}</p>
+                      <p className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}>
+                        {t.is_pending ? "~" : ""}{fmt(t.total_amount)}
+                      </p>
                     </div>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Edit transaction"
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
-                      className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </span>
+                    {t.is_pending ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Settle transaction"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
+                        className="inline-flex items-center gap-1 px-3 h-8 rounded-md bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 text-xs font-medium transition-colors"
+                      >
+                        Settle
+                      </span>
+                    ) : (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Edit transaction"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
+                        className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </span>
+                    )}
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
