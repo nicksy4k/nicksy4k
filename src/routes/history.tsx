@@ -478,10 +478,20 @@ function EditTransactionDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit transaction</DialogTitle>
+          <DialogTitle>{transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Still pending</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Turn off to settle: add real line items and the final amount.
+              </p>
+            </div>
+            <Switch checked={isPending} onCheckedChange={setIsPending} />
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Date">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -490,6 +500,7 @@ function EditTransactionDialog({
               <Input value={retailer} onChange={(e) => setRetailer(e.target.value)} />
             </Field>
           </div>
+
 
           <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
