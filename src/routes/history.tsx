@@ -604,7 +604,9 @@ function EditTransactionDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={save}>Save changes</Button>
+          <Button onClick={save}>
+            {transaction?.is_pending && !isPending ? "Settle transaction" : "Save changes"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
