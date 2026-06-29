@@ -408,9 +408,34 @@ function EditTransactionDialog({
         notes: r.notes.trim() || undefined,
       }));
 
-    if (cleanItems.length === 0) {
+    // When settling (was pending, now unchecked), require real items.
+    if (!isPending && cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
+    }
+
+    // Still-pending: require an estimated total via the first row price.
+    let finalItems: LineItem[];
+    let finalTotal: number;
+    if (isPending) {
+      const estimate = parseFloat(rows[0]?.price ?? "");
+      if (!(estimate > 0)) {
+        toast.error("Enter an estimated total greater than zero.");
+        return;
+      }
+      finalItems = [
+        {
+          id: rows[0]?.id ?? crypto.randomUUID(),
+          item_name: "Pending estimate",
+          price: +estimate.toFixed(2),
+          quantity: 1,
+          category: rows[0]?.category ?? "Other",
+        },
+      ];
+      finalTotal = +estimate.toFixed(2);
+    } else {
+      finalItems = cleanItems;
+      finalTotal = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
     }
 
     if (protection.enabled) {
@@ -428,19 +453,20 @@ function EditTransactionDialog({
       await update(transaction.id, {
         date,
         retailer: retailer.trim(),
-        total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
+        total_amount: finalTotal,
         receipt_attached: receiptAttached,
         receipt_type: receiptAttached ? receiptType : "None",
         receipt_location: receiptAttached ? receiptLocation.trim() : "",
         notes: notes.trim() || undefined,
-        items: cleanItems,
+        items: finalItems,
         protection_type: protection.enabled ? protection.type : null,
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         // Re-enabling protection on a previously-handled transaction clears the dismissal.
         dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
+        is_pending: isPending,
       });
-      toast.success("Transaction updated");
+      toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to update");
