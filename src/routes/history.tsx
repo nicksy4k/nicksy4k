@@ -323,6 +323,7 @@ function EditTransactionDialog({
   const [notes, setNotes] = useState("");
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
+  const [isPending, setIsPending] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
@@ -333,7 +334,23 @@ function EditTransactionDialog({
     setReceiptType(transaction.receipt_type === "None" ? "Digital" : transaction.receipt_type);
     setReceiptLocation(transaction.receipt_location ?? "");
     setNotes(transaction.notes ?? "");
-    setRows(transaction.items.map(toDraft));
+    // When settling a pending hold, start with one fresh empty row so the
+    // synthetic "Pending estimate" placeholder doesn't pollute itemization.
+    if (transaction.is_pending) {
+      setRows([
+        {
+          id: crypto.randomUUID(),
+          item_name: "",
+          price: "",
+          quantity: "1",
+          category: categories[0] ?? "Other",
+          notes: "",
+        },
+      ]);
+    } else {
+      setRows(transaction.items.map(toDraft));
+    }
+    setIsPending(transaction.is_pending ?? false);
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
