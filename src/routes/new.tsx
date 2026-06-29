@@ -64,6 +64,8 @@ function NewTransactionPage() {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [pendingEstimate, setPendingEstimate] = useState("");
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
@@ -101,6 +103,53 @@ function NewTransactionPage() {
 
   async function save() {
     if (saving) return;
+
+    // Fast-path: pending pre-authorization hold.
+    if (isPending) {
+      const estimate = parseFloat(pendingEstimate);
+      if (!retailer.trim()) {
+        toast.error("Retailer is required");
+        return;
+      }
+      if (!(estimate > 0)) {
+        toast.error("Enter an estimated total greater than zero.");
+        return;
+      }
+      setSaving(true);
+      try {
+        const placeholder: LineItem = {
+          id: crypto.randomUUID(),
+          item_name: "Pending estimate",
+          price: +estimate.toFixed(2),
+          quantity: 1,
+          category: categories[0] ?? "Other",
+        };
+        await add({
+          date,
+          retailer: retailer.trim(),
+          total_amount: +estimate.toFixed(2),
+          receipt_attached: false,
+          receipt_type: "None",
+          receipt_location: "",
+          notes: notes.trim() || undefined,
+          items: [placeholder],
+          protection_type: null,
+          protection_duration: null,
+          expiration_date: null,
+          payment_splits: [],
+          is_pending: true,
+        } as never);
+        toast.success("Pending hold logged");
+        navigate({ to: "/history" });
+      } catch (err) {
+        console.error(err);
+        toast.error(err instanceof Error ? err.message : "Failed to save");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const cleanItems: LineItem[] = items
       .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
       .map((i) => {
@@ -301,21 +350,39 @@ function NewTransactionPage() {
   return (
     <div className="p-6 md:p-10 max-w-3xl mx-auto">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Step {step} of 2</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+          {isPending ? "Quick pending hold" : `Step ${step} of 2`}
+        </p>
         <h1 className="text-3xl md:text-4xl font-semibold">
-          {step === 1 ? "Transaction details" : "Itemize your purchase"}
+          {isPending
+            ? "Reserve a pending amount"
+            : step === 1 ? "Transaction details" : "Itemize your purchase"}
         </h1>
       </header>
 
-      <div className="flex gap-2 mb-6">
-        <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
-        <div className="flex-1 h-px bg-border self-center" />
-        <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
-      </div>
+      {!isPending && (
+        <div className="flex gap-2 mb-6">
+          <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
+          <div className="flex-1 h-px bg-border self-center" />
+          <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+        </div>
+      )}
 
       {step === 1 && (
         <Card>
           <CardContent className="p-6 space-y-5">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-sm">Mark as Pending Hold</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    For supermarket pre-auths and other estimates. Reserves the money now; settle the exact amount later.
+                  </p>
+                </div>
+                <Switch checked={isPending} onCheckedChange={setIsPending} />
+              </div>
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Date">
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -330,54 +397,83 @@ function NewTransactionPage() {
               </Field>
             </div>
 
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <Label className="text-sm">Receipt attached</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Track where the receipt lives for returns or warranty claims.</p>
+            {isPending ? (
+              <>
+                <Field label="Estimated total (£)">
+                  <Input
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={pendingEstimate}
+                    onChange={(e) => setPendingEstimate(e.target.value)}
+                  />
+                </Field>
+                <Field label="Notes (optional)">
+                  <Textarea
+                    rows={2}
+                    placeholder="e.g. Asda grocery slot, pre-auth"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </Field>
+                <div className="flex justify-end pt-2">
+                  <Button onClick={save} disabled={saving}>
+                    <Check className="h-4 w-4" /> {saving ? "Saving…" : "Save pending hold"}
+                  </Button>
                 </div>
-                <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
-              </div>
-              {receiptAttached && (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Type">
-                    <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
-                    {receiptType === "Physical" ? (
-                      <Input
-                        placeholder="e.g. Shoebox / Filing cabinet"
-                        value={receiptLocation}
-                        onChange={(e) => setReceiptLocation(e.target.value)}
-                      />
-                    ) : (
-                      <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
-                    )}
-                  </Field>
+              </>
+            ) : (
+              <>
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <Label className="text-sm">Receipt attached</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Track where the receipt lives for returns or warranty claims.</p>
+                    </div>
+                    <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
+                  </div>
+                  {receiptAttached && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Field label="Type">
+                        <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
+                        {receiptType === "Physical" ? (
+                          <Input
+                            placeholder="e.g. Shoebox / Filing cabinet"
+                            value={receiptLocation}
+                            onChange={(e) => setReceiptLocation(e.target.value)}
+                          />
+                        ) : (
+                          <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
+                        )}
+                      </Field>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+                <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
 
-            <Field label="Notes (optional)">
-              <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </Field>
+                <Field label="Notes (optional)">
+                  <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                </Field>
 
-
-            <div className="flex justify-end pt-2">
-              <Button disabled={!canStep2} onClick={() => setStep(2)}>
-                Continue <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
+                <div className="flex justify-end pt-2">
+                  <Button disabled={!canStep2} onClick={() => setStep(2)}>
+                    Continue <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
+
+
 
       {step === 2 && (
         <div className="space-y-4">

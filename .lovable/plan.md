@@ -1,51 +1,51 @@
-## Goal
+## Pending / Placeholder Transactions
 
-When a split-payment transaction creates a new BNPL plan, also auto-create a linked recurring **commitment** so the remaining installments show up in the active cycle tracker — matching the behaviour that already exists in the manual "Add BNPL debt" flow on `/credit`.
+A lightweight mode for supermarket pre-auths (e.g. Asda). Reserve the money instantly with just a retailer + estimated total, then "Settle" the next day to enter real items and the final price.
 
-## Why it's missing today
+### 1. Data model
 
-`src/routes/new.tsx` calls `addDebt(...)` for the BNPL split and stops there. The `/credit` page's `BnplFormModal` save-handler creates the debt **and** an `addCommitment({...debt_id})` row; the split-payment path skipped that second step.
+Add one nullable column to `transactions`:
 
-## Behaviour
+- `is_pending` (boolean, default `false`)
 
-For every `bnpl:new` split saved from the Log Transaction flow:
+Migration also backfills existing rows to `false`. `Transaction` type gains `is_pending?: boolean`. No other schema changes — itemization stays optional at the DB level; the UI enforces it normally and relaxes it when pending.
 
-1. Create the debt (already happens) and capture `debtId`.
-2. Immediately create one linked commitment row:
-   - `item_name`: `"<Plan name> Installment"`
-   - `store`: plan name
-   - `payment_method`: `"BNPL"`
-   - `category`: `"Debt"`
-   - `amount`: per-installment amount (see table below)
-   - `next_due_date`: first **future** installment date (see table)
-   - `last_paid_date`: `null` for the no-pay-today branch; `today` when installment #1 was taken now
-   - `prev_due_date`: `null`
-   - `paid`: `false`
-   - `debt_id`: the new debt's id
-   - `notes`: `"Auto-linked to BNPL plan (<remaining> of <total> remaining)."`
-3. Skip the commitment when the plan has **0 remaining installments** after the today-deduction (i.e. user picked `installments = 1` and "first payment today" — nothing left to schedule).
+### 2. Fast entry on `/new`
 
-### Per-installment amount + first due date
+- Add a **"Mark as Pending Hold"** Switch at the top of Step 1, beside the retailer field.
+- When ON:
+  - Hide Step 2 entirely. Step indicator collapses to a single step.
+  - Replace the items section with one **Estimated total (£)** input.
+  - Hide receipt block, protection block, notes, and the payment-split editor.
+  - Save button appears directly on Step 1.
+  - Only validation: retailer required, estimated total > 0.
+- On save: create the transaction with `is_pending = true`, a single synthetic line item (`item_name: "Pending estimate"`, price = estimated total, qty 1, category "Other"), no payment splits (defaults to main balance), no receipt, no protection.
+- Because there are no `bnpl:` splits, `mainExpensePortion` already subtracts the full amount from "Left to Spend" → money is reserved automatically. No calculation changes needed.
 
-| Branch | Amount | next_due_date |
-|---|---|---|
-| Standard (no "pay today") | `s.amt / installments` | `dates[0]` (already the first scheduled date) |
-| "First payment today" | `remainingAmt / (installments − 1)` | `remainingDates[0]` (first date after today) |
+### 3. Visual treatment in `/history`
 
-Both rounded to 2dp, same convention as the existing BNPL math.
+- Header row: add an amber **"Pending"** badge (`bg-amber-500/15 text-amber-600 border-amber-500/30`) next to the retailer when `is_pending`.
+- Amount renders in amber + with `~` prefix (e.g. `~£42.10`) to signal it's an estimate.
+- Replace the inline edit pencil with a primary **"Settle"** button for pending rows (the existing edit pencil stays for non-pending).
+- Pending rows are sorted/listed identically to others — no separate section.
 
-### Cycle integration
+### 4. Settle flow
 
-No extra code needed — `useCommitmentRollover` walks all commitments and advances `next_due_date` whenever the cycle rolls, so the new row participates automatically. The existing "settled debt → drop linked commitment" kill-switch on `/credit` already keys off `debt_id`, so cleanup keeps working.
+- "Settle" opens the existing `EditTransactionDialog` (same component used by the edit pencil), pre-loaded with the pending transaction.
+- Add a **"Still pending"** Switch at the top of the dialog, bound to `is_pending`. Defaults to current value; user unchecks it to settle.
+- When the dialog opens for a pending transaction, clear the synthetic "Pending estimate" placeholder row so the user starts with one empty line ready for real items.
+- On save: same validation as today (requires at least one priced line item) when `is_pending` is unchecked. When kept pending, allow zero line items and just update the estimated total / retailer.
+- Saving propagates `is_pending` through `update(...)`.
 
-## Files
+### 5. Files touched
 
-- **`src/routes/new.tsx`** — in the `bnpl:new` branch of `save()`, after each `addDebt(...)` resolves, call `addCommitment({...})` with the fields above. Pull `useCommitments` from `@/lib/store` and destructure `add: addCommitment` alongside the existing hooks.
+- `supabase/migrations/<new>.sql` — add `is_pending` column with default + backfill.
+- `src/lib/types.ts` — add `is_pending?: boolean` to `Transaction`.
+- `src/lib/store.ts` — include `is_pending` in transaction insert/update/select mapping.
+- `src/routes/new.tsx` — add Pending toggle, conditional rendering, fast-save branch.
+- `src/routes/history.tsx` — amber badge, amount styling, Settle button, dialog Pending toggle + relaxed validation.
 
-No schema changes. No changes to `PaymentSplitEditor`, `/credit`, `/commitments`, or the rollover engine.
+### 6. Out of scope
 
-## Out of scope
-
-- Letting the user customise the commitment name/category from the split editor (uses the same defaults as `/credit`).
-- Back-filling commitments for BNPL plans created **before** this change — only new split-payment BNPL plans get one.
-- Changing commitment cadence storage (commitments don't store cadence today; rollover is cycle-driven).
+- No changes to BNPL, pockets, commitments, or cycle math (pending pre-auths always come out of main balance, matching real pre-auth behaviour).
+- No reminders/notifications for unsettled pending rows (can add later if wanted).

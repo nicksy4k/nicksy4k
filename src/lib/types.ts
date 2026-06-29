@@ -63,6 +63,8 @@ export interface Transaction {
   dismissed_at?: string | null;
   /** How this transaction was paid — may be empty for older records. */
   payment_splits?: PaymentSplit[];
+  /** True for fast-entry pre-authorization holds awaiting itemization/settling. */
+  is_pending?: boolean;
   created_at: string;
 }
 

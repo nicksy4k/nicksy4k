@@ -100,24 +100,44 @@ function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium truncate">{t.retailer}</p>
+                        {t.is_pending && (
+                          <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
+                            Pending
+                          </Badge>
+                        )}
                         <Badge variant="secondary" className="font-normal">{t.items.length} item{t.items.length !== 1 ? "s" : ""}</Badge>
                         {t.receipt_attached && <Badge variant="outline" className="font-normal gap-1"><FileText className="h-3 w-3" />{t.receipt_type}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{format(parseISO(t.date), "MMM d, yyyy")}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold tabular-nums">{fmt(t.total_amount)}</p>
+                      <p className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}>
+                        {t.is_pending ? "~" : ""}{fmt(t.total_amount)}
+                      </p>
                     </div>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Edit transaction"
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
-                      className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </span>
+                    {t.is_pending ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Settle transaction"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
+                        className="inline-flex items-center gap-1 px-3 h-8 rounded-md bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 text-xs font-medium transition-colors"
+                      >
+                        Settle
+                      </span>
+                    ) : (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Edit transaction"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
+                        className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </span>
+                    )}
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
@@ -303,6 +323,7 @@ function EditTransactionDialog({
   const [notes, setNotes] = useState("");
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
+  const [isPending, setIsPending] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
@@ -313,7 +334,23 @@ function EditTransactionDialog({
     setReceiptType(transaction.receipt_type === "None" ? "Digital" : transaction.receipt_type);
     setReceiptLocation(transaction.receipt_location ?? "");
     setNotes(transaction.notes ?? "");
-    setRows(transaction.items.map(toDraft));
+    // When settling a pending hold, start with one fresh empty row so the
+    // synthetic "Pending estimate" placeholder doesn't pollute itemization.
+    if (transaction.is_pending) {
+      setRows([
+        {
+          id: crypto.randomUUID(),
+          item_name: "",
+          price: "",
+          quantity: "1",
+          category: categories[0] ?? "Other",
+          notes: "",
+        },
+      ]);
+    } else {
+      setRows(transaction.items.map(toDraft));
+    }
+    setIsPending(transaction.is_pending ?? false);
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
@@ -371,9 +408,34 @@ function EditTransactionDialog({
         notes: r.notes.trim() || undefined,
       }));
 
-    if (cleanItems.length === 0) {
+    // When settling (was pending, now unchecked), require real items.
+    if (!isPending && cleanItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
+    }
+
+    // Still-pending: require an estimated total via the first row price.
+    let finalItems: LineItem[];
+    let finalTotal: number;
+    if (isPending) {
+      const estimate = parseFloat(rows[0]?.price ?? "");
+      if (!(estimate > 0)) {
+        toast.error("Enter an estimated total greater than zero.");
+        return;
+      }
+      finalItems = [
+        {
+          id: rows[0]?.id ?? crypto.randomUUID(),
+          item_name: "Pending estimate",
+          price: +estimate.toFixed(2),
+          quantity: 1,
+          category: rows[0]?.category ?? "Other",
+        },
+      ];
+      finalTotal = +estimate.toFixed(2);
+    } else {
+      finalItems = cleanItems;
+      finalTotal = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
     }
 
     if (protection.enabled) {
@@ -391,19 +453,20 @@ function EditTransactionDialog({
       await update(transaction.id, {
         date,
         retailer: retailer.trim(),
-        total_amount: cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0),
+        total_amount: finalTotal,
         receipt_attached: receiptAttached,
         receipt_type: receiptAttached ? receiptType : "None",
         receipt_location: receiptAttached ? receiptLocation.trim() : "",
         notes: notes.trim() || undefined,
-        items: cleanItems,
+        items: finalItems,
         protection_type: protection.enabled ? protection.type : null,
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         // Re-enabling protection on a previously-handled transaction clears the dismissal.
         dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
+        is_pending: isPending,
       });
-      toast.success("Transaction updated");
+      toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to update");
@@ -415,10 +478,20 @@ function EditTransactionDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit transaction</DialogTitle>
+          <DialogTitle>{transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Still pending</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Turn off to settle: add real line items and the final amount.
+              </p>
+            </div>
+            <Switch checked={isPending} onCheckedChange={setIsPending} />
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Date">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -428,91 +501,112 @@ function EditTransactionDialog({
             </Field>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Receipt attached</Label>
-              <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
-            </div>
-            {receiptAttached && (
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Type">
-                  <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
-                  {receiptType === "Physical" ? (
-                    <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
-                  ) : (
-                    <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
-                  )}
-                </Field>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
-            {rows.map((r, idx) => (
-              <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
+          {isPending ? (
+            <>
+              <Field label="Estimated total (£)">
+                <Input
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={rows[0]?.price ?? ""}
+                  onChange={(e) => updateRow(rows[0]?.id ?? "", { price: e.target.value })}
+                />
+              </Field>
+              <Field label="Notes (optional)">
+                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
+            </>
+          ) : (
+            <>
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
-                  <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Label className="text-sm">Receipt attached</Label>
+                  <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
                 </div>
-                <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
-                  <Field label="Name">
-                    <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
-                  </Field>
-                  <Field label="Price (£)">
-                    <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
-                  </Field>
-                  <Field label="Qty">
-                    <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
-                  </Field>
-                </div>
-                <Field label="Category">
-                  <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label="Notes">
-                  <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
-                </Field>
-                <p className="text-xs text-muted-foreground text-right">
-                  Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
-                </p>
+                {receiptAttached && (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="Type">
+                      <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
+                      {receiptType === "Physical" ? (
+                        <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                      ) : (
+                        <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
+                      )}
+                    </Field>
+                  </div>
+                )}
               </div>
-            ))}
-            <Button variant="outline" className="w-full" onClick={addRow}>
-              <Plus className="h-4 w-4" /> Add item
-            </Button>
-          </div>
 
-          <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
+                {rows.map((r, idx) => (
+                  <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
+                      <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
+                      <Field label="Name">
+                        <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
+                      </Field>
+                      <Field label="Price (£)">
+                        <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
+                      </Field>
+                      <Field label="Qty">
+                        <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                      </Field>
+                    </div>
+                    <Field label="Category">
+                      <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </Field>
 
-          <Field label="Notes (optional)">
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </Field>
+                    <Field label="Notes">
+                      <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
+                    </Field>
+                    <p className="text-xs text-muted-foreground text-right">
+                      Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
+                    </p>
+                  </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={addRow}>
+                  <Plus className="h-4 w-4" /> Add item
+                </Button>
+              </div>
+
+              <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+
+              <Field label="Notes (optional)">
+                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
 
 
-          <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
-            <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
-          </div>
+              <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
+              </div>
+            </>
+          )}
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={save}>Save changes</Button>
+          <Button onClick={save}>
+            {transaction?.is_pending && !isPending ? "Settle transaction" : "Save changes"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
