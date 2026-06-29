@@ -64,6 +64,8 @@ function NewTransactionPage() {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [pendingEstimate, setPendingEstimate] = useState("");
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
