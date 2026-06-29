@@ -501,88 +501,106 @@ function EditTransactionDialog({
             </Field>
           </div>
 
-
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Receipt attached</Label>
-              <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
-            </div>
-            {receiptAttached && (
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Type">
-                  <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
-                  {receiptType === "Physical" ? (
-                    <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
-                  ) : (
-                    <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
-                  )}
-                </Field>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
-            {rows.map((r, idx) => (
-              <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
+          {isPending ? (
+            <>
+              <Field label="Estimated total (£)">
+                <Input
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={rows[0]?.price ?? ""}
+                  onChange={(e) => updateRow(rows[0]?.id ?? "", { price: e.target.value })}
+                />
+              </Field>
+              <Field label="Notes (optional)">
+                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
+            </>
+          ) : (
+            <>
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
-                  <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Label className="text-sm">Receipt attached</Label>
+                  <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
                 </div>
-                <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
-                  <Field label="Name">
-                    <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
-                  </Field>
-                  <Field label="Price (£)">
-                    <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
-                  </Field>
-                  <Field label="Qty">
-                    <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
-                  </Field>
-                </div>
-                <Field label="Category">
-                  <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label="Notes">
-                  <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
-                </Field>
-                <p className="text-xs text-muted-foreground text-right">
-                  Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
-                </p>
+                {receiptAttached && (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="Type">
+                      <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
+                      {receiptType === "Physical" ? (
+                        <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                      ) : (
+                        <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
+                      )}
+                    </Field>
+                  </div>
+                )}
               </div>
-            ))}
-            <Button variant="outline" className="w-full" onClick={addRow}>
-              <Plus className="h-4 w-4" /> Add item
-            </Button>
-          </div>
 
-          <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
+                {rows.map((r, idx) => (
+                  <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
+                      <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
+                      <Field label="Name">
+                        <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
+                      </Field>
+                      <Field label="Price (£)">
+                        <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
+                      </Field>
+                      <Field label="Qty">
+                        <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                      </Field>
+                    </div>
+                    <Field label="Category">
+                      <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </Field>
 
-          <Field label="Notes (optional)">
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </Field>
+                    <Field label="Notes">
+                      <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
+                    </Field>
+                    <p className="text-xs text-muted-foreground text-right">
+                      Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
+                    </p>
+                  </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={addRow}>
+                  <Plus className="h-4 w-4" /> Add item
+                </Button>
+              </div>
+
+              <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+
+              <Field label="Notes (optional)">
+                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
 
 
-          <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
-            <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
-          </div>
+              <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
+              </div>
+            </>
+          )}
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
