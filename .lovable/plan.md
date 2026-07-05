@@ -1,51 +1,40 @@
-## Pending / Placeholder Transactions
+# Reports & Analytics View
 
-A lightweight mode for supermarket pre-auths (e.g. Asda). Reserve the money instantly with just a retailer + estimated total, then "Settle" the next day to enter real items and the final price.
+Add a new `/reports` route for flexible spending analysis outside the 28-day cycle.
 
-### 1. Data model
+## Route
+- Create `src/routes/reports.tsx` (`createFileRoute("/reports")`).
+- Add "Reports" nav item to `src/components/AppLayout.tsx` (BarChart3 icon, between History and Past Cycles).
 
-Add one nullable column to `transactions`:
+## Data query
+- Load categories from the existing categories store for the multi-select options.
+- Query `transactions` directly via `supabase.from("transactions").select("*")` scoped to `user_id = auth.uid()` (RLS enforces), filtered by:
+  - `.gte("date", startDate)` and `.lte("date", endDate)`
+  - `.eq("is_pending", false)` — exclude unsettled pending holds from analytics
+  - `.order("date", { ascending: false })`
+- Category filter applied client-side against each transaction's line-item categories (since categories live on `items`, not the transaction row).
+- Read-only — no writes, no cycle logic, does not touch existing dashboard/cycle state.
 
-- `is_pending` (boolean, default `false`)
+## Filters (top of page)
+- **Date range**: two shadcn Date Pickers (Start / End). Default: last 30 days (today − 30 → today).
+- **Categories**: shadcn multi-select popover with checkboxes over all user categories. Default: all selected (empty = all). Include a "Clear" / "All" quick action.
+- Filters update local state; query re-runs via `useQuery` keyed on `[startDate, endDate]`; category filter is a client-side derived filter (cheap, avoids extra roundtrips).
 
-Migration also backfills existing rows to `false`. `Transaction` type gains `is_pending?: boolean`. No other schema changes — itemization stays optional at the DB level; the UI enforces it normally and relaxes it when pending.
+## KPIs
+- **Total Spent** card: sum of matched transactions using `mainExpensePortion` from `src/lib/format.ts` so BNPL-deferred amounts are excluded (consistent with rest of app). Also show transaction count and average per transaction as small secondary stats.
 
-### 2. Fast entry on `/new`
+## Visuals
+- **Category breakdown**: recharts Pie Chart (recharts already in project — used elsewhere). Aggregate spend per category by walking each transaction's `items[]`, summing `price * (quantity ?? 1)` per category, and scaling proportionally to `mainExpensePortion` so pie totals match the KPI. Legend shows category name + amount + %.
+- Use color tokens from `src/lib/colors.ts` if a palette helper exists; otherwise map through chart-*  CSS variables.
 
-- Add a **"Mark as Pending Hold"** Switch at the top of Step 1, beside the retailer field.
-- When ON:
-  - Hide Step 2 entirely. Step indicator collapses to a single step.
-  - Replace the items section with one **Estimated total (£)** input.
-  - Hide receipt block, protection block, notes, and the payment-split editor.
-  - Save button appears directly on Step 1.
-  - Only validation: retailer required, estimated total > 0.
-- On save: create the transaction with `is_pending = true`, a single synthetic line item (`item_name: "Pending estimate"`, price = estimated total, qty 1, category "Other"), no payment splits (defaults to main balance), no receipt, no protection.
-- Because there are no `bnpl:` splits, `mainExpensePortion` already subtracts the full amount from "Left to Spend" → money is reserved automatically. No calculation changes needed.
+## Transaction list
+- Below the chart, render matched transactions as rows: Date · Retailer · Categories (chips from item categories) · Amount (formatted via `fmt`).
+- Empty state when nothing matches: "No transactions in this range."
 
-### 3. Visual treatment in `/history`
+## Files
+- **New**: `src/routes/reports.tsx`
+- **Edited**: `src/components/AppLayout.tsx` (nav entry + type union)
 
-- Header row: add an amber **"Pending"** badge (`bg-amber-500/15 text-amber-600 border-amber-500/30`) next to the retailer when `is_pending`.
-- Amount renders in amber + with `~` prefix (e.g. `~£42.10`) to signal it's an estimate.
-- Replace the inline edit pencil with a primary **"Settle"** button for pending rows (the existing edit pencil stays for non-pending).
-- Pending rows are sorted/listed identically to others — no separate section.
-
-### 4. Settle flow
-
-- "Settle" opens the existing `EditTransactionDialog` (same component used by the edit pencil), pre-loaded with the pending transaction.
-- Add a **"Still pending"** Switch at the top of the dialog, bound to `is_pending`. Defaults to current value; user unchecks it to settle.
-- When the dialog opens for a pending transaction, clear the synthetic "Pending estimate" placeholder row so the user starts with one empty line ready for real items.
-- On save: same validation as today (requires at least one priced line item) when `is_pending` is unchecked. When kept pending, allow zero line items and just update the estimated total / retailer.
-- Saving propagates `is_pending` through `update(...)`.
-
-### 5. Files touched
-
-- `supabase/migrations/<new>.sql` — add `is_pending` column with default + backfill.
-- `src/lib/types.ts` — add `is_pending?: boolean` to `Transaction`.
-- `src/lib/store.ts` — include `is_pending` in transaction insert/update/select mapping.
-- `src/routes/new.tsx` — add Pending toggle, conditional rendering, fast-save branch.
-- `src/routes/history.tsx` — amber badge, amount styling, Settle button, dialog Pending toggle + relaxed validation.
-
-### 6. Out of scope
-
-- No changes to BNPL, pockets, commitments, or cycle math (pending pre-auths always come out of main balance, matching real pre-auth behaviour).
-- No reminders/notifications for unsettled pending rows (can add later if wanted).
+## Out of scope
+- No CSV export, no saved filter presets, no comparison-to-previous-period, no drill-down navigation.
+- No schema changes.
