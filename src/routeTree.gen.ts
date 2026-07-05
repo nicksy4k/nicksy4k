@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavingsRouteImport } from './routes/savings'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -28,6 +29,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavingsRoute = SavingsRouteImport.update({
   id: '/savings',
   path: '/savings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
+  '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
+  '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
   '/new': typeof NewRoute
+  '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/income'
     | '/new'
+    | '/reports'
     | '/savings'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/income'
     | '/new'
+    | '/reports'
     | '/savings'
     | '/settings'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/income'
     | '/new'
+    | '/reports'
     | '/savings'
     | '/settings'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   IncomeRoute: typeof IncomeRoute
   NewRoute: typeof NewRoute
+  ReportsRoute: typeof ReportsRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
 }
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/savings'
       fullPath: '/savings'
       preLoaderRoute: typeof SavingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   IncomeRoute: IncomeRoute,
   NewRoute: NewRoute,
+  ReportsRoute: ReportsRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
 }
