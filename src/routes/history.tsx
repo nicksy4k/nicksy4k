@@ -324,6 +324,7 @@ function EditTransactionDialog({
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
+  const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
@@ -351,6 +352,7 @@ function EditTransactionDialog({
       setRows(transaction.items.map(toDraft));
     }
     setIsPending(transaction.is_pending ?? false);
+    setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
@@ -482,6 +484,12 @@ function EditTransactionDialog({
         </DialogHeader>
 
         <div className="space-y-5">
+          {transaction?.is_pending && isPending && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+              This transaction is a pending hold. When your receipt arrives, turn off <span className="font-medium">Still pending</span> below and enter the final itemized amount.
+            </div>
+          )}
+
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
             <div>
               <Label className="text-sm">Still pending</Label>
@@ -555,7 +563,11 @@ function EditTransactionDialog({
                     </div>
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
-                        <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
+                        <Input
+                          autoFocus={idx === 0 && transaction?.is_pending === true}
+                          value={r.item_name}
+                          onChange={(e) => updateRow(r.id, { item_name: e.target.value })}
+                        />
                       </Field>
                       <Field label="Price (£)">
                         <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
@@ -594,7 +606,14 @@ function EditTransactionDialog({
 
 
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                  {transaction?.is_pending && pendingHoldAmount !== null && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Estimated hold was {fmt(pendingHoldAmount)}. Enter the final receipt amount.
+                    </p>
+                  )}
+                </div>
                 <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
               </div>
             </>
