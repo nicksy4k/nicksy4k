@@ -563,7 +563,11 @@ function EditTransactionDialog({
                     </div>
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
-                        <Input value={r.item_name} onChange={(e) => updateRow(r.id, { item_name: e.target.value })} />
+                        <Input
+                          autoFocus={idx === 0 && transaction?.is_pending === true}
+                          value={r.item_name}
+                          onChange={(e) => updateRow(r.id, { item_name: e.target.value })}
+                        />
                       </Field>
                       <Field label="Price (£)">
                         <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
