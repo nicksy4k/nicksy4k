@@ -324,6 +324,7 @@ function EditTransactionDialog({
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
+  const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
