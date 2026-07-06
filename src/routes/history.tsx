@@ -606,7 +606,14 @@ function EditTransactionDialog({
 
 
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                  {transaction?.is_pending && pendingHoldAmount !== null && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Estimated hold was {fmt(pendingHoldAmount)}. Enter the final receipt amount.
+                    </p>
+                  )}
+                </div>
                 <p className="text-xl font-semibold tabular-nums">{fmt(total)}</p>
               </div>
             </>
