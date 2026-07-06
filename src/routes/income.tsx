@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings } from "@/lib/store";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Settings2, Split, PlusCircle } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Split, PlusCircle } from "lucide-react";
 import { colorForKey } from "@/lib/colors";
-import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/income")({
@@ -25,48 +26,11 @@ export const Route = createFileRoute("/income")({
   component: IncomePage,
 });
 
-// ===== Cycle settings (persisted in localStorage) =====
-const CYCLE_KEY = "ledgerly.incomeCycle.v1";
-type CycleSettings = {
-  baseStart: string;         // ISO date — anchor for the 28-day rhythm
-  lengthDays: number;        // currently fixed at 28
-  overrides: Record<string, string>; // cycleStartISO -> overridden end ISO (exclusive end = override date)
-};
-
-function loadCycle(): CycleSettings {
-  if (typeof window === "undefined") {
-    return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
-  }
-  try {
-    const raw = localStorage.getItem(CYCLE_KEY);
-    if (raw) return { lengthDays: 28, overrides: {}, ...JSON.parse(raw) };
-  } catch { /* noop */ }
-  return { baseStart: todayLocalISO(), lengthDays: 28, overrides: {} };
-}
-
-function saveCycle(c: CycleSettings) {
-  localStorage.setItem(CYCLE_KEY, JSON.stringify(c));
-}
-
-/** Returns the current cycle [start, end) where end is exclusive. Honours per-cycle overrides. */
-function currentCycle(c: CycleSettings, today = new Date()) {
-  const base = startOfDay(parseISO(c.baseStart));
-  const t = startOfDay(today);
-  const len = c.lengthDays || 28;
-  const days = differenceInCalendarDays(t, base);
-  const n = Math.floor(days / len);
-  const start = addDays(base, n * len);
-  const naturalEnd = addDays(start, len);
-  const startISO = format(start, "yyyy-MM-dd");
-  const override = c.overrides[startISO];
-  const end = override ? parseISO(override) : naturalEnd;
-  return { start, end, startISO, naturalEnd, isOverridden: Boolean(override) };
-}
-
 function IncomePage() {
   const { items, add, remove } = useIncomes();
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
+  const cycle = useActiveCycle();
 
   const [date, setDate] = useState(todayLocalISO());
   const [source, setSource] = useState("");
@@ -82,16 +46,6 @@ function IncomePage() {
   // Locally-created pockets that don't yet have any savings row.
   const [draftPockets, setDraftPockets] = useState<string[]>([]);
 
-  const [cycle, setCycle] = useState<CycleSettings>(() => loadCycle());
-  const [cycleOpen, setCycleOpen] = useState(false);
-
-  useEffect(() => { saveCycle(cycle); }, [cycle]);
-
-  const { start: cStart, end: cEnd, startISO: cStartISO, naturalEnd, isOverridden } = useMemo(
-    () => currentCycle(cycle),
-    [cycle],
-  );
-
   const pocketNames = useMemo(() => {
     const set = new Set<string>(draftPockets);
     savingsItems.forEach((s) => set.add(s.account));
@@ -101,12 +55,9 @@ function IncomePage() {
   const total = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
   const thisCycle = useMemo(() => {
     return items
-      .filter((i) => {
-        const d = parseISO(i.date);
-        return d >= cStart && d < cEnd;
-      })
+      .filter((i) => isInCycle(i.date, cycle))
       .reduce((s, i) => s + i.amount, 0);
-  }, [items, cStart, cEnd]);
+  }, [items, cycle]);
 
   const totalAmt = parseFloat(amount) || 0;
   const splitSum = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
@@ -336,16 +287,16 @@ function IncomePage() {
                   <TrendingUp className="h-4 w-4 text-primary" />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {format(cStart, "MMM d")} – {format(addDays(cEnd, -1), "MMM d, yyyy")}
-                  {isOverridden && <span className="ml-1 text-amber-600">· override</span>}
+                  {format(cycle.start, "MMM d")} – {format(cycle.end, "MMM d, yyyy")}
+                  {cycle.isOverridden && <span className="ml-1 text-amber-600">· override</span>}
+                  <span className="ml-1">· {cycle.type === "monthly" ? "monthly" : "4-weekly"}</span>
                 </p>
               </div>
-              <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setCycleOpen(true)}>
-                <Settings2 className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Cycle</span>
-              </Button>
             </div>
             <p className="text-2xl font-semibold tabular-nums">{fmt(thisCycle)}</p>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Change cycle rhythm in <span className="font-medium">Settings</span>.
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -388,15 +339,6 @@ function IncomePage() {
           )}
         </CardContent>
       </Card>
-
-      <CycleSettingsDialog
-        open={cycleOpen}
-        onOpenChange={setCycleOpen}
-        cycle={cycle}
-        currentStartISO={cStartISO}
-        naturalEndISO={format(naturalEnd, "yyyy-MM-dd")}
-        onSave={(next) => { setCycle(next); toast.success("Cycle updated"); }}
-      />
     </div>
   );
 }
@@ -407,98 +349,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
       {children}
     </div>
-  );
-}
-
-function CycleSettingsDialog({
-  open, onOpenChange, cycle, currentStartISO, naturalEndISO, onSave,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  cycle: CycleSettings;
-  currentStartISO: string;
-  naturalEndISO: string;
-  onSave: (next: CycleSettings) => void;
-}) {
-  const [baseStart, setBaseStart] = useState(cycle.baseStart);
-  const [lengthDays, setLengthDays] = useState<string>(String(cycle.lengthDays || 28));
-  const [overrideEnd, setOverrideEnd] = useState<string>(
-    cycle.overrides[currentStartISO] ?? naturalEndISO,
-  );
-
-  useEffect(() => {
-    if (open) {
-      setBaseStart(cycle.baseStart);
-      setLengthDays(String(cycle.lengthDays || 28));
-      setOverrideEnd(cycle.overrides[currentStartISO] ?? naturalEndISO);
-    }
-  }, [open, cycle, currentStartISO, naturalEndISO]);
-
-  function handleSave() {
-    const len = parseInt(lengthDays, 10) || 28;
-    const overrides = { ...cycle.overrides };
-    if (overrideEnd && overrideEnd !== naturalEndISO) {
-      overrides[currentStartISO] = overrideEnd;
-    } else {
-      delete overrides[currentStartISO];
-    }
-    onSave({ baseStart, lengthDays: len, overrides });
-    onOpenChange(false);
-  }
-
-  function clearOverride() {
-    setOverrideEnd(naturalEndISO);
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cycle settings</DialogTitle>
-          <DialogDescription>
-            Track income on a recurring rhythm instead of the calendar month.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <Field label="Base start date">
-            <Input type="date" value={baseStart} onChange={(e) => setBaseStart(e.target.value)} />
-          </Field>
-          <Field label="Cycle frequency">
-            <Select value={lengthDays} onValueChange={setLengthDays}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="28">Every 28 days</SelectItem>
-                <SelectItem value="14">Every 14 days</SelectItem>
-                <SelectItem value="7">Every 7 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <div className="rounded-md border border-border p-3 space-y-2">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              Manual override · this cycle only
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              Adjust the reset date if you were paid early (weekend / bank holiday).
-              Future cycles keep the 28-day rhythm.
-            </p>
-            <Field label="Next reset date">
-              <Input type="date" value={overrideEnd} onChange={(e) => setOverrideEnd(e.target.value)} />
-            </Field>
-            {overrideEnd !== naturalEndISO && (
-              <Button variant="ghost" size="sm" onClick={clearOverride} className="h-7 px-2 text-xs">
-                Reset to natural date ({format(parseISO(naturalEndISO), "MMM d")})
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
