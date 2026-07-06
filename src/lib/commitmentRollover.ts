@@ -77,7 +77,18 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
       patch.prev_due_date = c.next_due_date;
     }
 
-    if (c.paid) {
+    // Only reset paid state when the commitment is actually due in (or was
+    // rolled into) the new cycle. Future-dated bills (e.g. quarterly, or
+    // BNPL installments on a different cadence than the global cycle) keep
+    // their paid flag so early payments aren't silently undone.
+    const effectiveDue = patch.next_due_date ?? c.next_due_date;
+    const dueInsideNewCycle =
+      !!effectiveDue &&
+      effectiveDue >= cycle.startISO &&
+      effectiveDue <= cycle.endISO;
+    const rolledForward = !!patch.next_due_date;
+
+    if (c.paid && (rolledForward || dueInsideNewCycle)) {
       patch.paid = false;
       patch.last_paid_date = null;
     }
