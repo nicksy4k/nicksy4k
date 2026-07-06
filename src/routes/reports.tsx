@@ -141,9 +141,22 @@ function ReportsPage() {
     return txs.filter((t) => t.items.some((i) => selectedCats.has(i.category)));
   }, [txs, selectedCats, catFilterActive]);
 
+  const matchedAmount = useMemo(() => {
+    return (t: Transaction): number => {
+      const main = mainExpensePortion(t);
+      if (!catFilterActive) return main;
+      const itemsSum = t.items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+      if (itemsSum <= 0) return 0;
+      const matched = t.items
+        .filter((i) => selectedCats.has(i.category))
+        .reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+      return (matched / itemsSum) * main;
+    };
+  }, [catFilterActive, selectedCats]);
+
   const totalSpent = useMemo(
-    () => filtered.reduce((sum, t) => sum + mainExpensePortion(t), 0),
-    [filtered],
+    () => filtered.reduce((sum, t) => sum + matchedAmount(t), 0),
+    [filtered, matchedAmount],
   );
   const avg = filtered.length ? totalSpent / filtered.length : 0;
 
