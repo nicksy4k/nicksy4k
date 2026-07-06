@@ -484,6 +484,12 @@ function EditTransactionDialog({
         </DialogHeader>
 
         <div className="space-y-5">
+          {transaction?.is_pending && isPending && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+              This transaction is a pending hold. When your receipt arrives, turn off <span className="font-medium">Still pending</span> below and enter the final itemized amount.
+            </div>
+          )}
+
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
             <div>
               <Label className="text-sm">Still pending</Label>
