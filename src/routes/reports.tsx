@@ -314,7 +314,14 @@ function ReportsPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="text-right tabular-nums font-medium">{fmt(mainExpensePortion(t))}</div>
+                    <div className="text-right tabular-nums font-medium">
+                      {fmt(matchedAmount(t))}
+                      {catFilterActive && (
+                        <div className="text-[10px] font-normal text-muted-foreground">
+                          of {fmt(mainExpensePortion(t))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
