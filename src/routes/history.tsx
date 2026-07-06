@@ -352,6 +352,7 @@ function EditTransactionDialog({
       setRows(transaction.items.map(toDraft));
     }
     setIsPending(transaction.is_pending ?? false);
+    setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
