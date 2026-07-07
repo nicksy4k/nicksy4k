@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useCommitmentRollover } from "@/lib/commitmentRollover";
+import { useRecurringIncomeGenerator } from "@/lib/recurringIncome";
 
 type NavItem = {
   to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/archive" | "/reports" | "/settings";
