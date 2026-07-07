@@ -379,6 +379,131 @@ function IncomePage() {
         </DialogContent>
       </Dialog>
 
+      {/* Recurring income templates */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <div className="flex items-center gap-2">
+            <Repeat className="h-4 w-4 text-primary" />
+            <CardTitle>Recurring income</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {recurring.length > 0 && (
+              <Button variant="outline" size="sm" onClick={runGenerationNow} title="Post any templates due today">
+                <Zap className="h-4 w-4" /> Run due
+              </Button>
+            )}
+            <Button size="sm" onClick={openNewRecurring}>
+              <Plus className="h-4 w-4" /> Add recurring
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recurring.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Set up a template and Ledgerly will post income entries automatically on their next date.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recurring.map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{r.source}</p>
+                      <Badge variant="secondary" className="font-normal">{r.category}</Badge>
+                      <Badge variant="outline" className="font-normal capitalize">{cadenceLabel(r.cadence)}</Badge>
+                      {!r.active && <Badge variant="outline" className="font-normal text-muted-foreground">Paused</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Next: {format(parseISO(r.next_date), "MMM d, yyyy")}
+                      {r.notes ? ` · ${r.notes}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold tabular-nums text-primary mr-1">{fmt(r.amount)}</span>
+                    <Button variant="ghost" size="icon" onClick={() => postRecurringNow(r)} title="Post now">
+                      <Zap className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateRecurring(r.id, { active: !r.active }).then(() => toast.success(r.active ? "Paused" : "Resumed"))}
+                      title={r.active ? "Pause" : "Resume"}
+                    >
+                      {r.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEditRecurring(r)} title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => { removeRecurring(r.id); toast.success("Removed"); }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recurring income dialog */}
+      <Dialog open={recOpen} onOpenChange={setRecOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{recEditing ? "Edit recurring income" : "New recurring income"}</DialogTitle>
+            <DialogDescription>
+              Ledgerly will auto-post an income entry on the next date and roll it forward by the chosen cadence.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={recSource} onChange={(e) => setRecSource(e.target.value)} /></Field>
+              <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={recAmount} onChange={(e) => setRecAmount(e.target.value)} /></Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Category">
+                <Select value={recCategory} onValueChange={setRecCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Cadence">
+                <Select value={recCadence} onValueChange={(v) => setRecCadence(v as IncomeCadence)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="fortnightly">Fortnightly (every 2 weeks)</SelectItem>
+                    <SelectItem value="four-weekly">4-weekly (every 28 days)</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+            <Field label={recEditing ? "Next post date" : "First post date"}>
+              <Input type="date" value={recNextDate} onChange={(e) => setRecNextDate(e.target.value)} />
+            </Field>
+            <Field label="Notes (optional)"><Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} /></Field>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-xs text-muted-foreground">Pause to stop auto-posting without deleting.</p>
+              </div>
+              <Switch checked={recActive} onCheckedChange={setRecActive} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRecOpen(false)}>Cancel</Button>
+            <Button onClick={saveRecurring}>{recEditing ? "Save changes" : "Add recurring"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
