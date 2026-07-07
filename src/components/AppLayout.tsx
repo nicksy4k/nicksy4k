@@ -33,6 +33,7 @@ export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
   // fires the moment a new cycle starts, regardless of which route is open.
   useCommitmentRollover();
+  useRecurringIncomeGenerator();
 
   const [email, setEmail] = useState<string | null>(null);
   useEffect(() => {
