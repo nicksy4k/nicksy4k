@@ -8,6 +8,7 @@ import type {
   IncomeEntry,
   LedgerPayment,
   Loan,
+  RecurringIncome,
   SavingsEntry,
   Transaction,
 } from "./types";
