@@ -572,6 +572,13 @@ function IncomePage() {
   );
 }
 
+function cadenceLabel(c: IncomeCadence): string {
+  if (c === "weekly") return "Weekly";
+  if (c === "fortnightly") return "Fortnightly";
+  if (c === "four-weekly") return "4-weekly";
+  return "Monthly";
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
