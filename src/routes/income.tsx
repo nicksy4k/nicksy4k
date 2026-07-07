@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useIncomes, useIncomeCategories, useSavings } from "@/lib/store";
+import { useEffect, useMemo, useState } from "react";
+import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { fmt, todayLocalISO } from "@/lib/format";
-import { useActiveCycle, isInCycle } from "@/lib/cycle";
+import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
+import { generateDueRecurringIncomes } from "@/lib/recurringIncome";
+import { useQueryClient } from "@tanstack/react-query";
+import type { IncomeCadence, RecurringIncome } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator,
 } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Split, PlusCircle } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Split, PlusCircle, Repeat, Pause, Play, Pencil, Zap } from "lucide-react";
 import { colorForKey } from "@/lib/colors";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
