@@ -135,6 +135,54 @@ export function useIncomes() {
   return { items: data ?? [], add, remove };
 }
 
+// ===== Recurring incomes =====
+export function useRecurringIncomes() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["recurring_incomes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("recurring_incomes")
+        .select("*")
+        .order("next_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as RecurringIncome[];
+    },
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
+
+  const add = useCallback(async (r: Omit<RecurringIncome, "id" | "created_at" | "updated_at">) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("Not signed in");
+    const { error } = await supabase.from("recurring_incomes").insert({
+      user_id: u.user.id,
+      source: r.source,
+      amount: r.amount,
+      category: r.category,
+      notes: r.notes ?? null,
+      cadence: r.cadence,
+      next_date: r.next_date,
+      last_generated_date: r.last_generated_date ?? null,
+      active: r.active,
+    });
+    if (error) throw error;
+    await invalidate();
+  }, [qc]);
+
+  const update = useCallback(async (id: string, patch: Partial<Omit<RecurringIncome, "id" | "created_at" | "updated_at">>) => {
+    const { error } = await supabase.from("recurring_incomes").update(patch).eq("id", id);
+    if (error) throw error;
+    await invalidate();
+  }, [qc]);
+
+  const remove = useCallback(async (id: string) => {
+    await supabase.from("recurring_incomes").delete().eq("id", id);
+    await invalidate();
+  }, [qc]);
+
+  return { items: data ?? [], add, update, remove };
+}
+
 // ===== Savings =====
 export function useSavings() {
   const qc = useQueryClient();
