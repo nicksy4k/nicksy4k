@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useIncomes, useIncomeCategories, useSavings } from "@/lib/store";
+import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { fmt, todayLocalISO } from "@/lib/format";
-import { useActiveCycle, isInCycle } from "@/lib/cycle";
+import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
+import { generateDueRecurringIncomes } from "@/lib/recurringIncome";
+import { useQueryClient } from "@tanstack/react-query";
+import type { IncomeCadence, RecurringIncome } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator,
 } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Split, PlusCircle } from "lucide-react";
+import { Plus, Trash2, TrendingUp, Split, PlusCircle, Repeat, Pause, Play, Pencil, Zap } from "lucide-react";
 import { colorForKey } from "@/lib/colors";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -30,7 +34,107 @@ function IncomePage() {
   const { items, add, remove } = useIncomes();
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
+  const { items: recurring, add: addRecurring, update: updateRecurring, remove: removeRecurring } = useRecurringIncomes();
   const cycle = useActiveCycle();
+  const qc = useQueryClient();
+
+  // Recurring template dialog state
+  const [recOpen, setRecOpen] = useState(false);
+  const [recEditing, setRecEditing] = useState<RecurringIncome | null>(null);
+  const [recSource, setRecSource] = useState("");
+  const [recAmount, setRecAmount] = useState("");
+  const [recCategory, setRecCategory] = useState<string>("Other");
+  const [recCadence, setRecCadence] = useState<IncomeCadence>("monthly");
+  const [recNextDate, setRecNextDate] = useState(todayLocalISO());
+  const [recNotes, setRecNotes] = useState("");
+  const [recActive, setRecActive] = useState(true);
+
+  function openNewRecurring() {
+    setRecEditing(null);
+    setRecSource("");
+    setRecAmount("");
+    setRecCategory(categories[0] ?? "Other");
+    setRecCadence("monthly");
+    setRecNextDate(todayLocalISO());
+    setRecNotes("");
+    setRecActive(true);
+    setRecOpen(true);
+  }
+  function openEditRecurring(r: RecurringIncome) {
+    setRecEditing(r);
+    setRecSource(r.source);
+    setRecAmount(String(r.amount));
+    setRecCategory(r.category);
+    setRecCadence(r.cadence);
+    setRecNextDate(r.next_date);
+    setRecNotes(r.notes ?? "");
+    setRecActive(r.active);
+    setRecOpen(true);
+  }
+  async function saveRecurring() {
+    const amt = parseFloat(recAmount);
+    if (!recSource.trim() || !(amt > 0)) {
+      toast.error("Enter a source and a positive amount.");
+      return;
+    }
+    if (!recNextDate) {
+      toast.error("Pick a first date.");
+      return;
+    }
+    try {
+      const payload = {
+        source: recSource.trim(),
+        amount: amt,
+        category: recCategory || "Other",
+        notes: recNotes.trim() || null,
+        cadence: recCadence,
+        next_date: recNextDate,
+        active: recActive,
+      };
+      if (recEditing) {
+        await updateRecurring(recEditing.id, payload);
+        toast.success("Recurring income updated");
+      } else {
+        await addRecurring({ ...payload, last_generated_date: null });
+        toast.success("Recurring income added");
+      }
+      setRecOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    }
+  }
+  async function postRecurringNow(r: RecurringIncome) {
+    try {
+      await add({
+        date: todayLocalISO(),
+        source: r.source,
+        amount: r.amount,
+        category: r.category,
+        notes: r.notes ?? undefined,
+      });
+      await updateRecurring(r.id, {
+        next_date: advanceByCadence(r.next_date > todayLocalISO() ? r.next_date : todayLocalISO(), r.cadence),
+        last_generated_date: todayLocalISO(),
+      });
+      toast.success(`${r.source} posted`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to post");
+    }
+  }
+  async function runGenerationNow() {
+    try {
+      const count = await generateDueRecurringIncomes(todayLocalISO());
+      if (count > 0) {
+        qc.invalidateQueries({ queryKey: ["incomes"] });
+        qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
+        toast.success(`Generated ${count} income ${count === 1 ? "entry" : "entries"}`);
+      } else {
+        toast.info("Nothing due right now");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate");
+    }
+  }
 
   const [date, setDate] = useState(todayLocalISO());
   const [source, setSource] = useState("");
@@ -275,6 +379,131 @@ function IncomePage() {
         </DialogContent>
       </Dialog>
 
+      {/* Recurring income templates */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <div className="flex items-center gap-2">
+            <Repeat className="h-4 w-4 text-primary" />
+            <CardTitle>Recurring income</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {recurring.length > 0 && (
+              <Button variant="outline" size="sm" onClick={runGenerationNow} title="Post any templates due today">
+                <Zap className="h-4 w-4" /> Run due
+              </Button>
+            )}
+            <Button size="sm" onClick={openNewRecurring}>
+              <Plus className="h-4 w-4" /> Add recurring
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recurring.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Set up a template and Ledgerly will post income entries automatically on their next date.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recurring.map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{r.source}</p>
+                      <Badge variant="secondary" className="font-normal">{r.category}</Badge>
+                      <Badge variant="outline" className="font-normal capitalize">{cadenceLabel(r.cadence)}</Badge>
+                      {!r.active && <Badge variant="outline" className="font-normal text-muted-foreground">Paused</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Next: {format(parseISO(r.next_date), "MMM d, yyyy")}
+                      {r.notes ? ` · ${r.notes}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold tabular-nums text-primary mr-1">{fmt(r.amount)}</span>
+                    <Button variant="ghost" size="icon" onClick={() => postRecurringNow(r)} title="Post now">
+                      <Zap className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateRecurring(r.id, { active: !r.active }).then(() => toast.success(r.active ? "Paused" : "Resumed"))}
+                      title={r.active ? "Pause" : "Resume"}
+                    >
+                      {r.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEditRecurring(r)} title="Edit">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => { removeRecurring(r.id); toast.success("Removed"); }}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recurring income dialog */}
+      <Dialog open={recOpen} onOpenChange={setRecOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{recEditing ? "Edit recurring income" : "New recurring income"}</DialogTitle>
+            <DialogDescription>
+              Ledgerly will auto-post an income entry on the next date and roll it forward by the chosen cadence.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={recSource} onChange={(e) => setRecSource(e.target.value)} /></Field>
+              <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={recAmount} onChange={(e) => setRecAmount(e.target.value)} /></Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Category">
+                <Select value={recCategory} onValueChange={setRecCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Cadence">
+                <Select value={recCadence} onValueChange={(v) => setRecCadence(v as IncomeCadence)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="fortnightly">Fortnightly (every 2 weeks)</SelectItem>
+                    <SelectItem value="four-weekly">4-weekly (every 28 days)</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+            <Field label={recEditing ? "Next post date" : "First post date"}>
+              <Input type="date" value={recNextDate} onChange={(e) => setRecNextDate(e.target.value)} />
+            </Field>
+            <Field label="Notes (optional)"><Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} /></Field>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-xs text-muted-foreground">Pause to stop auto-posting without deleting.</p>
+              </div>
+              <Switch checked={recActive} onCheckedChange={setRecActive} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRecOpen(false)}>Cancel</Button>
+            <Button onClick={saveRecurring}>{recEditing ? "Save changes" : "Add recurring"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
@@ -341,6 +570,13 @@ function IncomePage() {
       </Card>
     </div>
   );
+}
+
+function cadenceLabel(c: IncomeCadence): string {
+  if (c === "weekly") return "Weekly";
+  if (c === "fortnightly") return "Fortnightly";
+  if (c === "four-weekly") return "4-weekly";
+  return "Monthly";
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

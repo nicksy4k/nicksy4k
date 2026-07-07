@@ -243,6 +243,51 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_incomes: {
+        Row: {
+          active: boolean
+          amount: number
+          cadence: string
+          category: string
+          created_at: string
+          id: string
+          last_generated_date: string | null
+          next_date: string
+          notes: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          cadence: string
+          category?: string
+          created_at?: string
+          id?: string
+          last_generated_date?: string | null
+          next_date: string
+          notes?: string | null
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          cadence?: string
+          category?: string
+          created_at?: string
+          id?: string
+          last_generated_date?: string | null
+          next_date?: string
+          notes?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       savings: {
         Row: {
           account: string

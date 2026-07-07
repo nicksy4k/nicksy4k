@@ -205,6 +205,24 @@ export function advanceDueDate(
 }
 
 /**
+ * Advance an ISO date by exactly one step of a fixed cadence. Used by
+ * recurring income templates, whose cadence is independent of the global
+ * expense cycle.
+ */
+export function advanceByCadence(
+  dueISO: string,
+  cadence: "weekly" | "fortnightly" | "four-weekly" | "monthly",
+): string {
+  const base = parseISO(dueISO);
+  let next: Date;
+  if (cadence === "weekly") next = addDays(base, 7);
+  else if (cadence === "fortnightly") next = addDays(base, 14);
+  else if (cadence === "four-weekly") next = addDays(base, 28);
+  else next = addMonths(base, 1);
+  return fmt(next);
+}
+
+/**
  * Roll a due date forward in cycle-sized steps until it lands on or after
  * the target ISO date. Handles bills that have been missed for several cycles.
  */

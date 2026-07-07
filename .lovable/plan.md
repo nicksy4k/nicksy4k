@@ -1,37 +1,69 @@
-# Quick correctness pass
 
-Fix the two real bugs (G1, G14) and tighten the two items that were already partly built (G2, G13).
+## Goal
 
-## G1 — Unify Income cycle with global cycle
+Add recurring income templates that automatically generate income entries on their next date based on a chosen cadence — same "single source of truth" pattern as `commitmentRollover`, but scoped to income.
 
-Replace the Income page's private 28-day localStorage cycle with the global cycle engine so Monthly / 4-weekly settings apply everywhere.
+## Data model
 
-- Delete `CYCLE_KEY`, `loadCycle`, `saveCycle`, `currentCycle` and the local `CycleSettings` type from `src/routes/income.tsx`.
-- Use `useActiveCycle()` + `isInCycle()` from `@/lib/cycle` (same pattern as Dashboard) to derive current-cycle income totals, and `getCycleAt()` for historical lookups.
-- Remove the page-local "override cycle end" control; if that override was genuinely useful for income, it now lives once in Settings (the global `override` field is already there).
-- Keep all existing UI: totals card, allocation panel, entry list — just re-source the window.
+New table `public.recurring_incomes` (owner-scoped RLS, same pattern as `incomes`):
 
-## G14 — Don't wipe `paid` on commitments not due yet
+- `source` text
+- `amount` numeric
+- `category` text (defaults to "Other")
+- `notes` text nullable
+- `cadence` text — one of `weekly` | `fortnightly` | `four-weekly` | `monthly`
+- `next_date` date — when the next entry should post
+- `last_generated_date` date nullable — last time it auto-created an income row
+- `active` boolean default true — pause without deleting
+- standard `id / user_id / created_at / updated_at` + update trigger
+- GRANTs to `authenticated` and `service_role`; RLS policies scoped to `auth.uid()`
 
-`commitmentRollover.ts:80-83` resets `paid=false` for every commitment on every cycle change. Wrong for bills whose `next_due_date` lands beyond the new cycle (quarterly bills, bills paid early for a future cycle, BNPL installments on a different cadence than the global cycle).
+No changes to the existing `incomes` table. Generated entries are just normal rows in `incomes` (no back-reference needed for v1 — keeps history/edits/deletes trivial).
 
-- In `rolloverAllCommitments()`, only reset `paid`/`last_paid_date` for a commitment when its `next_due_date` actually rolled forward this run (i.e. `patch.next_due_date` was set) OR when its existing `next_due_date` sits inside the newly-active cycle window.
-- Concretely: compute `dueInsideNewCycle = c.next_due_date >= cycle.startISO && c.next_due_date <= cycle.endISO` (after any patch). Reset `paid` only when `patch.next_due_date` is set OR `dueInsideNewCycle`.
+## Generation engine
 
-## G2 — Settle flow polish (small)
+New hook `useRecurringIncomeGenerator()` in `src/lib/recurringIncome.ts`, mounted once at the app root next to `useCommitmentRollover()`:
 
-The button and modal exist; polish so it feels like a distinct action rather than a relabeled edit form.
+1. On mount and whenever the local date changes, fetch all active `recurring_incomes` for the user.
+2. For each row where `next_date <= today`:
+   - Insert an `incomes` row (`date = next_date`, source/amount/category/notes copied from template).
+   - Advance `next_date` by one cadence step until it lands strictly after today (catches multiple missed cycles, guarded like `rollDueDateForward`).
+   - Update `last_generated_date = today`.
+3. Guarded by a `running` ref + a `localStorage` daily marker (`ledgerly.recurringIncome.lastRunISO`) so it runs at most once per calendar day per device.
+4. On completion invalidates the `incomes` and `recurring_incomes` query keys.
 
-- In the settle dialog (`history.tsx:481+`), when `transaction.is_pending && isPending` (i.e. still-pending edit) keep current behavior; when the user is settling (was pending, now unchecking):
-  - Auto-focus the first item name input on open when `transaction.is_pending`.
-  - Under the total field show a subtle helper: "Estimated hold was {£X}. Enter the final receipt amount." using the original pending total.
-  - Change the primary CTA copy already handles this; also add a small amber banner at the top of the dialog while `isPending` is still true reading "This transaction is a pending hold — uncheck 'Still pending' when settling."
+Cadence math lives alongside the existing cycle helpers: extend `advanceDueDate` OR add a small `advanceByCadence(dueISO, cadence)` helper in `src/lib/cycle.ts` covering weekly (+7d), fortnightly (+14d), four-weekly (+28d), monthly (+1 month). Reuse it in the generator.
 
-## G13 — Verify mobile sign-out, remove dead hidden button
+## UI on Income page (`src/routes/income.tsx`)
 
-Sign-out is reachable on mobile via the avatar row. The extra hidden ghost button at `AppLayout.tsx:78-85` is dead code that just adds noise — remove it. No behavior change.
+Add a new "Recurring income" card between the "Add income" card and the cycle summary:
+
+- List each template: source, amount, category badge, cadence label, "Next: {date}", paused badge if inactive.
+- Row actions: Edit, Pause/Resume, Delete, and "Post now" (generates immediately and advances `next_date`).
+- "Add recurring" button opens a dialog with: source, amount, category (reuse `useIncomeCategories`), cadence select, first-post date (defaults to today), notes, active toggle.
+- Edit uses the same dialog prefilled.
+- Empty state: short helper text explaining what recurring income does.
+
+No changes to the existing "Add income" form or history list — they continue to work on `incomes` rows regardless of source.
+
+## Store additions (`src/lib/store.ts`)
+
+New `useRecurringIncomes()` hook mirroring `useCommitments()`: `items`, `add`, `update`, `remove`. Fetched via TanStack Query on key `["recurring_incomes"]`.
 
 ## Files
 
-- Edited: `src/routes/income.tsx`, `src/lib/commitmentRollover.ts`, `src/routes/history.tsx`, `src/components/AppLayout.tsx`
-- No schema changes, no new dependencies.
+- New: `supabase` migration for `recurring_incomes` table + RLS + grants + updated_at trigger
+- New: `src/lib/recurringIncome.ts` (generator hook)
+- Edited: `src/lib/types.ts` (add `RecurringIncome` type + `IncomeCadence`)
+- Edited: `src/lib/cycle.ts` (add `advanceByCadence`)
+- Edited: `src/lib/store.ts` (add `useRecurringIncomes`)
+- Edited: `src/routes/__root.tsx` (mount `useRecurringIncomeGenerator`)
+- Edited: `src/routes/income.tsx` (new Recurring income card + dialog)
+
+No new dependencies. No changes to the existing `incomes` schema.
+
+## Out of scope for v1
+
+- Per-template split routing to pockets (can be added later as a JSON `splits` column on `recurring_incomes`).
+- End date / occurrence count.
+- Server-side cron generation — client-on-open is sufficient for a personal app; can be promoted to `pg_cron` + a public hook route later without schema changes.

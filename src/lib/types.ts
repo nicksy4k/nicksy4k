@@ -79,6 +79,22 @@ export interface IncomeEntry {
   created_at: string;
 }
 
+export type IncomeCadence = "weekly" | "fortnightly" | "four-weekly" | "monthly";
+
+export interface RecurringIncome {
+  id: string;
+  source: string;
+  amount: number;
+  category: string;
+  notes?: string | null;
+  cadence: IncomeCadence;
+  next_date: string;
+  last_generated_date?: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
 export type SavingsKind = "deposit" | "withdrawal";
 
 export interface SavingsEntry {
