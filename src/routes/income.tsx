@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
