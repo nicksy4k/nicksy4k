@@ -85,6 +85,9 @@ function IncomePage() {
       return;
     }
     try {
+      const cleanAllocations: RecurringIncomeAllocation[] = recAllocations
+        .filter((a) => a.pocket.trim().length > 0 && (a.kind === "cover_commitments" || a.amount > 0))
+        .map((a, i) => ({ ...a, pocket: a.pocket.trim(), order: i }));
       const payload = {
         source: recSource.trim(),
         amount: amt,
@@ -93,6 +96,7 @@ function IncomePage() {
         cadence: recCadence,
         next_date: recNextDate,
         active: recActive,
+        allocations: cleanAllocations,
       };
       if (recEditing) {
         await updateRecurring(recEditing.id, payload);
@@ -108,16 +112,29 @@ function IncomePage() {
   }
   async function postRecurringNow(r: RecurringIncome) {
     try {
+      const today = todayLocalISO();
       await add({
-        date: todayLocalISO(),
+        date: today,
         source: r.source,
         amount: r.amount,
         category: r.category,
         notes: r.notes ?? undefined,
       });
+      const nextDate = advanceByCadence(r.next_date > today ? r.next_date : today, r.cadence);
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const warns = await applyAllocations({
+          userId: u.user.id,
+          template: r,
+          postDate: today,
+          nextDate,
+        });
+        warns.forEach((w) => toast.warning(w));
+        qc.invalidateQueries({ queryKey: ["savings"] });
+      }
       await updateRecurring(r.id, {
-        next_date: advanceByCadence(r.next_date > todayLocalISO() ? r.next_date : todayLocalISO(), r.cadence),
-        last_generated_date: todayLocalISO(),
+        next_date: nextDate,
+        last_generated_date: today,
       });
       toast.success(`${r.source} posted`);
     } catch (e) {
