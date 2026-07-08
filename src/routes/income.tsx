@@ -435,11 +435,26 @@ function IncomePage() {
                       <Badge variant="secondary" className="font-normal">{r.category}</Badge>
                       <Badge variant="outline" className="font-normal capitalize">{cadenceLabel(r.cadence)}</Badge>
                       {!r.active && <Badge variant="outline" className="font-normal text-muted-foreground">Paused</Badge>}
+                      {(r.allocations ?? []).length > 0 && (
+                        <Badge variant="outline" className="font-normal">
+                          <Split className="h-3 w-3 mr-1" />
+                          {(r.allocations ?? []).length} pocket{(r.allocations ?? []).length === 1 ? "" : "s"}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Next: {format(parseISO(r.next_date), "MMM d, yyyy")}
                       {r.notes ? ` · ${r.notes}` : ""}
                     </p>
+                    {(r.allocations ?? []).length > 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        {(r.allocations ?? []).slice().sort((a, b) => a.order - b.order).map((a) =>
+                          a.kind === "cover_commitments"
+                            ? `${a.pocket} (auto)`
+                            : `${fmt(a.amount)} → ${a.pocket}`
+                        ).join(" · ")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-semibold tabular-nums text-primary mr-1">{fmt(r.amount)}</span>
