@@ -634,3 +634,114 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function RecurringAllocationsEditor({
+  amount,
+  allocations,
+  onChange,
+  pocketOptions,
+}: {
+  amount: number;
+  allocations: RecurringIncomeAllocation[];
+  onChange: (next: RecurringIncomeAllocation[]) => void;
+  pocketOptions: string[];
+}) {
+  const update = (id: string, patch: Partial<RecurringIncomeAllocation>) =>
+    onChange(allocations.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  const remove = (id: string) => onChange(allocations.filter((a) => a.id !== id));
+  const add = () =>
+    onChange([
+      ...allocations,
+      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: 0, order: allocations.length },
+    ]);
+
+  // Preview: fund in order, stop when depleted; cover_commitments shown as "auto".
+  let remaining = amount;
+  const previewParts: string[] = [];
+  let clipped = false;
+  for (const a of allocations) {
+    if (!a.pocket.trim()) continue;
+    if (a.kind === "cover_commitments") {
+      previewParts.push(`${a.pocket} (auto)`);
+      continue;
+    }
+    if (remaining <= 0.0001) { clipped = true; break; }
+    const give = Math.min(a.amount, remaining);
+    if (give < a.amount - 0.0001) clipped = true;
+    if (give > 0) previewParts.push(`${fmt(give)} → ${a.pocket}`);
+    remaining -= give;
+  }
+  const mainStr = amount > 0 ? `${fmt(Math.max(0, remaining))} left in main` : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2">
+            <Split className="h-4 w-4 text-primary" />
+            <p className="text-sm font-medium">Auto-allocate to pockets</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Deposits happen automatically each time this template posts. Any remainder stays in main.
+          </p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={add}>
+          <Plus className="h-4 w-4" /> Add allocation
+        </Button>
+      </div>
+
+      {allocations.length > 0 && (
+        <div className="space-y-2">
+          {allocations.map((a) => {
+            const isCover = a.kind === "cover_commitments";
+            return (
+              <div key={a.id} className="rounded-md border p-2 space-y-2">
+                <div className="grid grid-cols-[1fr_120px_auto] gap-2 items-center">
+                  <Input
+                    list="ledgerly-pocket-list"
+                    placeholder="Pocket name"
+                    value={a.pocket}
+                    onChange={(e) => update(a.id, { pocket: e.target.value })}
+                  />
+                  <Input
+                    inputMode="decimal"
+                    placeholder={isCover ? "auto" : "0.00"}
+                    disabled={isCover}
+                    value={isCover ? "" : (a.amount ? String(a.amount) : "")}
+                    onChange={(e) => update(a.id, { amount: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(a.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5"
+                    checked={isCover}
+                    onChange={(e) => update(a.id, { kind: e.target.checked ? "cover_commitments" : "fixed" })}
+                  />
+                  Cover commitments due before next payday
+                </label>
+              </div>
+            );
+          })}
+          <datalist id="ledgerly-pocket-list">
+            {pocketOptions.map((p) => <option key={p} value={p} />)}
+          </datalist>
+          {amount > 0 && previewParts.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Preview: {previewParts.join(" · ")}{mainStr ? ` · ${mainStr}` : ""}
+            </p>
+          )}
+          {clipped && (
+            <p className="text-xs text-amber-600">
+              Income amount won't cover all fixed allocations — later pockets will be partially funded or skipped.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
