@@ -59,6 +59,7 @@ function IncomePage() {
     setRecNextDate(todayLocalISO());
     setRecNotes("");
     setRecActive(true);
+    setRecAllocations([]);
     setRecOpen(true);
   }
   function openEditRecurring(r: RecurringIncome) {
@@ -70,6 +71,7 @@ function IncomePage() {
     setRecNextDate(r.next_date);
     setRecNotes(r.notes ?? "");
     setRecActive(r.active);
+    setRecAllocations((r.allocations ?? []).slice().sort((a, b) => a.order - b.order));
     setRecOpen(true);
   }
   async function saveRecurring() {
