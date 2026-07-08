@@ -48,6 +48,7 @@ function IncomePage() {
   const [recNextDate, setRecNextDate] = useState(todayLocalISO());
   const [recNotes, setRecNotes] = useState("");
   const [recActive, setRecActive] = useState(true);
+  const [recAllocations, setRecAllocations] = useState<RecurringIncomeAllocation[]>([]);
 
   function openNewRecurring() {
     setRecEditing(null);
