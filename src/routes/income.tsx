@@ -490,7 +490,7 @@ function IncomePage() {
 
       {/* Recurring income dialog */}
       <Dialog open={recOpen} onOpenChange={setRecOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{recEditing ? "Edit recurring income" : "New recurring income"}</DialogTitle>
             <DialogDescription>
@@ -527,6 +527,15 @@ function IncomePage() {
               <Input type="date" value={recNextDate} onChange={(e) => setRecNextDate(e.target.value)} />
             </Field>
             <Field label="Notes (optional)"><Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} /></Field>
+
+            <Separator />
+            <RecurringAllocationsEditor
+              amount={parseFloat(recAmount) || 0}
+              allocations={recAllocations}
+              onChange={setRecAllocations}
+              pocketOptions={pocketNames}
+            />
+
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Active</p>
