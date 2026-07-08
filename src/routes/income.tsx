@@ -123,11 +123,13 @@ function IncomePage() {
   }
   async function runGenerationNow() {
     try {
-      const count = await generateDueRecurringIncomes(todayLocalISO());
-      if (count > 0) {
+      const { created, warnings } = await generateDueRecurringIncomes(todayLocalISO());
+      warnings.forEach((w) => toast.warning(w));
+      if (created > 0) {
         qc.invalidateQueries({ queryKey: ["incomes"] });
+        qc.invalidateQueries({ queryKey: ["savings"] });
         qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
-        toast.success(`Generated ${count} income ${count === 1 ? "entry" : "entries"}`);
+        toast.success(`Generated ${created} income ${created === 1 ? "entry" : "entries"}`);
       } else {
         toast.info("Nothing due right now");
       }
