@@ -164,13 +164,16 @@ export function useRecurringIncomes() {
       next_date: r.next_date,
       last_generated_date: r.last_generated_date ?? null,
       active: r.active,
+      allocations: (r.allocations ?? []) as never,
     });
     if (error) throw error;
     await invalidate();
   }, [qc]);
 
   const update = useCallback(async (id: string, patch: Partial<Omit<RecurringIncome, "id" | "created_at" | "updated_at">>) => {
-    const { error } = await supabase.from("recurring_incomes").update(patch).eq("id", id);
+    const clean: Record<string, unknown> = { ...patch };
+    if (patch.allocations !== undefined) clean.allocations = patch.allocations as never;
+    const { error } = await supabase.from("recurring_incomes").update(clean as never).eq("id", id);
     if (error) throw error;
     await invalidate();
   }, [qc]);
