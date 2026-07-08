@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
-import { generateDueRecurringIncomes } from "@/lib/recurringIncome";
+import { generateDueRecurringIncomes, applyAllocations } from "@/lib/recurringIncome";
 import { useQueryClient } from "@tanstack/react-query";
-import type { IncomeCadence, RecurringIncome } from "@/lib/types";
+import type { IncomeCadence, RecurringIncome, RecurringIncomeAllocation } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ function IncomePage() {
   const [recNextDate, setRecNextDate] = useState(todayLocalISO());
   const [recNotes, setRecNotes] = useState("");
   const [recActive, setRecActive] = useState(true);
+  const [recAllocations, setRecAllocations] = useState<RecurringIncomeAllocation[]>([]);
 
   function openNewRecurring() {
     setRecEditing(null);
@@ -58,6 +60,7 @@ function IncomePage() {
     setRecNextDate(todayLocalISO());
     setRecNotes("");
     setRecActive(true);
+    setRecAllocations([]);
     setRecOpen(true);
   }
   function openEditRecurring(r: RecurringIncome) {
@@ -69,6 +72,7 @@ function IncomePage() {
     setRecNextDate(r.next_date);
     setRecNotes(r.notes ?? "");
     setRecActive(r.active);
+    setRecAllocations((r.allocations ?? []).slice().sort((a, b) => a.order - b.order));
     setRecOpen(true);
   }
   async function saveRecurring() {
@@ -82,6 +86,9 @@ function IncomePage() {
       return;
     }
     try {
+      const cleanAllocations: RecurringIncomeAllocation[] = recAllocations
+        .filter((a) => a.pocket.trim().length > 0 && (a.kind === "cover_commitments" || a.amount > 0))
+        .map((a, i) => ({ ...a, pocket: a.pocket.trim(), order: i }));
       const payload = {
         source: recSource.trim(),
         amount: amt,
@@ -90,6 +97,7 @@ function IncomePage() {
         cadence: recCadence,
         next_date: recNextDate,
         active: recActive,
+        allocations: cleanAllocations,
       };
       if (recEditing) {
         await updateRecurring(recEditing.id, payload);
@@ -105,16 +113,29 @@ function IncomePage() {
   }
   async function postRecurringNow(r: RecurringIncome) {
     try {
+      const today = todayLocalISO();
       await add({
-        date: todayLocalISO(),
+        date: today,
         source: r.source,
         amount: r.amount,
         category: r.category,
         notes: r.notes ?? undefined,
       });
+      const nextDate = advanceByCadence(r.next_date > today ? r.next_date : today, r.cadence);
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const warns = await applyAllocations({
+          userId: u.user.id,
+          template: r,
+          postDate: today,
+          nextDate,
+        });
+        warns.forEach((w) => toast.warning(w));
+        qc.invalidateQueries({ queryKey: ["savings"] });
+      }
       await updateRecurring(r.id, {
-        next_date: advanceByCadence(r.next_date > todayLocalISO() ? r.next_date : todayLocalISO(), r.cadence),
-        last_generated_date: todayLocalISO(),
+        next_date: nextDate,
+        last_generated_date: today,
       });
       toast.success(`${r.source} posted`);
     } catch (e) {
@@ -123,11 +144,13 @@ function IncomePage() {
   }
   async function runGenerationNow() {
     try {
-      const count = await generateDueRecurringIncomes(todayLocalISO());
-      if (count > 0) {
+      const { created, warnings } = await generateDueRecurringIncomes(todayLocalISO());
+      warnings.forEach((w) => toast.warning(w));
+      if (created > 0) {
         qc.invalidateQueries({ queryKey: ["incomes"] });
+        qc.invalidateQueries({ queryKey: ["savings"] });
         qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
-        toast.success(`Generated ${count} income ${count === 1 ? "entry" : "entries"}`);
+        toast.success(`Generated ${created} income ${created === 1 ? "entry" : "entries"}`);
       } else {
         toast.info("Nothing due right now");
       }
@@ -412,11 +435,26 @@ function IncomePage() {
                       <Badge variant="secondary" className="font-normal">{r.category}</Badge>
                       <Badge variant="outline" className="font-normal capitalize">{cadenceLabel(r.cadence)}</Badge>
                       {!r.active && <Badge variant="outline" className="font-normal text-muted-foreground">Paused</Badge>}
+                      {(r.allocations ?? []).length > 0 && (
+                        <Badge variant="outline" className="font-normal">
+                          <Split className="h-3 w-3 mr-1" />
+                          {(r.allocations ?? []).length} pocket{(r.allocations ?? []).length === 1 ? "" : "s"}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Next: {format(parseISO(r.next_date), "MMM d, yyyy")}
                       {r.notes ? ` · ${r.notes}` : ""}
                     </p>
+                    {(r.allocations ?? []).length > 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        {(r.allocations ?? []).slice().sort((a, b) => a.order - b.order).map((a) =>
+                          a.kind === "cover_commitments"
+                            ? `${a.pocket} (auto)`
+                            : `${fmt(a.amount)} → ${a.pocket}`
+                        ).join(" · ")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-semibold tabular-nums text-primary mr-1">{fmt(r.amount)}</span>
@@ -452,7 +490,7 @@ function IncomePage() {
 
       {/* Recurring income dialog */}
       <Dialog open={recOpen} onOpenChange={setRecOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{recEditing ? "Edit recurring income" : "New recurring income"}</DialogTitle>
             <DialogDescription>
@@ -489,6 +527,15 @@ function IncomePage() {
               <Input type="date" value={recNextDate} onChange={(e) => setRecNextDate(e.target.value)} />
             </Field>
             <Field label="Notes (optional)"><Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} /></Field>
+
+            <Separator />
+            <RecurringAllocationsEditor
+              amount={parseFloat(recAmount) || 0}
+              allocations={recAllocations}
+              onChange={setRecAllocations}
+              pocketOptions={pocketNames}
+            />
+
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Active</p>
@@ -587,3 +634,114 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function RecurringAllocationsEditor({
+  amount,
+  allocations,
+  onChange,
+  pocketOptions,
+}: {
+  amount: number;
+  allocations: RecurringIncomeAllocation[];
+  onChange: (next: RecurringIncomeAllocation[]) => void;
+  pocketOptions: string[];
+}) {
+  const update = (id: string, patch: Partial<RecurringIncomeAllocation>) =>
+    onChange(allocations.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  const remove = (id: string) => onChange(allocations.filter((a) => a.id !== id));
+  const add = () =>
+    onChange([
+      ...allocations,
+      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: 0, order: allocations.length },
+    ]);
+
+  // Preview: fund in order, stop when depleted; cover_commitments shown as "auto".
+  let remaining = amount;
+  const previewParts: string[] = [];
+  let clipped = false;
+  for (const a of allocations) {
+    if (!a.pocket.trim()) continue;
+    if (a.kind === "cover_commitments") {
+      previewParts.push(`${a.pocket} (auto)`);
+      continue;
+    }
+    if (remaining <= 0.0001) { clipped = true; break; }
+    const give = Math.min(a.amount, remaining);
+    if (give < a.amount - 0.0001) clipped = true;
+    if (give > 0) previewParts.push(`${fmt(give)} → ${a.pocket}`);
+    remaining -= give;
+  }
+  const mainStr = amount > 0 ? `${fmt(Math.max(0, remaining))} left in main` : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2">
+            <Split className="h-4 w-4 text-primary" />
+            <p className="text-sm font-medium">Auto-allocate to pockets</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Deposits happen automatically each time this template posts. Any remainder stays in main.
+          </p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={add}>
+          <Plus className="h-4 w-4" /> Add allocation
+        </Button>
+      </div>
+
+      {allocations.length > 0 && (
+        <div className="space-y-2">
+          {allocations.map((a) => {
+            const isCover = a.kind === "cover_commitments";
+            return (
+              <div key={a.id} className="rounded-md border p-2 space-y-2">
+                <div className="grid grid-cols-[1fr_120px_auto] gap-2 items-center">
+                  <Input
+                    list="ledgerly-pocket-list"
+                    placeholder="Pocket name"
+                    value={a.pocket}
+                    onChange={(e) => update(a.id, { pocket: e.target.value })}
+                  />
+                  <Input
+                    inputMode="decimal"
+                    placeholder={isCover ? "auto" : "0.00"}
+                    disabled={isCover}
+                    value={isCover ? "" : (a.amount ? String(a.amount) : "")}
+                    onChange={(e) => update(a.id, { amount: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(a.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5"
+                    checked={isCover}
+                    onChange={(e) => update(a.id, { kind: e.target.checked ? "cover_commitments" : "fixed" })}
+                  />
+                  Cover commitments due before next payday
+                </label>
+              </div>
+            );
+          })}
+          <datalist id="ledgerly-pocket-list">
+            {pocketOptions.map((p) => <option key={p} value={p} />)}
+          </datalist>
+          {amount > 0 && previewParts.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Preview: {previewParts.join(" · ")}{mainStr ? ` · ${mainStr}` : ""}
+            </p>
+          )}
+          {clipped && (
+            <p className="text-xs text-amber-600">
+              Income amount won't cover all fixed allocations — later pockets will be partially funded or skipped.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+

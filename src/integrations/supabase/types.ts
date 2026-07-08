@@ -246,6 +246,7 @@ export type Database = {
       recurring_incomes: {
         Row: {
           active: boolean
+          allocations: Json
           amount: number
           cadence: string
           category: string
@@ -260,6 +261,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allocations?: Json
           amount?: number
           cadence: string
           category?: string
@@ -274,6 +276,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allocations?: Json
           amount?: number
           cadence?: string
           category?: string
