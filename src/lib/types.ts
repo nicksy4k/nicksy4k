@@ -81,6 +81,17 @@ export interface IncomeEntry {
 
 export type IncomeCadence = "weekly" | "fortnightly" | "four-weekly" | "monthly";
 
+export type RecurringAllocationKind = "fixed" | "cover_commitments";
+
+export interface RecurringIncomeAllocation {
+  id: string;
+  pocket: string;
+  kind: RecurringAllocationKind;
+  /** Ignored when kind === "cover_commitments". */
+  amount: number;
+  order: number;
+}
+
 export interface RecurringIncome {
   id: string;
   source: string;
@@ -91,6 +102,7 @@ export interface RecurringIncome {
   next_date: string;
   last_generated_date?: string | null;
   active: boolean;
+  allocations?: RecurringIncomeAllocation[];
   created_at: string;
   updated_at?: string;
 }
