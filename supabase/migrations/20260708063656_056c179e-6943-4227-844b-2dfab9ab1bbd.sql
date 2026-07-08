@@ -1,0 +1,1 @@
+ALTER TABLE public.recurring_incomes ADD COLUMN IF NOT EXISTS allocations jsonb NOT NULL DEFAULT '[]'::jsonb;
