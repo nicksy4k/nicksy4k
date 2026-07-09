@@ -154,6 +154,12 @@ function AuthGate() {
         // Hard-clear cached data so one user never sees another user's rows.
         await queryClient.cancelQueries();
         queryClient.clear();
+        // Also clear per-device daily/cycle guards so user B isn't blocked
+        // by user A's stamp on the same browser.
+        try {
+          localStorage.removeItem("ledgerly.commitments.lastCycleStart");
+          localStorage.removeItem("ledgerly.recurringIncome.lastRunISO");
+        } catch { /* ignore */ }
       }
       lastUserId = nextUserId;
       setStatus(session ? "in" : "out");
