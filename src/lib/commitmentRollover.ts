@@ -28,11 +28,11 @@ export function useCommitmentRollover() {
     if (typeof window === "undefined") return;
     const last = localStorage.getItem(STORAGE_KEY);
 
-    // First ever run on this device — record current cycle, do nothing.
-    if (!last) {
-      localStorage.setItem(STORAGE_KEY, cycle.startISO);
-      return;
-    }
+    // Skip only when we already processed this exact cycle on this device.
+    // If `last` is missing (new device, cleared browser, new user), we still
+    // run — rollover is idempotent (rolls forward past due dates and resets
+    // paid on rows actually due in the new cycle), so running once more is
+    // safe; skipping would leave stale-paid indicators indefinitely.
     if (last === cycle.startISO) return;
     if (running.current) return;
 

@@ -90,11 +90,15 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
       category: r.category || "Other",
       notes: r.notes ?? null,
     }));
-    const { error: insErr } = await supabase.from("incomes").insert(payload);
+    const { data: inserted, error: insErr } = await supabase
+      .from("incomes")
+      .insert(payload)
+      .select("id");
     if (insErr) {
       console.error("Recurring income insert failed for", r.id, insErr);
       continue;
     }
+    const insertedIds = (inserted ?? []).map((row: { id: string }) => row.id);
 
     // Run pocket allocations for each post date.
     for (let i = 0; i < postDates.length; i++) {
@@ -113,7 +117,16 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
       .from("recurring_incomes")
       .update({ next_date: cursor, last_generated_date: today })
       .eq("id", r.id);
-    if (upErr) console.error("Recurring income advance failed for", r.id, upErr);
+    if (upErr) {
+      // Advancing the template failed — roll back the incomes we just
+      // inserted so the next run doesn't double-post them, then throw so
+      // the outer daily guard is NOT set to today.
+      console.error("Recurring income advance failed for", r.id, upErr);
+      if (insertedIds.length > 0) {
+        await supabase.from("incomes").delete().in("id", insertedIds);
+      }
+      throw upErr;
+    }
 
     created += postDates.length;
   }

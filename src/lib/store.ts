@@ -427,8 +427,12 @@ export function useDebts() {
   }, [qc]);
 
   const remove = useCallback(async (id: string) => {
+    // Remove any commitment rows linked to this debt (BNPL installment
+    // trackers) so we don't leave orphans rolling over forever.
+    await supabase.from("commitments").delete().eq("debt_id", id);
     await supabase.from("debts").delete().eq("id", id);
     await invalidate();
+    qc.invalidateQueries({ queryKey: ["commitments"] });
   }, [qc]);
 
   const addPayment = useCallback(async (debt: Debt, p: Omit<LedgerPayment, "id">) => {
@@ -508,5 +512,7 @@ export async function clearAllData() {
     supabase.from("loans").delete().eq("user_id", uid),
     supabase.from("debt_items").delete().eq("user_id", uid),
     supabase.from("debts").delete().eq("user_id", uid),
+    supabase.from("recurring_incomes").delete().eq("user_id", uid),
+    supabase.from("categories").delete().eq("user_id", uid),
   ]);
 }
