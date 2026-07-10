@@ -124,13 +124,8 @@ function IncomePage() {
       const nextDate = advanceByCadence(r.next_date > today ? r.next_date : today, r.cadence);
       const { data: u } = await supabase.auth.getUser();
       if (u.user) {
-        const warns = await applyAllocations({
-          userId: u.user.id,
-          template: r,
-          postDate: today,
-          nextDate,
-        });
-        warns.forEach((w) => toast.warning(w));
+        const warns = await applyAllocationsOnce(u.user.id, r, today, nextDate);
+        warns.forEach((w: string) => toast.warning(w));
         qc.invalidateQueries({ queryKey: ["savings"] });
       }
       await updateRecurring(r.id, {
