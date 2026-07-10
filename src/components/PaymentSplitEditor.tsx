@@ -164,7 +164,7 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
                         </span>
                       </SelectItem>
                     ))}
-                    <SelectItem value="bnpl:new">BNPL (new plan)</SelectItem>
+                    {allowBnpl && <SelectItem value="bnpl:new">BNPL (new plan)</SelectItem>}
                     <SelectItem value="other">Other (not deducted)</SelectItem>
                   </SelectContent>
                 </Select>
