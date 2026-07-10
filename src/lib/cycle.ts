@@ -258,8 +258,10 @@ export function useCycleSettings() {
   }, []);
 
   const update = (next: CycleSettings) => {
+    // `saveCycleSettings` dispatches `ledgerly:cycle-changed`, which the
+    // effect above listens for and re-syncs state — no need to setSettings
+    // here (would cause a double render).
     saveCycleSettings(next);
-    setSettings(next);
   };
 
   return { settings, update };
