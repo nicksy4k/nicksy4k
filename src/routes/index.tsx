@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo } from "react";
 import { useTransactions, useIncomes, useSavings } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: DashboardPage,
+  errorComponent: RouteError,
 });
 
 import { colorForKey } from "@/lib/colors";
@@ -66,22 +68,36 @@ function DashboardPage() {
       .sort((a, b) => b[1] - a[1]);
   }, [savings]);
 
+  // Exclude pending pre-auth holds from analytics — they're estimates,
+  // not real spend, and would double-count once settled.
+  const analyticsItems = useMemo(
+    () => cycleItems.filter((t) => !t.is_pending),
+    [cycleItems],
+  );
+
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
-    cycleItems.forEach((t) => t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)));
+    analyticsItems.forEach((t) =>
+      t.items.forEach((it) => {
+        const qty = it.quantity ?? 1;
+        map.set(it.category, (map.get(it.category) ?? 0) + it.price * qty);
+      }),
+    );
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [cycleItems]);
+  }, [analyticsItems]);
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
-    cycleItems.forEach((t) => map.set(t.retailer, (map.get(t.retailer) ?? 0) + t.total_amount));
+    analyticsItems.forEach((t) =>
+      map.set(t.retailer, (map.get(t.retailer) ?? 0) + mainExpensePortion(t)),
+    );
     return Array.from(map.entries())
       .map(([name, total]) => ({ name, total: Math.round(total * 100) / 100 }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
-  }, [cycleItems]);
+  }, [analyticsItems]);
 
   const alerts = useMemo(() => {
     const now = new Date();

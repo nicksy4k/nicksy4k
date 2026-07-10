@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Ledgerly" }] }),
   component: SettingsPage,
+  errorComponent: RouteError,
 });
 
 function SettingsPage() {

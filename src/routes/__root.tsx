@@ -174,6 +174,14 @@ function AuthGate() {
     };
   }, [queryClient, router]);
 
+  // Redirect signed-in users away from the auth page in an effect, not
+  // during render (which would trigger a router update mid-render).
+  useEffect(() => {
+    if (status === "in" && pathname === "/auth") {
+      router.navigate({ to: "/" });
+    }
+  }, [status, pathname, router]);
+
   if (status === "loading") {
     return <div className="min-h-screen bg-background" />;
   }
@@ -181,10 +189,10 @@ function AuthGate() {
     return <AuthPage />;
   }
   if (pathname === "/auth") {
-    if (typeof window !== "undefined") router.navigate({ to: "/" });
     return null;
   }
   return <AppLayout />;
 }
+
 
 

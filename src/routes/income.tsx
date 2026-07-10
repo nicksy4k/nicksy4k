@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
-import { generateDueRecurringIncomes, applyAllocations } from "@/lib/recurringIncome";
+import { generateDueRecurringIncomes, applyAllocationsOnce } from "@/lib/recurringIncome";
 import { useQueryClient } from "@tanstack/react-query";
 import type { IncomeCadence, RecurringIncome, RecurringIncomeAllocation } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/income")({
   head: () => ({ meta: [{ title: "Income — Ledgerly" }] }),
   component: IncomePage,
+  errorComponent: RouteError,
 });
 
 function IncomePage() {
@@ -124,13 +126,8 @@ function IncomePage() {
       const nextDate = advanceByCadence(r.next_date > today ? r.next_date : today, r.cadence);
       const { data: u } = await supabase.auth.getUser();
       if (u.user) {
-        const warns = await applyAllocations({
-          userId: u.user.id,
-          template: r,
-          postDate: today,
-          nextDate,
-        });
-        warns.forEach((w) => toast.warning(w));
+        const warns = await applyAllocationsOnce(u.user.id, r, today, nextDate);
+        warns.forEach((w: string) => toast.warning(w));
         qc.invalidateQueries({ queryKey: ["savings"] });
       }
       await updateRecurring(r.id, {

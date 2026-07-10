@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useTransactions, useCategories } from "@/lib/store";
-import type { Category, LineItem, ReceiptType, Transaction } from "@/lib/types";
+import { useTransactions, useCategories, useSavings } from "@/lib/store";
+import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
+import { RouteError } from "@/components/RouteError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,7 @@ import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/compo
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
   component: HistoryPage,
+  errorComponent: RouteError,
 });
 
 function HistoryPage() {
@@ -313,6 +316,7 @@ function EditTransactionDialog({
   onClose: () => void;
 }) {
   const { update } = useTransactions();
+  const { add: addSaving } = useSavings();
   const open = transaction !== null;
 
   const [date, setDate] = useState("");
@@ -325,6 +329,7 @@ function EditTransactionDialog({
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
+  const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
@@ -353,6 +358,21 @@ function EditTransactionDialog({
     }
     setIsPending(transaction.is_pending ?? false);
     setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
+    // Restore existing splits if any, else start with a single "main" split
+    // sized to the current total (or empty for pending holds — user fills in
+    // on settle).
+    const existing = transaction.payment_splits ?? [];
+    if (existing.length > 0) {
+      setSplits(
+        existing.map((s) => ({
+          id: crypto.randomUUID(),
+          source: s.source,
+          amount: String(s.amount),
+        })),
+      );
+    } else {
+      setSplits([{ ...emptySplit("main"), amount: transaction.is_pending ? "" : String(transaction.total_amount) }]);
+    }
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
@@ -451,7 +471,63 @@ function EditTransactionDialog({
       }
     }
 
+    // Validate + apply payment splits when this is a real (non-pending)
+    // transaction. Splits are ignored while a hold is still pending.
+    const wasPending = transaction.is_pending ?? false;
+    const isSettling = wasPending && !isPending;
+    const activeSplits = !isPending
+      ? splits
+          .map((s) => ({ source: s.source, amount: parseFloat(s.amount) || 0 }))
+          .filter((s) => s.amount > 0)
+      : [];
+    const priorSplits = transaction.payment_splits ?? [];
+
+    if (!isPending && activeSplits.length > 0) {
+      const sum = +activeSplits.reduce((a, b) => a + b.amount, 0).toFixed(2);
+      if (Math.abs(sum - finalTotal) > 0.01) {
+        toast.error(`Splits (${fmt(sum)}) don't match the total ${fmt(finalTotal)}.`);
+        return;
+      }
+    }
+
     try {
+      // On settle: apply pocket withdrawals for any new pocket splits so
+      // the pocket balance moves in step with the settled amount. Prior
+      // splits (already saved on a non-pending edit) are left alone —
+      // withdrawals from earlier saves are not double-applied.
+      if (isSettling) {
+        for (const s of activeSplits) {
+          if (s.source.startsWith("pocket:")) {
+            const account = s.source.slice(7);
+            await addSaving({
+              date,
+              kind: "withdrawal",
+              amount: s.amount,
+              account,
+              notes: `Settled: ${retailer.trim() || "Transaction"}`,
+            });
+          }
+        }
+      }
+
+      const finalPaymentSplits: PaymentSplit[] =
+        isPending
+          ? priorSplits
+          : activeSplits.length > 0
+            ? activeSplits.map((s) => ({
+                source: s.source,
+                amount: +s.amount.toFixed(2),
+                label:
+                  s.source === "main"
+                    ? "Main balance"
+                    : s.source.startsWith("pocket:")
+                      ? `Pocket · ${s.source.slice(7)}`
+                      : s.source === "other"
+                        ? "Other"
+                        : undefined,
+              }))
+            : [];
+
       await update(transaction.id, {
         date,
         retailer: retailer.trim(),
@@ -467,6 +543,7 @@ function EditTransactionDialog({
         // Re-enabling protection on a previously-handled transaction clears the dismissal.
         dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
         is_pending: isPending,
+        payment_splits: finalPaymentSplits,
       });
       toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
@@ -604,6 +681,19 @@ function EditTransactionDialog({
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
 
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Payment split
+                </p>
+                <PaymentSplitEditor
+                  total={total}
+                  retailer={retailer}
+                  transactionDate={date}
+                  splits={splits}
+                  onChange={setSplits}
+                  allowBnpl={false}
+                />
+              </div>
 
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
                 <div>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ import { addMonths } from "date-fns";
 export const Route = createFileRoute("/credit")({
   head: () => ({ meta: [{ title: "Credit & Debt — Ledgerly" }] }),
   component: CreditPage,
+  errorComponent: RouteError,
 });
 
 function todayISO() {

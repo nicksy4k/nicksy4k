@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
@@ -28,6 +29,7 @@ import {
 export const Route = createFileRoute("/new")({
   head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
   component: NewTransactionPage,
+  errorComponent: RouteError,
 });
 
 interface DraftItem {

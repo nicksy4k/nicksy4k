@@ -52,6 +52,32 @@ export interface GenerateResult {
   warnings: string[];
 }
 
+/**
+ * Convenience wrapper for one-off manual posts (e.g. "Post now" button)
+ * that don't have a batch run's shared caches available. Loads fresh
+ * commitment + pocket balance data, then applies allocations for a single
+ * post date.
+ */
+export async function applyAllocationsOnce(
+  userId: string,
+  template: RecurringIncome,
+  postDate: string,
+  nextDate: string,
+): Promise<string[]> {
+  const { commitments, pocketBalances } = await loadRunCaches(userId);
+  return applyAllocations({
+    userId,
+    template,
+    postDate,
+    nextDate,
+    inFlight: new Map(),
+    commitments,
+    pocketBalances,
+  });
+}
+
+
+
 /** Back-compat: also returns just the count via .then when destructured. */
 export async function generateDueRecurringIncomes(today: string): Promise<GenerateResult> {
   const { data: u } = await supabase.auth.getUser();
@@ -69,6 +95,12 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
   const rows = (data ?? []) as unknown as RecurringIncome[];
   let created = 0;
   const warnings: string[] = [];
+  if (rows.length === 0) return { created, warnings };
+
+  // Load commitments + pocket balances ONCE for the whole run; track
+  // in-flight deposits per pocket across all templates/postDates.
+  const { commitments, pocketBalances } = await loadRunCaches(uid);
+  const inFlight = new Map<string, number>();
 
   for (const r of rows) {
     let cursor = r.next_date;
@@ -109,6 +141,9 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
         template: r,
         postDate,
         nextDate,
+        inFlight,
+        commitments,
+        pocketBalances,
       });
       warnings.push(...w);
     }
@@ -134,11 +169,31 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
   return { created, warnings };
 }
 
+
 interface ApplyArgs {
   userId: string;
   template: RecurringIncome;
   postDate: string;
   nextDate: string;
+  /**
+   * Shared per-run cache of already-scheduled pocket deposits (across ALL
+   * templates and postDates processed in this run). Keyed by pocket name.
+   * `cover_commitments` subtracts these from the counted balance so a
+   * second template funding the same pocket doesn't see stale data and
+   * under-fund.
+   */
+  inFlight: Map<string, number>;
+  /**
+   * Shared per-run cache of unpaid commitments (fetched once). Filtered
+   * per postDate window at call time.
+   */
+  commitments: Array<{ amount: number; next_due_date: string | null }>;
+  /**
+   * Shared per-run cache of persisted savings balances by pocket name.
+   * Populated once at the start of the run and treated as immutable —
+   * in-flight deposits from THIS run are tracked separately in `inFlight`.
+   */
+  pocketBalances: Map<string, number>;
 }
 
 /**
@@ -147,7 +202,7 @@ interface ApplyArgs {
  * stopping when the income is depleted. Returns warning strings.
  */
 export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
-  const { userId, template, postDate, nextDate } = args;
+  const { userId, template, postDate, nextDate, inFlight, commitments, pocketBalances } = args;
   const allocations = (template.allocations ?? []).slice().sort((a, b) => a.order - b.order);
   if (allocations.length === 0) return [];
 
@@ -162,14 +217,17 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
     }
     let want = 0;
     if (a.kind === "cover_commitments") {
-      want = await computeCoverAmount(userId, a.pocket, postDate, nextDate);
+      want = computeCoverAmount(a.pocket, postDate, nextDate, commitments, pocketBalances, inFlight);
     } else {
       want = a.amount;
     }
     if (!(want > 0)) continue;
     const give = Math.min(want, remaining);
     if (give < want - 0.0001) clipped = true;
-    if (give > 0) deposits.push({ pocket: a.pocket, amount: +give.toFixed(2) });
+    if (give > 0) {
+      deposits.push({ pocket: a.pocket, amount: +give.toFixed(2) });
+      inFlight.set(a.pocket, (inFlight.get(a.pocket) ?? 0) + give);
+    }
     remaining = +(remaining - give).toFixed(2);
   }
 
@@ -193,36 +251,48 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
   return warnings;
 }
 
-async function computeCoverAmount(
-  userId: string,
+function computeCoverAmount(
   pocket: string,
   from: string,
   to: string,
-): Promise<number> {
-  // Sum of unpaid commitments due in [from, to).
-  const { data: commits, error } = await supabase
-    .from("commitments")
-    .select("amount,next_due_date,paid")
-    .eq("user_id", userId)
-    .eq("paid", false)
-    .gte("next_due_date", from)
-    .lt("next_due_date", to);
-  if (error) {
-    console.error("cover_commitments query failed", error);
-    return 0;
-  }
-  const need = (commits ?? []).reduce((s, c) => s + Number(c.amount ?? 0), 0);
-
-  // Current pocket balance (sum of savings rows for that account).
-  const { data: sv } = await supabase
-    .from("savings")
-    .select("kind,amount")
-    .eq("user_id", userId)
-    .eq("account", pocket);
-  const bal = (sv ?? []).reduce((s, r) => {
-    const amt = Number(r.amount ?? 0);
-    return s + (r.kind === "deposit" ? amt : -amt);
+  commitments: Array<{ amount: number; next_due_date: string | null }>,
+  pocketBalances: Map<string, number>,
+  inFlight: Map<string, number>,
+): number {
+  const need = commitments.reduce((s, c) => {
+    const d = c.next_due_date;
+    if (!d) return s;
+    if (d >= from && d < to) return s + Number(c.amount ?? 0);
+    return s;
   }, 0);
-
+  const bal = (pocketBalances.get(pocket) ?? 0) + (inFlight.get(pocket) ?? 0);
   return Math.max(0, +(need - bal).toFixed(2));
+}
+
+/**
+ * Fetch commitments + pocket balances once for the whole generation run.
+ */
+async function loadRunCaches(userId: string) {
+  const [{ data: commits }, { data: sv }] = await Promise.all([
+    supabase
+      .from("commitments")
+      .select("amount,next_due_date,paid")
+      .eq("user_id", userId)
+      .eq("paid", false),
+    supabase
+      .from("savings")
+      .select("kind,amount,account")
+      .eq("user_id", userId),
+  ]);
+  const commitments = (commits ?? []).map((c) => ({
+    amount: Number(c.amount ?? 0),
+    next_due_date: c.next_due_date as string | null,
+  }));
+  const pocketBalances = new Map<string, number>();
+  for (const r of sv ?? []) {
+    const amt = Number(r.amount ?? 0);
+    const delta = r.kind === "deposit" ? amt : -amt;
+    pocketBalances.set(r.account, (pocketBalances.get(r.account) ?? 0) + delta);
+  }
+  return { commitments, pocketBalances };
 }

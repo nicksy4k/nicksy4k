@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, subDays } from "date-fns";
@@ -23,6 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports & Analytics — Ledgerly" }] }),
   component: ReportsPage,
+  errorComponent: RouteError,
 });
 
 function DateField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
