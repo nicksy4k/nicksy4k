@@ -37,6 +37,7 @@ import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/compo
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
   component: HistoryPage,
+  errorComponent: RouteError,
 });
 
 function HistoryPage() {
