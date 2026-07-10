@@ -18,6 +18,7 @@ import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "./types";
 export function useTransactions() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["transactions"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -106,6 +107,7 @@ export function useTransactions() {
 export function useIncomes() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["incomes"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -139,6 +141,7 @@ export function useIncomes() {
 export function useRecurringIncomes() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["recurring_incomes"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -190,6 +193,7 @@ export function useRecurringIncomes() {
 export function useSavings() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["savings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -298,6 +302,7 @@ export function useIncomeCategories() {
 export function useCommitments() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["commitments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -335,6 +340,7 @@ export function useCommitments() {
 export function useLoans() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["loans"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -387,6 +393,7 @@ export function useLoans() {
 export function useDebts() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["debts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -448,6 +455,7 @@ export function useDebts() {
 export function useDebtItems() {
   const qc = useQueryClient();
   const { data } = useQuery({
+    staleTime: 60_000,
     queryKey: ["debt_items"],
     queryFn: async () => {
       const { data, error } = await supabase
