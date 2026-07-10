@@ -471,7 +471,63 @@ function EditTransactionDialog({
       }
     }
 
+    // Validate + apply payment splits when this is a real (non-pending)
+    // transaction. Splits are ignored while a hold is still pending.
+    const wasPending = transaction.is_pending ?? false;
+    const isSettling = wasPending && !isPending;
+    const activeSplits = !isPending
+      ? splits
+          .map((s) => ({ source: s.source, amount: parseFloat(s.amount) || 0 }))
+          .filter((s) => s.amount > 0)
+      : [];
+    const priorSplits = transaction.payment_splits ?? [];
+
+    if (!isPending && activeSplits.length > 0) {
+      const sum = +activeSplits.reduce((a, b) => a + b.amount, 0).toFixed(2);
+      if (Math.abs(sum - finalTotal) > 0.01) {
+        toast.error(`Splits (${fmt(sum)}) don't match the total ${fmt(finalTotal)}.`);
+        return;
+      }
+    }
+
     try {
+      // On settle: apply pocket withdrawals for any new pocket splits so
+      // the pocket balance moves in step with the settled amount. Prior
+      // splits (already saved on a non-pending edit) are left alone —
+      // withdrawals from earlier saves are not double-applied.
+      if (isSettling) {
+        for (const s of activeSplits) {
+          if (s.source.startsWith("pocket:")) {
+            const account = s.source.slice(7);
+            await addSaving({
+              date,
+              kind: "withdrawal",
+              amount: s.amount,
+              account,
+              notes: `Settled: ${retailer.trim() || "Transaction"}`,
+            });
+          }
+        }
+      }
+
+      const finalPaymentSplits: PaymentSplit[] =
+        isPending
+          ? priorSplits
+          : activeSplits.length > 0
+            ? activeSplits.map((s) => ({
+                source: s.source,
+                amount: +s.amount.toFixed(2),
+                label:
+                  s.source === "main"
+                    ? "Main balance"
+                    : s.source.startsWith("pocket:")
+                      ? `Pocket · ${s.source.slice(7)}`
+                      : s.source === "other"
+                        ? "Other"
+                        : undefined,
+              }))
+            : [];
+
       await update(transaction.id, {
         date,
         retailer: retailer.trim(),
@@ -487,6 +543,7 @@ function EditTransactionDialog({
         // Re-enabling protection on a previously-handled transaction clears the dismissal.
         dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
         is_pending: isPending,
+        payment_splits: finalPaymentSplits,
       });
       toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
