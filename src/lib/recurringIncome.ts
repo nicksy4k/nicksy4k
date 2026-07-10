@@ -52,6 +52,32 @@ export interface GenerateResult {
   warnings: string[];
 }
 
+/**
+ * Convenience wrapper for one-off manual posts (e.g. "Post now" button)
+ * that don't have a batch run's shared caches available. Loads fresh
+ * commitment + pocket balance data, then applies allocations for a single
+ * post date.
+ */
+export async function applyAllocationsOnce(
+  userId: string,
+  template: RecurringIncome,
+  postDate: string,
+  nextDate: string,
+): Promise<string[]> {
+  const { commitments, pocketBalances } = await loadRunCaches(userId);
+  return applyAllocations({
+    userId,
+    template,
+    postDate,
+    nextDate,
+    inFlight: new Map(),
+    commitments,
+    pocketBalances,
+  });
+}
+
+
+
 /** Back-compat: also returns just the count via .then when destructured. */
 export async function generateDueRecurringIncomes(today: string): Promise<GenerateResult> {
   const { data: u } = await supabase.auth.getUser();
