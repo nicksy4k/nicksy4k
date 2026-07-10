@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useTransactions, useCategories } from "@/lib/store";
-import type { Category, LineItem, ReceiptType, Transaction } from "@/lib/types";
+import { useTransactions, useCategories, useSavings } from "@/lib/store";
+import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
+import { RouteError } from "@/components/RouteError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
