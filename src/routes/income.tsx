@@ -4,7 +4,7 @@ import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from
 import { supabase } from "@/integrations/supabase/client";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
-import { generateDueRecurringIncomes, applyAllocations } from "@/lib/recurringIncome";
+import { generateDueRecurringIncomes, applyAllocationsOnce } from "@/lib/recurringIncome";
 import { useQueryClient } from "@tanstack/react-query";
 import type { IncomeCadence, RecurringIncome, RecurringIncomeAllocation } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
