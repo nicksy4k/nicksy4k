@@ -358,6 +358,21 @@ function EditTransactionDialog({
     }
     setIsPending(transaction.is_pending ?? false);
     setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
+    // Restore existing splits if any, else start with a single "main" split
+    // sized to the current total (or empty for pending holds — user fills in
+    // on settle).
+    const existing = transaction.payment_splits ?? [];
+    if (existing.length > 0) {
+      setSplits(
+        existing.map((s) => ({
+          id: crypto.randomUUID(),
+          source: s.source,
+          amount: String(s.amount),
+        })),
+      );
+    } else {
+      setSplits([{ ...emptySplit("main"), amount: transaction.is_pending ? "" : String(transaction.total_amount) }]);
+    }
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
