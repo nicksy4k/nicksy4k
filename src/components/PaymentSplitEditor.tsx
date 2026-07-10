@@ -70,9 +70,11 @@ interface Props {
   transactionDate: string;
   splits: SplitDraft[];
   onChange: (splits: SplitDraft[]) => void;
+  /** When false, hides the "BNPL (new plan)" source option. */
+  allowBnpl?: boolean;
 }
 
-export function PaymentSplitEditor({ total, retailer, transactionDate, splits, onChange }: Props) {
+export function PaymentSplitEditor({ total, retailer, transactionDate, splits, onChange, allowBnpl = true }: Props) {
   const { items: savings } = useSavings();
 
   const pockets = useMemo(() => {
