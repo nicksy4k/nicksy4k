@@ -681,6 +681,19 @@ function EditTransactionDialog({
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
 
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Payment split
+                </p>
+                <PaymentSplitEditor
+                  total={total}
+                  retailer={retailer}
+                  transactionDate={date}
+                  splits={splits}
+                  onChange={setSplits}
+                  allowBnpl={false}
+                />
+              </div>
 
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
                 <div>
