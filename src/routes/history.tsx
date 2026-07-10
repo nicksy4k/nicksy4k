@@ -316,6 +316,7 @@ function EditTransactionDialog({
   onClose: () => void;
 }) {
   const { update } = useTransactions();
+  const { add: addSaving } = useSavings();
   const open = transaction !== null;
 
   const [date, setDate] = useState("");
@@ -328,6 +329,7 @@ function EditTransactionDialog({
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
+  const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
 
   if (transaction && initialized !== transaction.id) {
