@@ -65,40 +65,42 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
 
   const rows = (data ?? []) as unknown as Commitment[];
 
-  for (const c of rows) {
-    const patch: Partial<Commitment> = {};
+  await Promise.all(
+    rows.map(async (c) => {
+      const patch: Partial<Commitment> = {};
 
-    if (c.next_due_date && c.next_due_date < cycle.startISO) {
-      patch.next_due_date = rollDueDateForward(
-        c.next_due_date,
-        cycle.startISO,
-        cycle,
-      );
-      patch.prev_due_date = c.next_due_date;
-    }
+      if (c.next_due_date && c.next_due_date < cycle.startISO) {
+        patch.next_due_date = rollDueDateForward(
+          c.next_due_date,
+          cycle.startISO,
+          cycle,
+        );
+        patch.prev_due_date = c.next_due_date;
+      }
 
-    // Only reset paid state when the commitment is actually due in (or was
-    // rolled into) the new cycle. Future-dated bills (e.g. quarterly, or
-    // BNPL installments on a different cadence than the global cycle) keep
-    // their paid flag so early payments aren't silently undone.
-    const effectiveDue = patch.next_due_date ?? c.next_due_date;
-    const dueInsideNewCycle =
-      !!effectiveDue &&
-      effectiveDue >= cycle.startISO &&
-      effectiveDue <= cycle.endISO;
-    const rolledForward = !!patch.next_due_date;
+      // Only reset paid state when the commitment is actually due in (or was
+      // rolled into) the new cycle. Future-dated bills (e.g. quarterly, or
+      // BNPL installments on a different cadence than the global cycle) keep
+      // their paid flag so early payments aren't silently undone.
+      const effectiveDue = patch.next_due_date ?? c.next_due_date;
+      const dueInsideNewCycle =
+        !!effectiveDue &&
+        effectiveDue >= cycle.startISO &&
+        effectiveDue <= cycle.endISO;
+      const rolledForward = !!patch.next_due_date;
 
-    if (c.paid && (rolledForward || dueInsideNewCycle)) {
-      patch.paid = false;
-      patch.last_paid_date = null;
-    }
+      if (c.paid && (rolledForward || dueInsideNewCycle)) {
+        patch.paid = false;
+        patch.last_paid_date = null;
+      }
 
-    if (Object.keys(patch).length === 0) continue;
+      if (Object.keys(patch).length === 0) return;
 
-    const { error: upErr } = await supabase
-      .from("commitments")
-      .update(patch)
-      .eq("id", c.id);
-    if (upErr) console.error("Rollover update failed for", c.id, upErr);
-  }
+      const { error: upErr } = await supabase
+        .from("commitments")
+        .update(patch)
+        .eq("id", c.id);
+      if (upErr) console.error("Rollover update failed for", c.id, upErr);
+    }),
+  );
 }
