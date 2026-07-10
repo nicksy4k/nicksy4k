@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
 import type { SavingsKind } from "@/lib/types";
@@ -34,6 +35,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/savings")({
   head: () => ({ meta: [{ title: "Savings & Pockets — Ledgerly" }] }),
   component: SavingsPage,
+  errorComponent: RouteError,
 });
 
 function SavingsPage() {

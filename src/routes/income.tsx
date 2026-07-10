@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/income")({
   head: () => ({ meta: [{ title: "Income — Ledgerly" }] }),
   component: IncomePage,
+  errorComponent: RouteError,
 });
 
 function IncomePage() {

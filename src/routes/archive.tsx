@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/archive")({
     ],
   }),
   component: ArchivePage,
+  errorComponent: RouteError,
 });
 
 const PAGE = 12;

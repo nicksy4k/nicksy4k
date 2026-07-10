@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useMemo } from "react";
 import { useTransactions, useIncomes, useSavings } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: DashboardPage,
+  errorComponent: RouteError,
 });
 
 import { colorForKey } from "@/lib/colors";

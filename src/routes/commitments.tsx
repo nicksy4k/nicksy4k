@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteError } from "@/components/RouteError";
 import { useEffect, useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import type { Commitment } from "@/lib/types";
@@ -24,6 +25,7 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/commitments")({
   head: () => ({ meta: [{ title: "Commitments — Ledgerly" }] }),
   component: CommitmentsPage,
+  errorComponent: RouteError,
 });
 
 const BILL_POCKET = "Bill Money";
