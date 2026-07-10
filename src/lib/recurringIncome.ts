@@ -69,6 +69,12 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
   const rows = (data ?? []) as unknown as RecurringIncome[];
   let created = 0;
   const warnings: string[] = [];
+  if (rows.length === 0) return { created, warnings };
+
+  // Load commitments + pocket balances ONCE for the whole run; track
+  // in-flight deposits per pocket across all templates/postDates.
+  const { commitments, pocketBalances } = await loadRunCaches(uid);
+  const inFlight = new Map<string, number>();
 
   for (const r of rows) {
     let cursor = r.next_date;
@@ -109,6 +115,9 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
         template: r,
         postDate,
         nextDate,
+        inFlight,
+        commitments,
+        pocketBalances,
       });
       warnings.push(...w);
     }
@@ -133,6 +142,7 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
 
   return { created, warnings };
 }
+
 
 interface ApplyArgs {
   userId: string;
