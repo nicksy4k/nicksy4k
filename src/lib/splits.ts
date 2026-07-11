@@ -96,7 +96,7 @@ export function deriveSplitRows(
   for (const s of splits) {
     const amt = r2(s.amount);
     if (s.source === "main") {
-      explicitMain += amt;
+      _explicitMain += amt;
     } else if (s.source.startsWith("pocket:")) {
       pockets.push({ name: s.source.slice(7), amount: amt });
       nonMainSum += amt;
