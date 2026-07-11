@@ -83,8 +83,8 @@ describe("computeCoverAmount", () => {
 describe("applyAllocations", () => {
   it("funds fixed allocations in order and leaves remainder for main", async () => {
     const tpl = template(579, [
-      { kind: "fixed", pocket: "Food", amount: 300, order: 1 },
-      { kind: "fixed", pocket: "Bills", amount: 200, order: 2 },
+      { kind: "fixed", pocket: "Food", amount: 300, order: 1, id: "a1" },
+      { kind: "fixed", pocket: "Bills", amount: 200, order: 2, id: "a2" },
     ]);
     const warnings = await applyAllocations({
       userId: "user-1",
@@ -104,8 +104,8 @@ describe("applyAllocations", () => {
 
   it("clips a later allocation when income runs out and warns", async () => {
     const tpl = template(400, [
-      { kind: "fixed", pocket: "Food", amount: 300, order: 1 },
-      { kind: "fixed", pocket: "Bills", amount: 200, order: 2 },
+      { kind: "fixed", pocket: "Food", amount: 300, order: 1, id: "a1" },
+      { kind: "fixed", pocket: "Bills", amount: 200, order: 2, id: "a2" },
     ]);
     const warnings = await applyAllocations({
       userId: "user-1",
@@ -125,7 +125,7 @@ describe("applyAllocations", () => {
 
   it("cover_commitments only tops up the gap", async () => {
     const tpl = template(1000, [
-      { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1 },
+      { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1, id: "a1" },
     ]);
     await applyAllocations({
       userId: "user-1",
@@ -143,7 +143,7 @@ describe("applyAllocations", () => {
 
   it("cover_commitments deposits nothing when balance already covers", async () => {
     const tpl = template(1000, [
-      { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1 },
+      { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1, id: "a1" },
     ]);
     await applyAllocations({
       userId: "user-1",
@@ -166,7 +166,7 @@ describe("applyAllocations", () => {
     await applyAllocations({
       userId: "user-1",
       template: template(500, [
-        { kind: "fixed", pocket: "Bills", amount: 300, order: 1 },
+        { kind: "fixed", pocket: "Bills", amount: 300, order: 1, id: "a1" },
       ]),
       postDate: "2026-07-01",
       nextDate: "2026-08-01",
@@ -178,7 +178,7 @@ describe("applyAllocations", () => {
     await applyAllocations({
       userId: "user-1",
       template: template(500, [
-        { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1 },
+        { kind: "cover_commitments", pocket: "Bills", amount: 0, order: 1, id: "a1" },
       ]),
       postDate: "2026-07-01",
       nextDate: "2026-08-01",
@@ -194,8 +194,8 @@ describe("applyAllocations", () => {
 
   it("respects allocation order — first alloc wins, second gets clipped", async () => {
     const tpl = template(100, [
-      { kind: "fixed", pocket: "Food", amount: 80, order: 1 },
-      { kind: "fixed", pocket: "Bills", amount: 50, order: 2 },
+      { kind: "fixed", pocket: "Food", amount: 80, order: 1, id: "a1" },
+      { kind: "fixed", pocket: "Bills", amount: 50, order: 2, id: "a2" },
     ]);
     const warnings = await applyAllocations({
       userId: "user-1",
