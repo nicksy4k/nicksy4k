@@ -109,20 +109,15 @@ export function deriveSplitRows(
     }
   }
 
-  const main = r2(Math.max(0, r2(total) - nonMainSum - 0) + explicitMain === explicitMain
-    ? r2(r2(total) - nonMainSum)
-    : r2(r2(total) - nonMainSum));
-  // Simpler: implicit remainder + explicit main splits.
   const remainder = r2(r2(total) - nonMainSum);
   return {
-    main: r2(remainder),
+    main: remainder,
     pockets,
     bnpl,
     other,
   };
-  // (explicitMain retained for future use; current callers rely on remainder.)
-  void main;
 }
+
 
 export interface PocketWithdrawalRow {
   user_id: string;
