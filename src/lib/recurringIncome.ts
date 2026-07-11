@@ -251,7 +251,7 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
   return warnings;
 }
 
-function computeCoverAmount(
+export function computeCoverAmount(
   pocket: string,
   from: string,
   to: string,
