@@ -90,7 +90,7 @@ export function deriveSplitRows(
   const pockets: DerivedSplits["pockets"] = [];
   const bnpl: DerivedSplits["bnpl"] = [];
   const other: DerivedSplits["other"] = [];
-  let explicitMain = 0;
+  let _explicitMain = 0;
   let nonMainSum = 0;
 
   for (const s of splits) {
