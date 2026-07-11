@@ -1,49 +1,84 @@
-# Pass 2 + 3 — Correctness, UX, Performance & Polish
 
-Executing the remaining items from `.lovable/plan.md`. Item #1 stays skipped (verified last turn: current math nets correctly).
+## Goal
 
-## Pass 2 — Correctness & UX
+Lock down the two areas that have caused build/math regressions:
+1. Recurring income → pocket allocations (waterfall order, clipping, `cover_commitments` need calc, in-flight tracking).
+2. Settle-flow split payments (main-balance portion, pocket withdrawal rows, BNPL installment math with "first payment today").
 
-**#7 Dashboard charts respect quantity + BNPL** (`src/routes/index.tsx`)
-- By-category totals: use `item.price * (item.quantity ?? 1)`.
-- By-retailer totals: use `mainExpensePortion(t)` instead of `total_amount`.
-- Exclude `is_pending` rows from both aggregations (they're pre-auth holds, not real spend).
+Tests must run in CI-friendly fashion (`bun test` / `vitest run`), no network, no Supabase.
 
-**#8 `cover_commitments` uses stale pocket balance** (`src/lib/recurringIncome.ts`)
-- In `applyAllocations`, track in-flight deposits per pocket for the current run so multiple templates funding the same pocket on the same postDate don't each see the same "starting" balance and under-fund.
-- Fix: subtract already-scheduled deposits from the counted balance when computing the top-up gap.
+## Deliverables
 
-**#9 Settle flow gets split editor** (`src/routes/history.tsx`)
-- When editing a transaction (especially a pending → settle conversion), render `PaymentSplitEditor` so users can attribute the final spend across Main / Pockets / BNPL / Other.
-- Wire the same side-effects the new-transaction flow uses (pocket withdrawals, BNPL debt+commitment creation).
+### 1. Tooling
 
-**#10 BNPL rounding drift** (`src/routes/new.tsx`)
-- When "first payment today" is on: `remainingAmt = s.amt − firstAmt`, `perInstallment = round2(remainingAmt / remainingInstallments)`, and the LAST installment absorbs the rounding remainder so debt total = sum of installments to the penny.
+- Add dev deps: `vitest`, `@vitest/coverage-v8`, `happy-dom` (for any React helpers), `@types/node` already present.
+- Add `vitest.config.ts` with `test.environment = "node"`, alias `@` → `src` (reuse `vite-tsconfig-paths`).
+- Add scripts:
+  - `"test": "vitest run"`
+  - `"test:watch": "vitest"`
 
-**#11 `AuthGate` navigates during render** (`src/routes/__root.tsx`)
-- Move the "signed-in on /auth → redirect home" branch out of render into a `useEffect`.
+### 2. Small refactors to make logic testable (no behaviour change)
 
-## Pass 3 — Performance & Polish
+- **`src/lib/recurringIncome.ts`**: export `computeCoverAmount` and the internal `applyAllocations` types so tests can drive it directly with in-memory caches (already exported; just export `computeCoverAmount`).
+- **`src/lib/splits.ts`** (new): extract pure helpers currently inlined in `PaymentSplitEditor` / `history.tsx` / `new.tsx`:
+  - `deriveSplitRows(total, splits, opts)` → normalized `{ main, pockets: [{name, amount}], bnpl: [{plan, amount, firstToday}], other }`.
+  - `computeBnplInstallments(total, count, firstToday)` → `{ firstAmt, perInstallment, lastInstallment }` with penny-accurate remainder-on-last logic (mirrors `new.tsx` #10 fix).
+  - `buildPocketWithdrawalRows(userId, date, retailer, splits)` → array shaped for `savings` insert.
+  Rewrite callers to import these helpers. Zero UI/behaviour change.
 
-**#12 N+1 queries in `applyAllocations`** (`src/lib/recurringIncome.ts`)
-- Hoist commitments + savings fetches out of per-postDate / per-allocation loops; fetch once at the top and reuse.
+### 3. Test files
 
-**#13 Serial commitment UPDATEs** (`src/lib/commitmentRollover.ts`)
-- `Promise.all` the row updates instead of awaiting each one.
+```text
+src/lib/__tests__/
+  format.test.ts             # mainExpensePortion: no splits, bnpl offset, mixed
+  splits.test.ts             # deriveSplitRows, computeBnplInstallments, buildPocketWithdrawalRows
+  recurringIncome.test.ts    # applyAllocations + computeCoverAmount
+```
 
-**#14 Query `staleTime`** (`src/lib/store.ts`)
-- Add `staleTime: 60_000` to the big list queries: `transactions`, `incomes`, `savings`, `commitments`, `debts`, `loans`, `recurring_incomes`.
+**format.test.ts** — cases:
+- transaction with no splits → returns `total_amount`
+- one BNPL split → subtracts BNPL portion
+- multiple splits including pocket + BNPL → only BNPL offsets main
 
-**#15 Cycle settings double render** (`src/lib/cycle.ts`)
-- Remove the redundant `setSettings(next)` call after `saveCycleSettings` (the subscription already fires).
+**splits.test.ts** — cases:
+- `computeBnplInstallments(100, 4, false)` → 4 × 25, last = 25
+- `computeBnplInstallments(100, 4, true)` → first today 25, remaining 3 × 25
+- `computeBnplInstallments(10, 3, false)` → 3.33, 3.33, 3.34 (last absorbs remainder, sum = 10.00)
+- `computeBnplInstallments(10, 3, true)` → first today 3.33, remaining 2 installments 3.33 + 3.34 = 6.67
+- `deriveSplitRows`: pockets + BNPL + main = total; main = total − pockets − bnpl − other
+- `buildPocketWithdrawalRows`: one `withdrawal` row per pocket split, correct account/amount/date/notes
 
-**#16 Per-route error boundaries**
-- Add a small `errorComponent` to each route (`income`, `savings`, `history`, `commitments`, `credit`, `reports`, `archive`, `new`, `settings`) so one query failure doesn't blank the whole shell. Reuse a shared minimal error component.
+**recurringIncome.test.ts** — with in-memory fixtures (no Supabase mock needed since `applyAllocations` receives caches as args, but writes via `supabase.from("savings").insert`; mock via `vi.mock("@/integrations/supabase/client")` returning a chainable stub that records inserted rows):
+- Template £579, allocations [Food fixed 300, Bills fixed 200] → deposits 300 + 200, main remainder 79 flows implicitly (not deposited); no warnings.
+- Template £400, allocations [Food fixed 300, Bills fixed 200] → deposits 300 + 100, `clipped` warning present.
+- `cover_commitments` allocation with £250 need and £100 existing balance → deposits 150.
+- `cover_commitments` with existing balance ≥ need → deposits 0, no row inserted.
+- Two templates funding same pocket on same postDate via shared `inFlight` map → second sees first's deposit, doesn't double-fund (need 300, bal 0, tpl A deposits 300, tpl B `cover_commitments` deposits 0).
+- Allocation order respected: higher-order alloc gets clipped, not lower-order.
+- `computeCoverAmount` unit: commitments outside `[from, to)` are excluded.
 
-## Out of scope (flagged in original audit)
-- Server-side RPC for rollover / recurring income.
-- Unique constraint on `incomes` (needs data cleanup migration first).
-- Any visual redesign beyond #9's settle editor.
+### 4. Supabase mock
 
-## Order of execution
-Pass 2 first (correctness), then Pass 3 (perf/polish). Single build verification at the end.
+Single `src/lib/__tests__/mocks/supabase.ts`:
+- `createSupabaseMock()` returns `{ client, inserts, updates, seed(table, rows) }`.
+- `client.from(table)` returns chainable object supporting `.insert().select()`, `.select().eq().eq()`, `.update().eq()`, `.delete().in()`.
+- Records every write into `inserts[table]` for assertions.
+
+Used via `vi.mock("@/integrations/supabase/client", () => ({ supabase: mock.client }))` at top of `recurringIncome.test.ts`.
+
+### 5. CI hook
+
+- README snippet: `bun run test`.
+- Don't add GitHub Actions config (out of scope).
+
+## Out of scope
+
+- Component-level rendering tests for `PaymentSplitEditor` (the pure helpers cover the math; DOM tests can come later).
+- E2E / Playwright.
+- Backfilling tests for unrelated modules (rollover, cycle, protection) — can follow in a second pass if desired.
+
+## Verification
+
+- `bun add -d vitest @vitest/coverage-v8 happy-dom`
+- `bun run test` → all green.
+- `tsgo` clean on the new files + refactored call sites.
