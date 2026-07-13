@@ -4,6 +4,7 @@ import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
 import { RouteError } from "@/components/RouteError";
 import { Card, CardContent } from "@/components/ui/card";
