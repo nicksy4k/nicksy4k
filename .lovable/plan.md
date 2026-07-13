@@ -1,21 +1,42 @@
-## Auto-fill remainder when adding/selecting Pockets
+## Goal
+Make pocket movements visible in both history views so it's obvious where income was routed and how a transaction was funded.
 
-Replace the current "default to 0.00" behavior in three places so a newly-added or newly-selected Pocket line pre-fills with the remaining unpaid / unallocated balance. Manual typing still overrides.
+## 1. Income history — show pocket routing
 
-### 1. `src/components/PaymentSplitEditor.tsx` (Spend flow)
-- In `handleSourceChange`, when the new source is a pocket (`pocket:*`) or `main`/`other`, and the current row's `amount` is empty, set `amount` to the current remainder (transaction `total` minus already-allocated across other rows).
-- In `add()`, insert the new row pre-filled with the current remainder as its amount (only if remainder > 0). Leave `source` as `"main"` default — the auto-fill applies regardless of which source is picked next, since selecting a different source keeps a manually-blank amount and re-triggers the fill via `handleSourceChange`.
-- Skip auto-fill for `bnpl:new` selections (BNPL amount is intentionally user-driven per plan).
+In `src/routes/income.tsx`, the "Income history" list currently shows only source, amount, category, notes. Pocket routing is stored as separate `savings` deposit rows tagged in `notes`:
 
-### 2. `src/routes/income.tsx` — one-off income splits
-- Update the "Add split" handler (currently pushes `{ pocket: "", amount: "" }`) to pre-fill `amount` with `remainder` (income total minus current `splitSum`) when > 0.
-- When the user picks a pocket in an existing row whose amount is still blank, also fill with the current remainder (small tweak in the `updateSplit({ pocket })` path).
+- One-off income splits → `"Routed from income: <source>"`
+- Recurring income allocations → `"Auto-routed from <source>"`
 
-### 3. `src/routes/income.tsx` → `RecurringAllocationsEditor`
-- Update `add()` to seed `amount` with `Math.max(0, amount - sumOfFixedAllocations)` instead of `0`, so a new allocation defaults to the leftover recurring-income amount.
-- No change to `cover_commitments` rows (amount stays auto).
+Build a lookup keyed by `date + source` from `savingsItems` (kind `"deposit"`) matching either note pattern, then render a compact routing line under each income entry:
 
-### Non-goals
-- No schema changes.
-- No change to save/validation logic — remainder math is already enforced downstream.
-- BNPL split amounts remain manual.
+```text
+→ Pocket · Food  £300   Bills  £200   · Main  £79
+```
+
+- Order pockets by deposit `created_at`.
+- Compute `mainRemainder = income.amount − Σ matched deposits`; hide the "Main" chip when it's zero or negative.
+- Reuse `colorForKey` for the pocket swatch, `fmt()` for amounts.
+- Only render the line when at least one matched deposit exists.
+
+## 2. Transaction history — surface splits in the collapsed row
+
+In `src/routes/history.tsx`, `payment_splits` are already rendered inside the expanded `CollapsibleContent`, so they're hidden until the row is opened. Add a one-line summary directly under the retailer/date in the always-visible row so pocket funding is scannable:
+
+```text
+Paid with · Pocket Food £30 · Main £70
+```
+
+- Render only when `t.payment_splits?.length > 0`.
+- Use the same label mapping already in place (main / pocket:<name> / bnpl / other), colored swatch for pocket splits.
+- Keep the existing expanded "Paid with" block as-is (it stays the detailed source of truth).
+- Skip for pending transactions (no splits yet).
+
+## Out of scope
+- No schema changes — income splits stay stored as savings deposits with the existing note conventions.
+- No edits to the split editors or save flows.
+- No dashboard/report changes.
+
+## Files touched
+- `src/routes/income.tsx` — build savings→income match map, render pocket chips under each history row.
+- `src/routes/history.tsx` — add collapsed-row split summary line.
