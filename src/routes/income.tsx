@@ -183,6 +183,45 @@ function IncomePage() {
       .reduce((s, i) => s + i.amount, 0);
   }, [items, cycle]);
 
+  // Match savings deposits back to their originating income so the history
+  // can surface pocket routing. Deposits are tagged in notes as either
+  // "Routed from income: <source>" (one-off) or "Auto-routed from <source>"
+  // (recurring). We bucket by (date|source) and consume each bucket once,
+  // in income-creation order, to avoid double-counting when the same
+  // date+source appears more than once.
+  const routingByIncome = useMemo(() => {
+    const buckets = new Map<string, { account: string; amount: number; created_at: string }[]>();
+    for (const s of savingsItems) {
+      if (s.kind !== "deposit") continue;
+      const note = s.notes ?? "";
+      let src: string | null = null;
+      if (note.startsWith("Routed from income: ")) src = note.slice("Routed from income: ".length);
+      else if (note.startsWith("Auto-routed from ")) src = note.slice("Auto-routed from ".length);
+      if (!src) continue;
+      const key = `${s.date}|${src}`;
+      const arr = buckets.get(key) ?? [];
+      arr.push({ account: s.account, amount: s.amount, created_at: s.created_at });
+      buckets.set(key, arr);
+    }
+    // Sort each bucket by created_at so the chip order matches the save order.
+    for (const arr of buckets.values()) {
+      arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
+    }
+    const consumed = new Set<string>();
+    const out = new Map<string, { account: string; amount: number }[]>();
+    const sortedIncomes = [...items].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    for (const i of sortedIncomes) {
+      const key = `${i.date}|${i.source}`;
+      if (consumed.has(key)) continue;
+      const b = buckets.get(key);
+      if (b && b.length > 0) {
+        out.set(i.id, b.map((x) => ({ account: x.account, amount: x.amount })));
+        consumed.add(key);
+      }
+    }
+    return out;
+  }, [items, savingsItems]);
+
   const totalAmt = parseFloat(amount) || 0;
   const splitSum = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
   const remainder = +(totalAmt - splitSum).toFixed(2);
