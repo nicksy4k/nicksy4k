@@ -4,6 +4,7 @@ import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
 import { RouteError } from "@/components/RouteError";
 import { Card, CardContent } from "@/components/ui/card";
@@ -112,6 +113,30 @@ function HistoryPage() {
                         {t.receipt_attached && <Badge variant="outline" className="font-normal gap-1"><FileText className="h-3 w-3" />{t.receipt_type}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{format(parseISO(t.date), "MMM d, yyyy")}</p>
+                      {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-x-2 flex-wrap">
+                          <span className="uppercase tracking-wider text-[10px]">Paid with</span>
+                          {t.payment_splits.map((sp, i) => {
+                            const isPocket = sp.source.startsWith("pocket:");
+                            const pocketName = isPocket ? sp.source.slice(7) : null;
+                            const label = sp.label
+                              ?? (sp.source === "main" ? "Main"
+                                : sp.source === "other" ? "Other"
+                                : isPocket ? pocketName!
+                                : sp.source.startsWith("bnpl:") ? "BNPL"
+                                : sp.source);
+                            return (
+                              <span key={i} className="inline-flex items-center gap-1">
+                                {pocketName && (
+                                  <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: colorForKey(pocketName) }} />
+                                )}
+                                <span>{label}</span>
+                                <span className="tabular-nums font-medium text-foreground">{fmt(sp.amount)}</span>
+                              </span>
+                            );
+                          })}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}>
