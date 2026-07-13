@@ -189,10 +189,32 @@ function IncomePage() {
   const overAllocated = splitSum > totalAmt + 0.0001;
 
   function addSplitRow() {
-    setSplits((s) => [...s, { id: crypto.randomUUID(), pocket: "", amount: "" }]);
+    setSplits((s) => {
+      const used = s.reduce((n, x) => n + (parseFloat(x.amount) || 0), 0);
+      const left = +(totalAmt - used).toFixed(2);
+      return [
+        ...s,
+        { id: crypto.randomUUID(), pocket: "", amount: left > 0 ? String(left) : "" },
+      ];
+    });
   }
   function updateSplit(id: string, patch: Partial<Split>) {
-    setSplits((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    setSplits((s) =>
+      s.map((x) => {
+        if (x.id !== id) return x;
+        const next = { ...x, ...patch };
+        // Auto-fill amount with remainder when a pocket is picked and amount is blank.
+        if (patch.pocket && !x.amount) {
+          const usedByOthers = s.reduce(
+            (n, y) => (y.id === id ? n : n + (parseFloat(y.amount) || 0)),
+            0,
+          );
+          const left = +(totalAmt - usedByOthers).toFixed(2);
+          if (left > 0) next.amount = String(left);
+        }
+        return next;
+      }),
+    );
   }
   function removeSplit(id: string) {
     setSplits((s) => s.filter((x) => x.id !== id));
