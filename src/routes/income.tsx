@@ -189,10 +189,32 @@ function IncomePage() {
   const overAllocated = splitSum > totalAmt + 0.0001;
 
   function addSplitRow() {
-    setSplits((s) => [...s, { id: crypto.randomUUID(), pocket: "", amount: "" }]);
+    setSplits((s) => {
+      const used = s.reduce((n, x) => n + (parseFloat(x.amount) || 0), 0);
+      const left = +(totalAmt - used).toFixed(2);
+      return [
+        ...s,
+        { id: crypto.randomUUID(), pocket: "", amount: left > 0 ? String(left) : "" },
+      ];
+    });
   }
   function updateSplit(id: string, patch: Partial<Split>) {
-    setSplits((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    setSplits((s) =>
+      s.map((x) => {
+        if (x.id !== id) return x;
+        const next = { ...x, ...patch };
+        // Auto-fill amount with remainder when a pocket is picked and amount is blank.
+        if (patch.pocket && !x.amount) {
+          const usedByOthers = s.reduce(
+            (n, y) => (y.id === id ? n : n + (parseFloat(y.amount) || 0)),
+            0,
+          );
+          const left = +(totalAmt - usedByOthers).toFixed(2);
+          if (left > 0) next.amount = String(left);
+        }
+        return next;
+      }),
+    );
   }
   function removeSplit(id: string) {
     setSplits((s) => s.filter((x) => x.id !== id));
@@ -646,11 +668,17 @@ function RecurringAllocationsEditor({
   const update = (id: string, patch: Partial<RecurringIncomeAllocation>) =>
     onChange(allocations.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   const remove = (id: string) => onChange(allocations.filter((a) => a.id !== id));
-  const add = () =>
+  const add = () => {
+    const usedFixed = allocations.reduce(
+      (n, a) => (a.kind === "fixed" ? n + (a.amount || 0) : n),
+      0,
+    );
+    const left = Math.max(0, +(amount - usedFixed).toFixed(2));
     onChange([
       ...allocations,
-      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: 0, order: allocations.length },
+      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: left, order: allocations.length },
     ]);
+  };
 
   // Preview: fund in order, stop when depleted; cover_commitments shown as "auto".
   let remaining = amount;
