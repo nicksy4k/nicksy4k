@@ -650,7 +650,11 @@ function IncomePage() {
             <p className="text-sm text-muted-foreground py-8 text-center">No income recorded yet.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {items.map((i) => (
+              {items.map((i) => {
+                const routing = routingByIncome.get(i.id) ?? [];
+                const routedSum = routing.reduce((s, r) => s + r.amount, 0);
+                const mainRemainder = +(i.amount - routedSum).toFixed(2);
+                return (
                 <li key={i.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -660,6 +664,24 @@ function IncomePage() {
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {format(parseISO(i.date), "MMM d, yyyy")}{i.notes ? ` · ${i.notes}` : ""}
                     </p>
+                    {routing.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap">
+                        <span className="uppercase tracking-wider text-[10px]">Routed to</span>
+                        {routing.map((r, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: colorForKey(r.account) }} />
+                            <span>{r.account}</span>
+                            <span className="tabular-nums font-medium text-foreground">{fmt(r.amount)}</span>
+                          </span>
+                        ))}
+                        {mainRemainder > 0.005 && (
+                          <span className="inline-flex items-center gap-1">
+                            <span>· Main</span>
+                            <span className="tabular-nums font-medium text-foreground">{fmt(mainRemainder)}</span>
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold tabular-nums text-primary">{fmt(i.amount)}</span>
@@ -668,7 +690,8 @@ function IncomePage() {
                     </Button>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </CardContent>
