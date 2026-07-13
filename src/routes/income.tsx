@@ -668,11 +668,17 @@ function RecurringAllocationsEditor({
   const update = (id: string, patch: Partial<RecurringIncomeAllocation>) =>
     onChange(allocations.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   const remove = (id: string) => onChange(allocations.filter((a) => a.id !== id));
-  const add = () =>
+  const add = () => {
+    const usedFixed = allocations.reduce(
+      (n, a) => (a.kind === "fixed" ? n + (a.amount || 0) : n),
+      0,
+    );
+    const left = Math.max(0, +(amount - usedFixed).toFixed(2));
     onChange([
       ...allocations,
-      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: 0, order: allocations.length },
+      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: left, order: allocations.length },
     ]);
+  };
 
   // Preview: fund in order, stop when depleted; cover_commitments shown as "auto".
   let remaining = amount;
