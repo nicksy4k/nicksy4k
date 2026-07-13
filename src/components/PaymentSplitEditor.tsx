@@ -102,14 +102,29 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
     );
 
   const remove = (id: string) => onChange(splits.filter((s) => s.id !== id));
-  const add = () => onChange([...splits, emptySplit("main")]);
+  const add = () => {
+    const left = +(total - allocated).toFixed(2);
+    const seed = emptySplit("main");
+    if (left > 0) seed.amount = String(left);
+    onChange([...splits, seed]);
+  };
 
   function handleSourceChange(id: string, newSource: string) {
+    const current = splits.find((s) => s.id === id);
     const patch: Partial<SplitDraft> = { source: newSource };
     if (newSource === "bnpl:new") {
       patch.bnpl = defaultBnpl(retailer, transactionDate);
     } else {
       patch.bnpl = undefined;
+      // Auto-fill with remainder when amount is blank (skip BNPL — user drives that amount).
+      if (current && !current.amount) {
+        const usedByOthers = splits.reduce(
+          (n, s) => (s.id === id ? n : n + (parseFloat(s.amount) || 0)),
+          0,
+        );
+        const left = +(total - usedByOthers).toFixed(2);
+        if (left > 0) patch.amount = String(left);
+      }
     }
     update(id, patch);
   }
