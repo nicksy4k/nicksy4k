@@ -262,6 +262,8 @@ function ReportsPage() {
                         borderRadius: 8,
                         fontSize: 12,
                       }}
+                      itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+                      labelStyle={{ color: "hsl(var(--popover-foreground))" }}
                     />
                     <Legend wrapperStyle={{ display: "none" }} />
                   </PieChart>
