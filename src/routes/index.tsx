@@ -191,7 +191,7 @@ function DashboardPage() {
                           <Cell key={c.name} fill={colorForKey(c.name)} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+                      <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v)} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -247,7 +247,7 @@ function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                     <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
+                    <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v)} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
                     <Bar dataKey="total" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -388,9 +388,12 @@ function EmptyChart() {
 }
 
 const tooltipStyle = {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  color: "var(--popover-foreground)",
-  fontSize: 12,
+  contentStyle: {
+    backgroundColor: "var(--popover)",
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    fontSize: 12,
+  },
+  itemStyle: { color: "var(--popover-foreground)" },
+  labelStyle: { color: "var(--popover-foreground)" },
 };
