@@ -21,6 +21,7 @@ import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
 import { Link } from "@tanstack/react-router";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({ meta: [{ title: "Commitments — Ledgerly" }] }),
