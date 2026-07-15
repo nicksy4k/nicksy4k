@@ -1,53 +1,45 @@
-## How the status icons currently work
+## Goal
+Replace the plain `title` attributes on the four commitment status icons with rich Shadcn `Tooltip` popovers that explain exactly why the row shows its current state for the active cycle.
 
-Each row shows exactly one of three indicators, based only on the row's own `paid` flag and the waterfall funding calc — the cycle window is NOT part of this decision:
+## Where
+`src/routes/commitments.tsx` — the status icon block (lines ~199–225) inside the commitments list.
 
-- Green tick (`Check` in a filled circle) — `paid === true`. Set when you tap the "Paid" toggle, or when a payment auto-marks it.
-- Yellow dot — `paid === false` AND the Bill Money pocket balance (allocated top-down by earliest due date) still covers this bill.
-- Red dot — `paid === false` AND the pocket has run out by the time the waterfall reaches this bill (shortfall).
+## Tooltip content per state
 
-The waterfall sorts ALL unpaid commitments by `next_due_date` ascending and subtracts each amount from the Bill Money balance in order. Cycle end is only used for the "Left to pay before reset" KPI and the shortfall banner — not for the per-row icon.
+- **Solid green tick — Paid**
+  - Title: "Paid this cycle"
+  - Body: "Marked paid on {last_paid_date}. Next due {next_due_date}."
 
-## Why your July view looks mixed
+- **Outlined green tick — Covered (not due this cycle)**
+  - Title: "Covered — not due this cycle"
+  - Body: "Next due {next_due_date}, which falls after the current cycle ends on {resetDate}. No action needed until then."
 
-Pulled the live rows. A snapshot of the unpaid ones with due dates INSIDE the current cycle (they should not be green yet):
+- **Yellow dot — Unpaid · funded**
+  - Title: "Funded by Bill Money"
+  - Body: "Due {next_due_date} (this cycle). Enough Bill Money is currently allocated via the waterfall to cover it — mark paid when the charge lands."
 
-```text
-Service Charge      £60.00   due 17 Jul   unpaid
-test sub            £24.67   due 19 Jul   unpaid
-Paramount+           £4.99   due 19 Jul   unpaid
-ClearPay Amazon     £17.00   due 20 Jul   unpaid
-NowTV Sports        £27.99   due 20 Jul   unpaid
-Audible              £5.99   due 21 Jul   unpaid
-Max Fun Donation     £5.00   due 23 Jul   unpaid
-Michelle Disney+     £5.99   due 25 Jul   unpaid
-MY Disney+           £4.99   due 26 Jul   unpaid
-```
+- **Red dot — Unpaid · shortfall**
+  - Title: "Shortfall"
+  - Body: "Due {next_due_date} (this cycle). Bill Money has already been exhausted by earlier bills in the waterfall — top up or reprioritise."
 
-These are genuinely still due this cycle, so the icon logic is correct to leave them as yellow/red dots. The rows already showing a green tick (Xbox Game Pass 26 Jul, NowTV Boost 3 Aug, Phone plan 3 Aug, BNPL installments, Netflix 10 Aug, etc.) all have `paid = true` on the record — that's why they render as ticks.
+Dates formatted with the existing `format(parseISO(...), "d MMM yyyy")` helper. Missing `last_paid_date` falls back to "date unknown".
 
-So: nothing is broken. The icon is a *payment state*, not a *cycle state*. A bill dated 26 Jul that you marked paid on 2 Jul stays green forever until the global rollover engine flips it back to unpaid at the next cycle boundary.
+## Implementation
 
-## What you're probably expecting
+1. Import `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger` from `@/components/ui/tooltip` (already in the project).
+2. Wrap the whole `<ul>` (or the list `CardContent`) in a single `<TooltipProvider delayDuration={150}>`.
+3. Replace each of the four icon `<span>`s with:
+   ```tsx
+   <Tooltip>
+     <TooltipTrigger asChild><span …>{icon}</span></TooltipTrigger>
+     <TooltipContent side="left" className="max-w-xs">
+       <p className="font-medium">{title}</p>
+       <p className="text-xs text-muted-foreground mt-1">{body}</p>
+     </TooltipContent>
+   </Tooltip>
+   ```
+4. Keep the existing `aria-label`s for a11y; drop the redundant `title` attributes to avoid a native + custom tooltip double-up.
+5. Because the icon lives inside a `<button>` (the row itself), use `onClick={(e) => e.stopPropagation()}` on the `TooltipTrigger` wrapper span so hovering/tapping the icon does not open the details drawer. Trigger uses `asChild` on a `<span>` (not a nested button) to stay valid HTML.
 
-You're reading the tick as "already handled for this cycle" — i.e. anything with `next_due_date > cycle.end` should show green because it can't hit this cycle anymore. That's a reasonable mental model but isn't what the code does today.
-
-## Proposal — add a cycle-aware "covered" state (opt-in, no data changes)
-
-Only if you approve, I'll change `src/routes/commitments.tsx` so each row picks its indicator in this order:
-
-1. `paid === true` → green tick (unchanged).
-2. `next_due_date > cycle.end` (falls in a future cycle) → green tick with a subtler outline + tooltip "Covered — not due this cycle".
-3. Unpaid, due this cycle, waterfall-funded → yellow dot (unchanged).
-4. Unpaid, due this cycle, shortfall → red dot (unchanged).
-
-Effects:
-- The shortfall KPI, "Left to pay before reset", and the funding waterfall stay exactly as they are (they already filter by `< resetDate`).
-- Rows like Xbox Game Pass 26 Jul, NowTV Boost 3 Aug, etc. would show green whether or not they were manually marked paid, matching your expectation.
-- No DB migration, no changes to rollover, no changes to the paid toggle behaviour.
-
-If you'd rather keep tick = "you paid it" and add a NEW icon (e.g. a small calendar-check) for the "future cycle" case, say the word and I'll wire that instead.
-
-## Alternative if you actually want them cleared
-
-If the intent is "these should all be marked paid because they've been handled", the fix isn't visual — it's a one-shot data update to flip `paid = true` for the listed July rows. Tell me which cadence you want (all rows in a chosen date range, or a specific list) and I'll prepare a migration.
+## Out of scope
+No behavioural changes to the waterfall, rollover, or paid logic. Purely presentational.
