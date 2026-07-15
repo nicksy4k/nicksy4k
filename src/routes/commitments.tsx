@@ -176,6 +176,29 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
+      <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Check className="h-4 w-4" />
+          </span>
+          <span>Paid this cycle</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25">
+            <Check className="h-4 w-4" />
+          </span>
+          <span>Covered — not due this cycle</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-yellow-400" />
+          <span>Due this cycle · funded</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
+          <span>Due this cycle · shortfall</span>
+        </div>
+      </div>
+
       <Card>
         <CardHeader><CardTitle>All commitments</CardTitle></CardHeader>
         <CardContent>
