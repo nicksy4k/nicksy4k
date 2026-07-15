@@ -64,11 +64,11 @@ function CommitmentsPage() {
 
   const shortfall = leftToPay - billPocketBalance;
 
-  // Waterfall: order unpaid bills by due date, allocate Bill Money down the list.
-  // funded[id] = true means the current pocket balance covers this bill in priority order.
+  // Waterfall: order unpaid THIS-CYCLE bills by due date, allocate Bill Money down the list.
+  // Bills falling in a future cycle are not part of the funding race — they're "covered" for now.
   const fundedMap = useMemo(() => {
     const unpaidSorted = items
-      .filter((i) => !i.paid)
+      .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
       .slice()
       .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
     let remaining = billPocketBalance;
@@ -82,7 +82,7 @@ function CommitmentsPage() {
       }
     }
     return map;
-  }, [items, billPocketBalance]);
+  }, [items, billPocketBalance, resetDate]);
 
   // NOTE: Page-level rollover logic intentionally removed.
   // The single master rollover engine lives in `useCommitmentRollover`,
@@ -202,6 +202,14 @@ function CommitmentsPage() {
                         <span
                           title="Paid"
                           className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
+                        >
+                          <Check className="h-4 w-4" />
+                        </span>
+                      ) : c.next_due_date && c.next_due_date >= resetDate ? (
+                        <span
+                          title="Covered — not due this cycle"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
+                          aria-label="Covered — not due this cycle"
                         >
                           <Check className="h-4 w-4" />
                         </span>
