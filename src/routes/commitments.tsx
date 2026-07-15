@@ -182,52 +182,74 @@ function CommitmentsPage() {
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No commitments yet.</p>
           ) : (
-            <ul className="space-y-2">
-              {items.map((c) => (
-                <li key={c.id}>
-                  <button
-                    type="button"
-                    onClick={() => setDetailsId(c.id)}
-                    className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{c.item_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{c.category || "—"}</span>
-                        <span>{c.next_due_date ? `Due ${format(parseISO(c.next_due_date), "d MMM yyyy")}` : "No due date"}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
-                      {c.paid ? (
-                        <span
-                          title="Paid"
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
-                        >
-                          <Check className="h-4 w-4" />
-                        </span>
-                      ) : c.next_due_date && c.next_due_date >= resetDate ? (
-                        <span
-                          title="Covered — not due this cycle"
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
-                          aria-label="Covered — not due this cycle"
-                        >
-                          <Check className="h-4 w-4" />
-                        </span>
-                      ) : (
-                        <span
-                          title={fundedMap[c.id] ? "Unpaid · funded" : "Unpaid · shortfall"}
-                          className={`inline-flex h-2.5 w-2.5 rounded-full ${
-                            fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"
-                          }`}
-                          aria-label={fundedMap[c.id] ? "Funded" : "Shortfall"}
-                        />
-                      )}
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <TooltipProvider delayDuration={150}>
+              <ul className="space-y-2">
+                {items.map((c) => {
+                  const dueLabel = c.next_due_date ? format(parseISO(c.next_due_date), "d MMM yyyy") : "no date";
+                  const resetLabel = format(parseISO(resetDate), "d MMM yyyy");
+                  const paidLabel = c.last_paid_date ? format(parseISO(c.last_paid_date), "d MMM yyyy") : "date unknown";
+                  let statusTitle = "";
+                  let statusBody = "";
+                  if (c.paid) {
+                    statusTitle = "Paid this cycle";
+                    statusBody = `Marked paid on ${paidLabel}. Next due ${dueLabel}.`;
+                  } else if (c.next_due_date && c.next_due_date >= resetDate) {
+                    statusTitle = "Covered — not due this cycle";
+                    statusBody = `Next due ${dueLabel}, which falls after the current cycle ends on ${resetLabel}. No action needed until then.`;
+                  } else if (fundedMap[c.id]) {
+                    statusTitle = "Funded by Bill Money";
+                    statusBody = `Due ${dueLabel} (this cycle). Enough Bill Money is currently allocated via the waterfall to cover it — mark paid when the charge lands.`;
+                  } else {
+                    statusTitle = "Shortfall";
+                    statusBody = `Due ${dueLabel} (this cycle). Bill Money has already been exhausted by earlier bills in the waterfall — top up or reprioritise.`;
+                  }
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailsId(c.id)}
+                        className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{c.item_name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{c.category || "—"}</span>
+                            <span>{c.next_due_date ? `Due ${dueLabel}` : "No due date"}</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={statusTitle}
+                                className={
+                                  c.paid
+                                    ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
+                                    : c.next_due_date && c.next_due_date >= resetDate
+                                    ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
+                                    : `inline-flex h-2.5 w-2.5 rounded-full ${fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"}`
+                                }
+                              >
+                                {c.paid || (c.next_due_date && c.next_due_date >= resetDate) ? (
+                                  <Check className="h-4 w-4" />
+                                ) : null}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-xs">
+                              <p className="font-medium">{statusTitle}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{statusBody}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </TooltipProvider>
+
           )}
         </CardContent>
       </Card>
