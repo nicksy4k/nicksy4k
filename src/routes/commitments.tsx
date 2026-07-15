@@ -205,6 +205,14 @@ function CommitmentsPage() {
                         >
                           <Check className="h-4 w-4" />
                         </span>
+                      ) : c.next_due_date && c.next_due_date >= resetDate ? (
+                        <span
+                          title="Covered — not due this cycle"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
+                          aria-label="Covered — not due this cycle"
+                        >
+                          <Check className="h-4 w-4" />
+                        </span>
                       ) : (
                         <span
                           title={fundedMap[c.id] ? "Unpaid · funded" : "Unpaid · shortfall"}
