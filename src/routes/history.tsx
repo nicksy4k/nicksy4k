@@ -46,11 +46,17 @@ function HistoryPage() {
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "all">("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
+
+  const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return items.filter((t) => {
+      if (fromDate && t.date < fromDate) return false;
+      if (toDate && t.date > toDate) return false;
       const matchesCat = cat === "all" || t.items.some((i) => i.category === cat);
       if (!matchesCat) return false;
       if (!needle) return true;
@@ -61,33 +67,58 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, q, cat]);
+  }, [items, q, cat, fromDate, toDate]);
+
+  function clearFilters() {
+    setQ("");
+    setCat("all");
+    setFromDate("");
+    setToDate("");
+  }
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">All transactions</p>
-        <h1 className="text-3xl md:text-4xl font-semibold">History</h1>
+      <header className="mb-8 flex items-end justify-between flex-wrap gap-2">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">All transactions</p>
+          <h1 className="text-3xl md:text-4xl font-semibold">History</h1>
+        </div>
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {hasFilters ? `${filtered.length} of ${items.length}` : `${items.length} total`}
+        </p>
       </header>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search retailer, item, location…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Search retailer, item, notes, location…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <Select value={cat} onValueChange={(v) => setCat(v as Category | "all")}>
+            <SelectTrigger className="sm:w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categories.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={cat} onValueChange={(v) => setCat(v as Category | "all")}>
-          <SelectTrigger className="sm:w-[200px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categories.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="flex items-center gap-2 flex-1">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">From</Label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="flex-1" />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">To</Label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="flex-1" />
+          </div>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
-            No transactions match your filters.
+            {hasFilters ? "No transactions match your filters — try clearing them." : "No transactions yet."}
           </CardContent>
         </Card>
       ) : (
