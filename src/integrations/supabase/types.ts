@@ -395,6 +395,36 @@ export type Database = {
           },
         ]
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          cycle_anchor: string
+          cycle_override_end: string | null
+          cycle_override_start: string | null
+          cycle_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_anchor?: string
+          cycle_override_end?: string | null
+          cycle_override_start?: string | null
+          cycle_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_anchor?: string
+          cycle_override_end?: string | null
+          cycle_override_start?: string | null
+          cycle_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
