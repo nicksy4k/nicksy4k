@@ -9,11 +9,13 @@ import {
   startOfDay,
   getDaysInMonth,
 } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 // ============================================================================
 // Income Cycle Sync Engine
 // A single, app-wide source of truth for the active financial cycle window.
-// Persisted in localStorage and broadcast across the app via a tiny pub/sub.
+// Persisted per-user in Supabase (`user_settings`) with a localStorage cache
+// so the first paint has correct data before the network round-trip completes.
 // All date math uses local `yyyy-MM-dd` formatting — never `.toISOString()` —
 // to avoid UTC timezone shifts that would mis-bucket transactions by a day.
 // ============================================================================
@@ -31,7 +33,7 @@ export interface CycleSettings {
   } | null;
 }
 
-const STORAGE_KEY = "ledgerly.cycle.v2";
+const CACHE_KEY = "ledgerly.cycle.v2";
 
 export const DEFAULT_CYCLE: CycleSettings = {
   type: "monthly",
@@ -39,12 +41,12 @@ export const DEFAULT_CYCLE: CycleSettings = {
   override: null,
 };
 
-// ---------- persistence ----------
+// ---------- local cache (first-paint fallback) ----------
 
-export function loadCycleSettings(): CycleSettings {
+function readCache(): CycleSettings {
   if (typeof window === "undefined") return DEFAULT_CYCLE;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return DEFAULT_CYCLE;
     const parsed = JSON.parse(raw) as Partial<CycleSettings>;
     return {
@@ -57,22 +59,77 @@ export function loadCycleSettings(): CycleSettings {
   }
 }
 
-export function saveCycleSettings(s: CycleSettings) {
+function writeCache(s: CycleSettings) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  localStorage.setItem(CACHE_KEY, JSON.stringify(s));
+}
+
+function broadcast() {
+  if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("ledgerly:cycle-changed"));
+}
+
+// Legacy sync accessors — kept so any imperative caller still resolves
+// a reasonable value. Prefer the hooks below for reactive reads.
+export function loadCycleSettings(): CycleSettings {
+  return readCache();
+}
+
+// ---------- DB sync ----------
+
+type Row = {
+  cycle_type: string;
+  cycle_anchor: string;
+  cycle_override_start: string | null;
+  cycle_override_end: string | null;
+};
+
+function rowToSettings(r: Row): CycleSettings {
+  return {
+    type: r.cycle_type === "four-weekly" ? "four-weekly" : "monthly",
+    anchor: r.cycle_anchor,
+    override:
+      r.cycle_override_start && r.cycle_override_end
+        ? { startISO: r.cycle_override_start, endISO: r.cycle_override_end }
+        : null,
+  };
+}
+
+async function fetchRemote(): Promise<CycleSettings | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData.user?.id;
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end")
+    .eq("user_id", uid)
+    .maybeSingle();
+  if (error || !data) return null;
+  return rowToSettings(data as Row);
+}
+
+async function upsertRemote(s: CycleSettings): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData.user?.id;
+  if (!uid) return;
+  await supabase.from("user_settings").upsert(
+    {
+      user_id: uid,
+      cycle_type: s.type,
+      cycle_anchor: s.anchor,
+      cycle_override_start: s.override?.startISO ?? null,
+      cycle_override_end: s.override?.endISO ?? null,
+    },
+    { onConflict: "user_id" },
+  );
 }
 
 // ---------- core calculation ----------
 
 export interface ActiveCycle {
-  /** Local YYYY-MM-DD inclusive start. */
   startISO: string;
-  /** Local YYYY-MM-DD inclusive end. */
   endISO: string;
-  /** JS Date at start of day (local). */
   start: Date;
-  /** JS Date at start of day (local) for the inclusive end. */
   end: Date;
   isOverridden: boolean;
   type: CycleType;
@@ -82,17 +139,12 @@ function fmt(d: Date) {
   return format(d, "yyyy-MM-dd");
 }
 
-/**
- * Compute the cycle window containing `today` (defaults to now) based on
- * the chosen type + anchor. Manual override wins if today is inside it.
- */
 export function getActiveCycle(
   settings: CycleSettings,
   today: Date = new Date(),
 ): ActiveCycle {
   const t = startOfDay(today);
 
-  // Manual override (only valid if today sits inside it)
   if (settings.override) {
     const ovStart = startOfDay(parseISO(settings.override.startISO));
     const ovEnd = startOfDay(parseISO(settings.override.endISO));
@@ -114,7 +166,7 @@ export function getActiveCycle(
     const days = differenceInCalendarDays(t, anchor);
     const n = Math.floor(days / 28);
     const start = addDays(anchor, n * 28);
-    const end = addDays(start, 27); // inclusive (28-day window)
+    const end = addDays(start, 27);
     return {
       startISO: fmt(start),
       endISO: fmt(end),
@@ -125,19 +177,16 @@ export function getActiveCycle(
     };
   }
 
-  // Monthly: cycle starts on the anchor's day-of-month.
   const anchorDom = anchor.getDate();
-  // Candidate start = this month's anchor day (clamped to month length)
   const thisMonth = new Date(t.getFullYear(), t.getMonth(), 1);
   const clamp = (base: Date) =>
     setDate(base, Math.min(anchorDom, getDaysInMonth(base)));
   let start = clamp(thisMonth);
   if (t < start) {
-    // Anchor day hasn't arrived this month yet → cycle started previous month
     start = clamp(addMonths(thisMonth, -1));
   }
   const nextStart = clamp(addMonths(start, 1));
-  const end = addDays(nextStart, -1); // inclusive last day
+  const end = addDays(nextStart, -1);
   return {
     startISO: fmt(start),
     endISO: fmt(end),
@@ -148,16 +197,10 @@ export function getActiveCycle(
   };
 }
 
-/** True if an ISO date (YYYY-MM-DD) falls inside the cycle inclusive. */
 export function isInCycle(dateISO: string, cycle: ActiveCycle): boolean {
   return dateISO >= cycle.startISO && dateISO <= cycle.endISO;
 }
 
-/**
- * Cycle window containing an arbitrary ISO date — used by the Archive
- * lookup. Manual override is only returned when the target date sits
- * inside it (same rule as `getActiveCycle`).
- */
 export function getCycleAt(
   settings: CycleSettings,
   dateISO: string,
@@ -165,10 +208,6 @@ export function getCycleAt(
   return getActiveCycle(settings, parseISO(dateISO));
 }
 
-/**
- * Returns the most recent `count` cycles (newest first), starting from
- * the active cycle and stepping backwards by one cycle each iteration.
- */
 export function listRecentCycles(
   settings: CycleSettings,
   count: number,
@@ -185,14 +224,6 @@ export function listRecentCycles(
   return out;
 }
 
-/**
- * Advance a due-date by exactly one cycle step. Accepts either an
- * `ActiveCycle` (uses its `type`) or an explicit `CycleType` so that
- * individual bills with a different frequency than the global engine
- * can still be rolled forward correctly.
- * Four-weekly → +28d, Monthly → +1 calendar month.
- * This is the ONLY place rollover math lives.
- */
 export function advanceDueDate(
   dueISO: string,
   cycleOrType: ActiveCycle | CycleType,
@@ -204,11 +235,6 @@ export function advanceDueDate(
   return fmt(next);
 }
 
-/**
- * Advance an ISO date by exactly one step of a fixed cadence. Used by
- * recurring income templates, whose cadence is independent of the global
- * expense cycle.
- */
 export function advanceByCadence(
   dueISO: string,
   cadence: "weekly" | "fortnightly" | "four-weekly" | "monthly",
@@ -222,10 +248,6 @@ export function advanceByCadence(
   return fmt(next);
 }
 
-/**
- * Roll a due date forward in cycle-sized steps until it lands on or after
- * the target ISO date. Handles bills that have been missed for several cycles.
- */
 export function rollDueDateForward(
   dueISO: string,
   targetISO: string,
@@ -240,28 +262,62 @@ export function rollDueDateForward(
   return cur;
 }
 
-// ---------- React hook ----------
+// ---------- React hooks ----------
 
+/**
+ * Reactive access to the user's cycle settings.
+ * - Initial state is hydrated from the localStorage cache (0-ms first paint).
+ * - On mount, fetches the authoritative row from Supabase and reconciles.
+ * - `update()` writes through to Supabase, updates the cache, and broadcasts.
+ * - Auth changes (sign-in / sign-out) trigger a refetch.
+ */
 export function useCycleSettings() {
-  const [settings, setSettings] = useState<CycleSettings>(() =>
-    loadCycleSettings(),
-  );
+  const [settings, setSettings] = useState<CycleSettings>(() => readCache());
 
   useEffect(() => {
-    const sync = () => setSettings(loadCycleSettings());
-    window.addEventListener("ledgerly:cycle-changed", sync);
-    window.addEventListener("storage", sync);
+    let cancelled = false;
+
+    async function refresh() {
+      const remote = await fetchRemote();
+      if (cancelled) return;
+      if (remote) {
+        writeCache(remote);
+        setSettings(remote);
+        broadcast();
+      } else {
+        // No row yet — seed the remote with whatever we currently have so
+        // future devices pick it up too. (No-op when signed out.)
+        const cached = readCache();
+        await upsertRemote(cached);
+      }
+    }
+
+    refresh();
+
+    const onCycleChanged = () => setSettings(readCache());
+    window.addEventListener("ledgerly:cycle-changed", onCycleChanged);
+    window.addEventListener("storage", onCycleChanged);
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        refresh();
+      }
+    });
+
     return () => {
-      window.removeEventListener("ledgerly:cycle-changed", sync);
-      window.removeEventListener("storage", sync);
+      cancelled = true;
+      window.removeEventListener("ledgerly:cycle-changed", onCycleChanged);
+      window.removeEventListener("storage", onCycleChanged);
+      authSub.subscription.unsubscribe();
     };
   }, []);
 
   const update = (next: CycleSettings) => {
-    // `saveCycleSettings` dispatches `ledgerly:cycle-changed`, which the
-    // effect above listens for and re-syncs state — no need to setSettings
-    // here (would cause a double render).
-    saveCycleSettings(next);
+    writeCache(next);
+    setSettings(next);
+    broadcast();
+    // Fire-and-forget; RLS + upsert guarantees single row per user.
+    void upsertRemote(next);
   };
 
   return { settings, update };
