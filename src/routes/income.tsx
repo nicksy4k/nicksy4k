@@ -660,6 +660,11 @@ function IncomePage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium truncate">{i.source}</p>
                       <Badge variant="secondary" className="font-normal">{i.category}</Badge>
+                      {isCarryoverIncome(i) && (
+                        <Badge variant="outline" className={i.amount < 0 ? "border-red-400 text-red-600" : "border-emerald-400 text-emerald-700"}>
+                          {i.amount < 0 ? "Carryover · overspend" : "Carryover"}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {format(parseISO(i.date), "MMM d, yyyy")}{i.notes ? ` · ${i.notes}` : ""}
@@ -684,7 +689,7 @@ function IncomePage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold tabular-nums text-primary">{fmt(i.amount)}</span>
+                    <span className={"text-sm font-semibold tabular-nums " + (i.amount < 0 ? "text-red-600" : "text-primary")}>{fmt(i.amount)}</span>
                     <Button variant="ghost" size="icon" onClick={() => { remove(i.id); toast.success("Removed"); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
