@@ -222,6 +222,15 @@ export function getCycleAt(
   return getActiveCycle(settings, parseISO(dateISO));
 }
 
+/** The cycle immediately preceding the currently-active one. */
+export function previousCycleWindow(
+  settings: CycleSettings,
+  today: Date = new Date(),
+): ActiveCycle {
+  const current = getActiveCycle(settings, today);
+  return getActiveCycle(settings, addDays(current.start, -1));
+}
+
 export function listRecentCycles(
   settings: CycleSettings,
   count: number,
