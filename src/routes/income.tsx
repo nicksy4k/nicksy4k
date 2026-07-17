@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, TrendingUp, Split, PlusCircle, Repeat, Pause, Play, Pencil, Zap } from "lucide-react";
 import { colorForKey } from "@/lib/colors";
+import { isCarryoverIncome } from "@/lib/carryover";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
