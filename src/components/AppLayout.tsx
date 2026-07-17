@@ -35,6 +35,7 @@ export function AppLayout() {
   // fires the moment a new cycle starts, regardless of which route is open.
   useCommitmentRollover();
   useRecurringIncomeGenerator();
+  useCycleCarryover();
 
   const [email, setEmail] = useState<string | null>(null);
   useEffect(() => {
