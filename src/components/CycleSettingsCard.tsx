@@ -122,6 +122,18 @@ export function CycleSettingsCard() {
           )}
         </div>
 
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label htmlFor="cycle-carryover" className="text-sm">Carry unspent balance into next cycle</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When a new cycle starts, your remaining "Left to spend" is added as a Carryover income entry. Overspends carry as a negative entry.
+              </p>
+            </div>
+            <Switch id="cycle-carryover" checked={carryover} onCheckedChange={setCarryover} />
+          </div>
+        </div>
+
         <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-sm">
           <span className="text-muted-foreground">Active window: </span>
           <span className="font-medium tabular-nums">
