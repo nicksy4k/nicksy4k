@@ -20,6 +20,7 @@ export function CycleSettingsCard() {
   const [type, setType] = useState<CycleType>(settings.type);
   const [anchor, setAnchor] = useState(settings.anchor);
   const [overrideOn, setOverrideOn] = useState(Boolean(settings.override));
+  const [carryover, setCarryover] = useState(settings.carryoverEnabled);
   const active = getActiveCycle(settings);
   const [ovStart, setOvStart] = useState(settings.override?.startISO ?? active.startISO);
   const [ovEnd, setOvEnd] = useState(settings.override?.endISO ?? active.endISO);
@@ -29,6 +30,7 @@ export function CycleSettingsCard() {
     setType(settings.type);
     setAnchor(settings.anchor);
     setOverrideOn(Boolean(settings.override));
+    setCarryover(settings.carryoverEnabled);
     if (settings.override) {
       setOvStart(settings.override.startISO);
       setOvEnd(settings.override.endISO);
@@ -48,15 +50,23 @@ export function CycleSettingsCard() {
       }
       override = { startISO: ovStart, endISO: ovEnd };
     }
-    update({ type, anchor, override });
+    update({
+      ...settings,
+      type,
+      anchor,
+      override,
+      carryoverEnabled: carryover,
+    });
     toast.success("Cycle settings saved");
   }
 
   // Preview the cycle that WILL be active with the staged values.
   const preview = getActiveCycle({
+    ...settings,
     type,
     anchor: anchor || settings.anchor,
     override: overrideOn ? { startISO: ovStart, endISO: ovEnd } : null,
+    carryoverEnabled: carryover,
   });
 
   return (
