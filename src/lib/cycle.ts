@@ -90,6 +90,8 @@ type Row = {
   cycle_anchor: string;
   cycle_override_start: string | null;
   cycle_override_end: string | null;
+  carryover_enabled: boolean | null;
+  last_carryover_cycle_key: string | null;
 };
 
 function rowToSettings(r: Row): CycleSettings {
@@ -100,6 +102,8 @@ function rowToSettings(r: Row): CycleSettings {
       r.cycle_override_start && r.cycle_override_end
         ? { startISO: r.cycle_override_start, endISO: r.cycle_override_end }
         : null,
+    carryoverEnabled: r.carryover_enabled ?? true,
+    lastCarryoverCycleKey: r.last_carryover_cycle_key ?? null,
   };
 }
 
@@ -109,7 +113,7 @@ async function fetchRemote(): Promise<CycleSettings | null> {
   if (!uid) return null;
   const { data, error } = await supabase
     .from("user_settings")
-    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end")
+    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled, last_carryover_cycle_key")
     .eq("user_id", uid)
     .maybeSingle();
   if (error || !data) return null;
@@ -127,6 +131,8 @@ async function upsertRemote(s: CycleSettings): Promise<void> {
       cycle_anchor: s.anchor,
       cycle_override_start: s.override?.startISO ?? null,
       cycle_override_end: s.override?.endISO ?? null,
+      carryover_enabled: s.carryoverEnabled,
+      last_carryover_cycle_key: s.lastCarryoverCycleKey,
     },
     { onConflict: "user_id" },
   );
