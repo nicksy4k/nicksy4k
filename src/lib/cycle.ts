@@ -59,6 +59,8 @@ function readCache(): CycleSettings {
       type: parsed.type === "four-weekly" ? "four-weekly" : "monthly",
       anchor: parsed.anchor || DEFAULT_CYCLE.anchor,
       override: parsed.override ?? null,
+      carryoverEnabled: parsed.carryoverEnabled ?? true,
+      lastCarryoverCycleKey: parsed.lastCarryoverCycleKey ?? null,
     };
   } catch {
     return DEFAULT_CYCLE;
