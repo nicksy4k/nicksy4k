@@ -31,6 +31,10 @@ export interface CycleSettings {
     startISO: string;
     endISO: string; // inclusive last day of cycle
   } | null;
+  /** Carry unspent (or overspent) balance forward as an income row each cycle. */
+  carryoverEnabled: boolean;
+  /** startISO of the last cycle we already carried forward FROM. */
+  lastCarryoverCycleKey: string | null;
 }
 
 const CACHE_KEY = "ledgerly.cycle.v2";
@@ -39,6 +43,8 @@ export const DEFAULT_CYCLE: CycleSettings = {
   type: "monthly",
   anchor: format(new Date(), "yyyy-MM-dd"),
   override: null,
+  carryoverEnabled: true,
+  lastCarryoverCycleKey: null,
 };
 
 // ---------- local cache (first-paint fallback) ----------
@@ -53,6 +59,8 @@ function readCache(): CycleSettings {
       type: parsed.type === "four-weekly" ? "four-weekly" : "monthly",
       anchor: parsed.anchor || DEFAULT_CYCLE.anchor,
       override: parsed.override ?? null,
+      carryoverEnabled: parsed.carryoverEnabled ?? true,
+      lastCarryoverCycleKey: parsed.lastCarryoverCycleKey ?? null,
     };
   } catch {
     return DEFAULT_CYCLE;
@@ -82,6 +90,8 @@ type Row = {
   cycle_anchor: string;
   cycle_override_start: string | null;
   cycle_override_end: string | null;
+  carryover_enabled: boolean | null;
+  last_carryover_cycle_key: string | null;
 };
 
 function rowToSettings(r: Row): CycleSettings {
@@ -92,6 +102,8 @@ function rowToSettings(r: Row): CycleSettings {
       r.cycle_override_start && r.cycle_override_end
         ? { startISO: r.cycle_override_start, endISO: r.cycle_override_end }
         : null,
+    carryoverEnabled: r.carryover_enabled ?? true,
+    lastCarryoverCycleKey: r.last_carryover_cycle_key ?? null,
   };
 }
 
@@ -101,7 +113,7 @@ async function fetchRemote(): Promise<CycleSettings | null> {
   if (!uid) return null;
   const { data, error } = await supabase
     .from("user_settings")
-    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end")
+    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled, last_carryover_cycle_key")
     .eq("user_id", uid)
     .maybeSingle();
   if (error || !data) return null;
@@ -119,6 +131,8 @@ async function upsertRemote(s: CycleSettings): Promise<void> {
       cycle_anchor: s.anchor,
       cycle_override_start: s.override?.startISO ?? null,
       cycle_override_end: s.override?.endISO ?? null,
+      carryover_enabled: s.carryoverEnabled,
+      last_carryover_cycle_key: s.lastCarryoverCycleKey,
     },
     { onConflict: "user_id" },
   );
@@ -206,6 +220,15 @@ export function getCycleAt(
   dateISO: string,
 ): ActiveCycle {
   return getActiveCycle(settings, parseISO(dateISO));
+}
+
+/** The cycle immediately preceding the currently-active one. */
+export function previousCycleWindow(
+  settings: CycleSettings,
+  today: Date = new Date(),
+): ActiveCycle {
+  const current = getActiveCycle(settings, today);
+  return getActiveCycle(settings, addDays(current.start, -1));
 }
 
 export function listRecentCycles(

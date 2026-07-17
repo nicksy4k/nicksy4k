@@ -397,29 +397,35 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          carryover_enabled: boolean
           created_at: string
           cycle_anchor: string
           cycle_override_end: string | null
           cycle_override_start: string | null
           cycle_type: string
+          last_carryover_cycle_key: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          carryover_enabled?: boolean
           created_at?: string
           cycle_anchor?: string
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          last_carryover_cycle_key?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          carryover_enabled?: boolean
           created_at?: string
           cycle_anchor?: string
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          last_carryover_cycle_key?: string | null
           updated_at?: string
           user_id?: string
         }
