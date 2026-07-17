@@ -31,6 +31,10 @@ export interface CycleSettings {
     startISO: string;
     endISO: string; // inclusive last day of cycle
   } | null;
+  /** Carry unspent (or overspent) balance forward as an income row each cycle. */
+  carryoverEnabled: boolean;
+  /** startISO of the last cycle we already carried forward FROM. */
+  lastCarryoverCycleKey: string | null;
 }
 
 const CACHE_KEY = "ledgerly.cycle.v2";
@@ -39,6 +43,8 @@ export const DEFAULT_CYCLE: CycleSettings = {
   type: "monthly",
   anchor: format(new Date(), "yyyy-MM-dd"),
   override: null,
+  carryoverEnabled: true,
+  lastCarryoverCycleKey: null,
 };
 
 // ---------- local cache (first-paint fallback) ----------
