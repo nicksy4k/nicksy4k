@@ -1,64 +1,37 @@
-Plan: Persist cycle settings + Transaction search
+## Cycle Carryover
 
-Scope for this session
+Automatically move the previous cycle's "Left to Spend" into the new cycle as an income row when a new cycle begins.
 
-1. Persist budget cycle settings to the backend
-2. Transaction search on the History page
+### Behaviour
+- On first app load in a new cycle, detect that the last processed cycle key differs from the current one.
+- Compute the previous cycle's leftover: `totalIncome − totalExpenses − savingsBalanceDelta` scoped to the previous cycle window (same math already used for "Left to Spend").
+- If carryover is enabled and leftover ≠ 0, create a single income row:
+  - `date` = first day of the new cycle
+  - `source` = "Carryover from previous cycle"
+  - `amount` = leftover (positive or negative)
+  - `note` includes previous cycle label (e.g. `carryover:2026-07`) so it's idempotent and identifiable
+- Record the processed cycle key in `user_settings` so it never runs twice.
+- Negative carryovers appear as a negative income row, correctly reducing the new cycle's Left to Spend.
 
-Everything else (currency setting, password reset, loans/debts FK cascade fix) moves to the later roadmap.
+### Settings toggle
+- Add `carryover_enabled` (default `true`) and `last_carryover_cycle_key` (text) to `user_settings`.
+- Add a switch in `CycleSettingsCard`: "Carry unspent balance into next cycle" with helper text explaining positive and negative carry.
+- When disabled, no new carryover rows are generated (existing ones remain untouched).
 
----
+### Files
+- `supabase/migrations/*` — add two columns to `user_settings`.
+- `src/lib/cycle.ts` — extend settings read/write with the two new fields; helper `previousCycleWindow(now)`.
+- `src/lib/carryover.ts` (new) — `runCarryoverIfNeeded({ incomes, transactions, savings, settings, upsertSetting, addIncome })`. Idempotent by cycle key + note tag.
+- `src/components/AppLayout.tsx` — call the hook once per session after data loads, alongside existing rollover hook.
+- `src/components/CycleSettingsCard.tsx` — new toggle.
+- `src/routes/income.tsx` — render carryover income rows with a distinct label/badge (still editable/deletable if user wants to override).
 
-### 1. Persist budget cycle settings
+### Technical notes
+- Reuse existing income store methods; no schema change to `incomes`.
+- Uses local computation of leftover based on already-loaded data — no extra queries.
+- Idempotency: check `last_carryover_cycle_key` AND scan incomes for the tagged note before inserting, so cross-device runs don't double-post.
+- If leftover is exactly 0, skip insert but still advance the key.
 
-Today `src/lib/cycle.ts` stores `type`, `anchor`, and `override` in `localStorage` under `ledgerly.cycle.v2`. That means every device/browser has its own cycle config, and the dashboard, commitments, rollover, and archive routes all show different windows depending on where you log in.
-
-Backend
-- New `user_settings` table with one row per user:
-  - `user_id uuid PK REFERENCES auth.users(id) ON DELETE CASCADE`
-  - `cycle_type text NOT NULL DEFAULT 'monthly'` (`'monthly'` | `'four-weekly'`)
-  - `cycle_anchor date NOT NULL DEFAULT current_date`
-  - `cycle_override_start date`
-  - `cycle_override_end date`
-  - `updated_at timestamptz` + trigger
-- GRANT + RLS scoped to `auth.uid() = user_id` (select/insert/update).
-
-Client
-- Update `src/lib/cycle.ts`:
-  - Replace `loadCycleSettings` / `saveCycleSettings` with a React Query-backed store:
-    - `useCycleSettings()` fetches from `user_settings` on mount, upserts on `update()`.
-    - Keep localStorage as a **read-only fallback** for the first paint before the query resolves, then migrate once (upsert local → DB, clear local key) the first time we successfully load a signed-in session.
-  - Preserve the same public API (`settings`, `update`, `useActiveCycle`, `getActiveCycle`, etc.) so no consumer needs changing.
-- `CycleSettingsCard` needs no visible changes; it just now writes to the backend.
-
-Sync + UX
-- `router.invalidate()` + `queryClient.invalidateQueries({ queryKey: ['user_settings'] })` on sign-in/out so switching accounts loads the right cycle.
-- On the first successful cloud load, dispatch the existing `ledgerly:cycle-changed` event so dashboard/commitments recompute immediately.
-
----
-
-### 2. Transaction search on History page
-
-`src/routes/history.tsx` currently lists transactions grouped by day with no filtering — hard to find a specific purchase once you have a few hundred.
-
-Additions to `src/routes/history.tsx`
-- Sticky filter bar above the list containing:
-  - Search input (debounced ~200 ms) — matches `retailer`, any `items[].name`, and `notes` (case-insensitive `includes`).
-  - Category `Select` — populated from the user's expense categories, plus "All categories".
-  - Date range: two `<Input type="date">` fields (from / to), defaulting to empty.
-  - "Clear" button when any filter is active.
-- Filtering happens client-side over the already-loaded transactions (same source as today) so we don't add extra network round-trips.
-- Empty state when filters return nothing: "No transactions match — try clearing filters."
-- Result count badge next to the header (e.g. "42 of 318").
-- Preserve current inline edit / settle / delete actions untouched.
-
-No schema or store changes required for this piece — it's UI + a `useMemo` filter over `useTransactions()`.
-
----
-
-### Order of implementation
-
-1. Migration for `user_settings` (surfaces for approval first).
-2. Refactor `src/lib/cycle.ts` to read/write the new table with localStorage fallback + one-shot migration.
-3. Add the filter bar and memoized filter logic to `src/routes/history.tsx`.
-4. Verify: run existing vitest suite + typecheck, spot-check dashboard/commitments still resolve the correct cycle after sign-in.
+### Out of scope
+- Retroactive carryover for past cycles before this feature ships (only forward from install).
+- Per-pocket carryover (pockets already persist naturally).
