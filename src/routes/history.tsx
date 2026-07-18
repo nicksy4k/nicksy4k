@@ -237,7 +237,7 @@ function HistoryPage() {
                           <li key={i.id} className="flex items-center gap-2 text-sm">
                             <Badge variant="secondary" className="font-normal shrink-0">{i.category}</Badge>
                             <span className="flex-1 min-w-0 truncate">
-                              <Highlight text={i.item_name} needle={needle} />
+                              <HighlightText text={i.item_name} needle={needle} />
                               {qty > 1 && <span className="text-muted-foreground"> × {qty}</span>}
                             </span>
                             <span className="tabular-nums text-muted-foreground text-xs shrink-0">{fmt(i.price)}</span>
