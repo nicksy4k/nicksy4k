@@ -404,9 +404,11 @@ function HistoryPage() {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
-          ))}
+            );
+          })}
         </div>
       )}
+
 
       <EditTransactionDialog
         transaction={editing}
