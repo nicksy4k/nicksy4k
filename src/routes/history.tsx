@@ -225,6 +225,57 @@ function HistoryPage() {
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
+                {hasItemMatch && (
+                  <div className="border-t border-border px-4 md:px-5 py-3 bg-primary/[0.03]">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                      Matched {matchingItems.length} of {t.items.length} item{t.items.length !== 1 ? "s" : ""} · <span className="tabular-nums text-foreground font-medium">{fmt(matchedSubtotal)}</span>
+                    </p>
+                    <ul className="space-y-1.5">
+                      {matchingItems.map((i) => {
+                        const qty = i.quantity ?? 1;
+                        return (
+                          <li key={i.id} className="flex items-center gap-2 text-sm">
+                            <Badge variant="secondary" className="font-normal shrink-0">{i.category}</Badge>
+                            <span className="flex-1 min-w-0 truncate">
+                              <Highlight text={i.item_name} needle={needle} />
+                              {qty > 1 && <span className="text-muted-foreground"> × {qty}</span>}
+                            </span>
+                            <span className="tabular-nums text-muted-foreground text-xs shrink-0">{fmt(i.price)}</span>
+                            <span className="tabular-nums font-medium shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {restItems.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleRest(t.id)}
+                        className="mt-2 text-xs text-primary hover:underline"
+                      >
+                        {showRest ? "Hide rest" : `View rest of transaction (${restItems.length} item${restItems.length !== 1 ? "s" : ""})`}
+                      </button>
+                    )}
+                    {showRest && restItems.length > 0 && (
+                      <ul className="mt-2 space-y-1.5 border-t border-border/60 pt-2">
+                        {restItems.map((i) => {
+                          const qty = i.quantity ?? 1;
+                          return (
+                            <li key={i.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="outline" className="font-normal shrink-0">{i.category}</Badge>
+                              <span className="flex-1 min-w-0 truncate">
+                                {i.item_name}
+                                {qty > 1 && <span> × {qty}</span>}
+                              </span>
+                              <span className="tabular-nums text-xs shrink-0">{fmt(i.price)}</span>
+                              <span className="tabular-nums shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 <CollapsibleContent>
                   <div className="border-t border-border px-4 md:px-5 py-4 space-y-4 bg-muted/15">
                     {t.payment_splits && t.payment_splits.length > 0 && (
