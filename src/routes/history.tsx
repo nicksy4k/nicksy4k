@@ -134,11 +134,25 @@ function HistoryPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((t) => (
+          {filtered.map((t) => {
+            const matchingItems = needle
+              ? t.items.filter((i) => i.item_name.toLowerCase().includes(needle))
+              : [];
+            const hasItemMatch = matchingItems.length > 0;
+            const restItems = hasItemMatch
+              ? t.items.filter((i) => !i.item_name.toLowerCase().includes(needle))
+              : [];
+            const showRest = showRestIds.has(t.id);
+            const matchedSubtotal = matchingItems.reduce(
+              (s, i) => s + i.price * (i.quantity ?? 1),
+              0,
+            );
+            return (
             <Collapsible key={t.id} asChild>
               <Card className="overflow-hidden">
                 <CollapsibleTrigger className="w-full text-left group">
                   <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
+
                     <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(parseISO(t.date), "MMM")}</span>
                       <span className="text-lg font-semibold tabular-nums">{format(parseISO(t.date), "d")}</span>
