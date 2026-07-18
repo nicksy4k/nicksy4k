@@ -49,8 +49,11 @@ function HistoryPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
 
   const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
+  const needle = q.trim().toLowerCase();
+
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
