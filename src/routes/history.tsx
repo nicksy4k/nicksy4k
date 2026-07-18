@@ -165,6 +165,15 @@ function HistoryPage() {
         </div>
       </div>
 
+      {matchedSummary && matchedSummary.itemCount > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
+          <span className="text-muted-foreground">
+            {matchedSummary.itemCount} matching item{matchedSummary.itemCount !== 1 ? "s" : ""} across {matchedSummary.txCount} transaction{matchedSummary.txCount !== 1 ? "s" : ""}
+          </span>
+          <span className="font-semibold tabular-nums">Total: {fmt(matchedSummary.total)}</span>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
@@ -172,6 +181,7 @@ function HistoryPage() {
           </CardContent>
         </Card>
       ) : (
+
         <div className="space-y-2">
           {filtered.map((t) => {
             const matchingItems = needle
