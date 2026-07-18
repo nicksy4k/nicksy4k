@@ -56,7 +56,6 @@ function HistoryPage() {
 
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     return items.filter((t) => {
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
@@ -70,7 +69,16 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, q, cat, fromDate, toDate]);
+  }, [items, needle, cat, fromDate, toDate]);
+
+  function toggleRest(id: string) {
+    setShowRestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
 
   function clearFilters() {
     setQ("");
