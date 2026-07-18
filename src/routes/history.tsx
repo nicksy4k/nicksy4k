@@ -44,7 +44,7 @@ export const Route = createFileRoute("/history")({
 function HighlightText({ text, needle }: { text: string; needle: string }) {
   if (!needle) return <>{text}</>;
   const lower = text.toLowerCase();
-  const parts: React.ReactNode[] = [];
+  const parts: ReactNode[] = [];
   let i = 0;
   let key = 0;
   while (i < text.length) {
