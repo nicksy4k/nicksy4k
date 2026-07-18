@@ -41,6 +41,28 @@ export const Route = createFileRoute("/history")({
   errorComponent: RouteError,
 });
 
+function HighlightText({ text, needle }: { text: string; needle: string }) {
+  if (!needle) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+  while (i < text.length) {
+    const idx = lower.indexOf(needle, i);
+    if (idx === -1) { parts.push(text.slice(i)); break; }
+    if (idx > i) parts.push(text.slice(i, idx));
+    parts.push(
+      <mark key={key++} className="bg-primary/25 text-foreground rounded px-0.5">
+        {text.slice(idx, idx + needle.length)}
+      </mark>,
+    );
+    i = idx + needle.length;
+  }
+  return <>{parts}</>;
+}
+
+
+
 function HistoryPage() {
   const { items, remove } = useTransactions();
   const { list: categories } = useCategories();
