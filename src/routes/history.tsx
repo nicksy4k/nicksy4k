@@ -15,25 +15,50 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, FileText, MapPin, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  FileText,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
-import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
-
+import {
+  ProtectionFields,
+  emptyProtection,
+  type ProtectionValue,
+} from "@/components/ProtectionFields";
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
@@ -49,7 +74,10 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
   let key = 0;
   while (i < text.length) {
     const idx = lower.indexOf(needle, i);
-    if (idx === -1) { parts.push(text.slice(i)); break; }
+    if (idx === -1) {
+      parts.push(text.slice(i));
+      break;
+    }
     if (idx > i) parts.push(text.slice(i, idx));
     parts.push(
       <mark key={key++} className="bg-primary/25 text-foreground rounded px-0.5">
@@ -60,8 +88,6 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
   }
   return <>{parts}</>;
 }
-
-
 
 function HistoryPage() {
   const { items, remove } = useTransactions();
@@ -75,7 +101,6 @@ function HistoryPage() {
 
   const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
-
 
   const filtered = useMemo(() => {
     return items.filter((t) => {
@@ -112,12 +137,11 @@ function HistoryPage() {
   function toggleRest(id: string) {
     setShowRestIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
-
-
 
   function clearFilters() {
     setQ("");
@@ -130,7 +154,9 @@ function HistoryPage() {
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
       <header className="mb-8 flex items-end justify-between flex-wrap gap-2">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">All transactions</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            All transactions
+          </p>
           <h1 className="text-3xl md:text-4xl font-semibold">History</h1>
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
@@ -142,25 +168,52 @@ function HistoryPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search retailer, item, notes, location…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              className="pl-9"
+              placeholder="Search retailer, item, notes, location…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
           <Select value={cat} onValueChange={(v) => setCat(v as Category | "all")}>
-            <SelectTrigger className="sm:w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="sm:w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {categories.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categories.map((c: string) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="flex items-center gap-2 flex-1">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">From</Label>
-            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="flex-1" />
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">To</Label>
-            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="flex-1" />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
+              From
+            </Label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="flex-1"
+            />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
+              To
+            </Label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="flex-1"
+            />
           </div>
           {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
           )}
         </div>
       </div>
@@ -168,7 +221,8 @@ function HistoryPage() {
       {matchedSummary && matchedSummary.itemCount > 0 && (
         <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
           <span className="text-muted-foreground">
-            {matchedSummary.itemCount} matching item{matchedSummary.itemCount !== 1 ? "s" : ""} across {matchedSummary.txCount} transaction{matchedSummary.txCount !== 1 ? "s" : ""}
+            {matchedSummary.itemCount} matching item{matchedSummary.itemCount !== 1 ? "s" : ""}{" "}
+            across {matchedSummary.txCount} transaction{matchedSummary.txCount !== 1 ? "s" : ""}
           </span>
           <span className="font-semibold tabular-nums">Total: {fmt(matchedSummary.total)}</span>
         </div>
@@ -177,11 +231,12 @@ function HistoryPage() {
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
-            {hasFilters ? "No transactions match your filters — try clearing them." : "No transactions yet."}
+            {hasFilters
+              ? "No transactions match your filters — try clearing them."
+              : "No transactions yet."}
           </CardContent>
         </Card>
       ) : (
-
         <div className="space-y-2">
           {filtered.map((t) => {
             const matchingItems = needle
@@ -197,267 +252,383 @@ function HistoryPage() {
               0,
             );
             return (
-            <Collapsible key={t.id} asChild>
-              <Card className="overflow-hidden">
-                <CollapsibleTrigger className="w-full text-left group">
-                  <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
-
-                    <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(parseISO(t.date), "MMM")}</span>
-                      <span className="text-lg font-semibold tabular-nums">{format(parseISO(t.date), "d")}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium truncate">{t.retailer}</p>
-                        {t.is_pending && (
-                          <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
-                            Pending
-                          </Badge>
-                        )}
-                        <Badge variant="secondary" className="font-normal">{t.items.length} item{t.items.length !== 1 ? "s" : ""}</Badge>
-                        {t.receipt_attached && <Badge variant="outline" className="font-normal gap-1"><FileText className="h-3 w-3" />{t.receipt_type}</Badge>}
+              <Collapsible key={t.id} asChild>
+                <Card className="overflow-hidden">
+                  <CollapsibleTrigger className="w-full text-left group">
+                    <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
+                      <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {format(parseISO(t.date), "MMM")}
+                        </span>
+                        <span className="text-lg font-semibold tabular-nums">
+                          {format(parseISO(t.date), "d")}
+                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{format(parseISO(t.date), "MMM d, yyyy")}</p>
-                      {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-x-2 flex-wrap">
-                          <span className="uppercase tracking-wider text-[10px]">Paid with</span>
-                          {t.payment_splits.map((sp, i) => {
-                            const isPocket = sp.source.startsWith("pocket:");
-                            const pocketName = isPocket ? sp.source.slice(7) : null;
-                            const label = sp.label
-                              ?? (sp.source === "main" ? "Main"
-                                : sp.source === "other" ? "Other"
-                                : isPocket ? pocketName!
-                                : sp.source.startsWith("bnpl:") ? "BNPL"
-                                : sp.source);
-                            return (
-                              <span key={i} className="inline-flex items-center gap-1">
-                                {pocketName && (
-                                  <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: colorForKey(pocketName) }} />
-                                )}
-                                <span>{label}</span>
-                                <span className="tabular-nums font-medium text-foreground">{fmt(sp.amount)}</span>
-                              </span>
-                            );
-                          })}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium truncate">{t.retailer}</p>
+                          {t.is_pending && (
+                            <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
+                              Pending
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="font-normal">
+                            {t.items.length} item{t.items.length !== 1 ? "s" : ""}
+                          </Badge>
+                          {t.receipt_attached && (
+                            <Badge variant="outline" className="font-normal gap-1">
+                              <FileText className="h-3 w-3" />
+                              {t.receipt_type}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
+                          {format(parseISO(t.date), "MMM d, yyyy")}
                         </p>
+                        {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-x-2 flex-wrap">
+                            <span className="uppercase tracking-wider text-[10px]">Paid with</span>
+                            {t.payment_splits.map((sp, i) => {
+                              const isPocket = sp.source.startsWith("pocket:");
+                              const pocketName = isPocket ? sp.source.slice(7) : null;
+                              const label =
+                                sp.label ??
+                                (sp.source === "main"
+                                  ? "Main"
+                                  : sp.source === "other"
+                                    ? "Other"
+                                    : isPocket
+                                      ? pocketName!
+                                      : sp.source.startsWith("bnpl:")
+                                        ? "BNPL"
+                                        : sp.source);
+                              return (
+                                <span key={i} className="inline-flex items-center gap-1">
+                                  {pocketName && (
+                                    <span
+                                      className="h-2 w-2 rounded-sm"
+                                      style={{ backgroundColor: colorForKey(pocketName) }}
+                                    />
+                                  )}
+                                  <span>{label}</span>
+                                  <span className="tabular-nums font-medium text-foreground">
+                                    {fmt(sp.amount)}
+                                  </span>
+                                </span>
+                              );
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}
+                        >
+                          {t.is_pending ? "~" : ""}
+                          {fmt(t.total_amount)}
+                        </p>
+                      </div>
+                      {t.is_pending ? (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Settle transaction"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditing(t);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setEditing(t);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-3 h-8 rounded-md bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 text-xs font-medium transition-colors"
+                        >
+                          Settle
+                        </span>
+                      ) : (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Edit transaction"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditing(t);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setEditing(t);
+                            }
+                          }}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </span>
                       )}
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                     </div>
-                    <div className="text-right">
-                      <p className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}>
-                        {t.is_pending ? "~" : ""}{fmt(t.total_amount)}
+                  </CollapsibleTrigger>
+                  {hasItemMatch && (
+                    <div className="border-t border-border px-4 md:px-5 py-3 bg-primary/[0.03]">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                        Matched {matchingItems.length} of {t.items.length} item
+                        {t.items.length !== 1 ? "s" : ""} ·{" "}
+                        <span className="tabular-nums text-foreground font-medium">
+                          {fmt(matchedSubtotal)}
+                        </span>
                       </p>
-                    </div>
-                    {t.is_pending ? (
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Settle transaction"
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
-                        className="inline-flex items-center gap-1 px-3 h-8 rounded-md bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 text-xs font-medium transition-colors"
-                      >
-                        Settle
-                      </span>
-                    ) : (
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Edit transaction"
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(t); }}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); setEditing(t); } }}
-                        className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </span>
-                    )}
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                  </div>
-                </CollapsibleTrigger>
-                {hasItemMatch && (
-                  <div className="border-t border-border px-4 md:px-5 py-3 bg-primary/[0.03]">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                      Matched {matchingItems.length} of {t.items.length} item{t.items.length !== 1 ? "s" : ""} · <span className="tabular-nums text-foreground font-medium">{fmt(matchedSubtotal)}</span>
-                    </p>
-                    <ul className="space-y-1.5">
-                      {matchingItems.map((i) => {
-                        const qty = i.quantity ?? 1;
-                        return (
-                          <li key={i.id} className="flex items-center gap-2 text-sm">
-                            <Badge variant="secondary" className="font-normal shrink-0">{i.category}</Badge>
-                            <span className="flex-1 min-w-0 truncate">
-                              <HighlightText text={i.item_name} needle={needle} />
-                              {qty > 1 && <span className="text-muted-foreground"> × {qty}</span>}
-                            </span>
-                            <span className="tabular-nums text-muted-foreground text-xs shrink-0">{fmt(i.price)}</span>
-                            <span className="tabular-nums font-medium shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {restItems.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => toggleRest(t.id)}
-                        className="mt-2 text-xs text-primary hover:underline"
-                      >
-                        {showRest ? "Hide rest" : `View rest of transaction (${restItems.length} item${restItems.length !== 1 ? "s" : ""})`}
-                      </button>
-                    )}
-                    {showRest && restItems.length > 0 && (
-                      <ul className="mt-2 space-y-1.5 border-t border-border/60 pt-2">
-                        {restItems.map((i) => {
+                      <ul className="space-y-1.5">
+                        {matchingItems.map((i) => {
                           const qty = i.quantity ?? 1;
                           return (
-                            <li key={i.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="font-normal shrink-0">{i.category}</Badge>
+                            <li key={i.id} className="flex items-center gap-2 text-sm">
+                              <Badge variant="secondary" className="font-normal shrink-0">
+                                {i.category}
+                              </Badge>
                               <span className="flex-1 min-w-0 truncate">
-                                {i.item_name}
-                                {qty > 1 && <span> × {qty}</span>}
+                                <HighlightText text={i.item_name} needle={needle} />
+                                {qty > 1 && <span className="text-muted-foreground"> × {qty}</span>}
                               </span>
-                              <span className="tabular-nums text-xs shrink-0">{fmt(i.price)}</span>
-                              <span className="tabular-nums shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
+                              <span className="tabular-nums text-muted-foreground text-xs shrink-0">
+                                {fmt(i.price)}
+                              </span>
+                              <span className="tabular-nums font-medium shrink-0 w-20 text-right">
+                                {fmt(i.price * qty)}
+                              </span>
                             </li>
                           );
                         })}
                       </ul>
-                    )}
-                  </div>
-                )}
-
-                <CollapsibleContent>
-                  <div className="border-t border-border px-4 md:px-5 py-4 space-y-4 bg-muted/15">
-                    {t.payment_splits && t.payment_splits.length > 0 && (
-                      <div className="text-sm rounded-md bg-card/60 p-3 border border-border/60">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Paid with</p>
-                        <p className="text-sm">
-                          {t.payment_splits.map((sp, i) => {
-                            const label = sp.label
-                              ?? (sp.source === "main" ? "Main balance"
-                                : sp.source === "other" ? "Other"
-                                : sp.source.startsWith("pocket:") ? `Pocket · ${sp.source.slice(7)}`
-                                : sp.source.startsWith("bnpl:") ? "BNPL"
-                                : sp.source);
-                            return (
-                              <span key={i}>
-                                {i > 0 && <span className="text-muted-foreground"> · </span>}
-                                {label} <span className="tabular-nums font-medium">{fmt(sp.amount)}</span>
-                              </span>
-                            );
-                          })}
-                        </p>
-                      </div>
-                    )}
-                    {t.receipt_attached && (
-                      <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
-                        <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Receipt</p>
-                          {isStoragePath(t.receipt_location) ? (
-                            <button
-                              type="button"
-                              className="text-primary hover:underline truncate inline-flex items-center gap-1"
-                              onClick={async () => {
-                                const { data, error } = await supabase.storage
-                                  .from("receipts")
-                                  .createSignedUrl(t.receipt_location, 3600);
-                                if (error || !data) { toast.error("Could not open receipt"); return; }
-                                window.open(data.signedUrl, "_blank", "noopener");
-                              }}
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                              {t.receipt_location.split("/").pop()}
-                            </button>
-                          ) : (
-                            <p>{t.receipt_location || <span className="text-muted-foreground italic">No location noted</span>}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {t.protection_type && t.expiration_date && (
-                      <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
-                        <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{t.protection_type}</p>
-                          <p>
-                            Expires {format(parseISO(t.expiration_date), "MMM d, yyyy")}
-                            {t.protection_duration && t.protection_duration !== "Custom Date" && (
-                              <span className="text-muted-foreground"> · {t.protection_duration}</span>
-                            )}
-                            {t.dismissed_at && <span className="ml-2 text-xs text-muted-foreground italic">(handled)</span>}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-xs uppercase tracking-wider text-muted-foreground text-left">
-                            <th className="font-medium py-2 pr-3">Item</th>
-                            <th className="font-medium py-2 pr-3">Category</th>
-                            <th className="font-medium py-2 pr-3 text-right">Qty</th>
-                            <th className="font-medium py-2 pr-3 text-right">Unit</th>
-                            <th className="font-medium py-2 text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {t.items.map((i) => {
+                      {restItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleRest(t.id)}
+                          className="mt-2 text-xs text-primary hover:underline"
+                        >
+                          {showRest
+                            ? "Hide rest"
+                            : `View rest of transaction (${restItems.length} item${restItems.length !== 1 ? "s" : ""})`}
+                        </button>
+                      )}
+                      {showRest && restItems.length > 0 && (
+                        <ul className="mt-2 space-y-1.5 border-t border-border/60 pt-2">
+                          {restItems.map((i) => {
                             const qty = i.quantity ?? 1;
                             return (
-                              <tr key={i.id}>
-                                <td className="py-2.5 pr-3">
-                                  <p>{i.item_name}</p>
-                                  {i.notes && <p className="text-xs text-muted-foreground">{i.notes}</p>}
-                                </td>
-                                <td className="py-2.5 pr-3"><Badge variant="secondary" className="font-normal">{i.category}</Badge></td>
-                                <td className="py-2.5 pr-3 text-right tabular-nums">{qty}</td>
-                                <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{fmt(i.price)}</td>
-                                <td className="py-2.5 text-right tabular-nums">{fmt(i.price * qty)}</td>
-                              </tr>
+                              <li
+                                key={i.id}
+                                className="flex items-center gap-2 text-sm text-muted-foreground"
+                              >
+                                <Badge variant="outline" className="font-normal shrink-0">
+                                  {i.category}
+                                </Badge>
+                                <span className="flex-1 min-w-0 truncate">
+                                  {i.item_name}
+                                  {qty > 1 && <span> × {qty}</span>}
+                                </span>
+                                <span className="tabular-nums text-xs shrink-0">
+                                  {fmt(i.price)}
+                                </span>
+                                <span className="tabular-nums shrink-0 w-20 text-right">
+                                  {fmt(i.price * qty)}
+                                </span>
+                              </li>
                             );
                           })}
-                        </tbody>
-                      </table>
+                        </ul>
+                      )}
                     </div>
+                  )}
 
+                  <CollapsibleContent>
+                    <div className="border-t border-border px-4 md:px-5 py-4 space-y-4 bg-muted/15">
+                      {t.payment_splits && t.payment_splits.length > 0 && (
+                        <div className="text-sm rounded-md bg-card/60 p-3 border border-border/60">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                            Paid with
+                          </p>
+                          <p className="text-sm">
+                            {t.payment_splits.map((sp, i) => {
+                              const label =
+                                sp.label ??
+                                (sp.source === "main"
+                                  ? "Main balance"
+                                  : sp.source === "other"
+                                    ? "Other"
+                                    : sp.source.startsWith("pocket:")
+                                      ? `Pocket · ${sp.source.slice(7)}`
+                                      : sp.source.startsWith("bnpl:")
+                                        ? "BNPL"
+                                        : sp.source);
+                              return (
+                                <span key={i}>
+                                  {i > 0 && <span className="text-muted-foreground"> · </span>}
+                                  {label}{" "}
+                                  <span className="tabular-nums font-medium">{fmt(sp.amount)}</span>
+                                </span>
+                              );
+                            })}
+                          </p>
+                        </div>
+                      )}
+                      {t.receipt_attached && (
+                        <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
+                          <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                              Receipt
+                            </p>
+                            {isStoragePath(t.receipt_location) ? (
+                              <button
+                                type="button"
+                                className="text-primary hover:underline truncate inline-flex items-center gap-1"
+                                onClick={async () => {
+                                  const { data, error } = await supabase.storage
+                                    .from("receipts")
+                                    .createSignedUrl(t.receipt_location, 3600);
+                                  if (error || !data) {
+                                    toast.error("Could not open receipt");
+                                    return;
+                                  }
+                                  window.open(data.signedUrl, "_blank", "noopener");
+                                }}
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                {t.receipt_location.split("/").pop()}
+                              </button>
+                            ) : (
+                              <p>
+                                {t.receipt_location || (
+                                  <span className="text-muted-foreground italic">
+                                    No location noted
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
-                    {t.notes && <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>}
+                      {t.protection_type && t.expiration_date && (
+                        <div className="flex items-start gap-2 text-sm rounded-md bg-card/60 p-3 border border-border/60">
+                          <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                              {t.protection_type}
+                            </p>
+                            <p>
+                              Expires {format(parseISO(t.expiration_date), "MMM d, yyyy")}
+                              {t.protection_duration && t.protection_duration !== "Custom Date" && (
+                                <span className="text-muted-foreground">
+                                  {" "}
+                                  · {t.protection_duration}
+                                </span>
+                              )}
+                              {t.dismissed_at && (
+                                <span className="ml-2 text-xs text-muted-foreground italic">
+                                  (handled)
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
-                        <Pencil className="h-4 w-4" /> Edit
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" /> Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This removes {t.retailer} and all {t.items.length} line item{t.items.length !== 1 ? "s" : ""}. This cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => { remove(t.id); toast.success("Transaction deleted"); }}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-xs uppercase tracking-wider text-muted-foreground text-left">
+                              <th className="font-medium py-2 pr-3">Item</th>
+                              <th className="font-medium py-2 pr-3">Category</th>
+                              <th className="font-medium py-2 pr-3 text-right">Qty</th>
+                              <th className="font-medium py-2 pr-3 text-right">Unit</th>
+                              <th className="font-medium py-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {t.items.map((i) => {
+                              const qty = i.quantity ?? 1;
+                              return (
+                                <tr key={i.id}>
+                                  <td className="py-2.5 pr-3">
+                                    <p>{i.item_name}</p>
+                                    {i.notes && (
+                                      <p className="text-xs text-muted-foreground">{i.notes}</p>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 pr-3">
+                                    <Badge variant="secondary" className="font-normal">
+                                      {i.category}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2.5 pr-3 text-right tabular-nums">{qty}</td>
+                                  <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">
+                                    {fmt(i.price)}
+                                  </td>
+                                  <td className="py-2.5 text-right tabular-nums">
+                                    {fmt(i.price * qty)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {t.notes && (
+                        <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>
+                      )}
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
+                          <Pencil className="h-4 w-4" /> Edit
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" /> Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This removes {t.retailer} and all {t.items.length} line item
+                                {t.items.length !== 1 ? "s" : ""}. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  remove(t.id);
+                                  toast.success("Transaction deleted");
+                                }}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                  </div>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             );
           })}
         </div>
       )}
-
 
       <EditTransactionDialog
         transaction={editing}
@@ -487,7 +658,6 @@ function toDraft(i: LineItem): DraftRow {
     notes: i.notes ?? "",
   };
 }
-
 
 function EditTransactionDialog({
   transaction,
@@ -554,14 +724,20 @@ function EditTransactionDialog({
         })),
       );
     } else {
-      setSplits([{ ...emptySplit("main"), amount: transaction.is_pending ? "" : String(transaction.total_amount) }]);
+      setSplits([
+        {
+          ...emptySplit("main"),
+          amount: transaction.is_pending ? "" : String(transaction.total_amount),
+        },
+      ]);
     }
     setProtection(
       transaction.protection_type && transaction.expiration_date
         ? {
             enabled: true,
             type: transaction.protection_type as ProtectionValue["type"],
-            duration: (transaction.protection_duration as ProtectionValue["duration"]) ?? "Custom Date",
+            duration:
+              (transaction.protection_duration as ProtectionValue["duration"]) ?? "Custom Date",
             expiration: transaction.expiration_date,
           }
         : emptyProtection(),
@@ -693,23 +869,22 @@ function EditTransactionDialog({
         }
       }
 
-      const finalPaymentSplits: PaymentSplit[] =
-        isPending
-          ? priorSplits
-          : activeSplits.length > 0
-            ? activeSplits.map((s) => ({
-                source: s.source,
-                amount: +s.amount.toFixed(2),
-                label:
-                  s.source === "main"
-                    ? "Main balance"
-                    : s.source.startsWith("pocket:")
-                      ? `Pocket · ${s.source.slice(7)}`
-                      : s.source === "other"
-                        ? "Other"
-                        : undefined,
-              }))
-            : [];
+      const finalPaymentSplits: PaymentSplit[] = isPending
+        ? priorSplits
+        : activeSplits.length > 0
+          ? activeSplits.map((s) => ({
+              source: s.source,
+              amount: +s.amount.toFixed(2),
+              label:
+                s.source === "main"
+                  ? "Main balance"
+                  : s.source.startsWith("pocket:")
+                    ? `Pocket · ${s.source.slice(7)}`
+                    : s.source === "other"
+                      ? "Other"
+                      : undefined,
+            }))
+          : [];
 
       await update(transaction.id, {
         date,
@@ -724,7 +899,7 @@ function EditTransactionDialog({
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         // Re-enabling protection on a previously-handled transaction clears the dismissal.
-        dismissed_at: protection.enabled ? null : transaction.dismissed_at ?? null,
+        dismissed_at: protection.enabled ? null : (transaction.dismissed_at ?? null),
         is_pending: isPending,
         payment_splits: finalPaymentSplits,
       });
@@ -735,18 +910,26 @@ function EditTransactionDialog({
     }
   }
 
-
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}</DialogTitle>
+          <DialogTitle>
+            {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
           {transaction?.is_pending && isPending && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
-              This transaction is a pending hold. When your receipt arrives, turn off <span className="font-medium">Still pending</span> below and enter the final itemized amount.
+              This transaction is a pending hold. When your receipt arrives, turn off{" "}
+              <span className="font-medium">Still pending</span> below and enter the final itemized
+              amount.
             </div>
           )}
 
@@ -793,16 +976,28 @@ function EditTransactionDialog({
                 {receiptAttached && (
                   <div className="grid sm:grid-cols-2 gap-4">
                     <Field label="Type">
-                      <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={receiptType}
+                        onValueChange={(v) => setReceiptType(v as ReceiptType)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          {RECEIPT_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </Field>
                     <Field label={receiptType === "Physical" ? "Stored at" : "Receipt file"}>
                       {receiptType === "Physical" ? (
-                        <Input value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} />
+                        <Input
+                          value={receiptLocation}
+                          onChange={(e) => setReceiptLocation(e.target.value)}
+                        />
                       ) : (
                         <ReceiptUpload value={receiptLocation} onChange={setReceiptLocation} />
                       )}
@@ -817,7 +1012,12 @@ function EditTransactionDialog({
                   <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">Item {idx + 1}</p>
-                      <Button variant="ghost" size="icon" onClick={() => removeRow(r.id)} disabled={rows.length === 1}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRow(r.id)}
+                        disabled={rows.length === 1}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -830,26 +1030,53 @@ function EditTransactionDialog({
                         />
                       </Field>
                       <Field label="Price (£)">
-                        <Input inputMode="decimal" value={r.price} onChange={(e) => updateRow(r.id, { price: e.target.value })} />
+                        <Input
+                          inputMode="decimal"
+                          value={r.price}
+                          onChange={(e) => updateRow(r.id, { price: e.target.value })}
+                        />
                       </Field>
                       <Field label="Qty">
-                        <Input inputMode="numeric" value={r.quantity} onChange={(e) => updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })} />
+                        <Input
+                          inputMode="numeric"
+                          value={r.quantity}
+                          onChange={(e) =>
+                            updateRow(r.id, { quantity: e.target.value.replace(/[^0-9]/g, "") })
+                          }
+                        />
                       </Field>
                     </div>
                     <Field label="Category">
-                      <Select value={r.category} onValueChange={(v) => updateRow(r.id, { category: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={r.category}
+                        onValueChange={(v) => updateRow(r.id, { category: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {[...categories]
+                            .sort((a, b) => a.localeCompare(b))
+                            .map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </Field>
 
                     <Field label="Notes">
-                      <Input value={r.notes} onChange={(e) => updateRow(r.id, { notes: e.target.value })} />
+                      <Input
+                        value={r.notes}
+                        onChange={(e) => updateRow(r.id, { notes: e.target.value })}
+                      />
                     </Field>
                     <p className="text-xs text-muted-foreground text-right">
-                      Line total: <span className="tabular-nums font-medium text-foreground">{fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}</span>
+                      Line total:{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {fmt((parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0))}
+                      </span>
                     </p>
                   </div>
                 ))}
@@ -858,7 +1085,11 @@ function EditTransactionDialog({
                 </Button>
               </div>
 
-              <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+              <ProtectionFields
+                transactionDate={date}
+                value={protection}
+                onChange={setProtection}
+              />
 
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -880,7 +1111,9 @@ function EditTransactionDialog({
 
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">New total</p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    New total
+                  </p>
                   {transaction?.is_pending && pendingHoldAmount !== null && (
                     <p className="text-[11px] text-muted-foreground mt-1">
                       Estimated hold was {fmt(pendingHoldAmount)}. Enter the final receipt amount.
@@ -893,9 +1126,10 @@ function EditTransactionDialog({
           )}
         </div>
 
-
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={save}>
             {transaction?.is_pending && !isPending ? "Settle transaction" : "Save changes"}
           </Button>
