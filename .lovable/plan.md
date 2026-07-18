@@ -1,35 +1,28 @@
-## Goal
+Add a global "matched items total" summary directly above the History search results when a query is active.
 
-When a search query is active on the History page, show only the matching **line items** (with their per-item cost) instead of the full transaction. Keep the transaction header (retailer, date, total) as context, and offer a "View rest of transaction" toggle to reveal the remaining non-matching items.
+### What will change
 
-## Behaviour
+In `src/routes/history.tsx`:
 
-Applies only when `q.trim() !== ""` and the match is on an item name. Retailer/notes/location matches still show the full transaction as today (nothing hidden).
+1. **Roll up a matched-items total**  
+   Add a `useMemo` that iterates over the already-filtered transactions and sums the line totals of items whose `item_name` includes the current search needle (case-insensitive). It also counts how many items and how many transactions are involved.
 
-For each transaction card in the filtered list where at least one line item matches the query:
-- Collapsed card body renders a compact list of just the matching items: item name (with the matched substring highlighted via `<mark>`), category chip, qty, unit price, and line total (`price × qty`).
-- A subtotal row shows "Matched X of Y items · £Z" so the user immediately sees how much of the transaction the search accounts for.
-- A "View rest of transaction" text button expands the full item table (current table layout, unchanged) inline underneath. Toggles to "Hide rest".
-- The existing Collapsible chevron / full expanded view (receipt, protection, notes, edit/delete actions) still works exactly as today when the row is expanded via the chevron — the item-level view is purely an addition to the collapsed header area.
+2. **Render the summary above the results**  
+   Insert a small banner between the filter bar and the results list. It appears only when a search is active and at least one item name matches.
 
-When no search query is present, or the query only matches retailer/notes/location, the card renders exactly as today (no item preview, no subtotal, no extra button).
+   Example copy:  
+   `12 matching items across 4 transactions · Total: £123.45`
 
-## Highlighting
+3. **Re-use existing helpers**  
+   - `fmt` for GBP formatting.  
+   - The same item-name match logic already used inside the transaction card map.
 
-Small helper that splits a string on the needle (case-insensitive) and wraps matches in a `<mark>` styled with `bg-primary/20 text-foreground rounded px-0.5`. Used for the item name in the preview list only — retailer text stays untouched to avoid visual noise.
+### Assumption
 
-## Files
+The total will reflect the full line-item cost (`price × quantity`) to match the existing per-card "Matched X of Y items · £Z" subtotal. If you want the total net of split payments (only the portion that actually left the main balance), I can switch to that instead.
 
-- `src/routes/history.tsx` — only file touched.
-  - Extract the item-name match test into a small helper so the filter and the render share it.
-  - Add `MatchedItemsPreview` sub-component rendered inside the existing `CollapsibleTrigger` block (or just above it, above the item count badge line), gated on `needle && matchingItems.length > 0`.
-  - Local `useState<Set<string>>` for "show rest" per transaction id, or a `useState<string | null>` since only one is typically open — a `Set` keeps it simple.
-  - Reuse `fmt`, `colorForKey` for the category chip color already in use elsewhere.
+### Out of scope
 
-No store, schema, or type changes. No new dependencies.
-
-## Out of scope
-
-- Filtering by category still shows the whole transaction (category filter is coarse and per-item filtering there would hide too much).
-- Changing the expanded (chevron-open) detail view.
-- Persisting the "show rest" toggle across reloads.
+- No changes to search filtering, category filtering, or date filtering.  
+- No changes to the per-card matched-items preview or the "View rest of transaction" toggle.  
+- No new dependencies or schema changes.

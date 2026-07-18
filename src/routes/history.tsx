@@ -93,6 +93,22 @@ function HistoryPage() {
     });
   }, [items, needle, cat, fromDate, toDate]);
 
+  const matchedSummary = useMemo(() => {
+    if (!needle) return null;
+    let total = 0;
+    let itemCount = 0;
+    let txCount = 0;
+    for (const t of filtered) {
+      const hits = t.items.filter((i) => i.item_name.toLowerCase().includes(needle));
+      if (hits.length > 0) {
+        total += hits.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+        itemCount += hits.length;
+        txCount += 1;
+      }
+    }
+    return { total, itemCount, txCount };
+  }, [filtered, needle]);
+
   function toggleRest(id: string) {
     setShowRestIds((prev) => {
       const next = new Set(prev);
@@ -100,6 +116,7 @@ function HistoryPage() {
       return next;
     });
   }
+
 
 
   function clearFilters() {
