@@ -1,37 +1,35 @@
-## Cycle Carryover
+## Goal
 
-Automatically move the previous cycle's "Left to Spend" into the new cycle as an income row when a new cycle begins.
+When a search query is active on the History page, show only the matching **line items** (with their per-item cost) instead of the full transaction. Keep the transaction header (retailer, date, total) as context, and offer a "View rest of transaction" toggle to reveal the remaining non-matching items.
 
-### Behaviour
-- On first app load in a new cycle, detect that the last processed cycle key differs from the current one.
-- Compute the previous cycle's leftover: `totalIncome − totalExpenses − savingsBalanceDelta` scoped to the previous cycle window (same math already used for "Left to Spend").
-- If carryover is enabled and leftover ≠ 0, create a single income row:
-  - `date` = first day of the new cycle
-  - `source` = "Carryover from previous cycle"
-  - `amount` = leftover (positive or negative)
-  - `note` includes previous cycle label (e.g. `carryover:2026-07`) so it's idempotent and identifiable
-- Record the processed cycle key in `user_settings` so it never runs twice.
-- Negative carryovers appear as a negative income row, correctly reducing the new cycle's Left to Spend.
+## Behaviour
 
-### Settings toggle
-- Add `carryover_enabled` (default `true`) and `last_carryover_cycle_key` (text) to `user_settings`.
-- Add a switch in `CycleSettingsCard`: "Carry unspent balance into next cycle" with helper text explaining positive and negative carry.
-- When disabled, no new carryover rows are generated (existing ones remain untouched).
+Applies only when `q.trim() !== ""` and the match is on an item name. Retailer/notes/location matches still show the full transaction as today (nothing hidden).
 
-### Files
-- `supabase/migrations/*` — add two columns to `user_settings`.
-- `src/lib/cycle.ts` — extend settings read/write with the two new fields; helper `previousCycleWindow(now)`.
-- `src/lib/carryover.ts` (new) — `runCarryoverIfNeeded({ incomes, transactions, savings, settings, upsertSetting, addIncome })`. Idempotent by cycle key + note tag.
-- `src/components/AppLayout.tsx` — call the hook once per session after data loads, alongside existing rollover hook.
-- `src/components/CycleSettingsCard.tsx` — new toggle.
-- `src/routes/income.tsx` — render carryover income rows with a distinct label/badge (still editable/deletable if user wants to override).
+For each transaction card in the filtered list where at least one line item matches the query:
+- Collapsed card body renders a compact list of just the matching items: item name (with the matched substring highlighted via `<mark>`), category chip, qty, unit price, and line total (`price × qty`).
+- A subtotal row shows "Matched X of Y items · £Z" so the user immediately sees how much of the transaction the search accounts for.
+- A "View rest of transaction" text button expands the full item table (current table layout, unchanged) inline underneath. Toggles to "Hide rest".
+- The existing Collapsible chevron / full expanded view (receipt, protection, notes, edit/delete actions) still works exactly as today when the row is expanded via the chevron — the item-level view is purely an addition to the collapsed header area.
 
-### Technical notes
-- Reuse existing income store methods; no schema change to `incomes`.
-- Uses local computation of leftover based on already-loaded data — no extra queries.
-- Idempotency: check `last_carryover_cycle_key` AND scan incomes for the tagged note before inserting, so cross-device runs don't double-post.
-- If leftover is exactly 0, skip insert but still advance the key.
+When no search query is present, or the query only matches retailer/notes/location, the card renders exactly as today (no item preview, no subtotal, no extra button).
 
-### Out of scope
-- Retroactive carryover for past cycles before this feature ships (only forward from install).
-- Per-pocket carryover (pockets already persist naturally).
+## Highlighting
+
+Small helper that splits a string on the needle (case-insensitive) and wraps matches in a `<mark>` styled with `bg-primary/20 text-foreground rounded px-0.5`. Used for the item name in the preview list only — retailer text stays untouched to avoid visual noise.
+
+## Files
+
+- `src/routes/history.tsx` — only file touched.
+  - Extract the item-name match test into a small helper so the filter and the render share it.
+  - Add `MatchedItemsPreview` sub-component rendered inside the existing `CollapsibleTrigger` block (or just above it, above the item count badge line), gated on `needle && matchingItems.length > 0`.
+  - Local `useState<Set<string>>` for "show rest" per transaction id, or a `useState<string | null>` since only one is typically open — a `Set` keeps it simple.
+  - Reuse `fmt`, `colorForKey` for the category chip color already in use elsewhere.
+
+No store, schema, or type changes. No new dependencies.
+
+## Out of scope
+
+- Filtering by category still shows the whole transaction (category filter is coarse and per-item filtering there would hide too much).
+- Changing the expanded (chevron-open) detail view.
+- Persisting the "show rest" toggle across reloads.

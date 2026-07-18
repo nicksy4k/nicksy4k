@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
@@ -41,6 +41,28 @@ export const Route = createFileRoute("/history")({
   errorComponent: RouteError,
 });
 
+function HighlightText({ text, needle }: { text: string; needle: string }) {
+  if (!needle) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const parts: ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+  while (i < text.length) {
+    const idx = lower.indexOf(needle, i);
+    if (idx === -1) { parts.push(text.slice(i)); break; }
+    if (idx > i) parts.push(text.slice(i, idx));
+    parts.push(
+      <mark key={key++} className="bg-primary/25 text-foreground rounded px-0.5">
+        {text.slice(idx, idx + needle.length)}
+      </mark>,
+    );
+    i = idx + needle.length;
+  }
+  return <>{parts}</>;
+}
+
+
+
 function HistoryPage() {
   const { items, remove } = useTransactions();
   const { list: categories } = useCategories();
@@ -49,11 +71,13 @@ function HistoryPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
 
   const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
+  const needle = q.trim().toLowerCase();
+
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
     return items.filter((t) => {
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
@@ -67,7 +91,16 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, q, cat, fromDate, toDate]);
+  }, [items, needle, cat, fromDate, toDate]);
+
+  function toggleRest(id: string) {
+    setShowRestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
 
   function clearFilters() {
     setQ("");
@@ -123,11 +156,25 @@ function HistoryPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((t) => (
+          {filtered.map((t) => {
+            const matchingItems = needle
+              ? t.items.filter((i) => i.item_name.toLowerCase().includes(needle))
+              : [];
+            const hasItemMatch = matchingItems.length > 0;
+            const restItems = hasItemMatch
+              ? t.items.filter((i) => !i.item_name.toLowerCase().includes(needle))
+              : [];
+            const showRest = showRestIds.has(t.id);
+            const matchedSubtotal = matchingItems.reduce(
+              (s, i) => s + i.price * (i.quantity ?? 1),
+              0,
+            );
+            return (
             <Collapsible key={t.id} asChild>
               <Card className="overflow-hidden">
                 <CollapsibleTrigger className="w-full text-left group">
                   <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
+
                     <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(parseISO(t.date), "MMM")}</span>
                       <span className="text-lg font-semibold tabular-nums">{format(parseISO(t.date), "d")}</span>
@@ -200,6 +247,57 @@ function HistoryPage() {
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
+                {hasItemMatch && (
+                  <div className="border-t border-border px-4 md:px-5 py-3 bg-primary/[0.03]">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                      Matched {matchingItems.length} of {t.items.length} item{t.items.length !== 1 ? "s" : ""} · <span className="tabular-nums text-foreground font-medium">{fmt(matchedSubtotal)}</span>
+                    </p>
+                    <ul className="space-y-1.5">
+                      {matchingItems.map((i) => {
+                        const qty = i.quantity ?? 1;
+                        return (
+                          <li key={i.id} className="flex items-center gap-2 text-sm">
+                            <Badge variant="secondary" className="font-normal shrink-0">{i.category}</Badge>
+                            <span className="flex-1 min-w-0 truncate">
+                              <HighlightText text={i.item_name} needle={needle} />
+                              {qty > 1 && <span className="text-muted-foreground"> × {qty}</span>}
+                            </span>
+                            <span className="tabular-nums text-muted-foreground text-xs shrink-0">{fmt(i.price)}</span>
+                            <span className="tabular-nums font-medium shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {restItems.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleRest(t.id)}
+                        className="mt-2 text-xs text-primary hover:underline"
+                      >
+                        {showRest ? "Hide rest" : `View rest of transaction (${restItems.length} item${restItems.length !== 1 ? "s" : ""})`}
+                      </button>
+                    )}
+                    {showRest && restItems.length > 0 && (
+                      <ul className="mt-2 space-y-1.5 border-t border-border/60 pt-2">
+                        {restItems.map((i) => {
+                          const qty = i.quantity ?? 1;
+                          return (
+                            <li key={i.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="outline" className="font-normal shrink-0">{i.category}</Badge>
+                              <span className="flex-1 min-w-0 truncate">
+                                {i.item_name}
+                                {qty > 1 && <span> × {qty}</span>}
+                              </span>
+                              <span className="tabular-nums text-xs shrink-0">{fmt(i.price)}</span>
+                              <span className="tabular-nums shrink-0 w-20 text-right">{fmt(i.price * qty)}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 <CollapsibleContent>
                   <div className="border-t border-border px-4 md:px-5 py-4 space-y-4 bg-muted/15">
                     {t.payment_splits && t.payment_splits.length > 0 && (
@@ -328,9 +426,11 @@ function HistoryPage() {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
-          ))}
+            );
+          })}
         </div>
       )}
+
 
       <EditTransactionDialog
         transaction={editing}
