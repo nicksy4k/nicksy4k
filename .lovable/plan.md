@@ -1,28 +1,84 @@
-Add a global "matched items total" summary directly above the History search results when a query is active.
+# Refund Feature
 
-### What will change
+Add a per-item refund workflow to the History tab. Refunds never mutate the original transaction's items or total — they are recorded as a separate refund log on the transaction, plus a positive income (and pocket deposit, when applicable) so the money re-enters the running balance correctly.
 
-In `src/routes/history.tsx`:
+## 1. Data model
 
-1. **Roll up a matched-items total**  
-   Add a `useMemo` that iterates over the already-filtered transactions and sums the line totals of items whose `item_name` includes the current search needle (case-insensitive). It also counts how many items and how many transactions are involved.
+New column on `transactions`:
 
-2. **Render the summary above the results**  
-   Insert a small banner between the filter bar and the results list. It appears only when a search is active and at least one item name matches.
+- `refunds jsonb not null default '[]'::jsonb`
 
-   Example copy:  
-   `12 matching items across 4 transactions · Total: £123.45`
+Each refund entry (stored in the JSON array):
 
-3. **Re-use existing helpers**  
-   - `fmt` for GBP formatting.  
-   - The same item-name match logic already used inside the transaction card map.
+```text
+{
+  id, refunded_at, amount,
+  destination: "main" | "pocket:<name>",
+  reason?: string,
+  item_ids: string[],      // LineItem ids refunded (may be empty for pure partial)
+  income_id: string,       // link to the generated income row
+  savings_id?: string      // set when destination is a pocket
+}
+```
 
-### Assumption
+Types added in `src/lib/types.ts`:
 
-The total will reflect the full line-item cost (`price × quantity`) to match the existing per-card "Matched X of Y items · £Z" subtotal. If you want the total net of split payments (only the portion that actually left the main balance), I can switch to that instead.
+- `Refund` interface
+- `Transaction.refunds?: Refund[]`
 
-### Out of scope
+Migration adds the column and grants (RLS already scoped to `user_id`, no policy changes needed).
 
-- No changes to search filtering, category filtering, or date filtering.  
-- No changes to the per-card matched-items preview or the "View rest of transaction" toggle.  
-- No new dependencies or schema changes.
+## 2. Store changes (`src/lib/store.ts`)
+
+- `useTransactions().add/update` already forwards arbitrary fields — extend the insert/update payloads to include `refunds`.
+- Add a new helper `refundTransaction(tx, { amount, destination, reason, itemIds })` on the transactions hook that, in order:
+  1. Inserts an `incomes` row: `source = "Refund · <retailer>"`, `category = "Refund"` (auto-create the category if missing via `useIncomeCategories`), `amount`, `date = today`, `notes` = reason + "Refund of tx <id>".
+  2. If `destination` starts with `pocket:`, inserts a `savings` deposit into that pocket (mirrors existing split-deposit pattern) so pocket balance grows.
+  3. Appends a new `Refund` entry to `tx.refunds` and updates the transaction row.
+  All three steps run sequentially; if any step fails, surface a toast and stop (no rollback needed because the refund entry is written last).
+
+## 3. UI — Refund dialog (`src/routes/history.tsx`)
+
+Add a refund action to each transaction card (icon button next to the existing Edit pencil, using `Undo2` or `RotateCcw` from lucide). Hidden for `is_pending` transactions.
+
+Dialog contents:
+
+- **Item checklist** — each line item with checkbox, name, qty × price, subtotal. Items that appear in any prior refund's `item_ids` show a muted "Already refunded" tag and are disabled.
+- **Amount input** — number field defaulting to the sum of selected items' subtotals; recalculates whenever the checklist changes unless the user has manually edited it (track with a `touched` flag). Clamped to `≤ tx.total_amount − sum(prior refunds)`.
+- **Destination pocket dropdown** — mandatory. Options: "Main Balance" + every pocket derived from `useSavings()` (same aggregation used in `PaymentSplitEditor`). Allows selecting a pocket even at zero balance (refund can seed one).
+- **Reason** — optional textarea.
+- Footer: Cancel / Confirm refund. Confirm calls `refundTransaction(...)`, toasts success, closes.
+
+Validation:
+- At least one item selected OR a manually entered amount > 0.
+- Amount > 0 and ≤ remaining refundable balance.
+- Destination chosen.
+
+## 4. Visual tagging
+
+- Transaction card header: show a badge based on refund totals:
+  - `sum(refunds.amount) >= tx.total_amount` → "Refunded" (destructive/neutral variant).
+  - `sum > 0` → "Partially refunded".
+- Inside the item list (both the search-matched preview and the full list): items whose `id` is in any refund's `item_ids` render with strikethrough on the name and a small "Refunded" chip.
+- Edit dialog: show a read-only "Refund history" section listing each refund (date, amount, destination, reason) when `tx.refunds?.length > 0`.
+
+## 5. Income tab surfacing
+
+No structural change needed — the generated income row already appears in `src/routes/income.tsx` history. Its `notes` field carries the reference back to the original transaction. Ensure "Refund" is present in the income category list on first use (insert once if missing).
+
+## 6. Out of scope
+
+- Editing or deleting an existing refund (add later if needed).
+- Reversing pocket deposits or income when a refund is voided.
+- Reporting-tab treatment of refunds (existing spend math is unchanged because the original transaction total is preserved and the refund shows up as income).
+
+## Technical notes
+
+- Migration:
+  ```sql
+  ALTER TABLE public.transactions
+    ADD COLUMN IF NOT EXISTS refunds jsonb NOT NULL DEFAULT '[]'::jsonb;
+  ```
+- Regenerate Supabase types after the migration; `useTransactions` payloads cast via `as never` already, so no type friction.
+- Refund category seeding uses `useIncomeCategories().add("Refund")` guarded by a `.includes` check.
+- All monetary math uses the existing `+(...).toFixed(2)` pattern to avoid float drift.
