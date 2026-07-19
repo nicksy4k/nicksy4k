@@ -42,6 +42,18 @@ export interface PaymentSplit {
   label?: string;
 }
 
+export interface Refund {
+  id: string;
+  refunded_at: string;
+  amount: number;
+  /** "main" | "pocket:<name>" */
+  destination: string;
+  reason?: string;
+  item_ids: string[];
+  income_id?: string;
+  savings_id?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -65,8 +77,11 @@ export interface Transaction {
   payment_splits?: PaymentSplit[];
   /** True for fast-entry pre-authorization holds awaiting itemization/settling. */
   is_pending?: boolean;
+  /** Log of refunds against this transaction — does not mutate items/total. */
+  refunds?: Refund[];
   created_at: string;
 }
+
 
 
 export interface IncomeEntry {
