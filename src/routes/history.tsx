@@ -377,27 +377,53 @@ function HistoryPage() {
                           Settle
                         </span>
                       ) : (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          aria-label="Edit transaction"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditing(t);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        <>
+                          {refundStatus !== "full" && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              aria-label="Refund transaction"
+                              title="Refund"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setRefunding(t);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setRefunding(t);
+                                }
+                              }}
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-emerald-600 hover:bg-muted/50 transition-colors"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </span>
+                          )}
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Edit transaction"
+                            onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
                               setEditing(t);
-                            }
-                          }}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </span>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setEditing(t);
+                              }
+                            }}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </span>
+                        </>
                       )}
+
                       <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
