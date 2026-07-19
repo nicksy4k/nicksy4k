@@ -740,6 +740,8 @@ function HistoryPage() {
         categories={categories}
         onClose={() => setEditing(null)}
       />
+      <RefundDialog transaction={refunding} onClose={() => setRefunding(null)} />
+
     </div>
   );
 }
