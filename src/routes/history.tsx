@@ -61,6 +61,8 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { RefundDialog } from "@/components/RefundDialog";
+
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
