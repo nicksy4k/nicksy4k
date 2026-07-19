@@ -650,10 +650,50 @@ function HistoryPage() {
                         <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>
                       )}
 
+                      {(t.refunds ?? []).length > 0 && (
+                        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/[0.04] p-3">
+                          <p className="text-xs uppercase tracking-wider text-emerald-700 mb-2">
+                            Refund history
+                          </p>
+                          <ul className="space-y-1.5 text-sm">
+                            {(t.refunds ?? []).map((r) => {
+                              const destLabel = r.destination.startsWith("pocket:")
+                                ? `Pocket · ${r.destination.slice(7)}`
+                                : "Main balance";
+                              return (
+                                <li key={r.id} className="flex items-center gap-2 flex-wrap">
+                                  <span className="tabular-nums font-medium">{fmt(r.amount)}</span>
+                                  <span className="text-muted-foreground">→ {destLabel}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(parseISO(r.refunded_at.slice(0, 10)), "MMM d, yyyy")}
+                                  </span>
+                                  {r.reason && (
+                                    <span className="text-xs italic text-muted-foreground">
+                                      "{r.reason}"
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+
                       <div className="flex justify-end gap-2">
+                        {!t.is_pending && refundStatus !== "full" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRefunding(t)}
+                            className="text-emerald-700 hover:text-emerald-700"
+                          >
+                            <RotateCcw className="h-4 w-4" /> Refund
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" /> Edit
                         </Button>
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
