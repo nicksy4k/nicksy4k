@@ -297,6 +297,17 @@ function HistoryPage() {
                               {t.receipt_type}
                             </Badge>
                           )}
+                          {refundStatus === "full" && (
+                            <Badge className="font-normal bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 hover:bg-emerald-500/15">
+                              Refunded {fmt(refundedTotal)}
+                            </Badge>
+                          )}
+                          {refundStatus === "partial" && (
+                            <Badge className="font-normal bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 hover:bg-emerald-500/10">
+                              Partial refund {fmt(refundedTotal)}
+                            </Badge>
+                          )}
+
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
                           {format(parseISO(t.date), "MMM d, yyyy")}
