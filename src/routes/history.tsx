@@ -607,10 +607,21 @@ function HistoryPage() {
                           <tbody className="divide-y divide-border">
                             {t.items.map((i) => {
                               const qty = i.quantity ?? 1;
+                              const isRefunded = refundedItemIds.has(i.id);
                               return (
-                                <tr key={i.id}>
+                                <tr key={i.id} className={isRefunded ? "opacity-60" : ""}>
                                   <td className="py-2.5 pr-3">
-                                    <p>{i.item_name}</p>
+                                    <p className={isRefunded ? "line-through" : ""}>
+                                      {i.item_name}
+                                    </p>
+                                    {isRefunded && (
+                                      <Badge
+                                        variant="outline"
+                                        className="font-normal mt-1 text-emerald-700 border-emerald-500/40"
+                                      >
+                                        Refunded
+                                      </Badge>
+                                    )}
                                     {i.notes && (
                                       <p className="text-xs text-muted-foreground">{i.notes}</p>
                                     )}
@@ -630,6 +641,7 @@ function HistoryPage() {
                                 </tr>
                               );
                             })}
+
                           </tbody>
                         </table>
                       </div>
