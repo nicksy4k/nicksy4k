@@ -257,7 +257,17 @@ function HistoryPage() {
               (s, i) => s + i.price * (i.quantity ?? 1),
               0,
             );
+            const refundedTotal = (t.refunds ?? []).reduce((s, r) => s + r.amount, 0);
+            const refundedItemIds = new Set<string>();
+            (t.refunds ?? []).forEach((r) => r.item_ids.forEach((id) => refundedItemIds.add(id)));
+            const refundStatus =
+              refundedTotal <= 0
+                ? null
+                : refundedTotal + 0.001 >= t.total_amount
+                  ? "full"
+                  : "partial";
             return (
+
               <Collapsible key={t.id} asChild>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger className="w-full text-left group">
