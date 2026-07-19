@@ -341,6 +341,7 @@ export type Database = {
           receipt_attached: boolean
           receipt_location: string
           receipt_type: string
+          refunds: Json
           retailer: string
           total_amount: number
           user_id: string
@@ -361,6 +362,7 @@ export type Database = {
           receipt_attached?: boolean
           receipt_location?: string
           receipt_type?: string
+          refunds?: Json
           retailer: string
           total_amount?: number
           user_id: string
@@ -381,6 +383,7 @@ export type Database = {
           receipt_attached?: boolean
           receipt_location?: string
           receipt_type?: string
+          refunds?: Json
           retailer?: string
           total_amount?: number
           user_id?: string

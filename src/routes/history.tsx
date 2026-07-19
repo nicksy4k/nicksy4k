@@ -46,10 +46,12 @@ import {
   MapPin,
   Pencil,
   Plus,
+  RotateCcw,
   Search,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
+
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
@@ -59,6 +61,8 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { RefundDialog } from "@/components/RefundDialog";
+
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
@@ -97,7 +101,9 @@ function HistoryPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [refunding, setRefunding] = useState<Transaction | null>(null);
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
+
 
   const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
@@ -251,7 +257,17 @@ function HistoryPage() {
               (s, i) => s + i.price * (i.quantity ?? 1),
               0,
             );
+            const refundedTotal = (t.refunds ?? []).reduce((s, r) => s + r.amount, 0);
+            const refundedItemIds = new Set<string>();
+            (t.refunds ?? []).forEach((r) => r.item_ids.forEach((id) => refundedItemIds.add(id)));
+            const refundStatus =
+              refundedTotal <= 0
+                ? null
+                : refundedTotal + 0.001 >= t.total_amount
+                  ? "full"
+                  : "partial";
             return (
+
               <Collapsible key={t.id} asChild>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger className="w-full text-left group">
@@ -281,6 +297,17 @@ function HistoryPage() {
                               {t.receipt_type}
                             </Badge>
                           )}
+                          {refundStatus === "full" && (
+                            <Badge className="font-normal bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 hover:bg-emerald-500/15">
+                              Refunded {fmt(refundedTotal)}
+                            </Badge>
+                          )}
+                          {refundStatus === "partial" && (
+                            <Badge className="font-normal bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 hover:bg-emerald-500/10">
+                              Partial refund {fmt(refundedTotal)}
+                            </Badge>
+                          )}
+
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
                           {format(parseISO(t.date), "MMM d, yyyy")}
@@ -350,27 +377,53 @@ function HistoryPage() {
                           Settle
                         </span>
                       ) : (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          aria-label="Edit transaction"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditing(t);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        <>
+                          {refundStatus !== "full" && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              aria-label="Refund transaction"
+                              title="Refund"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setRefunding(t);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setRefunding(t);
+                                }
+                              }}
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-emerald-600 hover:bg-muted/50 transition-colors"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </span>
+                          )}
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Edit transaction"
+                            onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
                               setEditing(t);
-                            }
-                          }}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </span>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setEditing(t);
+                              }
+                            }}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </span>
+                        </>
                       )}
+
                       <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -554,10 +607,21 @@ function HistoryPage() {
                           <tbody className="divide-y divide-border">
                             {t.items.map((i) => {
                               const qty = i.quantity ?? 1;
+                              const isRefunded = refundedItemIds.has(i.id);
                               return (
-                                <tr key={i.id}>
+                                <tr key={i.id} className={isRefunded ? "opacity-60" : ""}>
                                   <td className="py-2.5 pr-3">
-                                    <p>{i.item_name}</p>
+                                    <p className={isRefunded ? "line-through" : ""}>
+                                      {i.item_name}
+                                    </p>
+                                    {isRefunded && (
+                                      <Badge
+                                        variant="outline"
+                                        className="font-normal mt-1 text-emerald-700 border-emerald-500/40"
+                                      >
+                                        Refunded
+                                      </Badge>
+                                    )}
                                     {i.notes && (
                                       <p className="text-xs text-muted-foreground">{i.notes}</p>
                                     )}
@@ -577,6 +641,7 @@ function HistoryPage() {
                                 </tr>
                               );
                             })}
+
                           </tbody>
                         </table>
                       </div>
@@ -585,10 +650,50 @@ function HistoryPage() {
                         <p className="text-sm text-muted-foreground italic">"{t.notes}"</p>
                       )}
 
+                      {(t.refunds ?? []).length > 0 && (
+                        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/[0.04] p-3">
+                          <p className="text-xs uppercase tracking-wider text-emerald-700 mb-2">
+                            Refund history
+                          </p>
+                          <ul className="space-y-1.5 text-sm">
+                            {(t.refunds ?? []).map((r) => {
+                              const destLabel = r.destination.startsWith("pocket:")
+                                ? `Pocket · ${r.destination.slice(7)}`
+                                : "Main balance";
+                              return (
+                                <li key={r.id} className="flex items-center gap-2 flex-wrap">
+                                  <span className="tabular-nums font-medium">{fmt(r.amount)}</span>
+                                  <span className="text-muted-foreground">→ {destLabel}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(parseISO(r.refunded_at.slice(0, 10)), "MMM d, yyyy")}
+                                  </span>
+                                  {r.reason && (
+                                    <span className="text-xs italic text-muted-foreground">
+                                      "{r.reason}"
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+
                       <div className="flex justify-end gap-2">
+                        {!t.is_pending && refundStatus !== "full" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRefunding(t)}
+                            className="text-emerald-700 hover:text-emerald-700"
+                          >
+                            <RotateCcw className="h-4 w-4" /> Refund
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" /> Edit
                         </Button>
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -635,6 +740,8 @@ function HistoryPage() {
         categories={categories}
         onClose={() => setEditing(null)}
       />
+      <RefundDialog transaction={refunding} onClose={() => setRefunding(null)} />
+
     </div>
   );
 }
