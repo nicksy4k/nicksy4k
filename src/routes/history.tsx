@@ -295,6 +295,19 @@ function HistoryPage() {
         </div>
       )}
 
+      {categorySummary && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
+          <span className="text-muted-foreground">
+            {categorySummary.itemCount} item{categorySummary.itemCount !== 1 ? "s" : ""} across{" "}
+            {categorySummary.txCount} transaction{categorySummary.txCount !== 1 ? "s" : ""} in{" "}
+            {categorySummary.catCount} categor{categorySummary.catCount !== 1 ? "ies" : "y"}
+          </span>
+          <span className="font-semibold tabular-nums">
+            Total: {fmt(categorySummary.total)}
+          </span>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
