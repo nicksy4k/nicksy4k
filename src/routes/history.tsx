@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,7 +99,7 @@ function HistoryPage() {
   const { items, remove } = useTransactions();
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<Category | "all">("all");
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -105,14 +107,16 @@ function HistoryPage() {
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
 
 
-  const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
+  const hasFilters =
+    q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return items.filter((t) => {
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
-      const matchesCat = cat === "all" || t.items.some((i) => i.category === cat);
+      const matchesCat =
+        selectedCats.size === 0 || t.items.some((i) => selectedCats.has(i.category));
       if (!matchesCat) return false;
       if (!needle) return true;
       return (
@@ -122,7 +126,7 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, cat, fromDate, toDate]);
+  }, [items, needle, selectedCats, fromDate, toDate]);
 
   const matchedSummary = useMemo(() => {
     if (!needle) return null;
@@ -140,6 +144,31 @@ function HistoryPage() {
     return { total, itemCount, txCount };
   }, [filtered, needle]);
 
+  const categorySummary = useMemo(() => {
+    if (selectedCats.size === 0) return null;
+    let total = 0;
+    let itemCount = 0;
+    let txCount = 0;
+    for (const t of filtered) {
+      const hits = t.items.filter((i) => selectedCats.has(i.category));
+      if (hits.length > 0) {
+        total += hits.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+        itemCount += hits.length;
+        txCount += 1;
+      }
+    }
+    return { total, itemCount, txCount, catCount: selectedCats.size };
+  }, [filtered, selectedCats]);
+
+  function toggleCat(c: string) {
+    setSelectedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }
+
   function toggleRest(id: string) {
     setShowRestIds((prev) => {
       const next = new Set(prev);
@@ -151,7 +180,7 @@ function HistoryPage() {
 
   function clearFilters() {
     setQ("");
-    setCat("all");
+    setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
   }
@@ -181,19 +210,51 @@ function HistoryPage() {
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <Select value={cat} onValueChange={(v) => setCat(v as Category | "all")}>
-            <SelectTrigger className="sm:w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((c: string) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="sm:w-[220px] justify-between font-normal"
+              >
+                <span className="truncate">
+                  {selectedCats.size === 0
+                    ? "All categories"
+                    : selectedCats.size === 1
+                      ? Array.from(selectedCats)[0]
+                      : `${selectedCats.size} categories`}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[240px] p-2" align="end">
+              <div className="max-h-64 overflow-y-auto space-y-0.5">
+                {categories.map((c: string) => {
+                  const checked = selectedCats.has(c);
+                  return (
+                    <label
+                      key={c}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm"
+                    >
+                      <Checkbox checked={checked} onCheckedChange={() => toggleCat(c)} />
+                      <span className="truncate">{c}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {selectedCats.size > 0 && (
+                <div className="pt-2 mt-2 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-8"
+                    onClick={() => setSelectedCats(new Set())}
+                  >
+                    Clear categories
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="flex items-center gap-2 flex-1">
@@ -231,6 +292,19 @@ function HistoryPage() {
             across {matchedSummary.txCount} transaction{matchedSummary.txCount !== 1 ? "s" : ""}
           </span>
           <span className="font-semibold tabular-nums">Total: {fmt(matchedSummary.total)}</span>
+        </div>
+      )}
+
+      {categorySummary && (
+        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
+          <span className="text-muted-foreground">
+            {categorySummary.itemCount} item{categorySummary.itemCount !== 1 ? "s" : ""} across{" "}
+            {categorySummary.txCount} transaction{categorySummary.txCount !== 1 ? "s" : ""} in{" "}
+            {categorySummary.catCount} categor{categorySummary.catCount !== 1 ? "ies" : "y"}
+          </span>
+          <span className="font-semibold tabular-nums">
+            Total: {fmt(categorySummary.total)}
+          </span>
         </div>
       )}
 
