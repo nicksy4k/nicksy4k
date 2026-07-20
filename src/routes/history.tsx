@@ -99,7 +99,7 @@ function HistoryPage() {
   const { items, remove } = useTransactions();
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<Category | "all">("all");
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
