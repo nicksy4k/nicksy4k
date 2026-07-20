@@ -210,19 +210,51 @@ function HistoryPage() {
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <Select value={cat} onValueChange={(v) => setCat(v as Category | "all")}>
-            <SelectTrigger className="sm:w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((c: string) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="sm:w-[220px] justify-between font-normal"
+              >
+                <span className="truncate">
+                  {selectedCats.size === 0
+                    ? "All categories"
+                    : selectedCats.size === 1
+                      ? Array.from(selectedCats)[0]
+                      : `${selectedCats.size} categories`}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[240px] p-2" align="end">
+              <div className="max-h-64 overflow-y-auto space-y-0.5">
+                {categories.map((c: string) => {
+                  const checked = selectedCats.has(c);
+                  return (
+                    <label
+                      key={c}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm"
+                    >
+                      <Checkbox checked={checked} onCheckedChange={() => toggleCat(c)} />
+                      <span className="truncate">{c}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {selectedCats.size > 0 && (
+                <div className="pt-2 mt-2 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-8"
+                    onClick={() => setSelectedCats(new Set())}
+                  >
+                    Clear categories
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="flex items-center gap-2 flex-1">
