@@ -1,84 +1,29 @@
-# Refund Feature
+## Multi-Select Category Filter + Filtered Total on History
 
-Add a per-item refund workflow to the History tab. Refunds never mutate the original transaction's items or total — they are recorded as a separate refund log on the transaction, plus a positive income (and pocket deposit, when applicable) so the money re-enters the running balance correctly.
+Replace the single-select category dropdown on `/history` with a multi-select, and show a live "Total for selected categories" summary that sums only matching line items.
 
-## 1. Data model
+### Changes to `src/routes/history.tsx`
 
-New column on `transactions`:
+1. **State**: replace `categoryFilter: string` with `selectedCategories: Set<string>` (default empty = "All categories").
+2. **Filter UI**: swap the `<Select>` for a Shadcn `Popover` + `Command` multi-select (checkbox list of all categories present in transactions), with a trigger button showing:
+   - "All categories" when none selected
+   - "{Category}" when one selected
+   - "{N} categories" when multiple
+   - A small "Clear" affordance when any are selected
+3. **Filter logic**: a transaction is included if it has at least one item whose category is in `selectedCategories` (or if the set is empty).
+4. **Filtered total (new)**:
+   - `useMemo` that iterates the currently visible transactions and sums `price × quantity` **only for items whose category is in `selectedCategories`** — never the whole transaction total.
+   - Also count matching items and unique transactions for the label.
+5. **Summary placement**: render a muted banner directly under the filter row (same visual style as the existing search-match summary), only when `selectedCategories.size > 0`. Example: `"12 items across 4 transactions in 2 categories · Total: £123.45"`.
+6. **Interaction with search summary**: keep both banners independent; they can appear stacked when both a search query and category filters are active.
 
-- `refunds jsonb not null default '[]'::jsonb`
+### Non-goals
 
-Each refund entry (stored in the JSON array):
+- No changes to Reports, Dashboard, or DB.
+- No change to how transaction cards render items (refund strikethroughs, subtotals, etc. stay as-is).
+- Refund-adjusted totals are out of scope for this summary — it sums original line-item cost, matching the existing search-match total's convention.
 
-```text
-{
-  id, refunded_at, amount,
-  destination: "main" | "pocket:<name>",
-  reason?: string,
-  item_ids: string[],      // LineItem ids refunded (may be empty for pure partial)
-  income_id: string,       // link to the generated income row
-  savings_id?: string      // set when destination is a pocket
-}
-```
+### Verification
 
-Types added in `src/lib/types.ts`:
-
-- `Refund` interface
-- `Transaction.refunds?: Refund[]`
-
-Migration adds the column and grants (RLS already scoped to `user_id`, no policy changes needed).
-
-## 2. Store changes (`src/lib/store.ts`)
-
-- `useTransactions().add/update` already forwards arbitrary fields — extend the insert/update payloads to include `refunds`.
-- Add a new helper `refundTransaction(tx, { amount, destination, reason, itemIds })` on the transactions hook that, in order:
-  1. Inserts an `incomes` row: `source = "Refund · <retailer>"`, `category = "Refund"` (auto-create the category if missing via `useIncomeCategories`), `amount`, `date = today`, `notes` = reason + "Refund of tx <id>".
-  2. If `destination` starts with `pocket:`, inserts a `savings` deposit into that pocket (mirrors existing split-deposit pattern) so pocket balance grows.
-  3. Appends a new `Refund` entry to `tx.refunds` and updates the transaction row.
-  All three steps run sequentially; if any step fails, surface a toast and stop (no rollback needed because the refund entry is written last).
-
-## 3. UI — Refund dialog (`src/routes/history.tsx`)
-
-Add a refund action to each transaction card (icon button next to the existing Edit pencil, using `Undo2` or `RotateCcw` from lucide). Hidden for `is_pending` transactions.
-
-Dialog contents:
-
-- **Item checklist** — each line item with checkbox, name, qty × price, subtotal. Items that appear in any prior refund's `item_ids` show a muted "Already refunded" tag and are disabled.
-- **Amount input** — number field defaulting to the sum of selected items' subtotals; recalculates whenever the checklist changes unless the user has manually edited it (track with a `touched` flag). Clamped to `≤ tx.total_amount − sum(prior refunds)`.
-- **Destination pocket dropdown** — mandatory. Options: "Main Balance" + every pocket derived from `useSavings()` (same aggregation used in `PaymentSplitEditor`). Allows selecting a pocket even at zero balance (refund can seed one).
-- **Reason** — optional textarea.
-- Footer: Cancel / Confirm refund. Confirm calls `refundTransaction(...)`, toasts success, closes.
-
-Validation:
-- At least one item selected OR a manually entered amount > 0.
-- Amount > 0 and ≤ remaining refundable balance.
-- Destination chosen.
-
-## 4. Visual tagging
-
-- Transaction card header: show a badge based on refund totals:
-  - `sum(refunds.amount) >= tx.total_amount` → "Refunded" (destructive/neutral variant).
-  - `sum > 0` → "Partially refunded".
-- Inside the item list (both the search-matched preview and the full list): items whose `id` is in any refund's `item_ids` render with strikethrough on the name and a small "Refunded" chip.
-- Edit dialog: show a read-only "Refund history" section listing each refund (date, amount, destination, reason) when `tx.refunds?.length > 0`.
-
-## 5. Income tab surfacing
-
-No structural change needed — the generated income row already appears in `src/routes/income.tsx` history. Its `notes` field carries the reference back to the original transaction. Ensure "Refund" is present in the income category list on first use (insert once if missing).
-
-## 6. Out of scope
-
-- Editing or deleting an existing refund (add later if needed).
-- Reversing pocket deposits or income when a refund is voided.
-- Reporting-tab treatment of refunds (existing spend math is unchanged because the original transaction total is preserved and the refund shows up as income).
-
-## Technical notes
-
-- Migration:
-  ```sql
-  ALTER TABLE public.transactions
-    ADD COLUMN IF NOT EXISTS refunds jsonb NOT NULL DEFAULT '[]'::jsonb;
-  ```
-- Regenerate Supabase types after the migration; `useTransactions` payloads cast via `as never` already, so no type friction.
-- Refund category seeding uses `useIncomeCategories().add("Refund")` guarded by a `.includes` check.
-- All monetary math uses the existing `+(...).toFixed(2)` pattern to avoid float drift.
+- Prettier format the file.
+- Run existing vitest suite; no logic in tested helpers changes.
