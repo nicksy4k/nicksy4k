@@ -180,7 +180,7 @@ function HistoryPage() {
 
   function clearFilters() {
     setQ("");
-    setCat("all");
+    setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
   }
