@@ -107,14 +107,16 @@ function HistoryPage() {
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
 
 
-  const hasFilters = q.trim() !== "" || cat !== "all" || fromDate !== "" || toDate !== "";
+  const hasFilters =
+    q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return items.filter((t) => {
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
-      const matchesCat = cat === "all" || t.items.some((i) => i.category === cat);
+      const matchesCat =
+        selectedCats.size === 0 || t.items.some((i) => selectedCats.has(i.category));
       if (!matchesCat) return false;
       if (!needle) return true;
       return (
@@ -124,7 +126,7 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, cat, fromDate, toDate]);
+  }, [items, needle, selectedCats, fromDate, toDate]);
 
   const matchedSummary = useMemo(() => {
     if (!needle) return null;
@@ -141,6 +143,31 @@ function HistoryPage() {
     }
     return { total, itemCount, txCount };
   }, [filtered, needle]);
+
+  const categorySummary = useMemo(() => {
+    if (selectedCats.size === 0) return null;
+    let total = 0;
+    let itemCount = 0;
+    let txCount = 0;
+    for (const t of filtered) {
+      const hits = t.items.filter((i) => selectedCats.has(i.category));
+      if (hits.length > 0) {
+        total += hits.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+        itemCount += hits.length;
+        txCount += 1;
+      }
+    }
+    return { total, itemCount, txCount, catCount: selectedCats.size };
+  }, [filtered, selectedCats]);
+
+  function toggleCat(c: string) {
+    setSelectedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }
 
   function toggleRest(id: string) {
     setShowRestIds((prev) => {
