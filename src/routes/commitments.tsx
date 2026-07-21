@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { sortLabels } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -592,9 +593,15 @@ function CommitmentDialog({
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
+                  {categories.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No categories yet — add one in Settings.
+                    </div>
+                  ) : (
+                    sortLabels(categories).map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </Field>
