@@ -4,6 +4,7 @@ import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
+import { sortLabels } from "@/lib/utils";
 import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
 import { RouteError } from "@/components/RouteError";
@@ -228,18 +229,24 @@ function HistoryPage() {
             </PopoverTrigger>
             <PopoverContent className="w-[240px] p-2" align="end">
               <div className="max-h-64 overflow-y-auto space-y-0.5">
-                {categories.map((c: string) => {
-                  const checked = selectedCats.has(c);
-                  return (
-                    <label
-                      key={c}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm"
-                    >
-                      <Checkbox checked={checked} onCheckedChange={() => toggleCat(c)} />
-                      <span className="truncate">{c}</span>
-                    </label>
-                  );
-                })}
+                {categories.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    No categories yet — add one in Settings.
+                  </div>
+                ) : (
+                  sortLabels(categories).map((c: string) => {
+                    const checked = selectedCats.has(c);
+                    return (
+                      <label
+                        key={c}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm"
+                      >
+                        <Checkbox checked={checked} onCheckedChange={() => toggleCat(c)} />
+                        <span className="truncate">{c}</span>
+                      </label>
+                    );
+                  })
+                )}
               </div>
               {selectedCats.size > 0 && (
                 <div className="pt-2 mt-2 border-t border-border">

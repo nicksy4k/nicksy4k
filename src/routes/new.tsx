@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { sortLabels } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +82,7 @@ function NewTransactionPage() {
     for (const t of pastTransactions) {
       if (t.retailer?.trim()) set.add(t.retailer.trim());
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return sortLabels(set);
   }, [pastTransactions]);
 
   const itemNameSuggestions = useMemo(() => {
@@ -91,7 +92,7 @@ function NewTransactionPage() {
         if (it.item_name?.trim()) set.add(it.item_name.trim());
       }
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return sortLabels(set);
   }, [pastTransactions]);
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
@@ -522,7 +523,13 @@ function NewTransactionPage() {
                   <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {categories.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          No categories yet — add one in Settings.
+                        </div>
+                      ) : (
+                        sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
+                      )}
                     </SelectContent>
                   </Select>
                 </Field>
