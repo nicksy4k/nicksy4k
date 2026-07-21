@@ -174,7 +174,7 @@ function IncomePage() {
   const pocketNames = useMemo(() => {
     const set = new Set<string>(draftPockets);
     savingsItems.forEach((s) => set.add(s.account));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return sortLabels(set);
   }, [savingsItems, draftPockets]);
 
   const total = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
@@ -336,7 +336,13 @@ function IncomePage() {
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {categories.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No categories yet — add one in Settings.
+                    </div>
+                  ) : (
+                    sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
+                  )}
                 </SelectContent>
               </Select>
             </Field>
@@ -566,7 +572,13 @@ function IncomePage() {
                 <Select value={recCategory} onValueChange={setRecCategory}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {[...categories].sort((a, b) => a.localeCompare(b)).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {categories.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        No categories yet — add one in Settings.
+                      </div>
+                    ) : (
+                      sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
+                    )}
                   </SelectContent>
                 </Select>
               </Field>
