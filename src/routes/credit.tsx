@@ -1333,7 +1333,15 @@ function DebtDialog({
                     <SelectContent>
                       <SelectItem value="main">Main balance</SelectItem>
                       {pockets.map((p) => (
-                        <SelectItem key={p} value={`pocket:${p}`}>Pocket · {p}</SelectItem>
+                        <SelectItem key={p} value={`pocket:${p}`}>
+                          <span className="inline-flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-sm"
+                              style={{ backgroundColor: colorForKey(p) }}
+                            />
+                            Pocket · {p}
+                          </span>
+                        </SelectItem>
                       ))}
                       <SelectItem value="other">Other / Do not deduct</SelectItem>
                     </SelectContent>
