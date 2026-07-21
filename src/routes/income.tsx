@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { sortLabels } from "@/lib/utils";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
 import { generateDueRecurringIncomes, applyAllocationsOnce } from "@/lib/recurringIncome";
 import { useQueryClient } from "@tanstack/react-query";
