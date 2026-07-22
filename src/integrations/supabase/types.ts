@@ -406,6 +406,8 @@ export type Database = {
           cycle_override_end: string | null
           cycle_override_start: string | null
           cycle_type: string
+          hidden_items: string[]
+          hidden_retailers: string[]
           last_carryover_cycle_key: string | null
           updated_at: string
           user_id: string
@@ -417,6 +419,8 @@ export type Database = {
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          hidden_items?: string[]
+          hidden_retailers?: string[]
           last_carryover_cycle_key?: string | null
           updated_at?: string
           user_id: string
@@ -428,6 +432,8 @@ export type Database = {
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          hidden_items?: string[]
+          hidden_retailers?: string[]
           last_carryover_cycle_key?: string | null
           updated_at?: string
           user_id?: string
