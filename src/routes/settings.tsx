@@ -94,6 +94,29 @@ function SettingsPage() {
           onReset={incomeCats.reset}
         />
 
+        <SuggestionManager
+          title="Retailer suggestions"
+          description="Hide retailers from the New Transaction dropdown. Past transactions are unaffected."
+          icon={<Store className="h-5 w-5 text-primary" />}
+          catalog={retailerCatalog}
+          hidden={hidden.retailers}
+          onHide={hideRetailer}
+          onUnhide={unhideRetailer}
+          onClear={clearRetailers}
+        />
+
+        <SuggestionManager
+          title="Item name suggestions"
+          description="Hide mistyped item names from the itemization dropdown. Past transactions are unaffected."
+          icon={<Package className="h-5 w-5 text-primary" />}
+          catalog={itemCatalog}
+          hidden={hidden.items}
+          onHide={hideItem}
+          onUnhide={unhideItem}
+          onClear={clearItems}
+        />
+
+
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div className="flex items-center gap-3">
