@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { sortLabels } from "@/lib/utils";
+import { useHiddenSuggestions, filterHidden } from "@/lib/hiddenSuggestions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ function NewTransactionPage() {
   const { add: addSaving } = useSavings();
   const { add: addDebt } = useDebts();
   const { add: addCommitment } = useCommitments();
+  const { hidden } = useHiddenSuggestions();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
@@ -82,8 +84,8 @@ function NewTransactionPage() {
     for (const t of pastTransactions) {
       if (t.retailer?.trim()) set.add(t.retailer.trim());
     }
-    return sortLabels(set);
-  }, [pastTransactions]);
+    return filterHidden(sortLabels(set), hidden.retailers);
+  }, [pastTransactions, hidden.retailers]);
 
   const itemNameSuggestions = useMemo(() => {
     const set = new Set<string>();
@@ -92,13 +94,80 @@ function NewTransactionPage() {
         if (it.item_name?.trim()) set.add(it.item_name.trim());
       }
     }
-    return sortLabels(set);
+    return filterHidden(sortLabels(set), hidden.items);
+  }, [pastTransactions, hidden.items]);
+
+  /**
+   * Historical price lookup: for a given item name, return the most recent
+   * price paid at the current retailer, falling back to the most recent
+   * price at any retailer. Returns null when the item has never been seen.
+   */
+  const priceHistory = useMemo(() => {
+    const map = new Map<string, { retailer: string; price: number; date: string }[]>();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      const r = (t.retailer ?? "").trim().toLowerCase();
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim().toLowerCase();
+        if (!name) continue;
+        const price = Number(it.price);
+        if (!Number.isFinite(price) || price <= 0) continue;
+        const arr = map.get(name) ?? [];
+        arr.push({ retailer: r, price, date: t.date });
+        map.set(name, arr);
+      }
+    }
+    // Sort each list newest-first once.
+    for (const arr of map.values()) {
+      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    }
+    return map;
   }, [pastTransactions]);
+
+  function suggestPrice(itemName: string, retailerName: string): number | null {
+    const key = itemName.trim().toLowerCase();
+    if (!key) return null;
+    const arr = priceHistory.get(key);
+    if (!arr || arr.length === 0) return null;
+    const r = retailerName.trim().toLowerCase();
+    if (r) {
+      const match = arr.find((e) => e.retailer === r);
+      if (match) return match.price;
+    }
+    return arr[0].price;
+  }
+
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
+  // When the retailer changes, refill empty prices for known items so switching
+  // shop between "Asda" and "Tesco" updates suggestions. Manual prices stay.
+  useEffect(() => {
+    setItems((arr) =>
+      arr.map((it) => {
+        if (it.price.trim() || !it.item_name.trim()) return it;
+        const guess = suggestPrice(it.item_name, retailer);
+        return guess != null ? { ...it, price: String(guess) } : it;
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retailer, priceHistory]);
+
+
   function updateItem(id: string, patch: Partial<DraftItem>) {
-    setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((arr) =>
+      arr.map((it) => {
+        if (it.id !== id) return it;
+        const next = { ...it, ...patch };
+        // Retailer-aware price autofill: only when item_name changes and the
+        // user hasn't typed a price yet. Never overwrites manual edits.
+        if (patch.item_name !== undefined && !next.price.trim()) {
+          const guess = suggestPrice(next.item_name, retailer);
+          if (guess != null) next.price = String(guess);
+        }
+        return next;
+      }),
+    );
   }
   function removeItem(id: string) {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));

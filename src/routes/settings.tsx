@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import {
   useTransactions, useIncomes, useSavings,
   useCategories, useIncomeCategories, clearAllData,
 } from "@/lib/store";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag } from "lucide-react";
+import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
+import { sortLabels } from "@/lib/utils";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -29,6 +31,29 @@ function SettingsPage() {
   const { items: savings } = useSavings();
   const itemCats = useCategories();
   const incomeCats = useIncomeCategories();
+  const {
+    hidden,
+    hideRetailer,
+    unhideRetailer,
+    hideItem,
+    unhideItem,
+    clearRetailers,
+    clearItems,
+  } = useHiddenSuggestions();
+
+  const retailerCatalog = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of transactions) if (t.retailer?.trim()) set.add(t.retailer.trim());
+    return sortLabels(set);
+  }, [transactions]);
+
+  const itemCatalog = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of transactions) for (const it of t.items ?? []) {
+      if (it.item_name?.trim()) set.add(it.item_name.trim());
+    }
+    return sortLabels(set);
+  }, [transactions]);
 
   function exportJson() {
     const payload = { transactions, incomes, savings, categories: itemCats.list, income_categories: incomeCats.list };
@@ -68,6 +93,29 @@ function SettingsPage() {
           onRemove={incomeCats.remove}
           onReset={incomeCats.reset}
         />
+
+        <SuggestionManager
+          title="Retailer suggestions"
+          description="Hide retailers from the New Transaction dropdown. Past transactions are unaffected."
+          icon={<Store className="h-5 w-5 text-primary" />}
+          catalog={retailerCatalog}
+          hidden={hidden.retailers}
+          onHide={hideRetailer}
+          onUnhide={unhideRetailer}
+          onClear={clearRetailers}
+        />
+
+        <SuggestionManager
+          title="Item name suggestions"
+          description="Hide mistyped item names from the itemization dropdown. Past transactions are unaffected."
+          icon={<Package className="h-5 w-5 text-primary" />}
+          catalog={itemCatalog}
+          hidden={hidden.items}
+          onHide={hideItem}
+          onUnhide={unhideItem}
+          onClear={clearItems}
+        />
+
 
         <Card>
           <CardHeader className="flex-row items-center justify-between">
@@ -199,3 +247,99 @@ function CategoryManager({
     </Card>
   );
 }
+
+function SuggestionManager({
+  title,
+  description,
+  icon,
+  catalog,
+  hidden,
+  onHide,
+  onUnhide,
+  onClear,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  catalog: string[];
+  hidden: string[];
+  onHide: (name: string) => void | Promise<void>;
+  onUnhide: (name: string) => void | Promise<void>;
+  onClear: () => void | Promise<void>;
+}) {
+  const hiddenSet = new Set(hidden.map((h) => h.trim().toLowerCase()));
+  const visible = catalog.filter((n) => !hiddenSet.has(n.trim().toLowerCase()));
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">{icon}</div>
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {catalog.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing to manage yet — add a transaction first.</p>
+        ) : (
+          <>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                Showing in dropdown ({visible.length})
+              </p>
+              {visible.length === 0 ? (
+                <p className="text-sm text-muted-foreground">All entries are hidden.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {visible.map((name) => (
+                    <Badge key={name} variant="secondary" className="gap-1.5 pr-1 py-1 font-normal max-w-full">
+                      <span className="truncate" title={name}>{name}</span>
+                      <button
+                        onClick={async () => { await onHide(name); toast.success(`Hidden "${name}"`); }}
+                        className="rounded-sm hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
+                        aria-label={`Hide ${name}`}
+                      >
+                        <EyeOff className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {hidden.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Hidden ({hidden.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {hidden.map((name) => (
+                    <Badge key={name} variant="outline" className="gap-1.5 pr-1 py-1 font-normal max-w-full">
+                      <span className="truncate opacity-70 line-through" title={name}>{name}</span>
+                      <button
+                        onClick={async () => { await onUnhide(name); toast.success(`Restored "${name}"`); }}
+                        className="rounded-sm hover:bg-primary/20 hover:text-primary p-0.5 transition-colors"
+                        aria-label={`Unhide ${name}`}
+                      >
+                        <Eye className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <Button variant="ghost" size="sm" onClick={async () => { await onClear(); toast.success("All entries restored"); }}>
+                    <RotateCcw className="h-3.5 w-3.5" /> Restore all
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
