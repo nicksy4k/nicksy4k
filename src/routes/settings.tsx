@@ -31,6 +31,29 @@ function SettingsPage() {
   const { items: savings } = useSavings();
   const itemCats = useCategories();
   const incomeCats = useIncomeCategories();
+  const {
+    hidden,
+    hideRetailer,
+    unhideRetailer,
+    hideItem,
+    unhideItem,
+    clearRetailers,
+    clearItems,
+  } = useHiddenSuggestions();
+
+  const retailerCatalog = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of transactions) if (t.retailer?.trim()) set.add(t.retailer.trim());
+    return sortLabels(set);
+  }, [transactions]);
+
+  const itemCatalog = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of transactions) for (const it of t.items ?? []) {
+      if (it.item_name?.trim()) set.add(it.item_name.trim());
+    }
+    return sortLabels(set);
+  }, [transactions]);
 
   function exportJson() {
     const payload = { transactions, incomes, savings, categories: itemCats.list, income_categories: incomeCats.list };
