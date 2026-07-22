@@ -5,6 +5,7 @@ import { useTransactions, useCategories, useSavings, useDebts, useCommitments } 
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { sortLabels } from "@/lib/utils";
+import { useHiddenSuggestions, filterHidden } from "@/lib/hiddenSuggestions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
