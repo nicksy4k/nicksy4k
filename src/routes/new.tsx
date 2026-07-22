@@ -141,7 +141,19 @@ function NewTransactionPage() {
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
   function updateItem(id: string, patch: Partial<DraftItem>) {
-    setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((arr) =>
+      arr.map((it) => {
+        if (it.id !== id) return it;
+        const next = { ...it, ...patch };
+        // Retailer-aware price autofill: only when item_name changes and the
+        // user hasn't typed a price yet. Never overwrites manual edits.
+        if (patch.item_name !== undefined && !next.price.trim()) {
+          const guess = suggestPrice(next.item_name, retailer);
+          if (guess != null) next.price = String(guess);
+        }
+        return next;
+      }),
+    );
   }
   function removeItem(id: string) {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
