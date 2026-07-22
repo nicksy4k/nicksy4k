@@ -55,6 +55,7 @@ function NewTransactionPage() {
   const { add: addSaving } = useSavings();
   const { add: addDebt } = useDebts();
   const { add: addCommitment } = useCommitments();
+  const { hidden } = useHiddenSuggestions();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
