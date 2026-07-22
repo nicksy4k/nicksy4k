@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import {
   useTransactions, useIncomes, useSavings,
   useCategories, useIncomeCategories, clearAllData,
 } from "@/lib/store";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag } from "lucide-react";
+import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
+import { sortLabels } from "@/lib/utils";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
