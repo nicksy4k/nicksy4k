@@ -140,6 +140,20 @@ function NewTransactionPage() {
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
+  // When the retailer changes, refill empty prices for known items so switching
+  // shop between "Asda" and "Tesco" updates suggestions. Manual prices stay.
+  useEffect(() => {
+    setItems((arr) =>
+      arr.map((it) => {
+        if (it.price.trim() || !it.item_name.trim()) return it;
+        const guess = suggestPrice(it.item_name, retailer);
+        return guess != null ? { ...it, price: String(guess) } : it;
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retailer, priceHistory]);
+
+
   function updateItem(id: string, patch: Partial<DraftItem>) {
     setItems((arr) =>
       arr.map((it) => {
