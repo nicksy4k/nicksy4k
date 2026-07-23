@@ -865,9 +865,25 @@ function EditTransactionDialog({
   categories: string[];
   onClose: () => void;
 }) {
-  const { update } = useTransactions();
+  const { update, items: pastTransactions } = useTransactions();
   const { add: addSaving } = useSavings();
+  const { hidden } = useHiddenSuggestions();
   const open = transaction !== null;
+
+  const itemNameSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        if (it.item_name?.trim()) set.add(it.item_name.trim());
+      }
+    }
+    return filterHidden(sortLabels(set), hidden.items);
+  }, [pastTransactions, hidden.items]);
+  const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
+  const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
+
+  const [addCategoryForRowId, setAddCategoryForRowId] = useState<string | null>(null);
 
   const [date, setDate] = useState("");
   const [retailer, setRetailer] = useState("");
