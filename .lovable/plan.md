@@ -1,34 +1,34 @@
-## Historical Category Auto-Fill for line items
+## Settle-flow parity with New Transaction
 
-Mirror the existing price-autofill pattern in `src/routes/new.tsx` for the item's Category.
+Bring the settle/edit dialog in `src/routes/history.tsx` up to the same input ergonomics the New Transaction screen already has, plus one new capability (add-category inline) that will apply in both places.
 
-### Changes in `src/routes/new.tsx`
+### 1. Item name → Combobox with history suggestions
 
-1. **Default line items to blank category.**
-   - Change `emptyItem(defaultCat: Category = "Other")` to default to `""` (empty string).
-   - Update the initial `useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")])` and the "Add item" handler (which uses `lastAddedId`) to call `emptyItem()` with no default. Type stays `Category` (which is `string`).
-   - Pending-hold placeholder path keeps using `categories[0] ?? "Other"` (unchanged) since the user never sees that field.
+In `src/routes/history.tsx` `EditTransactionDialog`:
 
-2. **Build a `categoryHistory` memo** alongside `priceHistory`:
-   - Map<itemNameLower, Array<{ category, date }>> sorted newest-first.
-   - Skip `t.is_pending` and entries with empty category, same as price map.
+- Replace the plain `<Input>` at line 1214-1218 with the existing `Combobox` (`src/components/ui/combobox.tsx`, already used in `src/routes/new.tsx`).
+- Build an `itemNameSuggestions` memo from `useTransactions().items`: unique, non-pending item names, filtered through `useHiddenSuggestions().hiddenItems`, sorted with `sortLabels`. Same shape as `new.tsx`.
+- Reuse the existing price-autofill helper pattern from `new.tsx` so picking a known item prefills price when the price field is empty (retailer-first, then global). Do not overwrite a price the user typed.
+- Keep the existing category autofill behaviour that already exists on this row (if none, add the same "look up most recent category for this item name" logic mirrored from `new.tsx` — same safety rule: never overwrite a manual pick).
+- Keep `autoFocus` behaviour for the first row on a pending settle.
 
-3. **Add `suggestCategory(itemName)`** helper — returns the most recent category for that item name, or `null` if never seen. No retailer tier needed (per spec: just most recent).
+### 2. Inline "Add new category" in the Category select
 
-4. **Extend `updateItem` safety-first autofill** when `patch.item_name` is set:
-   - Existing price block stays.
-   - New block: if `!next.category` (empty / never chosen), call `suggestCategory(next.item_name)`; if it returns a value, assign it. Never overwrite a category the user already picked.
+Applies to both the settle/edit dialog (`src/routes/history.tsx` line 1237-1255) and the New Transaction line-item Category select in `src/routes/new.tsx`.
 
-5. **Category `<Select>` UI**: ensure it renders correctly with an empty value (show placeholder like "Choose category"). Verify the existing `SelectTrigger`/`SelectValue` shows a placeholder when `value=""`. If a placeholder isn't already wired, add `placeholder="Category"` on `SelectValue` and pass `value={it.category || undefined}` to `Select` so Radix shows the placeholder state.
-
-6. **Save validation**: in `save()`'s `cleanItems` filter, additionally require `i.category.trim()` to be non-empty; if any qualifying item is missing a category, `toast.error("Pick a category for every item.")` and abort. This enforces the "forced choice" empty-state rule.
+- Append a sentinel `__add_new__` item at the bottom of each `<SelectContent>`, rendered as "＋ New category…".
+- When picked, open a small prompt (shadcn `Dialog` with a single `Input` + Save/Cancel — no route change) to type the new name.
+- On save: trim, dedupe case-insensitively against existing categories, call `useCategories().add(name)`, then set that new value on the current line item. Toast on success; toast error on empty/duplicate.
+- No changes to the Settings category manager — it already handles delete/reset.
 
 ### Out of scope
 
-- No changes to price autofill, retailer logic, settings hidden-suggestions, or history/edit flows.
-- No schema changes — categories already live inside each line item in `transactions.items`.
+- Retailer field in the settle dialog (retailer isn't edited there — the settle dialog reuses the pending row's retailer).
+- Income category picker (this is only for expense line items, matching the request).
+- No schema changes; `categories` table + `useCategories` already support add.
 
 ### Technical notes
 
-- `Category` is a `string` alias, so `""` is type-safe without touching `src/lib/types.ts`.
-- Retailer-change `useEffect` doesn't need a category counterpart — category isn't retailer-dependent.
+- `Combobox` supports `autoFocus` — pass it through for the pending-settle first row.
+- Price/category history maps: extract the memo builders from `new.tsx` into `src/lib/suggestions.ts` (pure functions taking `Transaction[]`) so both routes share one implementation instead of duplicating.
+- The add-category mini-dialog is a shared local component inside each route file, or lifted to `src/components/AddCategoryDialog.tsx` to avoid duplication — prefer the shared component.

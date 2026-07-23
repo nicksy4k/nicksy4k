@@ -26,6 +26,13 @@ import {
   generateInstallmentDates,
   type SplitDraft,
 } from "@/components/PaymentSplitEditor";
+import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
+import {
+  buildPriceHistory,
+  buildCategoryHistory,
+  suggestPrice as lookupPrice,
+  suggestCategory as lookupCategory,
+} from "@/lib/suggestions";
 
 
 export const Route = createFileRoute("/new")({
@@ -71,6 +78,7 @@ function NewTransactionPage() {
   const [saving, setSaving] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [pendingEstimate, setPendingEstimate] = useState("");
+  const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
@@ -97,76 +105,15 @@ function NewTransactionPage() {
     return filterHidden(sortLabels(set), hidden.items);
   }, [pastTransactions, hidden.items]);
 
-  /**
-   * Historical price lookup: for a given item name, return the most recent
-   * price paid at the current retailer, falling back to the most recent
-   * price at any retailer. Returns null when the item has never been seen.
-   */
-  const priceHistory = useMemo(() => {
-    const map = new Map<string, { retailer: string; price: number; date: string }[]>();
-    for (const t of pastTransactions) {
-      if (t.is_pending) continue;
-      const r = (t.retailer ?? "").trim().toLowerCase();
-      for (const it of t.items ?? []) {
-        const name = (it.item_name ?? "").trim().toLowerCase();
-        if (!name) continue;
-        const price = Number(it.price);
-        if (!Number.isFinite(price) || price <= 0) continue;
-        const arr = map.get(name) ?? [];
-        arr.push({ retailer: r, price, date: t.date });
-        map.set(name, arr);
-      }
-    }
-    // Sort each list newest-first once.
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    }
-    return map;
-  }, [pastTransactions]);
+  const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
+  const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
 
   function suggestPrice(itemName: string, retailerName: string): number | null {
-    const key = itemName.trim().toLowerCase();
-    if (!key) return null;
-    const arr = priceHistory.get(key);
-    if (!arr || arr.length === 0) return null;
-    const r = retailerName.trim().toLowerCase();
-    if (r) {
-      const match = arr.find((e) => e.retailer === r);
-      if (match) return match.price;
-    }
-    return arr[0].price;
+    return lookupPrice(priceHistory, itemName, retailerName);
   }
 
-  /**
-   * Historical category lookup: most recent category used for the given item
-   * name across any retailer. Returns null when the item has never been seen
-   * with a category.
-   */
-  const categoryHistory = useMemo(() => {
-    const map = new Map<string, { category: string; date: string }[]>();
-    for (const t of pastTransactions) {
-      if (t.is_pending) continue;
-      for (const it of t.items ?? []) {
-        const name = (it.item_name ?? "").trim().toLowerCase();
-        if (!name) continue;
-        const cat = (it.category ?? "").trim();
-        if (!cat) continue;
-        const arr = map.get(name) ?? [];
-        arr.push({ category: cat, date: t.date });
-        map.set(name, arr);
-      }
-    }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    }
-    return map;
-  }, [pastTransactions]);
-
   function suggestCategory(itemName: string): string | null {
-    const key = itemName.trim().toLowerCase();
-    if (!key) return null;
-    const arr = categoryHistory.get(key);
-    return arr && arr.length > 0 ? arr[0].category : null;
+    return lookupCategory(categoryHistory, itemName);
   }
 
 
@@ -632,16 +579,22 @@ function NewTransactionPage() {
                   </p>
                 )}
                 <Field label="Category">
-                  <Select value={item.category || undefined} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                  <Select
+                    value={item.category || undefined}
+                    onValueChange={(v) => {
+                      if (v === ADD_CATEGORY_SENTINEL) {
+                        setAddCategoryForItemId(item.id);
+                        return;
+                      }
+                      updateItem(item.id, { category: v });
+                    }}
+                  >
                     <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
                     <SelectContent>
-                      {categories.length === 0 ? (
-                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          No categories yet — add one in Settings.
-                        </div>
-                      ) : (
-                        sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
-                      )}
+                      {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
+                        <Plus className="h-3.5 w-3.5 inline mr-1" /> New category…
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -700,6 +653,14 @@ function NewTransactionPage() {
           </div>
         </div>
       )}
+      <AddCategoryDialog
+        open={addCategoryForItemId !== null}
+        onOpenChange={(o) => { if (!o) setAddCategoryForItemId(null); }}
+        onCreated={(name) => {
+          if (addCategoryForItemId) updateItem(addCategoryForItemId, { category: name });
+          setAddCategoryForItemId(null);
+        }}
+      />
     </div>
   );
 }

@@ -8,6 +8,15 @@ import { sortLabels } from "@/lib/utils";
 import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
 import { RouteError } from "@/components/RouteError";
+import { Combobox } from "@/components/ui/combobox";
+import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
+import { useHiddenSuggestions, filterHidden } from "@/lib/hiddenSuggestions";
+import {
+  buildPriceHistory,
+  buildCategoryHistory,
+  suggestPrice as lookupPrice,
+  suggestCategory as lookupCategory,
+} from "@/lib/suggestions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -856,9 +865,25 @@ function EditTransactionDialog({
   categories: string[];
   onClose: () => void;
 }) {
-  const { update } = useTransactions();
+  const { update, items: pastTransactions } = useTransactions();
   const { add: addSaving } = useSavings();
+  const { hidden } = useHiddenSuggestions();
   const open = transaction !== null;
+
+  const itemNameSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        if (it.item_name?.trim()) set.add(it.item_name.trim());
+      }
+    }
+    return filterHidden(sortLabels(set), hidden.items);
+  }, [pastTransactions, hidden.items]);
+  const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
+  const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
+
+  const [addCategoryForRowId, setAddCategoryForRowId] = useState<string | null>(null);
 
   const [date, setDate] = useState("");
   const [retailer, setRetailer] = useState("");
@@ -890,7 +915,7 @@ function EditTransactionDialog({
           item_name: "",
           price: "",
           quantity: "1",
-          category: categories[0] ?? "Other",
+          category: "",
           notes: "",
         },
       ]);
@@ -941,7 +966,21 @@ function EditTransactionDialog({
   );
 
   function updateRow(id: string, patch: Partial<DraftRow>) {
-    setRows((arr) => arr.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setRows((arr) =>
+      arr.map((r) => {
+        if (r.id !== id) return r;
+        const next = { ...r, ...patch };
+        if (patch.item_name !== undefined && !next.price.trim()) {
+          const guess = lookupPrice(priceHistory, next.item_name, retailer);
+          if (guess != null) next.price = String(guess);
+        }
+        if (patch.item_name !== undefined && !next.category.trim()) {
+          const cat = lookupCategory(categoryHistory, next.item_name);
+          if (cat) next.category = cat;
+        }
+        return next;
+      }),
+    );
   }
   function removeRow(id: string) {
     setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
@@ -954,7 +993,7 @@ function EditTransactionDialog({
         item_name: "",
         price: "",
         quantity: "1",
-        category: categories[0] ?? "Other",
+        category: "",
         notes: "",
       },
     ]);
@@ -1211,10 +1250,12 @@ function EditTransactionDialog({
                     </div>
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
-                        <Input
+                        <Combobox
                           autoFocus={idx === 0 && transaction?.is_pending === true}
                           value={r.item_name}
-                          onChange={(e) => updateRow(r.id, { item_name: e.target.value })}
+                          onChange={(v) => updateRow(r.id, { item_name: v })}
+                          options={itemNameSuggestions}
+                          placeholder="Item name"
                         />
                       </Field>
                       <Field label="Price (£)">
@@ -1236,20 +1277,27 @@ function EditTransactionDialog({
                     </div>
                     <Field label="Category">
                       <Select
-                        value={r.category}
-                        onValueChange={(v) => updateRow(r.id, { category: v })}
+                        value={r.category || undefined}
+                        onValueChange={(v) => {
+                          if (v === ADD_CATEGORY_SENTINEL) {
+                            setAddCategoryForRowId(r.id);
+                            return;
+                          }
+                          updateRow(r.id, { category: v });
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Choose category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {[...categories]
-                            .sort((a, b) => a.localeCompare(b))
-                            .map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {c}
-                              </SelectItem>
-                            ))}
+                          {sortLabels(categories).map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
+                            + New category…
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </Field>
@@ -1323,6 +1371,14 @@ function EditTransactionDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <AddCategoryDialog
+        open={addCategoryForRowId !== null}
+        onOpenChange={(o) => { if (!o) setAddCategoryForRowId(null); }}
+        onCreated={(name) => {
+          if (addCategoryForRowId) updateRow(addCategoryForRowId, { category: name });
+          setAddCategoryForRowId(null);
+        }}
+      />
     </Dialog>
   );
 }
