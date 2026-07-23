@@ -137,6 +137,38 @@ function NewTransactionPage() {
     return arr[0].price;
   }
 
+  /**
+   * Historical category lookup: most recent category used for the given item
+   * name across any retailer. Returns null when the item has never been seen
+   * with a category.
+   */
+  const categoryHistory = useMemo(() => {
+    const map = new Map<string, { category: string; date: string }[]>();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim().toLowerCase();
+        if (!name) continue;
+        const cat = (it.category ?? "").trim();
+        if (!cat) continue;
+        const arr = map.get(name) ?? [];
+        arr.push({ category: cat, date: t.date });
+        map.set(name, arr);
+      }
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    }
+    return map;
+  }, [pastTransactions]);
+
+  function suggestCategory(itemName: string): string | null {
+    const key = itemName.trim().toLowerCase();
+    if (!key) return null;
+    const arr = categoryHistory.get(key);
+    return arr && arr.length > 0 ? arr[0].category : null;
+  }
+
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
