@@ -260,24 +260,29 @@ function NewTransactionPage() {
       return;
     }
 
-    const cleanItems: LineItem[] = items
-      .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
-      .map((i) => {
-        const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
-        return {
-          id: i.id,
-          item_name: i.item_name.trim(),
-          price: parseFloat(i.price),
-          quantity: qty,
-          category: i.category,
-          notes: i.notes.trim() || undefined,
-        };
-      });
+    const qualifyingItems = items.filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)));
 
-    if (cleanItems.length === 0) {
+    if (qualifyingItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
     }
+
+    if (qualifyingItems.some((i) => !i.category.trim())) {
+      toast.error("Pick a category for every item.");
+      return;
+    }
+
+    const cleanItems: LineItem[] = qualifyingItems.map((i) => {
+      const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
+      return {
+        id: i.id,
+        item_name: i.item_name.trim(),
+        price: parseFloat(i.price),
+        quantity: qty,
+        category: i.category,
+        notes: i.notes.trim() || undefined,
+      };
+    });
 
     const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
 
