@@ -1250,10 +1250,12 @@ function EditTransactionDialog({
                     </div>
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
-                        <Input
+                        <Combobox
                           autoFocus={idx === 0 && transaction?.is_pending === true}
                           value={r.item_name}
-                          onChange={(e) => updateRow(r.id, { item_name: e.target.value })}
+                          onChange={(v) => updateRow(r.id, { item_name: v })}
+                          options={itemNameSuggestions}
+                          placeholder="Item name"
                         />
                       </Field>
                       <Field label="Price (£)">
@@ -1275,20 +1277,27 @@ function EditTransactionDialog({
                     </div>
                     <Field label="Category">
                       <Select
-                        value={r.category}
-                        onValueChange={(v) => updateRow(r.id, { category: v })}
+                        value={r.category || undefined}
+                        onValueChange={(v) => {
+                          if (v === ADD_CATEGORY_SENTINEL) {
+                            setAddCategoryForRowId(r.id);
+                            return;
+                          }
+                          updateRow(r.id, { category: v });
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Choose category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {[...categories]
-                            .sort((a, b) => a.localeCompare(b))
-                            .map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {c}
-                              </SelectItem>
-                            ))}
+                          {sortLabels(categories).map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
+                            + New category…
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </Field>
