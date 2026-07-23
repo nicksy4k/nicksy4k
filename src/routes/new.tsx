@@ -632,8 +632,8 @@ function NewTransactionPage() {
                   </p>
                 )}
                 <Field label="Category">
-                  <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={item.category || undefined} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                    <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
                     <SelectContent>
                       {categories.length === 0 ? (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
