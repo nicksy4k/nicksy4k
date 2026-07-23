@@ -104,76 +104,15 @@ function NewTransactionPage() {
     return filterHidden(sortLabels(set), hidden.items);
   }, [pastTransactions, hidden.items]);
 
-  /**
-   * Historical price lookup: for a given item name, return the most recent
-   * price paid at the current retailer, falling back to the most recent
-   * price at any retailer. Returns null when the item has never been seen.
-   */
-  const priceHistory = useMemo(() => {
-    const map = new Map<string, { retailer: string; price: number; date: string }[]>();
-    for (const t of pastTransactions) {
-      if (t.is_pending) continue;
-      const r = (t.retailer ?? "").trim().toLowerCase();
-      for (const it of t.items ?? []) {
-        const name = (it.item_name ?? "").trim().toLowerCase();
-        if (!name) continue;
-        const price = Number(it.price);
-        if (!Number.isFinite(price) || price <= 0) continue;
-        const arr = map.get(name) ?? [];
-        arr.push({ retailer: r, price, date: t.date });
-        map.set(name, arr);
-      }
-    }
-    // Sort each list newest-first once.
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    }
-    return map;
-  }, [pastTransactions]);
+  const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
+  const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
 
   function suggestPrice(itemName: string, retailerName: string): number | null {
-    const key = itemName.trim().toLowerCase();
-    if (!key) return null;
-    const arr = priceHistory.get(key);
-    if (!arr || arr.length === 0) return null;
-    const r = retailerName.trim().toLowerCase();
-    if (r) {
-      const match = arr.find((e) => e.retailer === r);
-      if (match) return match.price;
-    }
-    return arr[0].price;
+    return lookupPrice(priceHistory, itemName, retailerName);
   }
 
-  /**
-   * Historical category lookup: most recent category used for the given item
-   * name across any retailer. Returns null when the item has never been seen
-   * with a category.
-   */
-  const categoryHistory = useMemo(() => {
-    const map = new Map<string, { category: string; date: string }[]>();
-    for (const t of pastTransactions) {
-      if (t.is_pending) continue;
-      for (const it of t.items ?? []) {
-        const name = (it.item_name ?? "").trim().toLowerCase();
-        if (!name) continue;
-        const cat = (it.category ?? "").trim();
-        if (!cat) continue;
-        const arr = map.get(name) ?? [];
-        arr.push({ category: cat, date: t.date });
-        map.set(name, arr);
-      }
-    }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    }
-    return map;
-  }, [pastTransactions]);
-
   function suggestCategory(itemName: string): string | null {
-    const key = itemName.trim().toLowerCase();
-    if (!key) return null;
-    const arr = categoryHistory.get(key);
-    return arr && arr.length > 0 ? arr[0].category : null;
+    return lookupCategory(categoryHistory, itemName);
   }
 
 
