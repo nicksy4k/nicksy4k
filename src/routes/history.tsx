@@ -915,7 +915,7 @@ function EditTransactionDialog({
           item_name: "",
           price: "",
           quantity: "1",
-          category: categories[0] ?? "Other",
+          category: "",
           notes: "",
         },
       ]);
