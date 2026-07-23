@@ -1,49 +1,34 @@
-## 1. Retailer-aware price autofill (New Transaction)
+## Historical Category Auto-Fill for line items
 
-In `src/routes/new.tsx`, when an item name is chosen from (or typed to match) a past item, prefill `price` using this lookup order:
+Mirror the existing price-autofill pattern in `src/routes/new.tsx` for the item's Category.
 
-1. Most recent transaction where `retailer === current retailer` (case-insensitive) AND contains an item with the same `item_name` → use that line item's `price`.
-2. Fallback: most recent transaction (any retailer) containing that item name → use that line item's `price`.
-3. No match → leave the price blank.
+### Changes in `src/routes/new.tsx`
 
-Rules:
-- Only autofill when the price field is currently **empty** (never overwrite a value the user has typed or edited).
-- Trigger inside the existing `updateItem` handler when `patch.item_name` is set and resolves to a known name.
-- Re-run once when the retailer changes and any item rows have a known name but empty price (so switching retailer improves the guess).
-- Manual edits remain fully editable; no lock, no toast.
+1. **Default line items to blank category.**
+   - Change `emptyItem(defaultCat: Category = "Other")` to default to `""` (empty string).
+   - Update the initial `useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")])` and the "Add item" handler (which uses `lastAddedId`) to call `emptyItem()` with no default. Type stays `Category` (which is `string`).
+   - Pending-hold placeholder path keeps using `categories[0] ?? "Other"` (unchanged) since the user never sees that field.
 
-Implementation detail: add a memoised map keyed by `itemNameLower` → array of `{ retailerLower, price, date }` sorted desc by date, built from `pastTransactions`. A tiny `suggestPrice(itemName, retailer)` helper does the two-tier lookup.
+2. **Build a `categoryHistory` memo** alongside `priceHistory`:
+   - Map<itemNameLower, Array<{ category, date }>> sorted newest-first.
+   - Skip `t.is_pending` and entries with empty category, same as price map.
 
-## 2. Hidden-suggestion manager (Settings)
+3. **Add `suggestCategory(itemName)`** helper — returns the most recent category for that item name, or `null` if never seen. No retailer tier needed (per spec: just most recent).
 
-Retailer and item-name suggestions are derived from transaction history, so "delete" means **hide from the combobox** without touching past transactions.
+4. **Extend `updateItem` safety-first autofill** when `patch.item_name` is set:
+   - Existing price block stays.
+   - New block: if `!next.category` (empty / never chosen), call `suggestCategory(next.item_name)`; if it returns a value, assign it. Never overwrite a category the user already picked.
 
-New Supabase columns on `user_settings` (single row per user, already exists):
-- `hidden_retailers text[] not null default '{}'`
-- `hidden_items text[] not null default '{}'`
+5. **Category `<Select>` UI**: ensure it renders correctly with an empty value (show placeholder like "Choose category"). Verify the existing `SelectTrigger`/`SelectValue` shows a placeholder when `value=""`. If a placeholder isn't already wired, add `placeholder="Category"` on `SelectValue` and pass `value={it.category || undefined}` to `Select` so Radix shows the placeholder state.
 
-Wire-up:
-- Extend the settings store hook to load/save these arrays.
-- `src/routes/new.tsx`: filter `retailerSuggestions` and `itemNameSuggestions` through the hidden sets (case-insensitive) before rendering.
-- `src/routes/history.tsx` retailer filter: same filter applied.
+6. **Save validation**: in `save()`'s `cleanItems` filter, additionally require `i.category.trim()` to be non-empty; if any qualifying item is missing a category, `toast.error("Pick a category for every item.")` and abort. This enforces the "forced choice" empty-state rule.
 
-Settings UI (`src/routes/settings.tsx`):
-- Two new cards, "Retailer suggestions" and "Item name suggestions", each showing every value currently derived from transactions.
-- Each row: name + trash icon → moves it into the hidden array. Hidden entries appear in a collapsed "Hidden" section with an "Unhide" action.
-- Empty state and reset-all button per card.
-- No new add form here — retailers and items are still created by logging a transaction.
+### Out of scope
 
-Categories manager stays as-is (already supports delete).
+- No changes to price autofill, retailer logic, settings hidden-suggestions, or history/edit flows.
+- No schema changes — categories already live inside each line item in `transactions.items`.
 
-## 3. Technical notes
+### Technical notes
 
-- Migration adds two `text[]` columns with defaults; no RLS changes needed (existing `user_settings` policies cover them).
-- Regenerate Supabase types after migration runs; then update `src/lib/store.ts` (or the settings hook) to read/write the new fields.
-- No changes to how transactions are stored — hiding is purely a presentation filter.
-- Prettier on touched files; existing vitest suite unaffected.
-
-## 4. Out of scope
-
-- Pockets management (user said current behaviour is fine).
-- Bulk rename of retailers/items across historical transactions.
-- Any change to autofill for quantity, category, or notes.
+- `Category` is a `string` alias, so `""` is type-safe without touching `src/lib/types.ts`.
+- Retailer-change `useEffect` doesn't need a category counterpart — category isn't retailer-dependent.
