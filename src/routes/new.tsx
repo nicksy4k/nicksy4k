@@ -653,6 +653,14 @@ function NewTransactionPage() {
           </div>
         </div>
       )}
+      <AddCategoryDialog
+        open={addCategoryForItemId !== null}
+        onOpenChange={(o) => { if (!o) setAddCategoryForItemId(null); }}
+        onCreated={(name) => {
+          if (addCategoryForItemId) updateItem(addCategoryForItemId, { category: name });
+          setAddCategoryForItemId(null);
+        }}
+      />
     </div>
   );
 }
