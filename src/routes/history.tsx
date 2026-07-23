@@ -8,6 +8,15 @@ import { sortLabels } from "@/lib/utils";
 import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
 import { RouteError } from "@/components/RouteError";
+import { Combobox } from "@/components/ui/combobox";
+import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
+import { useHiddenSuggestions, filterHidden } from "@/lib/hiddenSuggestions";
+import {
+  buildPriceHistory,
+  buildCategoryHistory,
+  suggestPrice as lookupPrice,
+  suggestCategory as lookupCategory,
+} from "@/lib/suggestions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
