@@ -43,7 +43,7 @@ interface DraftItem {
   notes: string;
 }
 
-function emptyItem(defaultCat: Category = "Other"): DraftItem {
+function emptyItem(defaultCat: Category = ""): DraftItem {
   return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, notes: "" };
 }
 
