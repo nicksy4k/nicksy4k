@@ -579,16 +579,22 @@ function NewTransactionPage() {
                   </p>
                 )}
                 <Field label="Category">
-                  <Select value={item.category || undefined} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                  <Select
+                    value={item.category || undefined}
+                    onValueChange={(v) => {
+                      if (v === ADD_CATEGORY_SENTINEL) {
+                        setAddCategoryForItemId(item.id);
+                        return;
+                      }
+                      updateItem(item.id, { category: v });
+                    }}
+                  >
                     <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
                     <SelectContent>
-                      {categories.length === 0 ? (
-                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          No categories yet — add one in Settings.
-                        </div>
-                      ) : (
-                        sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
-                      )}
+                      {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
+                        <Plus className="h-3.5 w-3.5 inline mr-1" /> New category…
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
