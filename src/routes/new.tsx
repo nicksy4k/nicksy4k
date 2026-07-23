@@ -26,6 +26,13 @@ import {
   generateInstallmentDates,
   type SplitDraft,
 } from "@/components/PaymentSplitEditor";
+import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
+import {
+  buildPriceHistory,
+  buildCategoryHistory,
+  suggestPrice as lookupPrice,
+  suggestCategory as lookupCategory,
+} from "@/lib/suggestions";
 
 
 export const Route = createFileRoute("/new")({
