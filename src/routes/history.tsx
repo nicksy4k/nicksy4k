@@ -1371,6 +1371,14 @@ function EditTransactionDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <AddCategoryDialog
+        open={addCategoryForRowId !== null}
+        onOpenChange={(o) => { if (!o) setAddCategoryForRowId(null); }}
+        onCreated={(name) => {
+          if (addCategoryForRowId) updateRow(addCategoryForRowId, { category: name });
+          setAddCategoryForRowId(null);
+        }}
+      />
     </Dialog>
   );
 }
