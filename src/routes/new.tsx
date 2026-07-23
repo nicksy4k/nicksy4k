@@ -78,6 +78,7 @@ function NewTransactionPage() {
   const [saving, setSaving] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [pendingEstimate, setPendingEstimate] = useState("");
+  const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
