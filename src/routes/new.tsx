@@ -43,7 +43,7 @@ interface DraftItem {
   notes: string;
 }
 
-function emptyItem(defaultCat: Category = "Other"): DraftItem {
+function emptyItem(defaultCat: Category = ""): DraftItem {
   return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, notes: "" };
 }
 
@@ -65,7 +65,7 @@ function NewTransactionPage() {
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
-  const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
+  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
@@ -137,6 +137,38 @@ function NewTransactionPage() {
     return arr[0].price;
   }
 
+  /**
+   * Historical category lookup: most recent category used for the given item
+   * name across any retailer. Returns null when the item has never been seen
+   * with a category.
+   */
+  const categoryHistory = useMemo(() => {
+    const map = new Map<string, { category: string; date: string }[]>();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim().toLowerCase();
+        if (!name) continue;
+        const cat = (it.category ?? "").trim();
+        if (!cat) continue;
+        const arr = map.get(name) ?? [];
+        arr.push({ category: cat, date: t.date });
+        map.set(name, arr);
+      }
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    }
+    return map;
+  }, [pastTransactions]);
+
+  function suggestCategory(itemName: string): string | null {
+    const key = itemName.trim().toLowerCase();
+    if (!key) return null;
+    const arr = categoryHistory.get(key);
+    return arr && arr.length > 0 ? arr[0].category : null;
+  }
+
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
@@ -164,6 +196,12 @@ function NewTransactionPage() {
         if (patch.item_name !== undefined && !next.price.trim()) {
           const guess = suggestPrice(next.item_name, retailer);
           if (guess != null) next.price = String(guess);
+        }
+        // Category autofill: most recent category for this item name. Never
+        // overwrites a category the user has already picked.
+        if (patch.item_name !== undefined && !next.category.trim()) {
+          const cat = suggestCategory(next.item_name);
+          if (cat) next.category = cat;
         }
         return next;
       }),
@@ -222,24 +260,29 @@ function NewTransactionPage() {
       return;
     }
 
-    const cleanItems: LineItem[] = items
-      .filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)))
-      .map((i) => {
-        const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
-        return {
-          id: i.id,
-          item_name: i.item_name.trim(),
-          price: parseFloat(i.price),
-          quantity: qty,
-          category: i.category,
-          notes: i.notes.trim() || undefined,
-        };
-      });
+    const qualifyingItems = items.filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)));
 
-    if (cleanItems.length === 0) {
+    if (qualifyingItems.length === 0) {
       toast.error("Add at least one line item with a price.");
       return;
     }
+
+    if (qualifyingItems.some((i) => !i.category.trim())) {
+      toast.error("Pick a category for every item.");
+      return;
+    }
+
+    const cleanItems: LineItem[] = qualifyingItems.map((i) => {
+      const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
+      return {
+        id: i.id,
+        item_name: i.item_name.trim(),
+        price: parseFloat(i.price),
+        quantity: qty,
+        category: i.category,
+        notes: i.notes.trim() || undefined,
+      };
+    });
 
     const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
 
@@ -589,8 +632,8 @@ function NewTransactionPage() {
                   </p>
                 )}
                 <Field label="Category">
-                  <Select value={item.category} onValueChange={(v) => updateItem(item.id, { category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={item.category || undefined} onValueChange={(v) => updateItem(item.id, { category: v })}>
+                    <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
                     <SelectContent>
                       {categories.length === 0 ? (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -611,7 +654,7 @@ function NewTransactionPage() {
           ))}
 
           <Button variant="outline" className="w-full" onClick={() => {
-            const newItem = emptyItem(categories[0] ?? "Other");
+            const newItem = emptyItem();
             setItems((a) => [...a, newItem]);
             setLastAddedId(newItem.id);
           }}>
