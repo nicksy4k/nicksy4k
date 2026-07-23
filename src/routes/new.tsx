@@ -197,6 +197,12 @@ function NewTransactionPage() {
           const guess = suggestPrice(next.item_name, retailer);
           if (guess != null) next.price = String(guess);
         }
+        // Category autofill: most recent category for this item name. Never
+        // overwrites a category the user has already picked.
+        if (patch.item_name !== undefined && !next.category.trim()) {
+          const cat = suggestCategory(next.item_name);
+          if (cat) next.category = cat;
+        }
         return next;
       }),
     );
