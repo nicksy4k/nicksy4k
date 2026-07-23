@@ -654,7 +654,7 @@ function NewTransactionPage() {
           ))}
 
           <Button variant="outline" className="w-full" onClick={() => {
-            const newItem = emptyItem(categories[0] ?? "Other");
+            const newItem = emptyItem();
             setItems((a) => [...a, newItem]);
             setLastAddedId(newItem.id);
           }}>
