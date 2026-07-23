@@ -65,7 +65,7 @@ function NewTransactionPage() {
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
-  const [items, setItems] = useState<DraftItem[]>([emptyItem(categories[0] ?? "Other")]);
+  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
