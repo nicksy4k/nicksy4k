@@ -966,7 +966,21 @@ function EditTransactionDialog({
   );
 
   function updateRow(id: string, patch: Partial<DraftRow>) {
-    setRows((arr) => arr.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setRows((arr) =>
+      arr.map((r) => {
+        if (r.id !== id) return r;
+        const next = { ...r, ...patch };
+        if (patch.item_name !== undefined && !next.price.trim()) {
+          const guess = lookupPrice(priceHistory, next.item_name, retailer);
+          if (guess != null) next.price = String(guess);
+        }
+        if (patch.item_name !== undefined && !next.category.trim()) {
+          const cat = lookupCategory(categoryHistory, next.item_name);
+          if (cat) next.category = cat;
+        }
+        return next;
+      }),
+    );
   }
   function removeRow(id: string) {
     setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
@@ -979,7 +993,7 @@ function EditTransactionDialog({
         item_name: "",
         price: "",
         quantity: "1",
-        category: categories[0] ?? "Other",
+        category: "",
         notes: "",
       },
     ]);
