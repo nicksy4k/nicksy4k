@@ -994,7 +994,10 @@ function EditTransactionDialog({
           }
         : emptyProtection(),
     );
+    setQuickSelected(new Set());
+    setQuickShowMore(false);
   }
+
   if (!transaction && initialized !== null) {
     setInitialized(null);
   }
