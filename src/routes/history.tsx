@@ -1325,8 +1325,87 @@ function EditTransactionDialog({
                 )}
               </div>
 
+              {rankedQuick.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Quick add
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tap items to add.{retailerMatchCount > 0 ? " Retailer's picks first." : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {visibleQuick.map((f, i) => {
+                      const selected = quickSelected.has(f.key);
+                      const isRetailerMatch = retailerKey && f.retailers.has(retailerKey);
+                      const showDivider =
+                        retailerMatchCount > 0 &&
+                        i === retailerMatchCount &&
+                        i < visibleQuick.length;
+                      return (
+                        <span key={f.key} className="contents">
+                          {showDivider && (
+                            <span
+                              aria-hidden
+                              className="w-full text-[10px] uppercase tracking-wider text-muted-foreground"
+                            >
+                              Other frequents
+                            </span>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={selected ? "default" : "outline"}
+                            className="h-7 px-2.5 text-xs"
+                            onClick={() => toggleQuick(f.key)}
+                            title={
+                              isRetailerMatch
+                                ? `${f.count}× • last ${f.lastDate} • ${retailer}`
+                                : `${f.count}× • last ${f.lastDate}`
+                            }
+                          >
+                            {f.display}
+                          </Button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={addSelectedQuickItems}
+                        disabled={quickSelected.size === 0}
+                      >
+                        Add {quickSelected.size || ""} item{quickSelected.size === 1 ? "" : "s"}
+                      </Button>
+                      {quickSelected.size > 0 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setQuickSelected(new Set())}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    {rankedQuick.length > 12 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setQuickShowMore((v) => !v)}
+                      >
+                        {quickShowMore ? "Show less" : `Show more (${rankedQuick.length - 12})`}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
+
                 {rows.map((r, idx) => (
                   <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
                     <div className="flex items-center justify-between">
