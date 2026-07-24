@@ -1041,6 +1041,56 @@ function EditTransactionDialog({
     ]);
   }
 
+  const retailerKey = retailer.trim().toLowerCase();
+  const rankedQuick = useMemo(() => {
+    return [...frequentItems].sort((a, b) => {
+      const am = retailerKey && a.retailers.has(retailerKey) ? 1 : 0;
+      const bm = retailerKey && b.retailers.has(retailerKey) ? 1 : 0;
+      if (am !== bm) return bm - am;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.lastDate < b.lastDate ? 1 : -1;
+    });
+  }, [frequentItems, retailerKey]);
+  const retailerMatchCount = useMemo(
+    () => (retailerKey ? rankedQuick.filter((f) => f.retailers.has(retailerKey)).length : 0),
+    [rankedQuick, retailerKey],
+  );
+  const visibleQuick = quickShowMore ? rankedQuick.slice(0, 30) : rankedQuick.slice(0, 12);
+
+  function toggleQuick(key: string) {
+    setQuickSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+  function addSelectedQuickItems() {
+    if (quickSelected.size === 0) return;
+    const picks = rankedQuick.filter((f) => quickSelected.has(f.key));
+    const newRows: DraftRow[] = picks.map((f) => {
+      const guess = lookupPrice(priceHistory, f.display, retailer);
+      const cat = lookupCategory(categoryHistory, f.display);
+      return {
+        id: crypto.randomUUID(),
+        item_name: f.display,
+        price: guess != null ? guess.toFixed(2) : "",
+        quantity: "1",
+        category: cat ?? "",
+        notes: "",
+      };
+    });
+    setRows((arr) => {
+      const onlyBlank =
+        arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim();
+      return onlyBlank ? newRows : [...arr, ...newRows];
+    });
+    toast.success(`Added ${newRows.length} item${newRows.length === 1 ? "" : "s"}`);
+    setQuickSelected(new Set());
+  }
+
+
+
   async function save() {
     if (!transaction) return;
     if (!retailer.trim()) {
