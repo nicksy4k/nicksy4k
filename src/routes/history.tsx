@@ -883,7 +883,46 @@ function EditTransactionDialog({
   const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
   const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
 
+  const frequentItems = useMemo(() => {
+    const map = new Map<
+      string,
+      { display: string; count: number; lastDate: string; retailers: Set<string> }
+    >();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        const r = (t.retailer ?? "").trim().toLowerCase();
+        const entry = map.get(key);
+        if (entry) {
+          entry.count += 1;
+          if (t.date > entry.lastDate) {
+            entry.lastDate = t.date;
+            entry.display = name;
+          }
+          if (r) entry.retailers.add(r);
+        } else {
+          map.set(key, {
+            display: name,
+            count: 1,
+            lastDate: t.date,
+            retailers: new Set(r ? [r] : []),
+          });
+        }
+      }
+    }
+    const hiddenSet = new Set(hidden.items.map((h) => h.toLowerCase()));
+    return Array.from(map.entries())
+      .filter(([key]) => !hiddenSet.has(key))
+      .map(([key, v]) => ({ key, ...v }));
+  }, [pastTransactions, hidden.items]);
+
   const [addCategoryForRowId, setAddCategoryForRowId] = useState<string | null>(null);
+  const [quickSelected, setQuickSelected] = useState<Set<string>>(new Set());
+  const [quickShowMore, setQuickShowMore] = useState(false);
+
 
   const [date, setDate] = useState("");
   const [retailer, setRetailer] = useState("");
@@ -955,7 +994,10 @@ function EditTransactionDialog({
           }
         : emptyProtection(),
     );
+    setQuickSelected(new Set());
+    setQuickShowMore(false);
   }
+
   if (!transaction && initialized !== null) {
     setInitialized(null);
   }
@@ -998,6 +1040,56 @@ function EditTransactionDialog({
       },
     ]);
   }
+
+  const retailerKey = retailer.trim().toLowerCase();
+  const rankedQuick = useMemo(() => {
+    return [...frequentItems].sort((a, b) => {
+      const am = retailerKey && a.retailers.has(retailerKey) ? 1 : 0;
+      const bm = retailerKey && b.retailers.has(retailerKey) ? 1 : 0;
+      if (am !== bm) return bm - am;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.lastDate < b.lastDate ? 1 : -1;
+    });
+  }, [frequentItems, retailerKey]);
+  const retailerMatchCount = useMemo(
+    () => (retailerKey ? rankedQuick.filter((f) => f.retailers.has(retailerKey)).length : 0),
+    [rankedQuick, retailerKey],
+  );
+  const visibleQuick = quickShowMore ? rankedQuick.slice(0, 30) : rankedQuick.slice(0, 12);
+
+  function toggleQuick(key: string) {
+    setQuickSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+  function addSelectedQuickItems() {
+    if (quickSelected.size === 0) return;
+    const picks = rankedQuick.filter((f) => quickSelected.has(f.key));
+    const newRows: DraftRow[] = picks.map((f) => {
+      const guess = lookupPrice(priceHistory, f.display, retailer);
+      const cat = lookupCategory(categoryHistory, f.display);
+      return {
+        id: crypto.randomUUID(),
+        item_name: f.display,
+        price: guess != null ? guess.toFixed(2) : "",
+        quantity: "1",
+        category: cat ?? "",
+        notes: "",
+      };
+    });
+    setRows((arr) => {
+      const onlyBlank =
+        arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim();
+      return onlyBlank ? newRows : [...arr, ...newRows];
+    });
+    toast.success(`Added ${newRows.length} item${newRows.length === 1 ? "" : "s"}`);
+    setQuickSelected(new Set());
+  }
+
+
 
   async function save() {
     if (!transaction) return;
@@ -1233,8 +1325,87 @@ function EditTransactionDialog({
                 )}
               </div>
 
+              {rankedQuick.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Quick add
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tap items to add.{retailerMatchCount > 0 ? " Retailer's picks first." : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {visibleQuick.map((f, i) => {
+                      const selected = quickSelected.has(f.key);
+                      const isRetailerMatch = retailerKey && f.retailers.has(retailerKey);
+                      const showDivider =
+                        retailerMatchCount > 0 &&
+                        i === retailerMatchCount &&
+                        i < visibleQuick.length;
+                      return (
+                        <span key={f.key} className="contents">
+                          {showDivider && (
+                            <span
+                              aria-hidden
+                              className="w-full text-[10px] uppercase tracking-wider text-muted-foreground"
+                            >
+                              Other frequents
+                            </span>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={selected ? "default" : "outline"}
+                            className="h-7 px-2.5 text-xs"
+                            onClick={() => toggleQuick(f.key)}
+                            title={
+                              isRetailerMatch
+                                ? `${f.count}× • last ${f.lastDate} • ${retailer}`
+                                : `${f.count}× • last ${f.lastDate}`
+                            }
+                          >
+                            {f.display}
+                          </Button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={addSelectedQuickItems}
+                        disabled={quickSelected.size === 0}
+                      >
+                        Add {quickSelected.size || ""} item{quickSelected.size === 1 ? "" : "s"}
+                      </Button>
+                      {quickSelected.size > 0 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setQuickSelected(new Set())}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    {rankedQuick.length > 12 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setQuickShowMore((v) => !v)}
+                      >
+                        {quickShowMore ? "Show less" : `Show more (${rankedQuick.length - 12})`}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Line items</p>
+
                 {rows.map((r, idx) => (
                   <div key={r.id} className="rounded-lg border border-border p-3 space-y-3">
                     <div className="flex items-center justify-between">
