@@ -883,7 +883,46 @@ function EditTransactionDialog({
   const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
   const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
 
+  const frequentItems = useMemo(() => {
+    const map = new Map<
+      string,
+      { display: string; count: number; lastDate: string; retailers: Set<string> }
+    >();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        const r = (t.retailer ?? "").trim().toLowerCase();
+        const entry = map.get(key);
+        if (entry) {
+          entry.count += 1;
+          if (t.date > entry.lastDate) {
+            entry.lastDate = t.date;
+            entry.display = name;
+          }
+          if (r) entry.retailers.add(r);
+        } else {
+          map.set(key, {
+            display: name,
+            count: 1,
+            lastDate: t.date,
+            retailers: new Set(r ? [r] : []),
+          });
+        }
+      }
+    }
+    const hiddenSet = new Set(hidden.items.map((h) => h.toLowerCase()));
+    return Array.from(map.entries())
+      .filter(([key]) => !hiddenSet.has(key))
+      .map(([key, v]) => ({ key, ...v }));
+  }, [pastTransactions, hidden.items]);
+
   const [addCategoryForRowId, setAddCategoryForRowId] = useState<string | null>(null);
+  const [quickSelected, setQuickSelected] = useState<Set<string>>(new Set());
+  const [quickShowMore, setQuickShowMore] = useState(false);
+
 
   const [date, setDate] = useState("");
   const [retailer, setRetailer] = useState("");
