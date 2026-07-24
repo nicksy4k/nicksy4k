@@ -1,34 +1,37 @@
-## Settle-flow parity with New Transaction
+## Quick-add frequent items in the settle flow
 
-Bring the settle/edit dialog in `src/routes/history.tsx` up to the same input ergonomics the New Transaction screen already has, plus one new capability (add-category inline) that will apply in both places.
+Add a compact "Quick add" panel inside the settle/edit dialog in `src/routes/history.tsx` (visible only when `isPending` is off — i.e. actually itemizing). It lets you tap several past items at once and appends them as line items using the same autofill helpers already used per-row.
 
-### 1. Item name → Combobox with history suggestions
+### UI
 
-In `src/routes/history.tsx` `EditTransactionDialog`:
+- Placed just above the "Line items" list (`src/routes/history.tsx:1236`).
+- Header: "Quick add" + small muted subtitle "Tap items to add. Retailer's picks first."
+- Grid of toggle chips (shadcn `Badge`/`Button` variant `outline`, wrap-friendly). Selected chips flip to filled/primary.
+- Order: retailer-specific frequent items first (by usage count desc, then most-recent), then a divider, then global frequents. Cap at ~12 chips with a "Show more" toggle to reveal up to ~30.
+- Bottom row: `Add N items` primary button (disabled when 0 selected) + `Clear` ghost button. Optional per-chip qty stepper is out of scope — everything added at qty 1; user can bump qty on the row afterwards.
+- Hidden-items list (`useHiddenSuggestions().hiddenItems`) filters the chips, same as the item Combobox.
 
-- Replace the plain `<Input>` at line 1214-1218 with the existing `Combobox` (`src/components/ui/combobox.tsx`, already used in `src/routes/new.tsx`).
-- Build an `itemNameSuggestions` memo from `useTransactions().items`: unique, non-pending item names, filtered through `useHiddenSuggestions().hiddenItems`, sorted with `sortLabels`. Same shape as `new.tsx`.
-- Reuse the existing price-autofill helper pattern from `new.tsx` so picking a known item prefills price when the price field is empty (retailer-first, then global). Do not overwrite a price the user typed.
-- Keep the existing category autofill behaviour that already exists on this row (if none, add the same "look up most recent category for this item name" logic mirrored from `new.tsx` — same safety rule: never overwrite a manual pick).
-- Keep `autoFocus` behaviour for the first row on a pending settle.
+### Behaviour
 
-### 2. Inline "Add new category" in the Category select
-
-Applies to both the settle/edit dialog (`src/routes/history.tsx` line 1237-1255) and the New Transaction line-item Category select in `src/routes/new.tsx`.
-
-- Append a sentinel `__add_new__` item at the bottom of each `<SelectContent>`, rendered as "＋ New category…".
-- When picked, open a small prompt (shadcn `Dialog` with a single `Input` + Save/Cancel — no route change) to type the new name.
-- On save: trim, dedupe case-insensitively against existing categories, call `useCategories().add(name)`, then set that new value on the current line item. Toast on success; toast error on empty/duplicate.
-- No changes to the Settings category manager — it already handles delete/reset.
+- Build a `frequentItems` memo from `useTransactions().items`: non-pending, item_name non-empty, filtered by hidden list, grouped by lower-cased name. Track `{ name (display = most recent casing), count, lastDate, retailers: Set<string> }`. Sort: retailer match desc → count desc → lastDate desc.
+- On `Add N items`: for each selected name, push a new row (same shape as `addRow`) with:
+  - `item_name` = display name
+  - `price` = `suggestPrice(priceHistory, name, retailer)` formatted like existing code (`.toFixed(2)`), else `""`
+  - `category` = `suggestCategory(categoryHistory, name)` ?? `""`
+  - `quantity` = `"1"`, `notes` = `""`
+  - Reuse the same helpers from `src/lib/suggestions.ts` already imported in this file.
+- If the current rows contain only a single blank row (no name, no price), replace it; otherwise append.
+- Clear selection after adding; toast `"Added N items"`.
+- Selection state: local `Set<string>` (lowercased key), reset when dialog opens/closes or when `transaction.id` changes.
 
 ### Out of scope
 
-- Retailer field in the settle dialog (retailer isn't edited there — the settle dialog reuses the pending row's retailer).
-- Income category picker (this is only for expense line items, matching the request).
-- No schema changes; `categories` table + `useCategories` already support add.
+- No quick-add on the New Transaction route (`new.tsx`) — request is about the settle flow. Can mirror later if wanted.
+- No changes to suggestion storage, hidden-items UI, or the Combobox itself.
+- No qty pickers on chips, no drag-reorder.
 
 ### Technical notes
 
-- `Combobox` supports `autoFocus` — pass it through for the pending-settle first row.
-- Price/category history maps: extract the memo builders from `new.tsx` into `src/lib/suggestions.ts` (pure functions taking `Transaction[]`) so both routes share one implementation instead of duplicating.
-- The add-category mini-dialog is a shared local component inside each route file, or lifted to `src/components/AddCategoryDialog.tsx` to avoid duplication — prefer the shared component.
+- All logic stays inside `EditTransactionDialog` in `src/routes/history.tsx`; no new files needed.
+- Uses existing `priceHistory` / `categoryHistory` memos (already computed for the item Combobox) — just add a `frequentItems` memo alongside them.
+- Uses shadcn `Button` (variant `outline` / `default`) for chips to stay consistent with the current design system; no new deps.
