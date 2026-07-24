@@ -1,37 +1,20 @@
-## Quick-add frequent items in the settle flow
+## Quick add panel in New Transaction
 
-Add a compact "Quick add" panel inside the settle/edit dialog in `src/routes/history.tsx` (visible only when `isPending` is off — i.e. actually itemizing). It lets you tap several past items at once and appends them as line items using the same autofill helpers already used per-row.
+Mirror the settle/edit dialog's "Quick add" block into the itemize step of `src/routes/new.tsx`, using the same retailer-first ranking.
 
-### UI
+### Changes (only `src/routes/new.tsx`)
 
-- Placed just above the "Line items" list (`src/routes/history.tsx:1236`).
-- Header: "Quick add" + small muted subtitle "Tap items to add. Retailer's picks first."
-- Grid of toggle chips (shadcn `Badge`/`Button` variant `outline`, wrap-friendly). Selected chips flip to filled/primary.
-- Order: retailer-specific frequent items first (by usage count desc, then most-recent), then a divider, then global frequents. Cap at ~12 chips with a "Show more" toggle to reveal up to ~30.
-- Bottom row: `Add N items` primary button (disabled when 0 selected) + `Clear` ghost button. Optional per-chip qty stepper is out of scope — everything added at qty 1; user can bump qty on the row afterwards.
-- Hidden-items list (`useHiddenSuggestions().hiddenItems`) filters the chips, same as the item Combobox.
-
-### Behaviour
-
-- Build a `frequentItems` memo from `useTransactions().items`: non-pending, item_name non-empty, filtered by hidden list, grouped by lower-cased name. Track `{ name (display = most recent casing), count, lastDate, retailers: Set<string> }`. Sort: retailer match desc → count desc → lastDate desc.
-- On `Add N items`: for each selected name, push a new row (same shape as `addRow`) with:
-  - `item_name` = display name
-  - `price` = `suggestPrice(priceHistory, name, retailer)` formatted like existing code (`.toFixed(2)`), else `""`
-  - `category` = `suggestCategory(categoryHistory, name)` ?? `""`
-  - `quantity` = `"1"`, `notes` = `""`
-  - Reuse the same helpers from `src/lib/suggestions.ts` already imported in this file.
-- If the current rows contain only a single blank row (no name, no price), replace it; otherwise append.
-- Clear selection after adding; toast `"Added N items"`.
-- Selection state: local `Set<string>` (lowercased key), reset when dialog opens/closes or when `transaction.id` changes.
+1. Add a `frequentItems` memo built from `pastTransactions` (skip pending, dedupe by lowercased name, track `count`, `lastDate`, and `retailers` set), filtered through `useHiddenSuggestions().hiddenItems`. Same shape as `history.tsx`.
+2. Add local state: `quickSelected: Set<string>` and `quickShowMore: boolean`. Reset both when navigating between steps (or when `retailer` changes to avoid stale retailer-scoped picks — leave selections intact within a step).
+3. Ranking (identical to history):
+   - Retailer matches first (when `retailer.trim()` is set and `f.retailers.has(retailerKey)`), then remaining by `count` desc then `lastDate` desc.
+   - Default cap 12; "Show more / Show less" toggle reveals the rest.
+   - Divider chip "Other frequents" between the two groups when retailer matches exist.
+4. `addSelectedQuickItems()`: for each selected key, append a new line-item row with `item_name` set to `f.display`, `price` from `suggestPrice(name, retailer)` (retailer-aware, may be empty), `category` from `suggestCategory(name)` (may be empty), quantity 1. Never overwrite existing rows. Clear selection after add.
+5. Render the panel just above the "Line items" list in step 2 (itemize step), same styling/markup as the history dialog for visual parity (bordered muted card, chip buttons, Add N items / Clear / Show more controls). Hide entirely when `frequentItems.length === 0`.
 
 ### Out of scope
 
-- No quick-add on the New Transaction route (`new.tsx`) — request is about the settle flow. Can mirror later if wanted.
-- No changes to suggestion storage, hidden-items UI, or the Combobox itself.
-- No qty pickers on chips, no drag-reorder.
-
-### Technical notes
-
-- All logic stays inside `EditTransactionDialog` in `src/routes/history.tsx`; no new files needed.
-- Uses existing `priceHistory` / `categoryHistory` memos (already computed for the item Combobox) — just add a `frequentItems` memo alongside them.
-- Uses shadcn `Button` (variant `outline` / `default`) for chips to stay consistent with the current design system; no new deps.
+- No changes to history dialog (already done).
+- No new helpers — reuse `buildPriceHistory`, `buildCategoryHistory`, `suggestPrice`, `suggestCategory` from `src/lib/suggestions.ts`, and `sortLabels`/hidden filtering already imported.
+- No schema changes.

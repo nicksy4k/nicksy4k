@@ -108,6 +108,102 @@ function NewTransactionPage() {
   const priceHistory = useMemo(() => buildPriceHistory(pastTransactions), [pastTransactions]);
   const categoryHistory = useMemo(() => buildCategoryHistory(pastTransactions), [pastTransactions]);
 
+  const frequentItems = useMemo(() => {
+    const map = new Map<
+      string,
+      { display: string; count: number; lastDate: string; retailers: Set<string> }
+    >();
+    for (const t of pastTransactions) {
+      if (t.is_pending) continue;
+      for (const it of t.items ?? []) {
+        const name = (it.item_name ?? "").trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        const r = (t.retailer ?? "").trim().toLowerCase();
+        const entry = map.get(key);
+        if (entry) {
+          entry.count += 1;
+          if (t.date > entry.lastDate) {
+            entry.lastDate = t.date;
+            entry.display = name;
+          }
+          if (r) entry.retailers.add(r);
+        } else {
+          map.set(key, {
+            display: name,
+            count: 1,
+            lastDate: t.date,
+            retailers: new Set(r ? [r] : []),
+          });
+        }
+      }
+    }
+    const hiddenSet = new Set(hidden.items.map((h) => h.toLowerCase()));
+    return Array.from(map.entries())
+      .filter(([key]) => !hiddenSet.has(key))
+      .map(([key, v]) => ({ key, ...v }));
+  }, [pastTransactions, hidden.items]);
+
+  const [quickSelected, setQuickSelected] = useState<Set<string>>(new Set());
+  const [quickShowMore, setQuickShowMore] = useState(false);
+
+  const retailerKey = retailer.trim().toLowerCase();
+  const rankedQuick = useMemo(() => {
+    const arr = [...frequentItems];
+    arr.sort((a, b) => {
+      if (retailerKey) {
+        const am = a.retailers.has(retailerKey) ? 1 : 0;
+        const bm = b.retailers.has(retailerKey) ? 1 : 0;
+        if (am !== bm) return bm - am;
+      }
+      if (b.count !== a.count) return b.count - a.count;
+      return a.lastDate < b.lastDate ? 1 : a.lastDate > b.lastDate ? -1 : 0;
+    });
+    return arr;
+  }, [frequentItems, retailerKey]);
+
+  const retailerMatchCount = retailerKey
+    ? rankedQuick.filter((f) => f.retailers.has(retailerKey)).length
+    : 0;
+  const visibleQuick = quickShowMore ? rankedQuick : rankedQuick.slice(0, 12);
+
+  function toggleQuick(key: string) {
+    setQuickSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function addSelectedQuickItems() {
+    if (quickSelected.size === 0) return;
+    const additions: DraftItem[] = [];
+    for (const key of quickSelected) {
+      const f = frequentItems.find((x) => x.key === key);
+      if (!f) continue;
+      const priceGuess = lookupPrice(priceHistory, f.display, retailer);
+      const catGuess = lookupCategory(categoryHistory, f.display);
+      additions.push({
+        id: crypto.randomUUID(),
+        item_name: f.display,
+        price: priceGuess != null ? String(priceGuess) : "",
+        quantity: "1",
+        category: catGuess ?? "",
+        notes: "",
+      });
+    }
+    if (additions.length === 0) return;
+    setItems((arr) => {
+      // Drop an initial empty row if present, so quick-add doesn't leave a blank at top.
+      const base =
+        arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim() ? [] : arr;
+      return [...base, ...additions];
+    });
+    setLastAddedId(additions[additions.length - 1].id);
+    setQuickSelected(new Set());
+  }
+
   function suggestPrice(itemName: string, retailerName: string): number | null {
     return lookupPrice(priceHistory, itemName, retailerName);
   }
@@ -115,6 +211,7 @@ function NewTransactionPage() {
   function suggestCategory(itemName: string): string | null {
     return lookupCategory(categoryHistory, itemName);
   }
+
 
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
@@ -539,7 +636,84 @@ function NewTransactionPage() {
 
       {step === 2 && (
         <div className="space-y-4">
+          {rankedQuick.length > 0 && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Quick add</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Tap items to add.{retailerMatchCount > 0 ? " Retailer's picks first." : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleQuick.map((f, i) => {
+                  const selected = quickSelected.has(f.key);
+                  const isRetailerMatch = retailerKey && f.retailers.has(retailerKey);
+                  const showDivider =
+                    retailerMatchCount > 0 &&
+                    i === retailerMatchCount &&
+                    i < visibleQuick.length;
+                  return (
+                    <span key={f.key} className="contents">
+                      {showDivider && (
+                        <span
+                          aria-hidden
+                          className="w-full text-[10px] uppercase tracking-wider text-muted-foreground"
+                        >
+                          Other frequents
+                        </span>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selected ? "default" : "outline"}
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => toggleQuick(f.key)}
+                        title={
+                          isRetailerMatch
+                            ? `${f.count}× • last ${f.lastDate} • ${retailer}`
+                            : `${f.count}× • last ${f.lastDate}`
+                        }
+                      >
+                        {f.display}
+                      </Button>
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={addSelectedQuickItems}
+                    disabled={quickSelected.size === 0}
+                  >
+                    Add {quickSelected.size || ""} item{quickSelected.size === 1 ? "" : "s"}
+                  </Button>
+                  {quickSelected.size > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setQuickSelected(new Set())}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                {rankedQuick.length > 12 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setQuickShowMore((v) => !v)}
+                  >
+                    {quickShowMore ? "Show less" : `Show more (${rankedQuick.length - 12})`}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {items.map((item, idx) => (
+
             <Card key={item.id}>
               <CardHeader className="flex-row items-center justify-between pb-3">
                 <CardTitle className="text-base">Item {idx + 1}</CardTitle>
