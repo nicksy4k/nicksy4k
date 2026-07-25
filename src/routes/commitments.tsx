@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useEffect, useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
+import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { sortLabels } from "@/lib/utils";
@@ -42,6 +44,7 @@ function CommitmentsPage() {
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
   const { list: categories } = useCategories();
+  const qc = useQueryClient();
 
   const cycle = useActiveCycle();
   // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
@@ -347,6 +350,15 @@ function CommitmentsPage() {
             console.error("Failed to auto-log paid commitment", err);
             toast.error("Marked paid, but auto-logging failed.");
           }
+          // Sync BNPL debt balance when this commitment is linked to one.
+          if (c.debt_id) {
+            try {
+              await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
+              qc.invalidateQueries({ queryKey: ["debts"] });
+            } catch (err) {
+              console.error("Debt sync failed", err);
+            }
+          }
           toast.success("Paid · logged & deducted from Bill Money");
           setDetailsId(null);
         }}
@@ -372,6 +384,15 @@ function CommitmentsPage() {
               next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
               prev_due_date: null,
             });
+            // Reverse the auto-logged BNPL payment if any.
+            if (c.debt_id) {
+              try {
+                await undoDebtPaymentForCommitment(c);
+                qc.invalidateQueries({ queryKey: ["debts"] });
+              } catch (err) {
+                console.error("Debt undo failed", err);
+              }
+            }
             toast.success("Reversed · transaction removed & Bill Money refunded");
           } catch (err) {
             console.error("Failed to undo paid commitment", err);
