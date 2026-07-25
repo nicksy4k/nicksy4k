@@ -384,6 +384,15 @@ function CommitmentsPage() {
               next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
               prev_due_date: null,
             });
+            // Reverse the auto-logged BNPL payment if any.
+            if (c.debt_id) {
+              try {
+                await undoDebtPaymentForCommitment(c);
+                qc.invalidateQueries({ queryKey: ["debts"] });
+              } catch (err) {
+                console.error("Debt undo failed", err);
+              }
+            }
             toast.success("Reversed · transaction removed & Bill Money refunded");
           } catch (err) {
             console.error("Failed to undo paid commitment", err);
