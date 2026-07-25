@@ -1097,8 +1097,18 @@ function DebtsTab() {
               notes: pending.notes,
             });
 
-            // Kill-switch: drop the linked recurring commitment when settled.
+            // Sync linked commitment: mark paid + advance to next installment.
             const updatedDebt: Debt = { ...pending.debt, payments: next };
+            if (pending.debt.kind === "bnpl") {
+              try {
+                await syncCommitmentAfterDebtPayment(updatedDebt, pending.date);
+                qc.invalidateQueries({ queryKey: ["commitments"] });
+              } catch (err) {
+                console.error("Commitment sync failed", err);
+              }
+            }
+
+            // Kill-switch: drop the linked recurring commitment when settled.
             const remainingAfter = debtRemaining(updatedDebt);
             const installmentsDone =
               pending.debt.kind === "bnpl" &&
