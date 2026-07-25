@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useEffect, useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
+import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { sortLabels } from "@/lib/utils";
