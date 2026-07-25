@@ -350,6 +350,15 @@ function CommitmentsPage() {
             console.error("Failed to auto-log paid commitment", err);
             toast.error("Marked paid, but auto-logging failed.");
           }
+          // Sync BNPL debt balance when this commitment is linked to one.
+          if (c.debt_id) {
+            try {
+              await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
+              qc.invalidateQueries({ queryKey: ["debts"] });
+            } catch (err) {
+              console.error("Debt sync failed", err);
+            }
+          }
           toast.success("Paid · logged & deducted from Bill Money");
           setDetailsId(null);
         }}
