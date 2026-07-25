@@ -35,6 +35,7 @@ import {
 import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
+import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
 
 
 export const Route = createFileRoute("/credit")({
