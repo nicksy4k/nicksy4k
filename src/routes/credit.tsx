@@ -1013,7 +1013,7 @@ function DebtsTab() {
           }
           const debtId = (created as { id: string }).id;
 
-          // Side-effects when "Pay 1st now" was chosen.
+          // Side-effect: debit ledger when "Pay 1st now" was chosen.
           if (extras.payFirstNow && extras.firstPaymentSource && data.kind === "bnpl") {
             await ledger.debit(extras.firstPaymentSource, {
               amount: per,
@@ -1022,19 +1022,27 @@ function DebtsTab() {
               category: "Debt",
               notes: "1st installment",
             });
+          }
 
-            // Auto-create commitment for the remaining installments.
-            const remainingCount = n - 1;
+          // Auto-create a linked commitment for EVERY new BNPL plan (not only
+          // the pay-first-now path). Due date is the next unpaid installment.
+          if (data.kind === "bnpl" && n > 0) {
+            const dates = data.installment_dates ?? [];
+            const paidFirst = !!(extras.payFirstNow && extras.firstPaymentSource);
+            const remainingCount = paidFirst ? n - 1 : n;
             if (remainingCount > 0) {
-              const firstDue = format(addMonths(new Date(today), 1), "yyyy-MM-dd");
+              const nextDue =
+                dates[paidFirst ? 1 : 0] ??
+                dates[0] ??
+                format(addMonths(new Date(today), 1), "yyyy-MM-dd");
               await addCommitment({
                 item_name: `${data.name} Installment`,
                 store: data.name,
                 payment_method: "BNPL",
                 amount: per,
                 category: "Debt",
-                next_due_date: firstDue,
-                last_paid_date: today,
+                next_due_date: nextDue,
+                last_paid_date: paidFirst ? today : null,
                 prev_due_date: null,
                 notes: `Auto-linked to BNPL plan (${remainingCount} of ${n} remaining).`,
                 paid: false,
