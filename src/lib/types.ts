@@ -161,6 +161,9 @@ export interface LedgerPayment {
   type?: "payment" | "topup";
   /** "main", "pocket:<name>", or "other" — money source/destination */
   source?: string;
+  /** When set, this payment was auto-logged from a linked commitment
+   *  marking itself paid. Used to reverse the payment on undo. */
+  commitment_id?: string | null;
 }
 
 export interface Loan {
