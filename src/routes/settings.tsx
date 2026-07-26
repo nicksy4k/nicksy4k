@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
+import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
+import { filterHidden } from "@/lib/hiddenSuggestions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -82,21 +84,25 @@ function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="suggestions" className="mt-0 space-y-6">
-          <SuggestionManager
+          <SuggestionSection
+            kind="retailer"
             title="Retailer suggestions"
             description="Hide retailers from the New Transaction dropdown. Past transactions are unaffected."
             icon={<Store className="h-5 w-5 text-primary" />}
             catalog={useSortedCatalog(transactions, "retailer")}
+            occurrences={useOccurrences(transactions, "retailer")}
             hidden={hidden.hidden.retailers}
             onHide={hidden.hideRetailer}
             onUnhide={hidden.unhideRetailer}
             onClear={hidden.clearRetailers}
           />
-          <SuggestionManager
+          <SuggestionSection
+            kind="item"
             title="Item name suggestions"
             description="Hide mistyped item names from the itemization dropdown. Past transactions are unaffected."
             icon={<Package className="h-5 w-5 text-primary" />}
             catalog={useSortedCatalog(transactions, "item")}
+            occurrences={useOccurrences(transactions, "item")}
             hidden={hidden.hidden.items}
             onHide={hidden.hideItem}
             onUnhide={hidden.unhideItem}
@@ -127,6 +133,79 @@ function useSortedCatalog(
     }
     return sortLabels(set);
   }, [transactions, type]);
+}
+
+function useOccurrences(
+  transactions: { retailer?: string; items?: { item_name?: string }[] }[],
+  type: "retailer" | "item",
+) {
+  return useMemo(() => {
+    const out: string[] = [];
+    if (type === "retailer") {
+      for (const t of transactions) if (t.retailer?.trim()) out.push(t.retailer.trim());
+    } else {
+      for (const t of transactions) for (const it of t.items ?? []) {
+        if (it.item_name?.trim()) out.push(it.item_name.trim());
+      }
+    }
+    return out;
+  }, [transactions, type]);
+}
+
+function SuggestionSection({
+  kind, title, description, icon, catalog, occurrences,
+  hidden, onHide, onUnhide, onClear,
+}: {
+  kind: "retailer" | "item";
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  catalog: string[];
+  occurrences: string[];
+  hidden: string[];
+  onHide: (name: string) => void | Promise<void>;
+  onUnhide: (name: string) => void | Promise<void>;
+  onClear: () => void | Promise<void>;
+}) {
+  const [scanOpen, setScanOpen] = useState(false);
+  const visibleForScan = useMemo(
+    () => filterHidden(catalog, hidden),
+    [catalog, hidden],
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setScanOpen(true)}
+          disabled={visibleForScan.length < 2}
+        >
+          <Sparkles className="h-3.5 w-3.5" /> Scan for duplicates
+        </Button>
+      </div>
+      <SuggestionManager
+        title={title}
+        description={description}
+        icon={icon}
+        catalog={catalog}
+        hidden={hidden}
+        onHide={onHide}
+        onUnhide={onUnhide}
+        onClear={onClear}
+      />
+      <SmartCleanupDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        kind={kind}
+        title={kind === "retailer" ? "Retailers" : "Items"}
+        catalog={visibleForScan}
+        occurrences={occurrences}
+        onHide={onHide}
+      />
+    </div>
+  );
 }
 
 function CategoryManager({
