@@ -380,7 +380,7 @@ function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss
   }
 
   return (
-    <li className="flex items-start gap-2 rounded-lg border border-border/60 bg-card/40 p-3">
+    <li className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <p className="text-sm font-medium truncate">{txn.retailer}</p>
