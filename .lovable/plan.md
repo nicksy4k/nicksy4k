@@ -1,37 +1,69 @@
-# Setup Wizard
+# App Tutorial (Post-Setup)
 
-A 4-step onboarding wizard at `/setup`, gated by an explicit `onboarding_completed` flag, re-openable from Settings, with per-step "Keep current" vs "Replace" choice so it's safe to re-run.
+Add a short, hybrid onboarding tutorial that fires the moment a user clicks **Finish setup** and lands on the dashboard, and can be re-launched any time from Settings.
 
-## Steps
-1. **Cycle settings** — cycle type (monthly / 4-weekly), anchor date, carryover toggle.
-2. **Balance & pockets** — starting main balance + initial pockets (name + color, add/remove rows).
-3. **Categories** — pick from a default set (Groceries, Bills, Transport, Fun, Health, etc.) or add custom ones.
-4. **Income & commitments** — first recurring income (amount + cadence + next date) and a starter list of commitments (name, amount, due date, category, frequency).
+## Flow
 
-Final "Finish" screen summarises what will be written, then flips the completed flag and redirects to `/`.
+```text
+Setup wizard
+  └─ Finish → mark onboarding_completed, mark tutorial_pending
+              → navigate("/")
+Dashboard mounts
+  └─ if tutorial_pending → open Welcome modal
+       "Welcome to Ledgerly" · 2-paragraph intro · [Start tour] [Skip]
+       └─ Start tour → spotlight coach-marks (Next / Back / Skip)
+            1. "Left to spend" hero KPI
+            2. Spending-by-category chart
+            3. Return/warranty alerts card
+            4. Recent transactions list
+            5. Sidebar → "New transaction"
+            6. Sidebar → "Commitments"
+            7. Sidebar → "Settings" (mention re-run)
+       └─ End (Finish or Skip at any point) → mark tutorial_completed
+```
 
-## Re-run safety (per step)
-Each step loads current data and shows one of:
-- **Keep current** — skip, write nothing.
-- **Replace** — overwrite/append with the new values shown.
+Skip anywhere = counted as completed; the tour never auto-opens again.
+Re-run from **Settings → Data → Setup wizard card** (new "Run tutorial" button beside the existing wizard controls).
 
-Destructive replacements (pockets, categories, commitments) show a confirmation with counts before writing. Cycle settings and starting balance are always edit-in-place (single row).
+## Persistence
 
-## First-run trigger
-- Add `onboarding_completed boolean default false` to `user_settings`.
-- A top-level `useEffect` in `AppLayout` (or root) redirects to `/setup` when the flag is false and the user is authenticated.
-- Wizard sets it to `true` on Finish.
+Store a single new boolean on `user_settings`:
 
-## Re-run entry point
-- Settings → Data tab: a "Re-run setup wizard" button that navigates to `/setup` (flag stays true; wizard behaves the same, just doesn't auto-redirect afterward).
+- `tutorial_completed BOOLEAN NOT NULL DEFAULT false`
+
+A localStorage cache (`ledgerly.tutorial.completed`) gives 0-ms first-paint, mirroring the pattern already used by `useOnboardingStatus` and `useCycleSettings`.
+
+The wizard's `handleFinish` also writes a session flag `ledgerly.tutorial.pending = "1"` so the dashboard knows to auto-open the welcome modal on the very next mount (avoids a race with the redirect and avoids auto-opening on later logins).
+
+## Components / files
+
+New:
+- `src/lib/tutorial.ts` — `useTutorialStatus()` hook (`completed`, `markComplete`, `reset`) + `markPending()` / `consumePending()` helpers backed by sessionStorage.
+- `src/components/tutorial/TutorialProvider.tsx` — mounts a `<Popover>`-based spotlight overlay controlled by context; exposes `useTutorial().start(steps)`.
+- `src/components/tutorial/Spotlight.tsx` — dimmed backdrop with a cut-out around the current step's target element, plus a tooltip card (Back / Next / Skip, step counter, progress dots). Uses a `ResizeObserver` and `requestAnimationFrame` to reposition on scroll/resize; falls back to a centred modal when the target isn't in the DOM (e.g. sidebar collapsed on mobile).
+- `src/components/tutorial/WelcomeModal.tsx` — Shadcn `Dialog` with the 2-paragraph intro and Start / Skip buttons.
+- `src/lib/dashboardTourSteps.ts` — array of steps `{ selector, title, body, placement }`.
+
+Edits:
+- `src/routes/__root.tsx` — wrap the app in `<TutorialProvider>`.
+- `src/routes/index.tsx` — on mount, if `consumePending()` **or** an explicit `?tour=1` query param is set, open the welcome modal. Add `data-tour` attributes to: hero KPI, category chart card, warranty card, recent card.
+- `src/components/app-sidebar.tsx` — add `data-tour` attributes to the New Transaction, Commitments, and Settings nav items so the tour can target them.
+- `src/components/setup/SetupWizard.tsx` — in `handleFinish`, after `markComplete()`, call `markTutorialPending()` before `navigate({ to: "/" })`.
+- `src/routes/settings.tsx` (`SetupWizardCard`) — add a "Run tutorial" button that navigates to `/?tour=1` (which triggers the welcome modal via the query param path).
+
+## Migration
+
+```sql
+ALTER TABLE public.user_settings
+  ADD COLUMN IF NOT EXISTS tutorial_completed BOOLEAN NOT NULL DEFAULT false;
+```
+
+Grants and RLS already cover `user_settings`; no policy changes needed.
 
 ## Technical notes
-- **Migration:** add `onboarding_completed` to `user_settings`.
-- **New route:** `src/routes/setup.tsx` — public-facing but requires auth; uses the existing `_authenticated` gate by living at `src/routes/_authenticated/setup.tsx`. Auto-redirect logic lives in `AppLayout` so unauthenticated users hit `/auth` first.
-- **New component:** `src/components/setup/SetupWizard.tsx` — stepper UI (reuse sticky stepper pattern from `new.tsx`), one sub-component per step.
-- **Reuse:** cycle logic from `src/lib/cycle.ts`, recurring income helpers from `src/lib/recurringIncome.ts`, pocket colors from `src/lib/colors.ts`.
-- **Settings entry:** add "Re-run setup wizard" button in `src/routes/settings.tsx` Data tab, near the About card.
 
-## Out of scope
-- No wizard for BNPL/debts/loans (those are transactional, not setup).
-- No forced re-onboarding on schema upgrades.
+- Spotlight uses `getBoundingClientRect()` on the target selector; the overlay is a fixed-position SVG mask so it works over the sticky header and sidebar without layout thrash.
+- Steps that target sidebar items force the sidebar open (`SidebarProvider`'s `setOpen(true)`) before measuring, so mobile / collapsed users still see the highlight.
+- Escape key = Skip = mark completed.
+- The wizard's redirect to `/setup` in `AppLayout` is gated on `onboarding_completed`, so it never interferes with `/?tour=1` after setup is done.
+- No new dependencies — built on existing Shadcn `Dialog`, `Popover`, `Button`, and Tailwind.

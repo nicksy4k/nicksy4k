@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useTutorial } from "@/components/tutorial/TutorialProvider";
+import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
+import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useTransactions, useIncomes, useSavings } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
@@ -42,6 +45,21 @@ function DashboardPage() {
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
   const cycle = useActiveCycle();
+  const { openWelcome } = useTutorial();
+  const { completed: tutorialCompleted } = useTutorialStatus();
+
+  // Auto-launch tour once after setup wizard finishes, or on first dashboard
+  // visit if the user has never seen it. Consume the session flag either way.
+  useEffect(() => {
+    const pending = consumeTutorialPending();
+    if (tutorialCompleted === null) return; // still loading
+    if (pending || tutorialCompleted === false) {
+      openWelcome(dashboardTourSteps);
+    }
+    // Runs once per mount; status hook re-renders when it resolves.
+  }, [tutorialCompleted, openWelcome]);
+
+
 
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
@@ -133,7 +151,7 @@ function DashboardPage() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <Card className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Card data-tour="left-to-spend" className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
@@ -185,7 +203,7 @@ function DashboardPage() {
 
 
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
-        <Card className="lg:col-span-2">
+        <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Spending by category</CardTitle>
             <span className="text-xs text-muted-foreground">This cycle</span>
@@ -223,7 +241,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="warranty-alerts">
           <CardHeader className="flex-row items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <CardTitle>Return / warranty alerts</CardTitle>
@@ -268,7 +286,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="recent">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Recent</CardTitle>
             <Link to="/history" className="text-xs text-primary hover:underline">View all</Link>

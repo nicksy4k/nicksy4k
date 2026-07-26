@@ -27,6 +27,7 @@ import {
   useCategories, useCommitments, useIncomes, useRecurringIncomes, useSavings,
 } from "@/lib/store";
 import { useOnboardingStatus } from "@/lib/onboarding";
+import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
 import { todayLocalISO } from "@/lib/format";
 import type { IncomeCadence } from "@/lib/types";
 
@@ -47,6 +48,7 @@ export function SetupWizard() {
   const commitments = useCommitments();
   const recurring = useRecurringIncomes();
   const { markComplete } = useOnboardingStatus();
+  const { reset: resetTutorial } = useTutorialStatus();
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -165,6 +167,10 @@ export function SetupWizard() {
       }
 
       await markComplete();
+      // Force the guided tour to run on the dashboard even if this user has
+      // completed it before (re-runs of the wizard should offer it again).
+      await resetTutorial();
+      markTutorialPending();
       toast.success("Setup complete — welcome to Ledgerly!");
       navigate({ to: "/" });
     } catch (err) {
