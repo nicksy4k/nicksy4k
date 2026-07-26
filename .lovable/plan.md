@@ -1,32 +1,36 @@
-## Problem
-The Smart Cleanup wizard currently only lets you pick a single "master" via radio buttons — so in groups of 3+ similar entries you can't say "keep these two, hide these three."
+Upgrade the About card in Settings > Data to a richer, on-brand info section.
 
-## Change
-Replace the radio-per-row model in `src/components/SmartCleanupDialog.tsx` with a per-row **Keep / Hide** toggle so each entry in a group is decided independently.
+## What we will build
 
-### UI per group
-- Each row shows: name, usage count, and a two-state toggle (Keep ↔ Hide).
-- Default: the most-used entry starts as **Keep**, all others start as **Hide** (preserves current one-click behavior for the common 2-item case).
-- At least one row must remain **Keep**; toggling the last Keep off is blocked (button disabled + hint text).
-- Replace the "Keep both — leave untouched" radio with a small **"Keep all in this group"** link/button that flips every row to Keep.
-- Group header shows a live tally: "Keeping X · Hiding Y".
+1. App Header block
+   - App name "Ledgerly" in display font with a small `v2.0.0` badge.
+   - Tagline: "A precision personal finance and pocket-routing tracker."
+   - Placed at the top of the About card content area.
 
-### Data model
-Change `Decision` from `{ action: "keep" } | { action: "merge"; masterIndex }` to:
-```
-type Decision = { hide: Set<number> } // indices within group.names to hide
-```
-- "Keep all" = empty set.
-- Apply step iterates all groups, collects each `group.names[i]` where `i ∈ hide`, dedupes across groups, and calls `onHide(name)` — same safety guarantees (only writes to `hidden_retailers` / `hidden_items`, never touches transactions/receipts).
+2. Developer Credit card
+   - Title/line: "Designed and developed by Nicksy4K."
+   - Sub-text: "Powered by React, Supabase, and late-night coding sessions fueled by Monster Energy Drink!"
+   - Styled as a compact nested card using the existing `Card` component with primary-tinted icon.
 
-### Footer
-- Global counter switches from "N will be hidden" (master-based) to a true sum of every row marked Hide across all groups.
-- Finish button label unchanged: `Finish · hide N`.
+3. Interactive Changelog
+   - Use the existing `Accordion` component from `src/components/ui/accordion.tsx` (already present in the project).
+   - Label: "Changelog".
+   - Entries:
+     - v2.0.0: Midnight Indigo UI Refresh & Smart Suggestion Cleanup
+     - v1.9.0: Dynamic Income Routing & Automated Pockets
+     - v1.8.0: BNPL Engine & Cross-Tab Synchronization
+   - Each entry shows a short one-line summary in the collapsed trigger and expands to a few bullet details about the release.
 
-## Out of scope
-- Similarity grouping logic (`src/lib/suggestionSimilarity.ts`) is untouched.
-- No schema or Supabase changes.
-- No changes to how suggestions are surfaced elsewhere.
+4. Styling
+   - Use only semantic tokens from `src/styles.css` (`--color-primary`, `--color-card`, `--color-muted-foreground`, `--color-border`, etc.).
+   - Match the Phase 2 Midnight Indigo design: rounded cards, subtle borders, primary/15 icon backgrounds, `Space Grotesk` for headings, `Inter` for body.
 
-## Verification
-- Extend `src/lib/__tests__/suggestionSimilarity.test.ts`? Not needed — grouping is unchanged. Manual check: open Settings → Suggestions → Scan for duplicates on a 3+ group, verify independent toggles, "Keep all" link, and that Finish hides exactly the toggled-off rows.
+## Optional additions (open to your preference)
+- A "Made with" tech stack row of small icons/logos (React, Supabase, Tailwind).
+- A "Feedback / Report a bug" link/button that opens a mailto or GitHub issue URL.
+- A "Data storage" mini-stat (number of cloud-synced records) already partially exists in the Storage card above it.
+
+## Files to change
+- `src/routes/settings.tsx` — expand the existing `About` card inside `DataCard` with the header, developer credit, and changelog.
+
+No new dependencies, no backend changes, no RLS changes required.
