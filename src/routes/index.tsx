@@ -76,7 +76,7 @@ function DashboardPage() {
   const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
 
   const stats = useMemo(() => {
-    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0);
+    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0) + demo.extraSpend;
     const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
     const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
@@ -85,7 +85,7 @@ function DashboardPage() {
     const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
     return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
-  }, [cycleItems, cycleIncomes, cycleSavings]);
+  }, [cycleItems, cycleIncomes, cycleSavings, demo.extraSpend]);
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
