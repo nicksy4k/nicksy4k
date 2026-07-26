@@ -124,13 +124,13 @@ export function SmartCleanupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pr-8">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" /> Smart Cleanup — {title}
           </DialogTitle>
           <DialogDescription>
-            Toggle each entry to Keep or Hide. You can hide as many as you like — just leave at least one Keep per group.
+            Toggle each entry to Keep or Hide. Leave at least one Keep per group.
           </DialogDescription>
         </DialogHeader>
 
