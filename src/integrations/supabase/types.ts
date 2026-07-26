@@ -409,6 +409,7 @@ export type Database = {
           hidden_items: string[]
           hidden_retailers: string[]
           last_carryover_cycle_key: string | null
+          onboarding_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -422,6 +423,7 @@ export type Database = {
           hidden_items?: string[]
           hidden_retailers?: string[]
           last_carryover_cycle_key?: string | null
+          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -435,6 +437,7 @@ export type Database = {
           hidden_items?: string[]
           hidden_retailers?: string[]
           last_carryover_cycle_key?: string | null
+          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
         }

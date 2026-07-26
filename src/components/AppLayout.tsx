@@ -1,10 +1,12 @@
-import { Outlet } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useCommitmentRollover } from "@/lib/commitmentRollover";
 import { useRecurringIncomeGenerator } from "@/lib/recurringIncome";
 import { useCycleCarryover } from "@/lib/carryover";
+import { useOnboardingStatus } from "@/lib/onboarding";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -12,6 +14,16 @@ export function AppLayout() {
   useCommitmentRollover();
   useRecurringIncomeGenerator();
   useCycleCarryover();
+
+  const { completed } = useOnboardingStatus();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    if (completed === false && pathname !== "/setup") {
+      navigate({ to: "/setup", replace: true });
+    }
+  }, [completed, pathname, navigate]);
 
   return (
     <SidebarProvider defaultOpen={true}>

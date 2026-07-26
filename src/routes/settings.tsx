@@ -12,7 +12,9 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useOnboardingStatus } from "@/lib/onboarding";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -397,6 +399,7 @@ function DataCard({
 
   return (
     <div className="space-y-6">
+      <SetupWizardCard />
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
@@ -557,3 +560,45 @@ function DataCard({
     </div>
   );
 }
+
+function SetupWizardCard() {
+  const { reset } = useOnboardingStatus();
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Compass className="h-5 w-5 text-primary" /></div>
+          <div>
+            <CardTitle>Setup wizard</CardTitle>
+            <CardDescription>Re-run the guided setup to adjust cycle, balance, categories, or income.</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
+        <Button asChild variant="outline">
+          <Link to="/setup"><Compass className="h-4 w-4" /> Open setup wizard</Link>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost">Force re-run on next load</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Force the wizard to run again?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Marks onboarding as incomplete so the app redirects to the setup wizard the next time it loads. Your data is not touched.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => { await reset(); toast.success("Wizard will run on next load."); }}>
+                Force re-run
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
+  );
+}
+
