@@ -520,10 +520,34 @@ function NewTransactionPage() {
       </header>
 
       {!isPending && (
-        <div className="flex gap-2 mb-6">
-          <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
-          <div className="flex-1 h-px bg-border self-center" />
-          <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+        <div className="sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 mb-6 md:-mx-10 md:px-10">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
+              <div className="flex-1 h-px bg-border self-center" />
+              <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+            </div>
+            {step === 2 && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calculated total</p>
+                  <p className="text-xl font-semibold tabular-nums leading-none">{fmt(total)}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/30 bg-background/80"
+                  onClick={() => {
+                    const newItem = emptyItem();
+                    setItems((a) => [...a, newItem]);
+                    setLastAddedId(newItem.id);
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Add item
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
