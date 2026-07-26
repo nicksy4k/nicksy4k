@@ -5,10 +5,12 @@ import {
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, X, Wand2, Check } from "lucide-react";
 import { useTutorialStatus } from "@/lib/tutorial";
-import type { TourStep } from "@/lib/dashboardTourSteps";
+import type { TourStep, TourAction } from "@/lib/dashboardTourSteps";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useDemoMode } from "@/lib/demoMode";
+import { DEMO_ALERT_TXN_ID, DEMO_EXPAND_TXN_ID, DEMO_FILTER_CATEGORY } from "@/lib/demoData";
 
 interface TutorialCtx {
   start: (steps: TourStep[]) => void;
@@ -30,6 +32,7 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const [steps, setSteps] = useState<TourStep[]>([]);
   const [index, setIndex] = useState(0);
   const { markComplete } = useTutorialStatus();
+  const demo = useDemoMode();
 
   const openWelcome = useCallback((s: TourStep[]) => {
     setSteps(s);
@@ -40,13 +43,38 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const start = useCallback((s: TourStep[]) => {
     setSteps(s);
     setIndex(0);
+    demo.start();
     setPhase("running");
-  }, []);
+  }, [demo]);
 
   const finish = useCallback(async () => {
     setPhase("idle");
+    demo.stop();
     await markComplete();
-  }, [markComplete]);
+  }, [markComplete, demo]);
+
+  // Reset per-step demo interaction state when advancing so previous
+  // "Try it" tweaks don't leak into later cards.
+  const clearStepState = useCallback(() => {
+    demo.resetExtraSpend();
+    demo.setFilterCategory(null);
+    demo.setExpandedTxnId(null);
+    demo.setOpenAlertId(null);
+  }, [demo]);
+
+  const goNext = useCallback(() => {
+    if (index >= steps.length - 1) {
+      void finish();
+      return;
+    }
+    clearStepState();
+    setIndex((i) => i + 1);
+  }, [index, steps.length, finish, clearStepState]);
+
+  const goBack = useCallback(() => {
+    clearStepState();
+    setIndex((i) => Math.max(0, i - 1));
+  }, [clearStepState]);
 
   const value = useMemo(() => ({ start, openWelcome }), [start, openWelcome]);
 
@@ -69,15 +97,16 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
                 one, so you always know exactly what's left to spend.
               </span>
               <span className="block">
-                Take a 30-second tour of the dashboard and the sidebar so you know
-                where to log spends, chase bills, and review reports. You can re-run
-                this tour any time from Settings → Data.
+                Take a hands-on tour of the dashboard — we'll swap in some example
+                data so you can try filtering, expanding, and logging a spend without
+                touching your real ledger. You can re-run this any time from
+                Settings → Data.
               </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => void finish()}>Skip</Button>
-            <Button onClick={() => setPhase("running")}>
+            <Button onClick={() => { demo.start(); setPhase("running"); }}>
               Start tour <ChevronRight className="h-4 w-4" />
             </Button>
           </DialogFooter>
@@ -90,11 +119,8 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
           step={steps[index]}
           currentIndex={index}
           total={steps.length}
-          onBack={() => setIndex((i) => Math.max(0, i - 1))}
-          onNext={() => {
-            if (index >= steps.length - 1) void finish();
-            else setIndex((i) => i + 1);
-          }}
+          onBack={goBack}
+          onNext={goNext}
           onSkip={() => void finish()}
         />
       )}
