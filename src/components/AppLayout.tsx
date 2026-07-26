@@ -1,124 +1,36 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Plus, Receipt, Settings, Wallet, TrendingUp, PiggyBank, CalendarClock, LogOut, CreditCard, Archive, BarChart3 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Outlet } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import { useCommitmentRollover } from "@/lib/commitmentRollover";
 import { useRecurringIncomeGenerator } from "@/lib/recurringIncome";
 import { useCycleCarryover } from "@/lib/carryover";
 
-type NavItem = {
-  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/archive" | "/reports" | "/settings";
-  label: string;
-  icon: typeof LayoutDashboard;
-  exact?: boolean;
-};
-const nav: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/new", label: "+ New Spend", icon: Plus },
-  { to: "/commitments", label: "Commitments", icon: CalendarClock },
-  { to: "/income", label: "Income", icon: TrendingUp },
-  { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
-  { to: "/credit", label: "Credit & Debt", icon: CreditCard },
-  { to: "/history", label: "History", icon: Receipt },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/archive", label: "Past Cycles", icon: Archive },
-  { to: "/settings", label: "Settings", icon: Settings },
-];
-
-
 export function AppLayout() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Master cycle-rollover engine — runs globally on every page mount so it
   // fires the moment a new cycle starts, regardless of which route is open.
   useCommitmentRollover();
   useRecurringIncomeGenerator();
   useCycleCarryover();
 
-  const [email, setEmail] = useState<string | null>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setEmail(session?.user?.email ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-  const initial = (email?.[0] ?? "?").toUpperCase();
-
-
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <aside className="md:w-64 md:min-h-screen border-b md:border-b-0 md:border-r border-sidebar-border bg-sidebar/60 backdrop-blur-xl">
-        <div className="p-6 flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid place-items-center">
-            <Wallet className="h-4.5 w-4.5 text-primary" strokeWidth={2.25} />
-          </div>
-          <div className="leading-tight">
-            <div className="font-display font-semibold text-base">Ledgerly</div>
-            <div className="text-[11px] text-muted-foreground tracking-wide uppercase">Expense Tracker</div>
-          </div>
-        </div>
-        <nav className="px-3 pb-4 md:pb-0 flex md:flex-col gap-1 overflow-x-auto">
-          {nav.map(({ to, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === to : pathname.startsWith(to);
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-primary/15 text-primary"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="hidden md:flex items-center gap-2.5 mx-3 mt-4 mb-4 p-2 rounded-xl bg-sidebar-accent/40 ring-1 ring-sidebar-border">
-          <div className="h-8 w-8 rounded-lg bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-xs font-semibold text-primary">
-            {initial}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Signed in</div>
-            <div className="text-xs font-medium truncate" title={email ?? ""}>{email ?? "—"}</div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-            onClick={() => supabase.auth.signOut()}
-            title="Sign out"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="md:hidden flex items-center gap-2 px-4 pb-3">
-          <div className="h-7 w-7 rounded-md bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-[11px] font-semibold text-primary">
-            {initial}
-          </div>
-          <div className="text-xs text-muted-foreground truncate flex-1" title={email ?? ""}>{email ?? "—"}</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-sidebar-foreground/70"
-            onClick={() => supabase.auth.signOut()}
-            aria-label="Sign out"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </aside>
-      <main className="flex-1 min-w-0">
-        <Outlet />
-      </main>
-      <Toaster richColors position="top-right" />
-    </div>
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-svh w-full">
+        <AppSidebar />
+        <SidebarInset className="min-h-svh">
+          <header className="flex h-14 items-center gap-2 border-b border-border/60 px-4 md:px-6 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
+            <SidebarTrigger className="-ml-1.5" />
+            <div className="h-6 w-px bg-border/60 mx-1 hidden md:block" />
+            <div className="text-sm font-display font-medium text-foreground/90">
+              Ledgerly
+            </div>
+          </header>
+          <main className="flex-1 min-w-0 p-4 md:p-6">
+            <Outlet />
+          </main>
+        </SidebarInset>
+        <Toaster richColors position="top-right" />
+      </div>
+    </SidebarProvider>
   );
 }

@@ -36,7 +36,16 @@ import {
 
 
 export const Route = createFileRoute("/new")({
-  head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Log Transaction — Ledgerly" },
+      { name: "description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      { property: "og:title", content: "Log Transaction — Ledgerly" },
+      { property: "og:description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: NewTransactionPage,
   errorComponent: RouteError,
 });
@@ -520,10 +529,34 @@ function NewTransactionPage() {
       </header>
 
       {!isPending && (
-        <div className="flex gap-2 mb-6">
-          <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
-          <div className="flex-1 h-px bg-border self-center" />
-          <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+        <div className="sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 mb-6 md:-mx-10 md:px-10">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
+              <div className="flex-1 h-px bg-border self-center" />
+              <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+            </div>
+            {step === 2 && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calculated total</p>
+                  <p className="text-xl font-semibold tabular-nums leading-none">{fmt(total)}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/30 bg-background/80"
+                  onClick={() => {
+                    const newItem = emptyItem();
+                    setItems((a) => [...a, newItem]);
+                    setLastAddedId(newItem.id);
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Add item
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -712,91 +745,98 @@ function NewTransactionPage() {
             </div>
           )}
 
-          {items.map((item, idx) => (
-
-            <Card key={item.id}>
-              <CardHeader className="flex-row items-center justify-between pb-3">
-                <CardTitle className="text-base">Item {idx + 1}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Field label="Item name">
-                  <Combobox
-                    value={item.item_name}
-                    onChange={(v) => updateItem(item.id, { item_name: v })}
-                    options={itemNameSuggestions}
-                    placeholder="e.g. Wool overshirt"
-                    autoFocus={item.id === lastAddedId}
-                  />
-                </Field>
-                <div className="grid grid-cols-[1fr_90px] gap-4">
-                  <Field label="Price (£)">
-                    <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
-                  </Field>
-                  <Field label="Qty">
-                    <Select value={item.quantity} onValueChange={(v) => updateItem(item.id, { quantity: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 20 }, (_, i) => String(i + 1)).map((n) => (
-                          <SelectItem key={n} value={n}>{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <div
+                key={item.id}
+                className="rounded-lg border border-border bg-card/50 p-3 space-y-3 group/item transition-colors hover:bg-card/70"
+              >
+                <div className="grid grid-cols-12 gap-3 items-start">
+                  <div className="col-span-12 sm:col-span-5">
+                    <Field label="Item name">
+                      <Combobox
+                        value={item.item_name}
+                        onChange={(v) => updateItem(item.id, { item_name: v })}
+                        options={itemNameSuggestions}
+                        placeholder="e.g. Wool overshirt"
+                        autoFocus={item.id === lastAddedId}
+                      />
+                    </Field>
+                  </div>
+                  <div className="col-span-6 sm:col-span-2">
+                    <Field label="Price (£)">
+                      <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
+                    </Field>
+                  </div>
+                  <div className="col-span-3 sm:col-span-1">
+                    <Field label="Qty">
+                      <Select value={item.quantity} onValueChange={(v) => updateItem(item.id, { quantity: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 20 }, (_, i) => String(i + 1)).map((n) => (
+                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                  <div className="col-span-3 sm:col-span-3">
+                    <Field label="Category">
+                      <Select
+                        value={item.category || undefined}
+                        onValueChange={(v) => {
+                          if (v === ADD_CATEGORY_SENTINEL) {
+                            setAddCategoryForItemId(item.id);
+                            return;
+                          }
+                          updateItem(item.id, { category: v });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
+                        <SelectContent>
+                          {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
+                            <Plus className="h-3.5 w-3.5 inline mr-1" /> New category…
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                  <div className="col-span-12 sm:col-span-1 flex justify-end sm:pt-5">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                {(parseFloat(item.quantity) || 1) > 1 && (
-                  <p className="text-xs text-muted-foreground -mt-2">
-                    Line total: <span className="tabular-nums font-medium text-foreground">{fmt(lineTotal(item))}</span>
-                    {" "}({item.price || "0"} × {item.quantity || "1"})
-                  </p>
-                )}
-                <Field label="Category">
-                  <Select
-                    value={item.category || undefined}
-                    onValueChange={(v) => {
-                      if (v === ADD_CATEGORY_SENTINEL) {
-                        setAddCategoryForItemId(item.id);
-                        return;
-                      }
-                      updateItem(item.id, { category: v });
-                    }}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
-                    <SelectContent>
-                      {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
-                        <Plus className="h-3.5 w-3.5 inline mr-1" /> New category…
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
 
-                <Field label="Notes (optional)">
-                  <Input placeholder="Serial #, color, size…" value={item.notes} onChange={(e) => updateItem(item.id, { notes: e.target.value })} />
-                </Field>
-              </CardContent>
-            </Card>
-          ))}
-
-          <Button variant="outline" className="w-full" onClick={() => {
-            const newItem = emptyItem();
-            setItems((a) => [...a, newItem]);
-            setLastAddedId(newItem.id);
-          }}>
-            <Plus className="h-4 w-4" /> Add another item
-          </Button>
-
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Calculated total</p>
-                <p className="text-2xl font-semibold tabular-nums mt-1">{fmt(total)}</p>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                  <div className="flex-1">
+                    <Field label="Notes (optional)">
+                      <Input placeholder="Serial #, color, size…" value={item.notes} onChange={(e) => updateItem(item.id, { notes: e.target.value })} />
+                    </Field>
+                  </div>
+                  {(parseFloat(item.quantity) || 1) > 1 && (
+                    <p className="text-xs text-muted-foreground shrink-0">
+                      Line total: <span className="tabular-nums font-medium text-foreground">{fmt(lineTotal(item))}</span>
+                      {" "}({item.price || "0"} × {item.quantity || "1"})
+                    </p>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground max-w-[180px] text-right">Auto-summed from your line items.</p>
-            </CardContent>
-          </Card>
+            ))}
+
+            <Button
+              variant="outline"
+              className="w-full border-dashed"
+              onClick={() => {
+                const newItem = emptyItem();
+                setItems((a) => [...a, newItem]);
+                setLastAddedId(newItem.id);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Add another item
+            </Button>
+          </div>
 
           <Card>
             <CardHeader className="pb-3">

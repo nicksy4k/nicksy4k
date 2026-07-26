@@ -77,7 +77,16 @@ import { RefundDialog } from "@/components/RefundDialog";
 
 
 export const Route = createFileRoute("/history")({
-  head: () => ({ meta: [{ title: "Transaction history — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Transaction history — Ledgerly" },
+      { name: "description", content: "Search, filter, and settle your past transactions." },
+      { property: "og:title", content: "Transaction history — Ledgerly" },
+      { property: "og:description", content: "Search, filter, and settle your past transactions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: HistoryPage,
   errorComponent: RouteError,
 });

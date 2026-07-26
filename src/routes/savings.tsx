@@ -33,7 +33,16 @@ import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/savings")({
-  head: () => ({ meta: [{ title: "Savings & Pockets — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Savings & Pockets — Ledgerly" },
+      { name: "description", content: "Track savings goals, pocket balances, and withdrawals." },
+      { property: "og:title", content: "Savings & Pockets — Ledgerly" },
+      { property: "og:description", content: "Track savings goals, pocket balances, and withdrawals." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SavingsPage,
   errorComponent: RouteError,
 });

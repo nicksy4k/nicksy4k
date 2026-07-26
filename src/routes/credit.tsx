@@ -39,7 +39,16 @@ import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
 
 
 export const Route = createFileRoute("/credit")({
-  head: () => ({ meta: [{ title: "Credit & Debt — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Credit & Debt — Ledgerly" },
+      { name: "description", content: "Manage loans, BNPL plans, and debt balances." },
+      { property: "og:title", content: "Credit & Debt — Ledgerly" },
+      { property: "og:description", content: "Manage loans, BNPL plans, and debt balances." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CreditPage,
   errorComponent: RouteError,
 });

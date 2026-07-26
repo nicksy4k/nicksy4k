@@ -25,6 +25,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Dashboard — Ledgerly Expense Tracker" },
       { name: "description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      { property: "og:title", content: "Dashboard — Ledgerly Expense Tracker" },
+      { property: "og:description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DashboardPage,
@@ -122,25 +126,31 @@ function DashboardPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
-            {cycle.isOverridden && <span className="ml-1 text-amber-600">· override</span>}
+            {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
         </div>
-        <Button asChild>
-          <Link to="/new"><Plus className="h-4 w-4" />Log transaction</Link>
-        </Button>
       </header>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard
-          label="Left to spend"
-          value={fmt(stats.leftToSpend)}
-          icon={stats.leftToSpend >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-          accent
-          tone={stats.leftToSpend >= 0 ? "positive" : "negative"}
-        />
-        <StatCard label="Total expenses" value={fmt(stats.totalExpenses)} icon={<ArrowUpRight className="h-4 w-4" />} />
-        <Card className="col-span-2">
+      <div className="grid gap-4 lg:grid-cols-3 mb-6">
+        <Card className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
+          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
+              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
+                {fmt(stats.leftToSpend)}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income · {fmt(stats.savingsBalance)} saved
+              </p>
+            </div>
+            <Button asChild size="lg" className="shrink-0">
+              <Link to="/new"><Plus className="h-4 w-4" />Log transaction</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
@@ -166,7 +176,9 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 mb-6">
+        <StatCard label="Total expenses" value={fmt(stats.totalExpenses)} icon={<ArrowUpRight className="h-4 w-4" />} />
         <StatCard label="Total income" value={fmt(stats.totalIncome)} icon={<TrendingUp className="h-4 w-4" />} />
         <StatCard label="Items tracked" value={String(stats.itemCount)} icon={<Receipt className="h-4 w-4" />} />
       </div>
@@ -371,13 +383,13 @@ function StatCard({
   const toneClass =
     tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
-    <Card className={accent ? "border-primary/30 bg-primary/5" : ""}>
+    <Card className={accent ? "border-primary/30 bg-primary/5" : "bg-card/70"}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between text-muted-foreground mb-2">
           <span className="text-xs uppercase tracking-wider">{label}</span>
           <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>
         </div>
-        <p className={`text-2xl font-semibold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
+        <p className={`text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
       </CardContent>
     </Card>
   );

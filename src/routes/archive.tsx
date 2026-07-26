@@ -31,7 +31,11 @@ export const Route = createFileRoute("/archive")({
   head: () => ({
     meta: [
       { title: "Past Cycles — Ledgerly" },
-      { name: "description", content: "Review previous cycle performance." },
+      { name: "description", content: "Review previous cycle performance and historical spending." },
+      { property: "og:title", content: "Past Cycles — Ledgerly" },
+      { property: "og:description", content: "Review previous cycle performance and historical spending." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ArchivePage,

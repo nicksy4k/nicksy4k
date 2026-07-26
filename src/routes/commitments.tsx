@@ -27,7 +27,16 @@ import { Link } from "@tanstack/react-router";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/commitments")({
-  head: () => ({ meta: [{ title: "Commitments — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Commitments — Ledgerly" },
+      { name: "description", content: "Track recurring bills, due dates, and payment status." },
+      { property: "og:title", content: "Commitments — Ledgerly" },
+      { property: "og:description", content: "Track recurring bills, due dates, and payment status." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CommitmentsPage,
   errorComponent: RouteError,
 });

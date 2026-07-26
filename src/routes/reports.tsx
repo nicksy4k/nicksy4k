@@ -22,7 +22,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/reports")({
-  head: () => ({ meta: [{ title: "Reports & Analytics — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Reports & Analytics — Ledgerly" },
+      { name: "description", content: "Explore spending trends, category breakdowns, and CSV exports." },
+      { property: "og:title", content: "Reports & Analytics — Ledgerly" },
+      { property: "og:description", content: "Explore spending trends, category breakdowns, and CSV exports." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ReportsPage,
   errorComponent: RouteError,
 });

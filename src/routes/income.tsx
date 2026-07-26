@@ -30,7 +30,16 @@ import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/income")({
-  head: () => ({ meta: [{ title: "Income — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Income — Ledgerly" },
+      { name: "description", content: "Log income and route it into pockets or your main balance." },
+      { property: "og:title", content: "Income — Ledgerly" },
+      { property: "og:description", content: "Log income and route it into pockets or your main balance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: IncomePage,
   errorComponent: RouteError,
 });
