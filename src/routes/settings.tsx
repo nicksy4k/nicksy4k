@@ -453,9 +453,88 @@ function DataCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>Ledgerly tracks expenses, income, and savings — all itemized, all in one place.</p>
-          <p>{transactions.length} transactions · {incomes.length} income entries · {savings.length} savings entries.</p>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-display tracking-tight">Ledgerly</h2>
+              <Badge variant="secondary" className="font-mono text-xs">v2.0.0</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              A precision personal finance and pocket-routing tracker.
+            </p>
+          </div>
+
+          <Card className="bg-muted/30 border-border/60">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center shrink-0">
+                  <Code className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Designed and developed by Nicksy4K.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Powered by React, Supabase, and late-night coding sessions fueled by Monster Energy Drink!
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Changelog</p>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="v2-0-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v2.0.0 — Midnight Indigo UI Refresh</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Midnight Indigo visual refresh across the entire app.</li>
+                    <li>Smart Suggestion Cleanup wizard for retailers and item names.</li>
+                    <li>Cleaner navigation, dashboard hero, and tabbed settings.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="v1-9-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v1.9.0 — Dynamic Income Routing</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Dynamic income routing with inline pocket creation.</li>
+                    <li>Automatic remainder calculation for the main balance.</li>
+                    <li>Recurring income support for upcoming paychecks.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="v1-8-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v1.8.0 — BNPL Engine & Cross-Tab Sync</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Full BNPL / debt tracking with installment plans.</li>
+                    <li>Cross-tab synchronization between debts and commitments.</li>
+                    <li>Split payment support across pockets and BNPL plans.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Account summary</p>
+            <p>{transactions.length} transactions · {incomes.length} income entries · {savings.length} savings entries.</p>
+          </div>
         </CardContent>
       </Card>
     </div>
