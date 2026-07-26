@@ -15,6 +15,10 @@ import { sortLabels } from "@/lib/utils";
 import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useOnboardingStatus } from "@/lib/onboarding";
+import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
+import { useTutorial } from "@/components/tutorial/TutorialProvider";
+import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -563,20 +567,38 @@ function DataCard({
 
 function SetupWizardCard() {
   const { reset } = useOnboardingStatus();
+  const { reset: resetTutorial } = useTutorialStatus();
+  const { openWelcome } = useTutorial();
+  const navigate = useNavigate();
+  const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
+
+  async function runTutorialNow() {
+    await resetTutorial();
+    if (pathname !== "/") {
+      markTutorialPending();
+      navigate({ to: "/" });
+    } else {
+      openWelcome(dashboardTourSteps);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Compass className="h-5 w-5 text-primary" /></div>
           <div>
-            <CardTitle>Setup wizard</CardTitle>
-            <CardDescription>Re-run the guided setup to adjust cycle, balance, categories, or income.</CardDescription>
+            <CardTitle>Setup & tutorial</CardTitle>
+            <CardDescription>Re-run the guided setup, or replay the dashboard tour any time.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">
         <Button asChild variant="outline">
           <Link to="/setup"><Compass className="h-4 w-4" /> Open setup wizard</Link>
+        </Button>
+        <Button variant="outline" onClick={runTutorialNow}>
+          <Sparkles className="h-4 w-4" /> Run tutorial again
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -601,4 +623,5 @@ function SetupWizardCard() {
     </Card>
   );
 }
+
 
