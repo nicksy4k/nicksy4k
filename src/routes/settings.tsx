@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
+import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
+import { filterHidden } from "@/lib/hiddenSuggestions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
