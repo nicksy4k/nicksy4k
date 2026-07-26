@@ -8,12 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Check, EyeOff } from "lucide-react";
 import {
   buildFrequency,
   findDuplicateGroups,
@@ -21,9 +19,7 @@ import {
   type SimilarityKind,
 } from "@/lib/suggestionSimilarity";
 
-type Decision =
-  | { action: "keep" }
-  | { action: "merge"; masterIndex: number };
+type Decision = { hide: Set<number> };
 
 export function SmartCleanupDialog({
   open,
@@ -55,26 +51,45 @@ export function SmartCleanupDialog({
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
   const [applying, setApplying] = useState(false);
 
-  // Reset on open.
+  // Initialise decisions once groups are known: hide everything except the
+  // most-used entry (index 0 — groups are pre-sorted by frequency).
   useEffect(() => {
-    if (open) {
-      setIndex(0);
-      setDecisions({});
-    }
-  }, [open]);
+    if (!open) return;
+    setIndex(0);
+    const init: Record<number, Decision> = {};
+    groups.forEach((g, gi) => {
+      const hide = new Set<number>();
+      for (let i = 1; i < g.names.length; i++) hide.add(i);
+      init[gi] = { hide };
+    });
+    setDecisions(init);
+  }, [open, groups]);
 
   const total = groups.length;
   const current = groups[index];
-  const decision: Decision = decisions[index] ?? { action: "merge", masterIndex: 0 };
+  const decision: Decision = decisions[index] ?? { hide: new Set<number>() };
 
-  const hideTally = Object.entries(decisions).reduce((sum, [i, d]) => {
-    if (d.action !== "merge") return sum;
-    const g = groups[Number(i)];
-    return sum + (g ? g.names.length - 1 : 0);
-  }, 0);
+  const totalHide = Object.entries(decisions).reduce((sum, [, d]) => sum + d.hide.size, 0);
 
-  function setDecision(next: Decision) {
+  function updateDecision(next: Decision) {
     setDecisions((prev) => ({ ...prev, [index]: next }));
+  }
+
+  function toggleRow(i: number) {
+    if (!current) return;
+    const next = new Set(decision.hide);
+    if (next.has(i)) {
+      next.delete(i);
+    } else {
+      // Prevent hiding the last remaining Keep.
+      if (next.size >= current.names.length - 1) return;
+      next.add(i);
+    }
+    updateDecision({ hide: next });
+  }
+
+  function keepAll() {
+    updateDecision({ hide: new Set<number>() });
   }
 
   async function applyAll() {
@@ -83,13 +98,11 @@ export function SmartCleanupDialog({
       const seen = new Set<string>();
       let hidden = 0;
       for (const [i, d] of Object.entries(decisions)) {
-        if (d.action !== "merge") continue;
         const g = groups[Number(i)];
         if (!g) continue;
-        for (let k = 0; k < g.names.length; k++) {
-          if (k === d.masterIndex) continue;
+        for (const k of d.hide) {
           const name = g.names[k];
-          if (seen.has(name)) continue;
+          if (!name || seen.has(name)) continue;
           seen.add(name);
           await onHide(name);
           hidden += 1;
@@ -106,6 +119,9 @@ export function SmartCleanupDialog({
     }
   }
 
+  const keepCount = current ? current.names.length - decision.hide.size : 0;
+  const hideCount = decision.hide.size;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -114,7 +130,7 @@ export function SmartCleanupDialog({
             <Sparkles className="h-4 w-4 text-primary" /> Smart Cleanup — {title}
           </DialogTitle>
           <DialogDescription>
-            Group similar entries and pick one to keep.
+            Toggle each entry to Keep or Hide. You can hide as many as you like — just leave at least one Keep per group.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,56 +150,77 @@ export function SmartCleanupDialog({
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Group {index + 1} of {total}</span>
-              <span>{hideTally} will be hidden</span>
+              <span>{totalHide} will be hidden overall</span>
             </div>
 
             <div className="rounded-lg border p-3">
-              <RadioGroup
-                value={decision.action === "merge" ? `m-${decision.masterIndex}` : "keep"}
-                onValueChange={(v) => {
-                  if (v === "keep") setDecision({ action: "keep" });
-                  else setDecision({ action: "merge", masterIndex: Number(v.slice(2)) });
-                }}
-                className="space-y-2"
-              >
-                <ScrollArea className="max-h-56">
-                  <div className="space-y-1.5 pr-2">
-                    {current!.names.map((name, i) => {
-                      const id = `sc-${index}-${i}`;
-                      const isMaster =
-                        decision.action === "merge" && decision.masterIndex === i;
-                      return (
-                        <Label
-                          key={name}
-                          htmlFor={id}
-                          className={`flex items-center gap-3 rounded-md border px-3 py-2 cursor-pointer transition-colors ${
-                            isMaster ? "border-primary bg-primary/5" : "hover:bg-muted/40"
-                          }`}
-                        >
-                          <RadioGroupItem id={id} value={`m-${i}`} />
-                          <span className="flex-1 truncate" title={name}>{name}</span>
-                          <Badge variant="secondary" className="font-normal">
-                            {current!.counts[i]}× used
-                          </Badge>
-                          {isMaster && (
-                            <Badge className="font-normal">Keep</Badge>
-                          )}
-                        </Label>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
+              <div className="flex items-center justify-between mb-2 text-xs">
+                <span className="text-muted-foreground">
+                  Keeping <span className="font-medium text-foreground">{keepCount}</span> · Hiding{" "}
+                  <span className="font-medium text-foreground">{hideCount}</span>
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={keepAll}
+                  disabled={hideCount === 0}
+                >
+                  Keep all in this group
+                </Button>
+              </div>
 
-                <div className="mt-3 pt-3 border-t">
-                  <Label
-                    htmlFor={`sc-${index}-keep`}
-                    className="flex items-center gap-3 rounded-md px-1 py-1 cursor-pointer text-sm text-muted-foreground"
-                  >
-                    <RadioGroupItem id={`sc-${index}-keep`} value="keep" />
-                    Keep both — leave this group untouched
-                  </Label>
+              <ScrollArea className="max-h-64">
+                <div className="space-y-1.5 pr-2">
+                  {current!.names.map((name, i) => {
+                    const isHidden = decision.hide.has(i);
+                    const isLastKeep = !isHidden && keepCount === 1;
+                    return (
+                      <div
+                        key={name}
+                        className={`flex items-center gap-3 rounded-md border px-3 py-2 transition-colors ${
+                          isHidden
+                            ? "border-dashed border-border bg-muted/30 opacity-70"
+                            : "border-primary/40 bg-primary/5"
+                        }`}
+                      >
+                        <span className={`flex-1 truncate ${isHidden ? "line-through text-muted-foreground" : ""}`} title={name}>
+                          {name}
+                        </span>
+                        <Badge variant="secondary" className="font-normal">
+                          {current!.counts[i]}× used
+                        </Badge>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isHidden ? "outline" : "default"}
+                          className="h-7 px-2 text-xs gap-1"
+                          onClick={() => toggleRow(i)}
+                          disabled={isLastKeep}
+                          title={isLastKeep ? "At least one entry must be kept" : undefined}
+                        >
+                          {isHidden ? (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5" /> Hidden
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-3.5 w-3.5" /> Keep
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
-              </RadioGroup>
+              </ScrollArea>
+
+              {keepCount === 1 && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  At least one entry must remain as Keep in each group.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -212,7 +249,7 @@ export function SmartCleanupDialog({
               Cancel
             </Button>
             <Button onClick={applyAll} disabled={total === 0 || applying}>
-              {applying ? "Applying…" : `Finish${hideTally ? ` · hide ${hideTally}` : ""}`}
+              {applying ? "Applying…" : `Finish${totalHide ? ` · hide ${totalHide}` : ""}`}
             </Button>
           </div>
         </DialogFooter>
