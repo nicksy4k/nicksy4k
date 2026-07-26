@@ -12,6 +12,7 @@ import {
   CreditCard,
   Archive,
   BarChart3,
+  LucideIcon,
 } from "lucide-react";
 
 import {
@@ -32,7 +33,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
-const groups = [
+type NavItem = {
+  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/archive" | "/reports" | "/settings";
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  accent?: boolean;
+};
+
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const groups: NavGroup[] = [
   {
     label: "Core",
     items: [
@@ -66,7 +80,7 @@ const groups = [
     label: "App",
     items: [{ to: "/settings", label: "Settings", icon: Settings }],
   },
-] as const;
+];
 
 export function AppSidebar() {
   const { state } = useSidebar();
