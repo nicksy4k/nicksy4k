@@ -379,13 +379,13 @@ function StatCard({
   const toneClass =
     tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
-    <Card className={accent ? "border-primary/30 bg-primary/5" : ""}>
+    <Card className={accent ? "border-primary/30 bg-primary/5" : "bg-card/70"}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between text-muted-foreground mb-2">
           <span className="text-xs uppercase tracking-wider">{label}</span>
           <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>
         </div>
-        <p className={`text-2xl font-semibold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
+        <p className={`text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
       </CardContent>
     </Card>
   );
