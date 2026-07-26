@@ -21,6 +21,7 @@ import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useDemoMode } from "@/lib/demoMode";
 
 
 export const Route = createFileRoute("/")({
@@ -41,9 +42,16 @@ export const Route = createFileRoute("/")({
 import { colorForKey } from "@/lib/colors";
 
 function DashboardPage() {
-  const { items, dismiss } = useTransactions();
-  const { items: incomes } = useIncomes();
-  const { items: savings } = useSavings();
+  const { items: realItems, dismiss } = useTransactions();
+  const { items: realIncomes } = useIncomes();
+  const { items: realSavings } = useSavings();
+  const demo = useDemoMode();
+  // While the tour is active we swap the whole dataset for a curated demo
+  // slice so users can safely try filtering / expanding / logging without
+  // touching their real ledger. Nothing here writes back to Supabase.
+  const items = demo.active ? demo.transactions : realItems;
+  const incomes = demo.active ? demo.incomes : realIncomes;
+  const savings = demo.active ? demo.savings : realSavings;
   const cycle = useActiveCycle();
   const { openWelcome } = useTutorial();
   const { completed: tutorialCompleted } = useTutorialStatus();
@@ -68,7 +76,7 @@ function DashboardPage() {
   const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
 
   const stats = useMemo(() => {
-    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0);
+    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0) + demo.extraSpend;
     const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
     const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
@@ -77,7 +85,7 @@ function DashboardPage() {
     const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
     return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
-  }, [cycleItems, cycleIncomes, cycleSavings]);
+  }, [cycleItems, cycleIncomes, cycleSavings, demo.extraSpend]);
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
@@ -101,6 +109,7 @@ function DashboardPage() {
     const map = new Map<string, number>();
     analyticsItems.forEach((t) =>
       t.items.forEach((it) => {
+        if (demo.filterCategory && it.category !== demo.filterCategory) return;
         const qty = it.quantity ?? 1;
         map.set(it.category, (map.get(it.category) ?? 0) + it.price * qty);
       }),
@@ -108,7 +117,7 @@ function DashboardPage() {
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [analyticsItems]);
+  }, [analyticsItems, demo.filterCategory]);
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
@@ -257,7 +266,12 @@ function DashboardPage() {
             ) : (
               <ul className="space-y-3">
                 {alerts.slice(0, 6).map((t) => (
-                  <AlertRow key={t.id} txn={t} onDismiss={() => dismiss(t.id)} />
+                  <AlertRow
+                    key={t.id}
+                    txn={t}
+                    onDismiss={() => dismiss(t.id)}
+                    highlighted={demo.openAlertId === t.id}
+                  />
                 ))}
               </ul>
             )}
@@ -296,15 +310,33 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-8 text-center">No transactions yet.</p>
             ) : (
               <ul className="space-y-3">
-                {recent.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{t.retailer}</p>
-                      <p className="text-xs text-muted-foreground">{format(parseISO(t.date), "MMM d")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}</p>
-                    </div>
-                    <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
-                  </li>
-                ))}
+                {recent.map((t) => {
+                  const expanded = demo.expandedTxnId === t.id;
+                  return (
+                    <li key={t.id} className={`rounded-lg ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{t.retailer}</p>
+                          <p className="text-xs text-muted-foreground">{format(parseISO(t.date), "MMM d")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}</p>
+                        </div>
+                        <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
+                      </div>
+                      {expanded && (
+                        <ul className="mt-2 space-y-1 border-t border-border/40 pt-2">
+                          {t.items.map((it) => (
+                            <li key={it.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span className="truncate">
+                                {it.item_name}
+                                <span className="ml-1.5 text-[10px] uppercase tracking-wide opacity-70">{it.category}</span>
+                              </span>
+                              <span className="tabular-nums">{fmt(it.price * (it.quantity ?? 1))}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
@@ -314,7 +346,7 @@ function DashboardPage() {
   );
 }
 
-function AlertRow({ txn, onDismiss }: { txn: Transaction; onDismiss: () => void }) {
+function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss: () => void; highlighted?: boolean }) {
   const type = (txn.protection_type as ProtectionType) ?? "Return Window";
   const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
 
@@ -348,7 +380,7 @@ function AlertRow({ txn, onDismiss }: { txn: Transaction; onDismiss: () => void 
   }
 
   return (
-    <li className="flex items-start gap-2 rounded-lg border border-border/60 bg-card/40 p-3">
+    <li className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <p className="text-sm font-medium truncate">{txn.retailer}</p>

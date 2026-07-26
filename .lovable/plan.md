@@ -1,69 +1,44 @@
-# App Tutorial (Post-Setup)
+## Interactive guided tour with demo overlay
 
-Add a short, hybrid onboarding tutorial that fires the moment a user clicks **Finish setup** and lands on the dashboard, and can be re-launched any time from Settings.
+The tour becomes a hands-on walkthrough: while it's running, the dashboard renders a curated fake dataset (no DB writes), and each step offers a "Try it" action the user actually clicks. Exiting the tour restores the real data instantly.
 
-## Flow
+### 1. Demo data overlay (no DB writes)
 
-```text
-Setup wizard
-  └─ Finish → mark onboarding_completed, mark tutorial_pending
-              → navigate("/")
-Dashboard mounts
-  └─ if tutorial_pending → open Welcome modal
-       "Welcome to Ledgerly" · 2-paragraph intro · [Start tour] [Skip]
-       └─ Start tour → spotlight coach-marks (Next / Back / Skip)
-            1. "Left to spend" hero KPI
-            2. Spending-by-category chart
-            3. Return/warranty alerts card
-            4. Recent transactions list
-            5. Sidebar → "New transaction"
-            6. Sidebar → "Commitments"
-            7. Sidebar → "Settings" (mention re-run)
-       └─ End (Finish or Skip at any point) → mark tutorial_completed
-```
+- New `src/lib/demoData.ts` exports a curated dataset (a few transactions with items, one pocket, two warranty items, one recurring income) shaped exactly like the real store types.
+- New `src/lib/demoMode.tsx` provides a `DemoModeProvider` + `useDemoMode()` context with `{ active, start, stop, filterCategory, setFilterCategory, extraSpend, addExtraSpend, expandedTxnId, setExpandedTxnId }`.
+- Wrap `TutorialProvider` children (or add above `AppLayout`) so demo state is app-wide but only affects the dashboard.
+- `src/routes/index.tsx` reads `useDemoMode()`. When `active`, it swaps `items / incomes / savings` for the demo dataset before computing stats. `extraSpend` is subtracted from Left-to-Spend live. `filterCategory` narrows the category chart, warranty alerts stay demo-driven, and `expandedTxnId` toggles an inline itemized breakdown under the matching Recent row.
 
-Skip anywhere = counted as completed; the tour never auto-opens again.
-Re-run from **Settings → Data → Setup wizard card** (new "Run tutorial" button beside the existing wizard controls).
+### 2. Tour steps with actions
 
-## Persistence
+`src/lib/dashboardTourSteps.ts` gains an optional `action?: { label, run, reset? }` per step. `TutorialProvider` renders a "Try it" button in the tooltip when `action` is present; `Next` also runs `reset` (if defined) so state is clean for the next step.
 
-Store a single new boolean on `user_settings`:
+Steps updated:
+- **Left-to-spend** → "Log a demo £12 coffee" → calls `addExtraSpend(12)`, number animates down. `reset` clears it.
+- **Category chart** → "Filter to Groceries" → sets `filterCategory('Groceries')`. `reset` clears.
+- **Warranty alerts** → "Open the first alert" → sets a `demoAlertOpenId` that the alert row honours to expand a details popover inline.
+- **Recent** → "Expand this transaction" → sets `expandedTxnId` on the first demo transaction to reveal its line items with prices.
+- Sidebar steps (New / Commitments / Settings) keep their current highlight-only behaviour (no destructive click during the tour).
 
-- `tutorial_completed BOOLEAN NOT NULL DEFAULT false`
+### 3. Lifecycle wiring
 
-A localStorage cache (`ledgerly.tutorial.completed`) gives 0-ms first-paint, mirroring the pattern already used by `useOnboardingStatus` and `useCycleSettings`.
+- `TutorialProvider.start` calls `demo.start()`; `finish` (and `skip`) calls `demo.stop()`.
+- On mount, the dashboard checks `demo.active` and renders `<Badge>Demo data · tour mode</Badge>` in the header for clarity.
+- Cleanup: closing the tour clears filter/extraSpend/expanded IDs so nothing leaks to real data view.
 
-The wizard's `handleFinish` also writes a session flag `ledgerly.tutorial.pending = "1"` so the dashboard knows to auto-open the welcome modal on the very next mount (avoids a race with the redirect and avoids auto-opening on later logins).
+### 4. Files touched
 
-## Components / files
+- New: `src/lib/demoData.ts`, `src/lib/demoMode.tsx`
+- Edit: `src/lib/dashboardTourSteps.ts` (add `action` to relevant steps)
+- Edit: `src/components/tutorial/TutorialProvider.tsx` (render Try-it button, call demo start/stop, run `action.run` / `action.reset`)
+- Edit: `src/components/AppLayout.tsx` (mount `DemoModeProvider` around `TutorialProvider`)
+- Edit: `src/routes/index.tsx` (consume demo overlay, add filter chip banner when a category is active, inline expand on Recent row, inline detail on warranty alert)
 
-New:
-- `src/lib/tutorial.ts` — `useTutorialStatus()` hook (`completed`, `markComplete`, `reset`) + `markPending()` / `consumePending()` helpers backed by sessionStorage.
-- `src/components/tutorial/TutorialProvider.tsx` — mounts a `<Popover>`-based spotlight overlay controlled by context; exposes `useTutorial().start(steps)`.
-- `src/components/tutorial/Spotlight.tsx` — dimmed backdrop with a cut-out around the current step's target element, plus a tooltip card (Back / Next / Skip, step counter, progress dots). Uses a `ResizeObserver` and `requestAnimationFrame` to reposition on scroll/resize; falls back to a centred modal when the target isn't in the DOM (e.g. sidebar collapsed on mobile).
-- `src/components/tutorial/WelcomeModal.tsx` — Shadcn `Dialog` with the 2-paragraph intro and Start / Skip buttons.
-- `src/lib/dashboardTourSteps.ts` — array of steps `{ selector, title, body, placement }`.
+### Technical notes
 
-Edits:
-- `src/routes/__root.tsx` — wrap the app in `<TutorialProvider>`.
-- `src/routes/index.tsx` — on mount, if `consumePending()` **or** an explicit `?tour=1` query param is set, open the welcome modal. Add `data-tour` attributes to: hero KPI, category chart card, warranty card, recent card.
-- `src/components/app-sidebar.tsx` — add `data-tour` attributes to the New Transaction, Commitments, and Settings nav items so the tour can target them.
-- `src/components/setup/SetupWizard.tsx` — in `handleFinish`, after `markComplete()`, call `markTutorialPending()` before `navigate({ to: "/" })`.
-- `src/routes/settings.tsx` (`SetupWizardCard`) — add a "Run tutorial" button that navigates to `/?tour=1` (which triggers the welcome modal via the query param path).
+- No schema changes. Everything is client-only React state; the Supabase store hooks are only bypassed at read-time on the dashboard while `demo.active`.
+- Real routes (History, Reports, Commitments) are untouched — the overlay is dashboard-only, matching the tour's scope.
+- Restoring real data on tour exit is a single state flip; no cache invalidation needed.
+- Sidebar navigation steps stay non-interactive to avoid a mid-tour route change that would unmount the spotlight and lose demo state.
 
-## Migration
-
-```sql
-ALTER TABLE public.user_settings
-  ADD COLUMN IF NOT EXISTS tutorial_completed BOOLEAN NOT NULL DEFAULT false;
-```
-
-Grants and RLS already cover `user_settings`; no policy changes needed.
-
-## Technical notes
-
-- Spotlight uses `getBoundingClientRect()` on the target selector; the overlay is a fixed-position SVG mask so it works over the sticky header and sidebar without layout thrash.
-- Steps that target sidebar items force the sidebar open (`SidebarProvider`'s `setOpen(true)`) before measuring, so mobile / collapsed users still see the highlight.
-- Escape key = Skip = mark completed.
-- The wizard's redirect to `/setup` in `AppLayout` is gated on `onboarding_completed`, so it never interferes with `/?tour=1` after setup is done.
-- No new dependencies — built on existing Shadcn `Dialog`, `Popover`, `Button`, and Tailwind.
+Ready to build on approval.
