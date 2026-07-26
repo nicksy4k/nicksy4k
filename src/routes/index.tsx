@@ -21,6 +21,7 @@ import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useDemoMode } from "@/lib/demoMode";
 
 
 export const Route = createFileRoute("/")({
@@ -41,9 +42,16 @@ export const Route = createFileRoute("/")({
 import { colorForKey } from "@/lib/colors";
 
 function DashboardPage() {
-  const { items, dismiss } = useTransactions();
-  const { items: incomes } = useIncomes();
-  const { items: savings } = useSavings();
+  const { items: realItems, dismiss } = useTransactions();
+  const { items: realIncomes } = useIncomes();
+  const { items: realSavings } = useSavings();
+  const demo = useDemoMode();
+  // While the tour is active we swap the whole dataset for a curated demo
+  // slice so users can safely try filtering / expanding / logging without
+  // touching their real ledger. Nothing here writes back to Supabase.
+  const items = demo.active ? demo.transactions : realItems;
+  const incomes = demo.active ? demo.incomes : realIncomes;
+  const savings = demo.active ? demo.savings : realSavings;
   const cycle = useActiveCycle();
   const { openWelcome } = useTutorial();
   const { completed: tutorialCompleted } = useTutorialStatus();
