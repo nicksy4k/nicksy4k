@@ -55,8 +55,8 @@ export function SmartCleanupDialog({
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
   const [applying, setApplying] = useState(false);
 
-  // Reset on open/close.
-  useMemo(() => {
+  // Reset on open.
+  useEffect(() => {
     if (open) {
       setIndex(0);
       setDecisions({});
