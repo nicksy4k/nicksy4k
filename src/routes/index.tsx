@@ -346,7 +346,7 @@ function DashboardPage() {
   );
 }
 
-function AlertRow({ txn, onDismiss }: { txn: Transaction; onDismiss: () => void }) {
+function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss: () => void; highlighted?: boolean }) {
   const type = (txn.protection_type as ProtectionType) ?? "Return Window";
   const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
 
