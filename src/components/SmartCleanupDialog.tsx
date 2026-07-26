@@ -173,22 +173,17 @@ export function SmartCleanupDialog({
                     })}
                   </div>
                 </ScrollArea>
-              </RadioGroup>
 
-              <div className="mt-3 pt-3 border-t">
-                <Label
-                  htmlFor={`sc-${index}-keep`}
-                  className="flex items-center gap-3 rounded-md px-1 py-1 cursor-pointer text-sm text-muted-foreground"
-                >
-                  <RadioGroupItem
-                    id={`sc-${index}-keep`}
-                    value="keep"
-                    checked={decision.action === "keep"}
-                    onClick={() => setDecision({ action: "keep" })}
-                  />
-                  Keep both — leave this group untouched
-                </Label>
-              </div>
+                <div className="mt-3 pt-3 border-t">
+                  <Label
+                    htmlFor={`sc-${index}-keep`}
+                    className="flex items-center gap-3 rounded-md px-1 py-1 cursor-pointer text-sm text-muted-foreground"
+                  >
+                    <RadioGroupItem id={`sc-${index}-keep`} value="keep" />
+                    Keep both — leave this group untouched
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         )}
