@@ -151,7 +151,7 @@ function DashboardPage() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <Card className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Card data-tour="left-to-spend" className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
@@ -203,7 +203,7 @@ function DashboardPage() {
 
 
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
-        <Card className="lg:col-span-2">
+        <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Spending by category</CardTitle>
             <span className="text-xs text-muted-foreground">This cycle</span>
@@ -241,7 +241,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="warranty-alerts">
           <CardHeader className="flex-row items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <CardTitle>Return / warranty alerts</CardTitle>
@@ -286,7 +286,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="recent">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Recent</CardTitle>
             <Link to="/history" className="text-xs text-primary hover:underline">View all</Link>
