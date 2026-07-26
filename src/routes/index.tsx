@@ -266,7 +266,12 @@ function DashboardPage() {
             ) : (
               <ul className="space-y-3">
                 {alerts.slice(0, 6).map((t) => (
-                  <AlertRow key={t.id} txn={t} onDismiss={() => dismiss(t.id)} />
+                  <AlertRow
+                    key={t.id}
+                    txn={t}
+                    onDismiss={() => dismiss(t.id)}
+                    highlighted={demo.openAlertId === t.id}
+                  />
                 ))}
               </ul>
             )}
@@ -305,15 +310,33 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-8 text-center">No transactions yet.</p>
             ) : (
               <ul className="space-y-3">
-                {recent.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{t.retailer}</p>
-                      <p className="text-xs text-muted-foreground">{format(parseISO(t.date), "MMM d")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}</p>
-                    </div>
-                    <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
-                  </li>
-                ))}
+                {recent.map((t) => {
+                  const expanded = demo.expandedTxnId === t.id;
+                  return (
+                    <li key={t.id} className={`rounded-lg ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{t.retailer}</p>
+                          <p className="text-xs text-muted-foreground">{format(parseISO(t.date), "MMM d")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}</p>
+                        </div>
+                        <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
+                      </div>
+                      {expanded && (
+                        <ul className="mt-2 space-y-1 border-t border-border/40 pt-2">
+                          {t.items.map((it) => (
+                            <li key={it.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span className="truncate">
+                                {it.item_name}
+                                <span className="ml-1.5 text-[10px] uppercase tracking-wide opacity-70">{it.category}</span>
+                              </span>
+                              <span className="tabular-nums">{fmt(it.price * (it.quantity ?? 1))}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
