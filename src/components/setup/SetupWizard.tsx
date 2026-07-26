@@ -27,6 +27,7 @@ import {
   useCategories, useCommitments, useIncomes, useRecurringIncomes, useSavings,
 } from "@/lib/store";
 import { useOnboardingStatus } from "@/lib/onboarding";
+import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
 import { todayLocalISO } from "@/lib/format";
 import type { IncomeCadence } from "@/lib/types";
 
