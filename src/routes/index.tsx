@@ -109,6 +109,7 @@ function DashboardPage() {
     const map = new Map<string, number>();
     analyticsItems.forEach((t) =>
       t.items.forEach((it) => {
+        if (demo.filterCategory && it.category !== demo.filterCategory) return;
         const qty = it.quantity ?? 1;
         map.set(it.category, (map.get(it.category) ?? 0) + it.price * qty);
       }),
@@ -116,7 +117,7 @@ function DashboardPage() {
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [analyticsItems]);
+  }, [analyticsItems, demo.filterCategory]);
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
