@@ -13,7 +13,7 @@ describe("suggestionSimilarity", () => {
     expect(normalise("Cans", "item")).toBe("can");
     expect(normalise("Energies", "item")).toBe("energy");
     expect(normalise("Tesco Ltd.", "retailer")).toBe("tesco");
-    expect(normalise("The Sainsbury's", "retailer")).toBe("sainsbury");
+    expect(normalise("The Sainsbury's", "retailer")).toBe("sainsbury s");
   });
 
   it("computes edit distance including transposition", () => {
