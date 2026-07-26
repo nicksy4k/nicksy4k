@@ -39,6 +39,7 @@ type NavItem = {
   icon: LucideIcon;
   exact?: boolean;
   accent?: boolean;
+  tour?: string;
 };
 
 type NavGroup = {
@@ -51,7 +52,7 @@ const groups: NavGroup[] = [
     label: "Core",
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { to: "/new", label: "New Spend", icon: Plus, accent: true },
+      { to: "/new", label: "New Spend", icon: Plus, accent: true, tour: "nav-new" },
     ],
   },
   {
@@ -64,7 +65,7 @@ const groups: NavGroup[] = [
   {
     label: "Money out",
     items: [
-      { to: "/commitments", label: "Commitments", icon: CalendarClock },
+      { to: "/commitments", label: "Commitments", icon: CalendarClock, tour: "nav-commitments" },
       { to: "/credit", label: "Credit & Debt", icon: CreditCard },
       { to: "/history", label: "History", icon: Receipt },
     ],
@@ -78,7 +79,7 @@ const groups: NavGroup[] = [
   },
   {
     label: "App",
-    items: [{ to: "/settings", label: "Settings", icon: Settings }],
+    items: [{ to: "/settings", label: "Settings", icon: Settings, tour: "nav-settings" }],
   },
 ];
 
@@ -130,8 +131,8 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ to, label, icon: Icon, exact, accent }) => (
-                  <SidebarMenuItem key={to}>
+                {group.items.map(({ to, label, icon: Icon, exact, accent, tour }) => (
+                  <SidebarMenuItem key={to} data-tour={tour}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive(to, exact)}
