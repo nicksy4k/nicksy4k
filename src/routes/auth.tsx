@@ -9,7 +9,16 @@ import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — Ledgerly" },
+      { name: "description", content: "Sign in to your Ledgerly account." },
+      { property: "og:title", content: "Sign in — Ledgerly" },
+      { property: "og:description", content: "Sign in to your Ledgerly account." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AuthPage,
 });
 

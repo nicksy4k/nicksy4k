@@ -36,7 +36,16 @@ import {
 
 
 export const Route = createFileRoute("/new")({
-  head: () => ({ meta: [{ title: "Log Transaction — Ledgerly" }] }),
+  head: () => ({
+    meta: [
+      { title: "Log Transaction — Ledgerly" },
+      { name: "description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      { property: "og:title", content: "Log Transaction — Ledgerly" },
+      { property: "og:description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: NewTransactionPage,
   errorComponent: RouteError,
 });

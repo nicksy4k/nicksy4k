@@ -25,6 +25,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Dashboard — Ledgerly Expense Tracker" },
       { name: "description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      { property: "og:title", content: "Dashboard — Ledgerly Expense Tracker" },
+      { property: "og:description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DashboardPage,
