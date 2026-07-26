@@ -480,6 +480,23 @@ function DataCard({
             </CardContent>
           </Card>
 
+          <a
+            href="mailto:nicksy4k@gmail.com?subject=Ledgerly%20Feedback"
+            className="block rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+          >
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center shrink-0">
+                <Mail className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Send feedback</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Found a bug or have an idea? Drop me an email at nicksy4k@gmail.com.
+                </p>
+              </div>
+            </div>
+          </a>
+
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Changelog</p>
             <Accordion type="single" collapsible className="w-full">
