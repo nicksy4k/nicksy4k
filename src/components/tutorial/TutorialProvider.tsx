@@ -298,6 +298,7 @@ function Spotlight({
           ><X className="h-4 w-4" /></button>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">{step.body}</p>
+        {step.action && <TryItButton action={step.action} stepIndex={currentIndex} />}
         <div className="flex items-center gap-1 pt-1">
           {Array.from({ length: total }).map((_, i) => (
             <span
@@ -316,5 +317,40 @@ function Spotlight({
         </div>
       </div>
     </div>
+  );
+}
+
+// A per-step "Try it" button. Tracks its own done-state (keyed by step index so
+// a Back-then-forward navigation resets the button). Dispatches to the demo
+// context based on the action kind — sidebar-nav steps have no action.
+function TryItButton({ action, stepIndex }: { action: TourAction; stepIndex: number }) {
+  const demo = useDemoMode();
+  const [done, setDone] = useState(false);
+  useEffect(() => { setDone(false); }, [stepIndex]);
+
+  const run = () => {
+    switch (action.kind) {
+      case "add-spend": demo.addExtraSpend(12); break;
+      case "filter-category": demo.setFilterCategory(DEMO_FILTER_CATEGORY); break;
+      case "open-alert": demo.setOpenAlertId(DEMO_ALERT_TXN_ID); break;
+      case "expand-txn": demo.setExpandedTxnId(DEMO_EXPAND_TXN_ID); break;
+    }
+    setDone(true);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={run}
+      disabled={done}
+      className={`w-full inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+        done
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-default"
+          : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+      }`}
+    >
+      {done ? <Check className="h-3.5 w-3.5" /> : <Wand2 className="h-3.5 w-3.5" />}
+      {done ? action.doneLabel : action.label}
+    </button>
   );
 }
