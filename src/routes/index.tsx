@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useTutorial } from "@/components/tutorial/TutorialProvider";
+import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
+import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useTransactions, useIncomes, useSavings } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
@@ -42,6 +45,21 @@ function DashboardPage() {
   const { items: incomes } = useIncomes();
   const { items: savings } = useSavings();
   const cycle = useActiveCycle();
+  const { openWelcome } = useTutorial();
+  const { completed: tutorialCompleted } = useTutorialStatus();
+
+  // Auto-launch tour once after setup wizard finishes, or on first dashboard
+  // visit if the user has never seen it. Consume the session flag either way.
+  useEffect(() => {
+    const pending = consumeTutorialPending();
+    if (tutorialCompleted === null) return; // still loading
+    if (pending || tutorialCompleted === false) {
+      openWelcome(dashboardTourSteps);
+    }
+    // Runs once per mount; status hook re-renders when it resolves.
+  }, [tutorialCompleted, openWelcome]);
+
+
 
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
