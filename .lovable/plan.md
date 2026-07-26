@@ -1,108 +1,68 @@
-Plan: Ledgerly UI 2.0 Refresh
-================================
+# Smart Cleanup for Suggestions
 
-Goal
-----
-Improve the overall layout and design of the app with a phased approach:
-1. Phase 1 — targeted fixes for the worst UX friction (sidebar, forms, Settings).
-2. Phase 2 — full visual refresh to a Midnight Indigo palette, applied consistently across all routes.
+Add a "Scan for Duplicates" tool to Settings → Suggestions that groups similar retailer / item names and lets the user pick a Master to keep and hide the rest — using the existing `hiddenSuggestions` mechanism, which never touches transactions.
 
-Scope is driven by your feedback: sidebar/navigation, forms/input flows, and the Settings page are the priorities. The palette is locked to Midnight Indigo (deep navy with indigo accents). Revert/rollback is handled by Lovable’s built-in History, not by building a version switcher in the app.
+## Database safety (how it's guaranteed)
 
+Suggestions are already derived from historical `transactions.retailer` and `transactions.items[].item_name`. "Removing" a suggestion today = adding the string to `user_settings.hidden_retailers` / `hidden_items` so it stops appearing in comboboxes. This tool reuses that exact mechanism — it only writes to `user_settings`. No update, delete, or migration touches `transactions`, `receipts`, storage, or any historical row. Receipts and past line items remain byte-for-byte unchanged; the master name shown in old rows is whatever was originally recorded.
 
-Phase 1: Targeted Fixes (fix what hurts first)
------------------------------------------------
+Copy in the dialog will make this explicit: "Hides duplicates from future dropdowns. Past transactions and receipts are never modified."
 
-### 1. Sidebar / Navigation
-Current state: `AppLayout.tsx` renders 10 items in a single flat list. On desktop it fills the sidebar; on mobile it becomes a horizontally scrolling strip. This is hard to scan and the most important actions blend in with less-used pages.
+## New files
 
-Changes:
-- Group nav items into logical sections:
-  - Core: Dashboard, + New Spend
-  - Money in: Income, Savings & Pockets
-  - Money out: Commitments, Credit & Debt, History
-  - Plan & review: Reports, Past Cycles
-  - App: Settings
-- Keep the two most important actions visually prominent: **+ New Spend** as a primary button-style link and **Dashboard** as the home anchor.
-- Convert the mobile nav to a bottom tab bar or a compact sheet rather than horizontal scrolling. Use icon + label with the active item highlighted.
-- On desktop, keep the sidebar but tighten spacing, use subtle section labels, and make the active item a filled pill instead of a tinted background.
-- Add a collapsible mini-sidebar option (icon-only) for larger screens if users want more room.
+- `src/lib/suggestionSimilarity.ts` — pure grouping logic + unit-testable.
+- `src/components/SmartCleanupDialog.tsx` — the wizard UI.
+- `src/lib/__tests__/suggestionSimilarity.test.ts` — cases for the matcher.
 
-### 2. Settings page declutter
-Current state: `settings.tsx` is one long vertical stack of cards (Cycle, Expense categories, Income categories, Retailer suggestions, Item suggestions, Storage, About). Each card is full width and visually equal, so the page feels like a wall of options.
+## Grouping algorithm (`suggestionSimilarity.ts`)
 
-Changes:
-- Introduce a tabbed or sub-navigation layout inside Settings:
-  - Cycle & account
-  - Categories (expense + income together)
-  - Suggestions (retailers + items)
-  - Data & privacy (export, clear, about)
-- Move the less frequently used “Suggestion manager” and “About” sections behind tabs so the first view is Cycle + Categories.
-- Improve the category input: add a clearer “Add” affordance, inline empty state, and compact badge grid with clearer remove buttons.
-- Add a small sticky summary on the right (desktop) showing total categories, hidden items, last export date if available.
+Input: `string[]` (the visible catalog for retailers or items). Output: `Group[]` where each group has 2+ related names.
 
-### 3. New Transaction / Forms
-Current state: `new.tsx` is a two-step form with a lot of stacked cards. Step 1 has Receipt, Protection, Notes, Pending toggle. Step 2 has Quick Add, repeating item cards, Payment Split editor. The calculated total and payment section are below the fold, making it easy to lose context.
+Normalisation for comparison only (display keeps the original casing):
+- lowercase, trim
+- collapse whitespace
+- strip trailing punctuation
+- singularise a trailing `s`/`es` (naive rule: `energies → energy`, `cans → can`)
+- strip common noise tokens for retailers only: `ltd`, `limited`, `the`
 
-Changes:
-- Make the stepper sticky or more prominent so the user always knows where they are.
-- In Step 2, introduce a compact “order summary” row (total, item count, balance impact) that stays visible while scrolling.
-- Convert each item card from a full Card to a more compact row-based layout on larger screens, with item name, price, quantity, and category inline. Keep the card layout only on mobile.
-- Add clearer visual grouping: Item list → Summary → Payment. Use a sticky or floating Save button at the bottom on mobile.
-- Simplify the Pending toggle: when on, dim the rest of the form so it’s obvious you’re in fast-entry mode.
-- Ensure the Payment Split Editor uses the same field style and labels as the rest of the form.
+Grouping rules — union-find over pairs that satisfy ANY of:
+1. Normalised strings equal (pure case / whitespace / plural dupes).
+2. One normalised string is a whole-word substring of the other (`monster` ⊂ `monster energy`).
+3. Damerau–Levenshtein distance ≤ 1 for len ≥ 4, or ≤ 2 for len ≥ 8 (catches `tesco`/`tescos`, `sainsburys`/`sainsbury`, single-typo pairs).
 
+Order each group by frequency in the source data (most-used first) so the default "suggested master" is the most-used spelling. Skip singletons.
 
-Phase 2: Full Visual Refresh (Midnight Indigo)
-----------------------------------------------
+## Wizard UI (`SmartCleanupDialog.tsx`)
 
-### 1. Palette & tokens
-Apply the Midnight Indigo palette to `src/styles.css`:
-- Background: deep navy (#0a0a1a / #141432)
-- Surfaces: slightly lighter navy (#1e1e5a)
-- Primary accent: electric indigo (#4f46e5)
-- Text: crisp white/very light gray for foreground, softer muted gray for secondary text
-- Keep destructive/error, warning, and success semantics but recolor them to fit the cooler palette.
+Trigger: a "Scan for duplicates" button added at the top of both `SuggestionManager` cards in `src/routes/settings.tsx` (one for retailers, one for items). Each card owns its own dialog scoped to its catalog + hide callbacks.
 
-Update the chart colors so they still work against the dark navy background.
+Dialog layout:
+- Header: "Smart Cleanup — Retailers" / "Items", with the safety note.
+- If no groups: empty state ("No likely duplicates found").
+- Otherwise: a stepper `Group X of N` with three actions per group:
+  - **Keep both** (skip — no writes)
+  - **Merge** — one item is selected as Master via radio; all others become "will be hidden". Frequency count shown next to each option to guide the choice.
+  - **Back / Next** navigation, **Finish** on last group.
+- Footer running tally: "N suggestions will be hidden."
 
-### 2. Typography
-Current: Space Grotesk headings + Inter body. Keep the pairing but adjust weights:
-- Headings use a slightly heavier weight for clearer hierarchy.
-- Numbers and monetary values use tabular figures by default.
-- Reduce uppercase/tracked label usage slightly; too many uppercase labels make the app feel noisy.
+Apply step: on Finish, call `hideRetailer` / `hideItem` for each non-master name across all merged groups. Toast summary. Groups marked "Keep both" do nothing.
 
-### 3. Dashboard hierarchy
-Current: `index.tsx` has a 4-column stat grid, a 2+1 column chart section, then a 2+1 bottom section. The visual weight of every card is the same, so the eye has no clear starting point.
+Frequency counts come from a `Map<normalisedName, count>` computed from the same `transactions` array already available in `SettingsPage`, passed into the dialog.
 
-Changes:
-- Elevate “Left to spend” as the hero metric: larger number, more prominent card, possibly with a subtle trend indicator.
-- Move secondary stats (income, items, expenses) into a smaller, more subdued row.
-- Make “Spending by category” the primary chart and give it the dominant column. Pull “Return/warranty alerts” into a narrower, scrollable feed.
-- Add a “This cycle” header that is more visually tied to the cards below it.
-- Consider a subtle card lift/hover state to make the UI feel responsive.
+## Wiring in `src/routes/settings.tsx`
 
-### 4. Component polish across all routes
-- Replace flat card headers with cleaner, more consistent header/title/subtitle patterns.
-- Standardize button hierarchy: primary for the main action, secondary for related actions, ghost for destructive/cancel.
-- Improve empty states with small illustrations or clearer prompts rather than plain text in a card.
-- Add consistent hover states and focus rings using the indigo accent.
+- Compute per-catalog frequency maps alongside the existing `useSortedCatalog` result.
+- Extend `SuggestionManager` props with `onScan: () => void` OR render the button + dialog inline in `SettingsPage` next to each `SuggestionManager` (simpler; keeps `SuggestionManager` unchanged).
+- Filter the catalog passed to the scanner through `filterHidden` so already-hidden names aren't re-suggested.
 
+## Out of scope
 
-Success Criteria
-----------------
-- Sidebar is scannable on both desktop and mobile; the user can reach the top 3 actions in one click/tap.
-- Settings first view shows only the most-used controls; advanced options are one click away.
-- New Transaction form keeps the total and save action visible while adding items.
-- The Midnight Indigo palette is applied consistently and all charts remain readable.
-- No regressions in existing functionality: auth, data entry, splits, commitments, reports, etc.
+- No renaming of historical `transactions.retailer` / item names.
+- No schema changes, no migrations, no edits to any table other than the existing `user_settings.hidden_retailers` / `hidden_items` arrays.
+- No changes to the receipt storage bucket.
 
+## Verification
 
-Rollback / Versioning
------------------------
-I will not build a runtime “version 1.0 / 2.0” switcher in the app because that adds permanent complexity for a temporary need. Instead, I will pause after each phase so you can review the preview. If you dislike a change, use the Lovable History tab or the revert button under any AI message to restore the project to that exact state. This gives you a clean rollback without carrying dead code.
-
-
-Next Step
----------
-Approve this plan and I’ll start with Phase 1 (navigation, settings, forms). After that’s reviewed, I’ll proceed to Phase 2 (Midnight Indigo visual refresh).
+- New unit tests cover: pluralisation, substring, whitespace/case, single-typo, "no false-positive across unrelated names".
+- Manual pass: seed catalog like `["Monster", "Monster Energy", "Tesco", "Tescos", "Aldi"]` → groups `{Monster, Monster Energy}` and `{Tesco, Tescos}`, Aldi ignored.
+- After merging: hidden badge appears in the existing "Hidden" section of the same card; the visible dropdown loses the merged entries; a past transaction using the hidden name still renders untouched on History.
