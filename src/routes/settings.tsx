@@ -84,21 +84,25 @@ function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="suggestions" className="mt-0 space-y-6">
-          <SuggestionManager
+          <SuggestionSection
+            kind="retailer"
             title="Retailer suggestions"
             description="Hide retailers from the New Transaction dropdown. Past transactions are unaffected."
             icon={<Store className="h-5 w-5 text-primary" />}
             catalog={useSortedCatalog(transactions, "retailer")}
+            occurrences={useOccurrences(transactions, "retailer")}
             hidden={hidden.hidden.retailers}
             onHide={hidden.hideRetailer}
             onUnhide={hidden.unhideRetailer}
             onClear={hidden.clearRetailers}
           />
-          <SuggestionManager
+          <SuggestionSection
+            kind="item"
             title="Item name suggestions"
             description="Hide mistyped item names from the itemization dropdown. Past transactions are unaffected."
             icon={<Package className="h-5 w-5 text-primary" />}
             catalog={useSortedCatalog(transactions, "item")}
+            occurrences={useOccurrences(transactions, "item")}
             hidden={hidden.hidden.items}
             onHide={hidden.hideItem}
             onUnhide={hidden.unhideItem}
