@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
+import { buildFeedbackMailto } from "@/lib/support";
 import {
   Wallet,
   Eye,
   EyeOff,
-  Receipt,
   ShieldCheck,
   PiggyBank,
   CalendarClock,
   ListChecks,
   ArrowRight,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import heroAsset from "@/assets/auth-hero.png.asset.json";
@@ -148,6 +152,14 @@ export function AuthPage() {
           </div>
 
           <div className="grid gap-4">
+            <Alert className="border-primary/30 bg-primary/5">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <AlertTitle className="font-semibold">You're joining the Ledgerly beta</AlertTitle>
+              <AlertDescription className="text-muted-foreground text-sm leading-relaxed">
+                Features may change without notice, some flows are still being polished, and occasional bugs are expected. Please share anything you spot — it directly shapes what ships next.
+              </AlertDescription>
+            </Alert>
+
             <Card className="border-border/60 shadow-xl shadow-black/20">
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto h-12 w-12 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid place-items-center mb-3">
@@ -241,6 +253,21 @@ export function AuthPage() {
               {features.map((feature) => (
                 <FeatureCard key={feature.title} {...feature} />
               ))}
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a href={buildFeedbackMailto({ kind: "bug" })}>
+                  <MessageSquare className="h-3.5 w-3.5" /> Share feedback / report a bug
+                </a>
+              </Button>
+              <PrivacyDetailsDialog
+                trigger={
+                  <Button variant="ghost" size="sm">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Privacy & security details
+                  </Button>
+                }
+              />
             </div>
 
             <footer className="text-xs text-muted-foreground text-center text-balance leading-relaxed">

@@ -3,6 +3,9 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
+import { buildFeedbackMailto } from "@/lib/support";
 import { useCommitmentRollover } from "@/lib/commitmentRollover";
 import { useRecurringIncomeGenerator } from "@/lib/recurringIncome";
 import { useCycleCarryover } from "@/lib/carryover";
@@ -39,6 +42,14 @@ export function AppLayout() {
                 <div className="h-6 w-px bg-border/60 mx-1 hidden md:block" />
                 <div className="text-sm font-display font-medium text-foreground/90">
                   Ledgerly
+                </div>
+                <div className="ml-auto">
+                  <Button variant="ghost" size="sm" asChild className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                    <a href={buildFeedbackMailto({ kind: "bug" })} title="Share feedback / report a bug">
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Feedback</span>
+                    </a>
+                  </Button>
                 </div>
               </header>
               <main className="flex-1 min-w-0 p-4 md:p-6">

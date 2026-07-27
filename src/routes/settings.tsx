@@ -12,7 +12,10 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass, MessageSquare, ShieldCheck, Loader2 } from "lucide-react";
+import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
+import { buildFeedbackMailto } from "@/lib/support";
+import { exportUserData } from "@/lib/exportData";
 import { Link } from "@tanstack/react-router";
 import { useOnboardingStatus } from "@/lib/onboarding";
 import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
@@ -397,13 +400,29 @@ function DataCard({
   incomes: unknown[];
   savings: unknown[];
 }) {
-  function exportJson() {
+  const [exporting, setExporting] = useState(false);
+
+  async function fullExport() {
+    if (exporting) return;
+    setExporting(true);
+    const toastId = toast.loading("Preparing your export…");
+    try {
+      await exportUserData((msg) => toast.loading(msg, { id: toastId }));
+      toast.success("Export ready — check your downloads.", { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed", { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function exportJsonQuick() {
     const payload = { transactions, incomes, savings };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ledgerly-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `ledgerly-quick-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -411,6 +430,7 @@ function DataCard({
   return (
     <div className="space-y-6">
       <SetupWizardCard />
+      <BetaToolsCard onExport={fullExport} exporting={exporting} />
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
@@ -431,8 +451,8 @@ function DataCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={exportJson}>
-              <Download className="h-4 w-4" /> Export JSON
+            <Button variant="outline" onClick={exportJsonQuick}>
+              <Download className="h-4 w-4" /> Quick JSON snapshot
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -630,5 +650,59 @@ function SetupWizardCard() {
     </Card>
   );
 }
+
+function BetaToolsCard({ onExport, exporting }: { onExport: () => void; exporting: boolean }) {
+  return (
+    <Card className="border-primary/30 bg-primary/[0.03]">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Sparkles className="h-5 w-5 text-primary" /></div>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              Beta tools
+              <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Beta</Badge>
+            </CardTitle>
+            <CardDescription>Share feedback, export your data, or read how it's protected.</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-3">
+        <a
+          href={buildFeedbackMailto({ kind: "bug" })}
+          className="group rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
+        >
+          <MessageSquare className="h-5 w-5 text-primary mb-2" />
+          <p className="text-sm font-medium">Send feedback</p>
+          <p className="text-xs text-muted-foreground mt-1">Report a bug or suggest an idea via email.</p>
+        </a>
+
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={exporting}
+          className="group text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background disabled:opacity-60 disabled:cursor-progress"
+        >
+          {exporting ? <Loader2 className="h-5 w-5 text-primary mb-2 animate-spin" /> : <Download className="h-5 w-5 text-primary mb-2" />}
+          <p className="text-sm font-medium">{exporting ? "Preparing…" : "Download my data"}</p>
+          <p className="text-xs text-muted-foreground mt-1">ZIP with CSVs, JSON, and every receipt file.</p>
+        </button>
+
+        <PrivacyDetailsDialog
+          trigger={
+            <button
+              type="button"
+              className="group text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
+            >
+              <ShieldCheck className="h-5 w-5 text-primary mb-2" />
+              <p className="text-sm font-medium">Privacy & security</p>
+              <p className="text-xs text-muted-foreground mt-1">RLS, encryption, and the update history.</p>
+            </button>
+          }
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 
 
