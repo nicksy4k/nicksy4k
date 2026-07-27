@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
 import { filterHidden } from "@/lib/hiddenSuggestions";
+import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
+import { UserCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
