@@ -174,22 +174,24 @@ function Spotlight({
   const rafRef = useRef<number | null>(null);
 
   const measure = useCallback(() => {
-    const el = document.querySelector(step.selector) as HTMLElement | null;
     setViewport({ w: window.innerWidth, h: window.innerHeight });
+    const el = document.querySelector(step.selector) as HTMLElement | null;
     if (!el) { setRect(null); return; }
-    // Scroll target into view (best-effort) before measuring
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+  }, [step.selector]);
+
+  // One-time auto-scroll when the step (target) changes. Never re-scrolls on
+  // user scroll — that used to snap the viewport back and trap the user.
+  useEffect(() => {
+    const el = document.querySelector(step.selector) as HTMLElement | null;
+    if (!el) return;
     const r = el.getBoundingClientRect();
     const outOfView = r.top < 60 || r.bottom > window.innerHeight - 60;
     if (outOfView) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Re-measure on next frame after scroll settles
-      requestAnimationFrame(() => {
-        const r2 = el.getBoundingClientRect();
-        setRect({ top: r2.top, left: r2.left, width: r2.width, height: r2.height });
-      });
-      return;
     }
-    setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.selector]);
 
   useLayoutEffect(() => {
@@ -217,6 +219,7 @@ function Spotlight({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [measure]);
+
 
   const pad = 8;
   const hasTarget = !!rect;
