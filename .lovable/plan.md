@@ -1,44 +1,52 @@
-## Interactive guided tour with demo overlay
+## Homepage / sign-in redesign — bento-grid landing page
 
-The tour becomes a hands-on walkthrough: while it's running, the dashboard renders a curated fake dataset (no DB writes), and each step offers a "Try it" action the user actually clicks. Exiting the tour restores the real data instantly.
+Redesign `src/routes/auth.tsx` from a single centered card into a two-zone landing page: a left/right hero block that sells the app, and a bento-grid of feature cards that wraps the sign-in form. The existing email/password auth logic and SEO metadata are preserved; the page adds a Google OAuth option and small UX polish.
 
-### 1. Demo data overlay (no DB writes)
+### Design choices
 
-- New `src/lib/demoData.ts` exports a curated dataset (a few transactions with items, one pocket, two warranty items, one recurring income) shaped exactly like the real store types.
-- New `src/lib/demoMode.tsx` provides a `DemoModeProvider` + `useDemoMode()` context with `{ active, start, stop, filterCategory, setFilterCategory, extraSpend, addExtraSpend, expandedTxnId, setExpandedTxnId }`.
-- Wrap `TutorialProvider` children (or add above `AppLayout`) so demo state is app-wide but only affects the dashboard.
-- `src/routes/index.tsx` reads `useDemoMode()`. When `active`, it swaps `items / incomes / savings` for the demo dataset before computing stats. `extraSpend` is subtracted from Left-to-Spend live. `filterCategory` narrows the category chart, warranty alerts stay demo-driven, and `expandedTxnId` toggles an inline itemized breakdown under the matching Recent row.
+User selected: **Feature cards around form** layout with **app feature highlights** and an **illustrated hero**. The existing Midnight Indigo palette and Space Grotesk / Inter typography remain locked.
 
-### 2. Tour steps with actions
+### Changes
 
-`src/lib/dashboardTourSteps.ts` gains an optional `action?: { label, run, reset? }` per step. `TutorialProvider` renders a "Try it" button in the tooltip when `action` is present; `Next` also runs `reset` (if defined) so state is clean for the next step.
+1. **Generate a hero illustration**
+   - Create a dark Midnight Indigo-themed abstract finance/dashboard visual (e.g., glowing cycle rings, floating cards, subtle data particles).
+   - Upload it as a Lovable asset and import it in the route.
 
-Steps updated:
-- **Left-to-spend** → "Log a demo £12 coffee" → calls `addExtraSpend(12)`, number animates down. `reset` clears it.
-- **Category chart** → "Filter to Groceries" → sets `filterCategory('Groceries')`. `reset` clears.
-- **Warranty alerts** → "Open the first alert" → sets a `demoAlertOpenId` that the alert row honours to expand a details popover inline.
-- **Recent** → "Expand this transaction" → sets `expandedTxnId` on the first demo transaction to reveal its line items with prices.
-- Sidebar steps (New / Commitments / Settings) keep their current highlight-only behaviour (no destructive click during the tour).
+2. **Build a bento-grid landing page in `src/routes/auth.tsx`**
+   - Top section: large headline, one-line tagline, and the hero illustration.
+   - Bento grid of feature cards:
+     - **Itemized tracking** — log every item, not just totals.
+     - **Receipts & warranties** — attach receipts and get expiry alerts.
+     - **Income routing & pockets** — auto-route income and keep sinking funds.
+     - **Cycle-based budgeting** — budget around your income cycle (monthly or 4-weekly).
+   - The sign-in card sits as the largest or central card in the grid, blending into the bento layout.
 
-### 3. Lifecycle wiring
+3. **Enhance the sign-in card**
+   - Add a **Google OAuth** button (per Lovable Cloud auth defaults).
+   - Add a password visibility toggle.
+   - Keep the existing `signInWithPassword` / `signUp` flow and `emailRedirectTo` logic.
+   - Preserve form validation and toast/error handling.
 
-- `TutorialProvider.start` calls `demo.start()`; `finish` (and `skip`) calls `demo.stop()`.
-- On mount, the dashboard checks `demo.active` and renders `<Badge>Demo data · tour mode</Badge>` in the header for clarity.
-- Cleanup: closing the tour clears filter/extraSpend/expanded IDs so nothing leaks to real data view.
+4. **SEO / metadata**
+   - Update the head meta title/description to read as a landing page.
 
-### 4. Files touched
+5. **Responsive behavior**
+   - Single column on mobile, bento grid on tablet/desktop.
+   - Cards use the existing `--card` / `--border` tokens so they stay theme-aware.
 
-- New: `src/lib/demoData.ts`, `src/lib/demoMode.tsx`
-- Edit: `src/lib/dashboardTourSteps.ts` (add `action` to relevant steps)
-- Edit: `src/components/tutorial/TutorialProvider.tsx` (render Try-it button, call demo start/stop, run `action.run` / `action.reset`)
-- Edit: `src/components/AppLayout.tsx` (mount `DemoModeProvider` around `TutorialProvider`)
-- Edit: `src/routes/index.tsx` (consume demo overlay, add filter chip banner when a category is active, inline expand on Recent row, inline detail on warranty alert)
+### Files touched
 
-### Technical notes
+- `src/routes/auth.tsx` — new landing layout and auth form
+- New `src/assets/auth-hero.png` asset pointer (or generated equivalent)
 
-- No schema changes. Everything is client-only React state; the Supabase store hooks are only bypassed at read-time on the dashboard while `demo.active`.
-- Real routes (History, Reports, Commitments) are untouched — the overlay is dashboard-only, matching the tour's scope.
-- Restoring real data on tour exit is a single state flip; no cache invalidation needed.
-- Sidebar navigation steps stay non-interactive to avoid a mid-tour route change that would unmount the spotlight and lose demo state.
+### No schema changes
 
-Ready to build on approval.
+The page is purely client-side UI. OAuth backend is already supported by Lovable Cloud; the Google button uses the existing `supabase` client with `signInWithOAuth({ provider: 'google' })`.
+
+### Acceptance criteria
+
+- `/auth` shows a branded landing page with hero, feature cards, and a sign-in card.
+- Email/password sign-in and sign-up still work.
+- Google sign-in button works.
+- Page is responsive and matches the existing Midnight Indigo theme.
+- Meta title/description are updated for landing-page SEO.
