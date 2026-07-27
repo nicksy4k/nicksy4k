@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Wallet,
   Eye,
@@ -117,6 +118,9 @@ export function AuthPage() {
             <Wallet className="h-5 w-5 text-primary" />
           </div>
           <span className="text-xl font-display font-semibold tracking-tight">Ledgerly</span>
+          <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-card/50 border-border/60 text-muted-foreground">
+            Beta
+          </Badge>
         </header>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-center">
@@ -238,6 +242,15 @@ export function AuthPage() {
                 <FeatureCard key={feature.title} {...feature} />
               ))}
             </div>
+
+            <footer className="text-xs text-muted-foreground text-center text-balance leading-relaxed">
+              <p>
+                Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and should not be relied upon for absolute accuracy or as a professional financial manager. All data and calculations rely entirely on manual user input.
+              </p>
+              <p className="mt-2">
+                Privacy & Security: Your financial records are secured with Row Level Security (RLS) and encrypted storage, so they are only accessible to you.
+              </p>
+            </footer>
           </div>
         </div>
       </main>
