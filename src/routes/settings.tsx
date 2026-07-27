@@ -400,13 +400,29 @@ function DataCard({
   incomes: unknown[];
   savings: unknown[];
 }) {
-  function exportJson() {
+  const [exporting, setExporting] = useState(false);
+
+  async function fullExport() {
+    if (exporting) return;
+    setExporting(true);
+    const toastId = toast.loading("Preparing your export…");
+    try {
+      await exportUserData((msg) => toast.loading(msg, { id: toastId }));
+      toast.success("Export ready — check your downloads.", { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed", { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function exportJsonQuick() {
     const payload = { transactions, incomes, savings };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ledgerly-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `ledgerly-quick-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -414,6 +430,7 @@ function DataCard({
   return (
     <div className="space-y-6">
       <SetupWizardCard />
+      <BetaToolsCard onExport={fullExport} exporting={exporting} />
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
@@ -434,8 +451,8 @@ function DataCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={exportJson}>
-              <Download className="h-4 w-4" /> Export JSON
+            <Button variant="outline" onClick={exportJsonQuick}>
+              <Download className="h-4 w-4" /> Quick JSON snapshot
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
