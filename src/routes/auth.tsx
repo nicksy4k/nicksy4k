@@ -116,6 +116,24 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen w-full bg-background">
+      <div className="w-full border-b border-primary/20 bg-primary/5">
+        <div className="mx-auto max-w-7xl px-4 py-3 md:px-6">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 shrink-0 rounded-md bg-primary/15 p-1.5">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Ledgerly is in beta — features and design are evolving
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Things may change without notice, some flows are still being polished, and occasional bugs are expected. Please share anything you spot — it directly shapes what ships next.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 lg:py-16">
         <header className="mb-8 flex items-center gap-3 md:mb-12">
           <div className="h-10 w-10 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid place-items-center">
@@ -152,13 +170,6 @@ export function AuthPage() {
           </div>
 
           <div className="grid gap-4">
-            <Alert className="border-primary/30 bg-primary/5">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <AlertTitle className="font-semibold">You're joining the Ledgerly beta</AlertTitle>
-              <AlertDescription className="text-muted-foreground text-sm leading-relaxed">
-                Features may change without notice, some flows are still being polished, and occasional bugs are expected. Please share anything you spot — it directly shapes what ships next.
-              </AlertDescription>
-            </Alert>
 
             <Card className="border-border/60 shadow-xl shadow-black/20">
               <CardHeader className="text-center pb-4">
