@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
 import { filterHidden } from "@/lib/hiddenSuggestions";
+import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
+import { UserCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -60,12 +62,17 @@ function SettingsPage() {
       </header>
 
       <Tabs defaultValue="cycle" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 h-12 mb-6">
+        <TabsList className="w-full grid grid-cols-5 h-12 mb-6">
           <TabsTrigger value="cycle" className="gap-2"><CalendarCog className="h-4 w-4" /> Cycle</TabsTrigger>
+          <TabsTrigger value="account" className="gap-2"><UserCircle2 className="h-4 w-4" /> Account</TabsTrigger>
           <TabsTrigger value="categories" className="gap-2"><Tag className="h-4 w-4" /> Categories</TabsTrigger>
           <TabsTrigger value="suggestions" className="gap-2"><Sparkles className="h-4 w-4" /> Suggestions</TabsTrigger>
           <TabsTrigger value="data" className="gap-2"><HardDrive className="h-4 w-4" /> Data</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="account" className="mt-0 space-y-6">
+          <ConnectedAccountsCard />
+        </TabsContent>
 
         <TabsContent value="cycle" className="mt-0">
           <CycleSettingsCard />
