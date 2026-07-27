@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Link2, Mail, Loader2 } from "lucide-react";
+import { Link2, Mail, Info } from "lucide-react";
 import { toast } from "sonner";
 
 type Identity = {
@@ -29,7 +28,6 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export function ConnectedAccountsCard() {
   const [identities, setIdentities] = useState<Identity[] | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const { data, error } = await supabase.auth.getUserIdentities();
@@ -45,52 +43,17 @@ export function ConnectedAccountsCard() {
 
   const google = identities?.find((i) => i.provider === "google");
   const email = identities?.find((i) => i.provider === "email");
-  const canUnlink = (identities?.length ?? 0) > 1;
-
-  async function connectGoogle() {
-    setBusy("google-link");
-    try {
-      const { error } = await supabase.auth.linkIdentity({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/settings` },
-      });
-      if (error) throw error;
-      // Browser redirects to Google.
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to link Google account";
-      toast.error(msg.includes("Manual linking is disabled")
-        ? "Identity linking isn't enabled on this project yet."
-        : msg);
-      setBusy(null);
-    }
-  }
-
-  async function disconnect(identity: Identity) {
-    if (!canUnlink) {
-      toast.error("You need at least one sign-in method connected.");
-      return;
-    }
-    setBusy(`${identity.provider}-unlink`);
-    try {
-      const { error } = await supabase.auth.unlinkIdentity(identity as Parameters<typeof supabase.auth.unlinkIdentity>[0]);
-      if (error) throw error;
-      toast.success(`Disconnected ${identity.provider}.`);
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to disconnect");
-    } finally {
-      setBusy(null);
-    }
-  }
+  const primaryEmail = (email?.identity_data?.email as string | undefined)
+    ?? (google?.identity_data?.email as string | undefined);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Link2 className="h-5 w-5 text-primary" /> Connected accounts
+          <Link2 className="h-5 w-5 text-primary" /> Connected sign-in methods
         </CardTitle>
         <CardDescription>
-          Link additional sign-in methods to your Ledgerly account. Once linked, either method signs you into the same account.
+          The ways you can currently sign in to this Ledgerly account.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -115,33 +78,37 @@ export function ConnectedAccountsCard() {
             <div>
               <p className="text-sm font-medium">Google</p>
               <p className="text-xs text-muted-foreground">
-                {google ? (google.identity_data?.email as string | undefined) ?? "Connected" : "Sign in with your Google account"}
+                {google ? (google.identity_data?.email as string | undefined) ?? "Connected" : "Not connected"}
               </p>
             </div>
           </div>
-          {google ? (
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">Connected</Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => disconnect(google)}
-                disabled={!canUnlink || busy === "google-unlink"}
-              >
-                {busy === "google-unlink" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect"}
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" onClick={connectGoogle} disabled={busy === "google-link"}>
-              {busy === "google-link" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-              Connect
-            </Button>
-          )}
+          {google ? <Badge variant="secondary">Connected</Badge> : <Badge variant="outline">Not linked</Badge>}
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Tip: if your Google email is already used by a different Ledgerly account, linking will fail — sign in as that account and delete it first, or use a different Google account.
-        </p>
+        {!google && (
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
+            <div className="flex items-center gap-2 text-foreground">
+              <Info className="h-4 w-4 text-primary" />
+              <span className="font-medium">Want to add Google sign-in?</span>
+            </div>
+            <p>
+              Manual account linking isn't available on this hosting plan, but you can still merge
+              sign-in methods using a matching email address:
+            </p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Sign out of Ledgerly.</li>
+              <li>On the sign-in page, choose <span className="font-medium text-foreground">Continue with Google</span>.</li>
+              <li>
+                Pick the Google account whose email matches
+                {primaryEmail ? <> <span className="font-medium text-foreground">{primaryEmail}</span></> : " your Ledgerly email"}.
+              </li>
+            </ol>
+            <p>
+              If the emails match and both are verified, Google will attach to this same account.
+              If you use a different Google email, it will create a separate account instead.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
