@@ -12,7 +12,10 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass, MessageSquare, ShieldCheck, Loader2 } from "lucide-react";
+import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
+import { buildFeedbackMailto } from "@/lib/support";
+import { exportUserData } from "@/lib/exportData";
 import { Link } from "@tanstack/react-router";
 import { useOnboardingStatus } from "@/lib/onboarding";
 import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
