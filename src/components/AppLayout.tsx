@@ -43,6 +43,14 @@ export function AppLayout() {
                 <div className="text-sm font-display font-medium text-foreground/90">
                   Ledgerly
                 </div>
+                <div className="ml-auto">
+                  <Button variant="ghost" size="sm" asChild className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                    <a href={buildFeedbackMailto({ kind: "bug" })} title="Share feedback / report a bug">
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Feedback</span>
+                    </a>
+                  </Button>
+                </div>
               </header>
               <main className="flex-1 min-w-0 p-4 md:p-6">
                 <Outlet />
