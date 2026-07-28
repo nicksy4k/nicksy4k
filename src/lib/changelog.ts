@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.6.0",
+    title: "Agent integrations (MCP)",
+    date: "2026-07-28",
+    icon: Zap,
+    highlights: [
+      "Ledgerly now exposes an MCP server so AI assistants (ChatGPT, Claude, Codex, Cursor) can act as you.",
+      "Sign-in via Supabase OAuth 2.1 with a proper consent screen — no pasting tokens, no admin bypass.",
+      "Five starter tools: list transactions, list commitments, list savings pockets, list categories, and log a new transaction. All scoped to your account via RLS.",
+      "Google/email sign-in now preserves your intended destination so the OAuth handshake resumes cleanly after login.",
+    ],
+  },
+  {
     version: "v2.5.0",
     title: "Dedicated About tab",
     date: "2026-07-28",
