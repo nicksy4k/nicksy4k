@@ -84,8 +84,11 @@ const groups: NavGroup[] = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  const closeIfMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   const currentPath = useRouterState({
     select: (router) => router.location.pathname,
   });
@@ -106,7 +109,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
-        <Link to="/" className="flex items-center gap-3">
+        <Link to="/" onClick={closeIfMobile} className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid shrink-0 place-items-center">
             <Wallet className="h-4.5 w-4.5 text-primary" strokeWidth={2.25} />
           </div>
@@ -144,7 +147,7 @@ export function AppSidebar() {
                       )}
                       tooltip={collapsed ? label : undefined}
                     >
-                      <Link to={to} className="flex items-center gap-3">
+                      <Link to={to} onClick={closeIfMobile} className="flex items-center gap-3">
                         <Icon className="h-4 w-4 shrink-0" />
                         <span className="truncate">{label}</span>
                       </Link>
@@ -173,7 +176,7 @@ export function AppSidebar() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                onClick={() => supabase.auth.signOut()}
+                onClick={() => { closeIfMobile(); supabase.auth.signOut(); }}
                 title="Sign out"
                 aria-label="Sign out"
               >
