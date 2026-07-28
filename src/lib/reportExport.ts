@@ -40,6 +40,8 @@ function fmtDate(d: string): string {
   }
 }
 
+export type ReportDetailMode = "itemized" | "summary";
+
 /** One row per line item, mirroring the user's Google Sheet layout. */
 export function buildItemRows(payload: ReportPayload) {
   const rows: Array<Record<string, string | number>> = [];
@@ -62,6 +64,26 @@ export function buildItemRows(payload: ReportPayload) {
     }
   }
   return rows;
+}
+
+/** One row per transaction — no item breakdown. */
+export function buildTransactionRows(payload: ReportPayload) {
+  return payload.transactions.map((t) => {
+    const cats = Array.from(new Set(t.items.map((i) => i.category))).join(", ");
+    const refunded = (t.refunds ?? []).reduce(
+      (s: number, r: { amount?: number }) => s + (r.amount ?? 0),
+      0,
+    );
+    return {
+      Date: fmtDate(t.date),
+      Retailer: t.retailer,
+      Category: cats,
+      "Payment Method": paymentMethodLabel(t),
+      Amount: Number(payload.matchedAmount(t).toFixed(2)),
+      Refunded: Number(refunded.toFixed(2)),
+      Notes: t.notes || "",
+    };
+  });
 }
 
 export function buildIncomeRows(payload: ReportPayload) {
@@ -87,14 +109,26 @@ export function breakdownWithoutBills(payload: ReportPayload): CategoryDatum[] {
   return payload.categoryBreakdown.filter((d) => !BILLS.has(d.name));
 }
 
-export function downloadWorkbook(payload: ReportPayload, filename: string) {
+export function downloadWorkbook(
+  payload: ReportPayload,
+  filename: string,
+  mode: ReportDetailMode = "itemized",
+) {
   const wb = XLSX.utils.book_new();
 
   // Transactions sheet
-  const itemRows = buildItemRows(payload);
-  const wsItems = XLSX.utils.json_to_sheet(itemRows);
-  applyCurrencyColumn(wsItems, itemRows.length, "F"); // Amount col
-  XLSX.utils.book_append_sheet(wb, wsItems, "Transactions");
+  if (mode === "summary") {
+    const rows = buildTransactionRows(payload);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    applyCurrencyColumn(ws, rows.length, "E"); // Amount
+    applyCurrencyColumn(ws, rows.length, "F"); // Refunded
+    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+  } else {
+    const itemRows = buildItemRows(payload);
+    const wsItems = XLSX.utils.json_to_sheet(itemRows);
+    applyCurrencyColumn(wsItems, itemRows.length, "F"); // Amount col
+    XLSX.utils.book_append_sheet(wb, wsItems, "Transactions");
+  }
 
   // Income sheet
   const incomeRows = buildIncomeRows(payload);
