@@ -3,15 +3,17 @@ import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, subDays } from "date-fns";
-import { CalendarIcon, Check, ChevronDown } from "lucide-react";
+import { CalendarIcon, Check, ChevronDown, Download, Printer } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCategories } from "@/lib/store";
-import type { Transaction } from "@/lib/types";
+import type { IncomeEntry, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
 import { cn } from "@/lib/utils";
+import { downloadWorkbook, printReport } from "@/lib/reportExport";
+import { PrintableReport } from "@/components/PrintableReport";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
