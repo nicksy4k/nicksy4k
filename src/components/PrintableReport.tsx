@@ -14,6 +14,7 @@ interface Props {
   incomes: IncomeEntry[];
   matchedAmount: (t: Transaction) => number;
   categoryBreakdown: CategoryDatum[];
+  mode?: "itemized" | "summary";
 }
 
 function fmtDate(d: string) {
@@ -73,42 +74,76 @@ export function PrintableReport(props: Props) {
 
       <section>
         <h2>Transactions</h2>
-        <table className="print-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Item</th>
-              <th>Place</th>
-              <th>Category</th>
-              <th>Payment</th>
-              <th className="right">Amount</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {props.transactions.flatMap((t) => {
-              const itemsSum =
-                t.items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0) ||
-                1;
-              const main = mainExpensePortion(t);
-              const method = paymentMethodLabel(t);
-              return t.items.map((it) => {
-                const share = (it.price * (it.quantity ?? 1)) / itemsSum;
+        {props.mode === "summary" ? (
+          <table className="print-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Retailer</th>
+                <th>Category</th>
+                <th>Payment</th>
+                <th className="right">Amount</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {props.transactions.map((t) => {
+                const cats = Array.from(
+                  new Set(t.items.map((i) => i.category)),
+                ).join(", ");
                 return (
-                  <tr key={`${t.id}-${it.id}`}>
+                  <tr key={t.id}>
                     <td>{fmtDate(t.date)}</td>
-                    <td>{it.item_name}</td>
                     <td>{t.retailer}</td>
-                    <td>{it.category}</td>
-                    <td>{method}</td>
-                    <td className="right">{fmt(share * main)}</td>
-                    <td>{it.notes || t.notes || ""}</td>
+                    <td>{cats}</td>
+                    <td>{paymentMethodLabel(t)}</td>
+                    <td className="right">{fmt(props.matchedAmount(t))}</td>
+                    <td>{t.notes || ""}</td>
                   </tr>
                 );
-              });
-            })}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <table className="print-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Place</th>
+                <th>Category</th>
+                <th>Payment</th>
+                <th className="right">Amount</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {props.transactions.flatMap((t) => {
+                const itemsSum =
+                  t.items.reduce(
+                    (s, i) => s + i.price * (i.quantity ?? 1),
+                    0,
+                  ) || 1;
+                const main = mainExpensePortion(t);
+                const method = paymentMethodLabel(t);
+                return t.items.map((it) => {
+                  const share = (it.price * (it.quantity ?? 1)) / itemsSum;
+                  return (
+                    <tr key={`${t.id}-${it.id}`}>
+                      <td>{fmtDate(t.date)}</td>
+                      <td>{it.item_name}</td>
+                      <td>{t.retailer}</td>
+                      <td>{it.category}</td>
+                      <td>{method}</td>
+                      <td className="right">{fmt(share * main)}</td>
+                      <td>{it.notes || t.notes || ""}</td>
+                    </tr>
+                  );
+                });
+              })}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section>
