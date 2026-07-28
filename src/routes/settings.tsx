@@ -509,7 +509,10 @@ function DataCard({
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-display tracking-tight">Ledgerly</h2>
-              <Badge variant="secondary" className="font-mono text-xs">v2.0.0</Badge>
+              <Badge variant="secondary" className="font-mono text-xs">{currentVersion}</Badge>
+              <span className="text-xs text-muted-foreground">
+                {format(parseISO(currentVersionDate), "d MMM yyyy")}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
               A precision personal finance and pocket-routing tracker.
@@ -549,111 +552,28 @@ function DataCard({
             </div>
           </a>
 
-          <div className="space-y-3">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Changelog</p>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="v2-3-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v2.3.0 — Mobile & Reports polish</span>
-                    <span className="text-xs text-muted-foreground">28 Jul 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Mobile side menu now auto-closes after tapping a link.</li>
-                    <li>Reports export: choose <strong>Summary</strong> (one row per transaction) or <strong>Itemized</strong> for both PDF print and .xlsx.</li>
-                    <li>Search in History highlights matches and shows a running total for matched items.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="v2-2-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Download className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v2.2.0 — Beta launch kit</span>
-                    <span className="text-xs text-muted-foreground">24 Jul 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>New <strong>Reports & Analytics</strong> page with date/category filters, KPIs and a spend-by-category chart.</li>
-                    <li>Print-ready PDF report and <strong>.xlsx</strong> spreadsheet export (Transactions, Income, Summary).</li>
-                    <li>"Download my data" — ZIP of every record plus attached receipts.</li>
-                    <li>Privacy & security dialog explaining RLS and private storage in plain language.</li>
-                    <li>Beta badge, disclaimer footer and one-tap feedback link on the login page.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="v2-1-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v2.1.0 — Smarter transactions</span>
-                    <span className="text-xs text-muted-foreground">18 Jul 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li><strong>Refunds</strong> — process full or partial refunds against any past transaction; refunds post as positive income.</li>
-                    <li><strong>Quick Add</strong> grids on New Spend and History for one-tap re-entry of frequent items.</li>
-                    <li>Historical auto-fill: picking a known item pre-fills its last price and category.</li>
-                    <li>Pending / placeholder transactions with amber badges and a "Settle" flow.</li>
-                    <li>Bi-directional BNPL ↔ Commitment sync — paying one now marks the other.</li>
-                    <li>Google sign-in, guided setup wizard and interactive tutorial.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="v2-0-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Rocket className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v2.0.0 — Midnight Indigo UI refresh</span>
-                    <span className="text-xs text-muted-foreground">10 Jul 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Midnight Indigo visual refresh across the entire app.</li>
-                    <li>Smart Suggestion Cleanup wizard for retailers and item names.</li>
-                    <li>Cleaner navigation, dashboard hero, and tabbed settings.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="v1-9-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v1.9.0 — Dynamic Income Routing</span>
-                    <span className="text-xs text-muted-foreground">02 Jul 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Dynamic income routing with inline pocket creation.</li>
-                    <li>Automatic remainder calculation for the main balance.</li>
-                    <li>Recurring income support for upcoming paychecks.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="v1-8-0" className="border-border/60">
-                <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v1.8.0 — BNPL Engine & Cross-Tab Sync</span>
-                    <span className="text-xs text-muted-foreground">20 Jun 2026</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>Full BNPL / debt tracking with installment plans.</li>
-                    <li>Cross-tab synchronization between debts and commitments.</li>
-                    <li>Split payment support across pockets and BNPL plans.</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Changelog</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {changelog.length} releases · latest {currentVersion} on {format(parseISO(currentVersionDate), "d MMM yyyy")}
+                </p>
+              </div>
+              <ChangelogDialogTrigger>
+                <Button size="sm" variant="outline" className="gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5" /> Open
+                </Button>
+              </ChangelogDialogTrigger>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-border/50">
+              <Button size="sm" variant="ghost" onClick={downloadChangelogCsv} className="gap-1.5 h-8">
+                <FileDown className="h-3.5 w-3.5" /> Export CSV
+              </Button>
+              <Button size="sm" variant="ghost" onClick={printChangelog} className="gap-1.5 h-8">
+                <Printer className="h-3.5 w-3.5" /> Print / PDF
+              </Button>
+            </div>
           </div>
 
           <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
