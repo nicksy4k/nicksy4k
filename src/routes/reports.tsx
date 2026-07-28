@@ -3,15 +3,17 @@ import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, subDays } from "date-fns";
-import { CalendarIcon, Check, ChevronDown } from "lucide-react";
+import { CalendarIcon, Check, ChevronDown, Download, Printer } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCategories } from "@/lib/store";
-import type { Transaction } from "@/lib/types";
+import type { IncomeEntry, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
 import { cn } from "@/lib/utils";
+import { downloadWorkbook, printReport } from "@/lib/reportExport";
+import { PrintableReport } from "@/components/PrintableReport";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,6 +147,20 @@ function ReportsPage() {
     },
   });
 
+  const { data: incomes = [] } = useQuery({
+    queryKey: ["reports-incomes", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incomes")
+        .select("*")
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as IncomeEntry[];
+    },
+  });
+
   const catFilterActive = selectedCats.size > 0 && selectedCats.size < categories.length;
 
   const filtered = useMemo(() => {
@@ -190,14 +206,41 @@ function ReportsPage() {
 
   const breakdownTotal = categoryBreakdown.reduce((s, d) => s + d.value, 0);
 
+  const exportPayload = {
+    startDate,
+    endDate,
+    transactions: filtered,
+    incomes,
+    matchedAmount,
+    categoryBreakdown,
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Analytics</p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Reports</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Query your spending across any date range — independent of the active 28-day cycle.
-        </p>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Analytics</p>
+          <h1 className="text-3xl md:text-4xl font-semibold">Reports</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Query your spending across any date range — independent of the active 28-day cycle.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={printReport} disabled={filtered.length === 0}>
+            <Printer className="h-4 w-4 mr-2" /> Print / PDF
+          </Button>
+          <Button
+            onClick={() =>
+              downloadWorkbook(
+                exportPayload,
+                `ledgerly-report-${startDate}-to-${endDate}.xlsx`,
+              )
+            }
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" /> Spreadsheet (.xlsx)
+          </Button>
+        </div>
       </header>
 
       <Card className="mb-6">
@@ -207,6 +250,16 @@ function ReportsPage() {
           <CategoryMultiSelect all={categories} selected={selectedCats} onChange={setSelectedCats} />
         </CardContent>
       </Card>
+
+      <PrintableReport
+        startDate={startDate}
+        endDate={endDate}
+        transactions={filtered}
+        incomes={incomes}
+        matchedAmount={matchedAmount}
+        categoryBreakdown={categoryBreakdown}
+      />
+
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="sm:col-span-1">

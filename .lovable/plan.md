@@ -1,44 +1,54 @@
-## Problem
 
-Your main account (`32a96aba-…`) has a duplicate auto-generated carryover income sitting inside the current cycle, which is why "Left to Spend" is wrong.
+## Goal
 
-Rows in `public.incomes` (user-scoped):
+Turn the Reports page into something that can produce a shareable, printable statement that mirrors the layout of your Google Sheets tracker (transactions table + income table + category breakdown), plus a spreadsheet download that opens cleanly in Google Sheets or Excel.
 
-| date | source | amount | notes |
-|---|---|---|---|
-| 2026-07-17 | Carryover from previous cycle | 223.21 | `Auto-generated carryover:2026-06-19 · from 2026-06-19 → 2026-07-16` |
-| 2026-07-28 | Carryover from previous cycle | 207.87 | `Auto-generated carryover:2026-06-28 · from 2026-06-28 → 2026-07-27` |
+## What you'll get on `/reports`
 
-Current cycle: 4-weekly, anchor `2026-07-17` → window **17 Jul → 13 Aug 2026**. Both carryovers land in that window, so the prior remainder is being counted twice (over-count ≈ **£207.87**).
+Two new buttons in the header of the Reports page, next to the existing filters:
 
-The `2026-06-28` key doesn't align to any 4-weekly cycle from the current anchor, which means the cycle settings changed after the first carryover ran. `user_settings.last_carryover_cycle_key = 2026-06-19` was then out of sync with the newly-computed "previous cycle key", so `useCycleCarryover` re-ran and inserted a second carryover.
+- **Download PDF** — opens a print-ready view and triggers the browser's Save as PDF.
+- **Download spreadsheet (.xlsx)** — downloads a multi-sheet workbook. Google Sheets opens `.xlsx` files directly (File → Import, or drag into Drive), so this doubles as the "Google Sheets export".
 
-## Fix (two parts)
+Both use the same date range and category filters already on the page, so whatever you're currently viewing is what gets exported.
 
-### 1. Data repair (one-off)
+## PDF report layout
 
-Delete only the extra carryover row for this user and reset the guard so the correct one remains authoritative:
+Rendered as a dedicated print stylesheet on the existing Reports page (no new route). Sections, in order, matching your Sheet:
 
-- Delete the income row dated `2026-07-28`, source `Carryover from previous cycle`, notes starting `Auto-generated carryover:2026-06-28`.
-- Leave the legitimate `2026-07-17` carryover in place.
-- Set `user_settings.last_carryover_cycle_key = '2026-06-19'` (the key of the carryover that remains) so the hook won't re-fire.
+1. **Header** — "Ledgerly Report", date range, generated timestamp.
+2. **Summary tiles** — Income, Spent, Left (same maths as the dashboard for that window).
+3. **Transactions table** — Date, Item, Retailer, Category, Payment method (from `payment_splits`), Amount, Notes. One row per item, so multi-item receipts expand like your Sheet.
+4. **Income table** — Date, Source, Amount, Notes (from `incomes` in the window, including carryover rows).
+5. **Category breakdown** — two small tables mirroring your two pie charts: "Expenses without Bills" and "Where my money goes" (percentages + amounts).
 
-Scoped strictly to `user_id = 32a96aba-d2c5-40d7-ae02-11479fa05cf1`.
+Print CSS handles page breaks, hides the app chrome (sidebar/header), and forces a white background so it saves cleanly to PDF from any browser (Chrome/Safari/Firefox all support Save as PDF from the print dialog). No extra PDF library needed.
 
-### 2. Harden the carryover guard (`src/lib/carryover.ts` + `useCycleCarryover` hook)
+## Spreadsheet layout (.xlsx)
 
-Currently the guard relies solely on `last_carryover_cycle_key`. If cycle settings change, the computed previous-cycle key changes and the guard misses that a carryover for the same active window already exists.
+Built client-side with `xlsx` (SheetJS) — one small dependency, no server work. Sheets in the workbook:
 
-Add a second, data-driven check before inserting: query `incomes` for any row in the **current active cycle window** whose `source = 'Carryover from previous cycle'` AND `notes LIKE 'Auto-generated carryover:%'`. If one already exists, skip the insert and just update `last_carryover_cycle_key` to match. This makes the guard idempotent regardless of anchor/cadence changes.
+- **Transactions** — one row per item, columns matching the PDF.
+- **Income** — same shape as the income table.
+- **Summary** — Income / Spent / Left, plus the two category breakdown blocks.
+- **Raw** — full JSON-flat dump of transactions with splits/refunds, for anyone who wants to pivot themselves.
 
-No UI changes; behaviour only.
+Currency cells use a `£#,##0.00` number format so Sheets/Excel treat them as numbers, not text.
 
-## Out of scope
+## What this reuses
 
-- Not touching the other account (`d2c1cb28-…`).
-- Not changing cycle settings or any other income/transaction rows.
-- Not modifying rollover, BNPL sync, or reports logic.
+- Existing filter state, `matchedAmount`, `categoryBreakdown`, and `mainExpensePortion` from `src/routes/reports.tsx` — the PDF and xlsx both read from the same in-memory arrays, so numbers match the on-screen view exactly.
+- Existing `incomes` query pattern from the dashboard for the income table (scoped to the same date range).
 
-## Verification
+## What this does not do
 
-After the repair, re-query `incomes` for the current cycle window and confirm exactly one carryover row remains; the dashboard "Left to Spend" should drop by £207.87 to the correct value.
+- **No direct push to your Google Drive / Sheets account.** That would need a per-user Google OAuth connection. If you want that later, it's a follow-up (App User Connector for Google Sheets, "Save to my Drive" button). For now, downloading `.xlsx` and opening it in Sheets is one click and needs no auth.
+- No change to how data is stored or calculated — this is purely a new export surface.
+
+## Technical notes
+
+- New file `src/lib/reportExport.ts` — pure helpers: `buildWorkbook(filtered, incomes, breakdown)` returning a Blob, and `printReport()` calling `window.print()`.
+- New file `src/components/PrintableReport.tsx` — hidden-on-screen, visible-on-print component rendered inside `/reports`, driven by the same filtered arrays.
+- `src/styles.css` — add a `@media print` block that hides sidebar/header/buttons and shows `.print-only`.
+- Add `xlsx` (SheetJS community build) to dependencies.
+- Extend the `/reports` query to also fetch `incomes` in the window (single extra Supabase call, same filters).
