@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "sdk_version": "0.25.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://kvkmjvzysyledoghgusw.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "ledgerly-mcp",
+      "version": "0.1.0",
+      "title": "Ledgerly"
+    },
+    "tools": [
+      {
+        "name": "list_transactions",
+        "title": "List transactions",
+        "description": "List the signed-in user's transactions, newest first. Optionally filter by ISO date range (YYYY-MM-DD) and cap the number of rows returned (default 25, max 200).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "since": {
+              "type": "string",
+              "description": "Inclusive start date, YYYY-MM-DD."
+            },
+            "until": {
+              "type": "string",
+              "description": "Inclusive end date, YYYY-MM-DD."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Row cap, default 25."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_commitments",
+        "title": "List commitments",
+        "description": "List the signed-in user's recurring commitments (bills, subscriptions, BNPL installments). Optionally filter to only unpaid rows or only those due on or before a given date.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "unpaidOnly": {
+              "type": "boolean",
+              "description": "Only return rows where paid = false."
+            },
+            "dueOnOrBefore": {
+              "type": "string",
+              "description": "Only return rows with next_due_date <= this ISO date (YYYY-MM-DD)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_savings",
+        "title": "List savings pockets",
+        "description": "List the signed-in user's savings pockets/sinking funds with their current balances and targets.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_categories",
+        "title": "List categories",
+        "description": "List the signed-in user's spending / commitment categories. Filter by kind if provided.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "description": "Filter by category kind (e.g. 'spend', 'commitment', 'income')."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_transaction",
+        "title": "Log a transaction",
+        "description": "Record a new spending transaction for the signed-in user. Provide the retailer, total amount (in the app's base currency, e.g. 12.50), ISO date, and an optional list of itemized line items. Marks the transaction non-pending by default.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "retailer": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Store or merchant name."
+            },
+            "total_amount": {
+              "type": "number",
+              "description": "Total amount charged."
+            },
+            "date": {
+              "type": "string",
+              "description": "Transaction date, YYYY-MM-DD."
+            },
+            "notes": {
+              "type": "string",
+              "description": "Free-form notes."
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "price"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Optional itemized line items."
+            },
+            "is_pending": {
+              "type": "boolean",
+              "description": "Mark as a pending/placeholder transaction."
+            }
+          },
+          "required": [
+            "retailer",
+            "total_amount",
+            "date"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
