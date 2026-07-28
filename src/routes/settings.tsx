@@ -32,7 +32,11 @@ import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
 import { filterHidden } from "@/lib/hiddenSuggestions";
 import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
-import { UserCircle2 } from "lucide-react";
+import { UserCircle2, FileDown, Printer, BookOpen } from "lucide-react";
+import { WhatsNewCard } from "@/components/WhatsNewCard";
+import { ChangelogDialogTrigger } from "@/components/ChangelogDialog";
+import { changelog, currentVersion, currentVersionDate, downloadChangelogCsv, printChangelog } from "@/lib/changelog";
+import { format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -61,7 +65,20 @@ function SettingsPage() {
     <div className="max-w-4xl mx-auto">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Preferences</p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Settings</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-semibold">Settings</h1>
+          <ChangelogDialogTrigger>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="View changelog"
+            >
+              <span className="font-mono text-primary">{currentVersion}</span>
+              <span className="opacity-60">·</span>
+              <span>updated {format(parseISO(currentVersionDate), "d MMM yyyy")}</span>
+            </button>
+          </ChangelogDialogTrigger>
+        </div>
       </header>
 
       <Tabs defaultValue="cycle" className="w-full">
@@ -128,6 +145,7 @@ function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="data" className="mt-0 space-y-6">
+          <WhatsNewCard />
           <DataCard transactions={transactions} incomes={incomes} savings={savings} />
         </TabsContent>
       </Tabs>
