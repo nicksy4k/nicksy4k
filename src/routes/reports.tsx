@@ -147,6 +147,20 @@ function ReportsPage() {
     },
   });
 
+  const { data: incomes = [] } = useQuery({
+    queryKey: ["reports-incomes", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incomes")
+        .select("*")
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as IncomeEntry[];
+    },
+  });
+
   const catFilterActive = selectedCats.size > 0 && selectedCats.size < categories.length;
 
   const filtered = useMemo(() => {
