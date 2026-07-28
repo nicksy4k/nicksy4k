@@ -21,7 +21,7 @@ export default defineTool({
     let q = sb
       .from("categories")
       .select("id, name, kind")
-      .eq("user_id", ctx.getUserId())
+      .eq("user_id", ctx.getUserId()!)
       .order("name", { ascending: true });
     if (kind) q = q.eq("kind", kind);
     const { data, error } = await q;

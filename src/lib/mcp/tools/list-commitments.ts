@@ -24,7 +24,7 @@ export default defineTool({
       .select(
         "id, item_name, store, category, amount, next_due_date, paid, last_paid_date, payment_method",
       )
-      .eq("user_id", ctx.getUserId())
+      .eq("user_id", ctx.getUserId()!)
       .order("next_due_date", { ascending: true, nullsFirst: false });
     if (unpaidOnly) q = q.eq("paid", false);
     if (dueOnOrBefore) q = q.lte("next_due_date", dueOnOrBefore);

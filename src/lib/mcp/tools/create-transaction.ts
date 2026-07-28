@@ -33,7 +33,7 @@ export default defineTool({
     const { data, error } = await sb
       .from("transactions")
       .insert({
-        user_id: ctx.getUserId(),
+        user_id: ctx.getUserId()!,
         retailer,
         total_amount,
         date,

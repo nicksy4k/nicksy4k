@@ -20,7 +20,7 @@ export default defineTool({
     let q = sb
       .from("transactions")
       .select("id, date, retailer, total_amount, is_pending, notes, items, payment_splits")
-      .eq("user_id", ctx.getUserId())
+      .eq("user_id", ctx.getUserId()!)
       .order("date", { ascending: false })
       .limit(limit ?? 25);
     if (since) q = q.gte("date", since);

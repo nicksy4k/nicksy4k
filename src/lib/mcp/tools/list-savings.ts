@@ -16,7 +16,7 @@ export default defineTool({
     const { data, error } = await sb
       .from("savings")
       .select("*")
-      .eq("user_id", ctx.getUserId());
+      .eq("user_id", ctx.getUserId()!);
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
     }
