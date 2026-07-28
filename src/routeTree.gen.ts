@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as CreditRouteImport } from './routes/credit'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -35,6 +36,11 @@ const ArchiveRoute = ArchiveRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommitmentsRoute = CommitmentsRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/changelog'
     | '/commitments'
     | '/credit'
     | '/history'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/changelog'
     | '/commitments'
     | '/credit'
     | '/history'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/changelog'
     | '/commitments'
     | '/credit'
     | '/history'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArchiveRoute: typeof ArchiveRoute
   AuthRoute: typeof AuthRoute
+  ChangelogRoute: typeof ChangelogRoute
   CommitmentsRoute: typeof CommitmentsRoute
   CreditRoute: typeof CreditRoute
   HistoryRoute: typeof HistoryRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/commitments': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchiveRoute: ArchiveRoute,
   AuthRoute: AuthRoute,
+  ChangelogRoute: ChangelogRoute,
   CommitmentsRoute: CommitmentsRoute,
   CreditRoute: CreditRoute,
   HistoryRoute: HistoryRoute,
