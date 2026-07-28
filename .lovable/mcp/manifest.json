@@ -170,6 +170,31 @@
             "is_pending": {
               "type": "boolean",
               "description": "Mark as a pending/placeholder transaction."
+            },
+            "payment_splits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "Funding source label (e.g. 'main', pocket name, BNPL name)."
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "Optional split kind: 'main' | 'pocket' | 'bnpl'."
+                  }
+                },
+                "required": [
+                  "source",
+                  "amount"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Optional split-payment breakdown; amounts should sum to total_amount."
             }
           },
           "required": [

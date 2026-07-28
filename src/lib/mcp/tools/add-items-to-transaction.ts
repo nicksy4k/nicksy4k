@@ -49,14 +49,18 @@ export default defineTool({
     const currentItems = Array.isArray(existing.items) ? (existing.items as unknown[]) : [];
     const nextItems = [...currentItems, ...items];
 
-    const computedTotal = nextItems.reduce((sum, raw) => {
+    const computedTotal = nextItems.reduce<number>((sum, raw) => {
       const it = raw as { price?: unknown; quantity?: unknown };
       const price = typeof it.price === "number" ? it.price : Number(it.price ?? 0);
       const qty = typeof it.quantity === "number" ? it.quantity : Number(it.quantity ?? 1) || 1;
       return sum + price * qty;
     }, 0);
 
-    const update: Record<string, unknown> = {
+    const update: {
+      items: unknown[];
+      total_amount: number;
+      is_pending?: boolean;
+    } = {
       items: nextItems,
       total_amount: new_total_amount ?? computedTotal,
     };

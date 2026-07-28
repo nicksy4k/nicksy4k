@@ -24,9 +24,19 @@ export default defineTool({
       .optional()
       .describe("Optional itemized line items."),
     is_pending: z.boolean().optional().describe("Mark as a pending/placeholder transaction."),
+    payment_splits: z
+      .array(
+        z.object({
+          source: z.string().describe("Funding source label (e.g. 'main', pocket name, BNPL name)."),
+          amount: z.number(),
+          kind: z.string().optional().describe("Optional split kind: 'main' | 'pocket' | 'bnpl'."),
+        }),
+      )
+      .optional()
+      .describe("Optional split-payment breakdown; amounts should sum to total_amount."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-  handler: async ({ retailer, total_amount, date, notes, items, is_pending }, ctx) => {
+  handler: async ({ retailer, total_amount, date, notes, items, is_pending, payment_splits }, ctx) => {
     const guard = requireAuth(ctx);
     if (guard) return guard;
     const sb = supabaseForUser(ctx);
@@ -40,6 +50,7 @@ export default defineTool({
         notes: notes ?? null,
         items: items ?? [],
         is_pending: is_pending ?? false,
+        payment_splits: payment_splits ?? [],
       })
       .select()
       .single();
