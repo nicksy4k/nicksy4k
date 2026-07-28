@@ -57,18 +57,19 @@ export default defineTool({
     }, 0);
 
     const update: {
-      items: unknown[];
+      items: unknown;
       total_amount: number;
       is_pending?: boolean;
     } = {
-      items: nextItems,
+      items: nextItems as unknown,
       total_amount: new_total_amount ?? computedTotal,
     };
     if (mark_settled) update.is_pending = false;
 
     const { data, error } = await sb
       .from("transactions")
-      .update(update)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(update as any)
       .eq("id", transaction_id)
       .eq("user_id", ctx.getUserId()!)
       .select()

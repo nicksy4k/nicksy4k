@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "ledgerly-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "title": "Ledgerly"
     },
     "tools": [
@@ -201,6 +201,98 @@
             "retailer",
             "total_amount",
             "date"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_items_to_transaction",
+        "title": "Add items to a transaction",
+        "description": "Append line items to an existing transaction (typically a pending/placeholder one). By default the total_amount is recomputed from the sum of all items' price * quantity; pass new_total_amount to override. Set mark_settled=true to also clear the pending flag.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "transaction_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Transaction ID to append items to."
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "price"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Line items to add."
+            },
+            "mark_settled": {
+              "type": "boolean",
+              "description": "Also clear the pending flag (is_pending=false)."
+            },
+            "new_total_amount": {
+              "type": "number",
+              "description": "Override the recomputed total with this value."
+            }
+          },
+          "required": [
+            "transaction_id",
+            "items"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "mark_commitment_paid",
+        "title": "Mark commitment as paid",
+        "description": "Mark a recurring commitment (bill, subscription, BNPL installment) as paid for the current cycle. Sets paid=true and last_paid_date. The app's rollover engine advances next_due_date on the next cycle automatically.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "commitment_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Commitment ID to mark paid."
+            },
+            "paid_date": {
+              "type": "string",
+              "description": "Date paid, YYYY-MM-DD. Defaults to today (UTC)."
+            }
+          },
+          "required": [
+            "commitment_id"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
