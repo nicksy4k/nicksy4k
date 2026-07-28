@@ -131,6 +131,7 @@ function ReportsPage() {
   const [startDate, setStartDate] = useState(() => format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => todayLocalISO());
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
+  const [detailMode, setDetailMode] = useState<"itemized" | "summary">("itemized");
 
   const { data: txs = [], isLoading } = useQuery({
     queryKey: ["reports-transactions", startDate, endDate],
@@ -225,7 +226,32 @@ function ReportsPage() {
             Query your spending across any date range — independent of the active 28-day cycle.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-end">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Detail</Label>
+            <div className="inline-flex rounded-md border bg-background p-0.5">
+              <button
+                type="button"
+                onClick={() => setDetailMode("summary")}
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-sm transition-colors",
+                  detailMode === "summary" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailMode("itemized")}
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-sm transition-colors",
+                  detailMode === "itemized" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Itemized
+              </button>
+            </div>
+          </div>
           <Button variant="outline" onClick={printReport} disabled={filtered.length === 0}>
             <Printer className="h-4 w-4 mr-2" /> Print / PDF
           </Button>
@@ -233,7 +259,8 @@ function ReportsPage() {
             onClick={() =>
               downloadWorkbook(
                 exportPayload,
-                `ledgerly-report-${startDate}-to-${endDate}.xlsx`,
+                `ledgerly-report-${startDate}-to-${endDate}${detailMode === "summary" ? "-summary" : ""}.xlsx`,
+                detailMode,
               )
             }
             disabled={filtered.length === 0}
@@ -258,6 +285,7 @@ function ReportsPage() {
         incomes={incomes}
         matchedAmount={matchedAmount}
         categoryBreakdown={categoryBreakdown}
+        mode={detailMode}
       />
 
 
