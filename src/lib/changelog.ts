@@ -16,6 +16,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.5.0",
+    title: "Dedicated About tab",
+    date: "2026-07-28",
+    icon: Sparkles,
+    highlights: [
+      "New About tab in Settings — app identity, What's New, changelog, privacy, feedback, roadmap, and credits in one place.",
+      "Data tab is now purely for account operations: download my data, quick JSON snapshot, and clear all data.",
+      "Version pill in the Settings header now jumps straight to the About tab (deep-linkable via #about).",
+      "Split feedback into three quick actions: report a bug, share an idea, or send general feedback.",
+      "Added a public roadmap teaser so beta testers can see what's being considered next.",
+    ],
+  },
+  {
     version: "v2.4.0",
     title: "Changelog upgrades",
     date: "2026-07-28",
@@ -27,6 +40,7 @@ export const changelog: ChangelogEntry[] = [
       "Export the changelog as CSV or print-ready PDF.",
     ],
   },
+
   {
     version: "v2.3.0",
     title: "Mobile & Reports polish",

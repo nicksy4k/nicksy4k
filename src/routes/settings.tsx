@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2 } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart } from "lucide-react";
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { buildFeedbackMailto } from "@/lib/support";
 import { exportUserData } from "@/lib/exportData";
@@ -53,6 +53,15 @@ export const Route = createFileRoute("/settings")({
   errorComponent: RouteError,
 });
 
+const VALID_TABS = ["cycle", "account", "categories", "suggestions", "data", "about"] as const;
+type TabValue = (typeof VALID_TABS)[number];
+
+function readHashTab(): TabValue {
+  if (typeof window === "undefined") return "cycle";
+  const h = window.location.hash.replace("#", "");
+  return (VALID_TABS as readonly string[]).includes(h) ? (h as TabValue) : "cycle";
+}
+
 function SettingsPage() {
   const { items: transactions } = useTransactions();
   const { items: incomes } = useIncomes();
@@ -61,33 +70,50 @@ function SettingsPage() {
   const incomeCats = useIncomeCategories();
   const hidden = useHiddenSuggestions();
 
+  const [tab, setTab] = useState<TabValue>(() => readHashTab());
+
+  useEffect(() => {
+    const sync = () => setTab(readHashTab());
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  function selectTab(v: string) {
+    const next = (VALID_TABS as readonly string[]).includes(v) ? (v as TabValue) : "cycle";
+    setTab(next);
+    if (typeof window !== "undefined") {
+      const url = `${window.location.pathname}${next === "cycle" ? "" : `#${next}`}`;
+      window.history.replaceState(null, "", url);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Preferences</p>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl md:text-4xl font-semibold">Settings</h1>
-          <ChangelogDialogTrigger>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="View changelog"
-            >
-              <span className="font-mono text-primary">{currentVersion}</span>
-              <span className="opacity-60">·</span>
-              <span>updated {format(parseISO(currentVersionDate), "d MMM yyyy")}</span>
-            </button>
-          </ChangelogDialogTrigger>
+          <button
+            type="button"
+            onClick={() => selectTab("about")}
+            className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="View About & changelog"
+          >
+            <span className="font-mono text-primary">{currentVersion}</span>
+            <span className="opacity-60">·</span>
+            <span>updated {format(parseISO(currentVersionDate), "d MMM yyyy")}</span>
+          </button>
         </div>
       </header>
 
-      <Tabs defaultValue="cycle" className="w-full">
-        <TabsList className="w-full grid grid-cols-5 h-12 mb-6">
+      <Tabs value={tab} onValueChange={selectTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 h-auto md:h-12 mb-6 gap-1">
           <TabsTrigger value="cycle" className="gap-2"><CalendarCog className="h-4 w-4" /> Cycle</TabsTrigger>
           <TabsTrigger value="account" className="gap-2"><UserCircle2 className="h-4 w-4" /> Account</TabsTrigger>
           <TabsTrigger value="categories" className="gap-2"><Tag className="h-4 w-4" /> Categories</TabsTrigger>
           <TabsTrigger value="suggestions" className="gap-2"><Sparkles className="h-4 w-4" /> Suggestions</TabsTrigger>
           <TabsTrigger value="data" className="gap-2"><HardDrive className="h-4 w-4" /> Data</TabsTrigger>
+          <TabsTrigger value="about" className="gap-2"><Info className="h-4 w-4" /> About</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0 space-y-6">
@@ -145,8 +171,17 @@ function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="data" className="mt-0 space-y-6">
-          <WhatsNewCard />
-          <DataCard transactions={transactions} incomes={incomes} savings={savings} />
+          <DataTab transactions={transactions} incomes={incomes} savings={savings} />
+        </TabsContent>
+
+        <TabsContent value="about" className="mt-0 space-y-6">
+          <AboutTab
+            counts={{
+              transactions: transactions.length,
+              incomes: incomes.length,
+              savings: savings.length,
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
@@ -411,7 +446,9 @@ function SuggestionManager({
   );
 }
 
-function DataCard({
+/* ---------------- Data tab ---------------- */
+
+function DataTab({
   transactions, incomes, savings,
 }: {
   transactions: unknown[];
@@ -448,7 +485,25 @@ function DataCard({
   return (
     <div className="space-y-6">
       <SetupWizardCard />
-      <BetaToolsCard onExport={fullExport} exporting={exporting} />
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Download className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle>Download my data</CardTitle>
+              <CardDescription>A ZIP with every transaction, income, savings row, and attached receipt.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={fullExport} disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? "Preparing…" : "Download full export (ZIP)"}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
@@ -466,6 +521,11 @@ function DataCard({
             <p className="text-muted-foreground">
               Transactions, pockets, commitments, and categories are protected by row-level security — only you can read or write them.
             </p>
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Account summary</p>
+            <p>{transactions.length} transactions · {incomes.length} income entries · {savings.length} savings entries.</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -494,96 +554,196 @@ function DataCard({
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Settings2 className="h-5 w-5 text-primary" /></div>
-            <div>
-              <CardTitle>About</CardTitle>
-              <CardDescription>Ledgerly version and account summary.</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-display tracking-tight">Ledgerly</h2>
-              <Badge variant="secondary" className="font-mono text-xs">{currentVersion}</Badge>
-              <span className="text-xs text-muted-foreground">
-                {format(parseISO(currentVersionDate), "d MMM yyyy")}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              A precision personal finance and pocket-routing tracker.
-            </p>
-          </div>
+/* ---------------- About tab ---------------- */
 
-          <Card className="bg-muted/30 border-border/60">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center shrink-0">
-                  <Code className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Designed and developed by Nicksy4K.</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Powered by React, Supabase, and late-night coding sessions fueled by Monster Energy Drink!
-                  </p>
-                </div>
+const ROADMAP: { title: string; blurb: string }[] = [
+  { title: "Shared households", blurb: "Invite a partner and merge pockets, commitments, and reports." },
+  { title: "Bank sync (trial)", blurb: "Optional read-only feed to auto-suggest transactions." },
+  { title: "Category budgets", blurb: "Per-category caps with progress rings on the dashboard." },
+  { title: "Recurring rules v2", blurb: "Skip, pause, and end-date any recurring income or commitment." },
+];
+
+function AboutTab({ counts }: { counts: { transactions: number; incomes: number; savings: number } }) {
+  return (
+    <div className="space-y-6">
+      {/* Identity */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-transparent grid place-items-center">
+              <Sparkles className="h-7 w-7 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-display tracking-tight">Ledgerly</h2>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Beta</Badge>
+                <Badge variant="secondary" className="font-mono text-xs">{currentVersion}</Badge>
               </div>
-            </CardContent>
-          </Card>
-
-          <a
-            href="mailto:nicksy4k@gmail.com?subject=Ledgerly%20Feedback"
-            className="block rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/50"
-          >
-            <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center shrink-0">
-                <Mail className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Send feedback</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Found a bug or have an idea? Drop me an email at nicksy4k@gmail.com.
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Personal money, on your terms — pockets, commitments, and receipts in one place.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Last updated {format(parseISO(currentVersionDate), "d MMM yyyy")} ·{" "}
+                {counts.transactions} transactions · {counts.incomes} income entries · {counts.savings} savings entries
+              </p>
             </div>
-          </a>
-
-          <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium">Changelog</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {changelog.length} releases · latest {currentVersion} on {format(parseISO(currentVersionDate), "d MMM yyyy")}
-                </p>
-              </div>
-              <ChangelogDialogTrigger>
-                <Button size="sm" variant="outline" className="gap-1.5">
-                  <BookOpen className="h-3.5 w-3.5" /> Open
-                </Button>
-              </ChangelogDialogTrigger>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1 border-t border-border/50">
-              <Button size="sm" variant="ghost" onClick={downloadChangelogCsv} className="gap-1.5 h-8">
-                <FileDown className="h-3.5 w-3.5" /> Export CSV
-              </Button>
-              <Button asChild size="sm" variant="ghost" className="gap-1.5 h-8">
-                <Link to="/changelog">
-                  <Printer className="h-3.5 w-3.5" /> Print / PDF
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Account summary</p>
-            <p>{transactions.length} transactions · {incomes.length} income entries · {savings.length} savings entries.</p>
           </div>
         </CardContent>
       </Card>
+
+      <WhatsNewCard />
+
+      {/* Changelog */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><BookOpen className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle>Changelog</CardTitle>
+              <CardDescription>
+                {changelog.length} releases · latest {currentVersion} on {format(parseISO(currentVersionDate), "d MMM yyyy")}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <ChangelogDialogTrigger>
+            <Button size="sm" variant="outline" className="gap-1.5">
+              <BookOpen className="h-3.5 w-3.5" /> Open full changelog
+            </Button>
+          </ChangelogDialogTrigger>
+          <Button size="sm" variant="ghost" onClick={downloadChangelogCsv} className="gap-1.5">
+            <FileDown className="h-3.5 w-3.5" /> Export CSV
+          </Button>
+          <Button asChild size="sm" variant="ghost" className="gap-1.5">
+            <Link to="/changelog">
+              <Printer className="h-3.5 w-3.5" /> Print / PDF
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Privacy */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><ShieldCheck className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle>Privacy &amp; security</CardTitle>
+              <CardDescription>Row-level security, private receipt storage, and update history in plain language.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PrivacyDetailsDialog
+            trigger={
+              <Button size="sm" variant="outline">
+                <ShieldCheck className="h-4 w-4" /> Read the details
+              </Button>
+            }
+          />
+        </CardContent>
+      </Card>
+
+      {/* Help & feedback */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><MessageSquare className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle>Help &amp; feedback</CardTitle>
+              <CardDescription>Ledgerly is in beta — your notes shape what ships next.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <a
+            href={buildFeedbackMailto({ kind: "bug" })}
+            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
+          >
+            <MessageSquare className="h-5 w-5 text-primary mb-2" />
+            <p className="text-sm font-medium">Report a bug</p>
+            <p className="text-xs text-muted-foreground mt-1">Something not working? Send me the steps.</p>
+          </a>
+          <a
+            href={buildFeedbackMailto({ kind: "idea" })}
+            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
+          >
+            <Lightbulb className="h-5 w-5 text-primary mb-2" />
+            <p className="text-sm font-medium">Share an idea</p>
+            <p className="text-xs text-muted-foreground mt-1">A feature you'd love, or a rough edge to smooth.</p>
+          </a>
+          <a
+            href={buildFeedbackMailto({ kind: "general" })}
+            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
+          >
+            <Mail className="h-5 w-5 text-primary mb-2" />
+            <p className="text-sm font-medium">General feedback</p>
+            <p className="text-xs text-muted-foreground mt-1">Anything else — kind words welcome too.</p>
+          </a>
+        </CardContent>
+      </Card>
+
+      {/* Roadmap */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Rocket className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle>On the roadmap</CardTitle>
+              <CardDescription>Rough order — nothing here is a promise, but it's what I'm thinking about next.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-3">
+            {ROADMAP.map((r) => (
+              <li key={r.title} className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+                <div className="h-6 w-6 rounded-full bg-primary/15 grid place-items-center shrink-0 mt-0.5">
+                  <Sparkles className="h-3 w-3 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{r.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{r.blurb}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      {/* Credits */}
+      <Card className="bg-muted/30 border-border/60">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center shrink-0">
+              <Code className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Designed and developed by Nicksy4K.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Built with TanStack Start, Tailwind, shadcn/ui, and Lovable Cloud — fuelled by late-night Monster Energy.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legal footer */}
+      <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-xs text-muted-foreground leading-relaxed">
+        <p className="flex items-center gap-1.5 text-foreground/80 font-medium mb-1">
+          <Heart className="h-3.5 w-3.5 text-primary" /> Beta disclaimer
+        </p>
+        <p>
+          Ledgerly is a personal project in active development. Features may change or break between releases and some
+          functionality may be incomplete. Your data is stored securely with row-level security, but please keep your own
+          backups of anything important. © {new Date().getFullYear()} Ledgerly.
+        </p>
+      </div>
     </div>
   );
 }
@@ -611,7 +771,7 @@ function SetupWizardCard() {
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Compass className="h-5 w-5 text-primary" /></div>
           <div>
-            <CardTitle>Setup & tutorial</CardTitle>
+            <CardTitle>Setup &amp; tutorial</CardTitle>
             <CardDescription>Re-run the guided setup, or replay the dashboard tour any time.</CardDescription>
           </div>
         </div>
@@ -646,59 +806,3 @@ function SetupWizardCard() {
     </Card>
   );
 }
-
-function BetaToolsCard({ onExport, exporting }: { onExport: () => void; exporting: boolean }) {
-  return (
-    <Card className="border-primary/30 bg-primary/[0.03]">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Sparkles className="h-5 w-5 text-primary" /></div>
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              Beta tools
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Beta</Badge>
-            </CardTitle>
-            <CardDescription>Share feedback, export your data, or read how it's protected.</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-3">
-        <a
-          href={buildFeedbackMailto({ kind: "bug" })}
-          className="group rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
-        >
-          <MessageSquare className="h-5 w-5 text-primary mb-2" />
-          <p className="text-sm font-medium">Send feedback</p>
-          <p className="text-xs text-muted-foreground mt-1">Report a bug or suggest an idea via email.</p>
-        </a>
-
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={exporting}
-          className="group text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background disabled:opacity-60 disabled:cursor-progress"
-        >
-          {exporting ? <Loader2 className="h-5 w-5 text-primary mb-2 animate-spin" /> : <Download className="h-5 w-5 text-primary mb-2" />}
-          <p className="text-sm font-medium">{exporting ? "Preparing…" : "Download my data"}</p>
-          <p className="text-xs text-muted-foreground mt-1">ZIP with CSVs, JSON, and every receipt file.</p>
-        </button>
-
-        <PrivacyDetailsDialog
-          trigger={
-            <button
-              type="button"
-              className="group text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
-            >
-              <ShieldCheck className="h-5 w-5 text-primary mb-2" />
-              <p className="text-sm font-medium">Privacy & security</p>
-              <p className="text-xs text-muted-foreground mt-1">RLS, encryption, and the update history.</p>
-            </button>
-          }
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-
-
