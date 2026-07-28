@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "ledgerly-mcp",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "title": "Ledgerly"
     },
     "tools": [
@@ -20,6 +20,38 @@
         "name": "list_transactions",
         "title": "List transactions",
         "description": "List the signed-in user's transactions, newest first. Optionally filter by ISO date range (YYYY-MM-DD) and cap the number of rows returned (default 25, max 200).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "since": {
+              "type": "string",
+              "description": "Inclusive start date, YYYY-MM-DD."
+            },
+            "until": {
+              "type": "string",
+              "description": "Inclusive end date, YYYY-MM-DD."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Row cap, default 25."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_incomes",
+        "title": "List incomes",
+        "description": "List the signed-in user's income entries, newest first. Optionally filter by ISO date range (YYYY-MM-DD) and cap the number of rows returned (default 25, max 200). Includes carryover rows the app generates each cycle.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -105,6 +137,48 @@
             "kind": {
               "type": "string",
               "description": "Filter by category kind (e.g. 'spend', 'commitment', 'income')."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_active_cycle",
+        "title": "Get active cycle window",
+        "description": "Return the signed-in user's currently-active financial cycle window (monthly or four-weekly), including any manual override. Use this to know which start/end dates to filter transactions/incomes/commitments by when the user asks about 'this cycle', 'this month', or 'left to spend'.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_main_balance",
+        "title": "Get main balance (left to spend)",
+        "description": "Compute the signed-in user's main-balance 'Left to Spend' for a cycle window, matching the app's dashboard exactly: totalIncome − mainExpensePortion(transactions) − netSavings. Defaults to the currently-active cycle when startISO/endISO are omitted. BNPL splits are excluded from main expenses (money hasn't left main yet); pocket splits are included (they net out). Returns the total plus the breakdown so you can explain the number.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "startISO": {
+              "type": "string",
+              "description": "Inclusive window start, YYYY-MM-DD. Defaults to active cycle start."
+            },
+            "endISO": {
+              "type": "string",
+              "description": "Inclusive window end, YYYY-MM-DD. Defaults to active cycle end."
             }
           },
           "additionalProperties": false,

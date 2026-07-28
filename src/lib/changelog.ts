@@ -16,6 +16,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.6.2",
+    title: "MCP can see your main balance",
+    date: "2026-07-28",
+    icon: Wallet,
+    highlights: [
+      "MCP: list_incomes — assistants can now read your income entries (including cycle carryover).",
+      "MCP: get_active_cycle — exposes the current cycle window so assistants filter by the same dates the dashboard uses.",
+      "MCP: get_main_balance — computes 'Left to Spend' exactly like the dashboard (income − main expenses − net savings), with a full breakdown so Claude/ChatGPT can explain the number.",
+    ],
+  },
+  {
     version: "v2.6.1",
     title: "More MCP write tools",
     date: "2026-07-28",
