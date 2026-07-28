@@ -12,7 +12,7 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Rocket, Wallet, Zap, Mail, Compass, MessageSquare, ShieldCheck, Loader2 } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, Settings2, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2 } from "lucide-react";
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { buildFeedbackMailto } from "@/lib/support";
 import { exportUserData } from "@/lib/exportData";
@@ -26,7 +26,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
 import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
@@ -35,7 +35,7 @@ import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
 import { UserCircle2, FileDown, Printer, BookOpen } from "lucide-react";
 import { WhatsNewCard } from "@/components/WhatsNewCard";
 import { ChangelogDialogTrigger } from "@/components/ChangelogDialog";
-import { changelog, currentVersion, currentVersionDate, downloadChangelogCsv, printChangelog } from "@/lib/changelog";
+import { changelog, currentVersion, currentVersionDate, downloadChangelogCsv } from "@/lib/changelog";
 import { format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/settings")({
