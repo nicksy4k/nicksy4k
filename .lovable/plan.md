@@ -1,16 +1,44 @@
 ## Problem
 
-In `src/components/tutorial/TutorialProvider.tsx`, `measure()` re-scrolls the highlighted element into view whenever it detects the target is off-screen. It's also wired to run on every `scroll` event (line 202) plus a 200ms poll (line 207). So when the user manually scrolls, `measure()` fires, sees the target is out of view, and calls `scrollIntoView` again — snapping the viewport back and making it impossible to scroll away or click elsewhere.
+Your main account (`32a96aba-…`) has a duplicate auto-generated carryover income sitting inside the current cycle, which is why "Left to Spend" is wrong.
 
-## Fix
+Rows in `public.incomes` (user-scoped):
 
-Separate "measure" from "auto-scroll":
+| date | source | amount | notes |
+|---|---|---|---|
+| 2026-07-17 | Carryover from previous cycle | 223.21 | `Auto-generated carryover:2026-06-19 · from 2026-06-19 → 2026-07-16` |
+| 2026-07-28 | Carryover from previous cycle | 207.87 | `Auto-generated carryover:2026-06-28 · from 2026-06-28 → 2026-07-27` |
 
-1. Extract the `scrollIntoView` behavior into a one-time effect that runs only when the step changes (i.e. `step.selector`), not on every `measure()` call.
-2. `measure()` becomes purely a `getBoundingClientRect` + `setRect` — safe to call on scroll/resize/polling.
-3. Keep the scroll/resize listeners so the spotlight box tracks the element if the user scrolls, but never force the viewport back.
-4. Keep the short mount-poll so late-mounting targets still get located, but without triggering scrollIntoView repeatedly (only the initial step-change effect scrolls).
+Current cycle: 4-weekly, anchor `2026-07-17` → window **17 Jul → 13 Aug 2026**. Both carryovers land in that window, so the prior remainder is being counted twice (over-count ≈ **£207.87**).
 
-Optional polish: use `block: "center"` only if the target is off-screen at step activation; otherwise skip the scroll entirely.
+The `2026-06-28` key doesn't align to any 4-weekly cycle from the current anchor, which means the cycle settings changed after the first carryover ran. `user_settings.last_carryover_cycle_key = 2026-06-19` was then out of sync with the newly-computed "previous cycle key", so `useCycleCarryover` re-ran and inserted a second carryover.
 
-No other files need to change.
+## Fix (two parts)
+
+### 1. Data repair (one-off)
+
+Delete only the extra carryover row for this user and reset the guard so the correct one remains authoritative:
+
+- Delete the income row dated `2026-07-28`, source `Carryover from previous cycle`, notes starting `Auto-generated carryover:2026-06-28`.
+- Leave the legitimate `2026-07-17` carryover in place.
+- Set `user_settings.last_carryover_cycle_key = '2026-06-19'` (the key of the carryover that remains) so the hook won't re-fire.
+
+Scoped strictly to `user_id = 32a96aba-d2c5-40d7-ae02-11479fa05cf1`.
+
+### 2. Harden the carryover guard (`src/lib/carryover.ts` + `useCycleCarryover` hook)
+
+Currently the guard relies solely on `last_carryover_cycle_key`. If cycle settings change, the computed previous-cycle key changes and the guard misses that a carryover for the same active window already exists.
+
+Add a second, data-driven check before inserting: query `incomes` for any row in the **current active cycle window** whose `source = 'Carryover from previous cycle'` AND `notes LIKE 'Auto-generated carryover:%'`. If one already exists, skip the insert and just update `last_carryover_cycle_key` to match. This makes the guard idempotent regardless of anchor/cadence changes.
+
+No UI changes; behaviour only.
+
+## Out of scope
+
+- Not touching the other account (`d2c1cb28-…`).
+- Not changing cycle settings or any other income/transaction rows.
+- Not modifying rollover, BNPL sync, or reports logic.
+
+## Verification
+
+After the repair, re-query `incomes` for the current cycle window and confirm exactly one carryover row remains; the dashboard "Left to Spend" should drop by £207.87 to the correct value.
