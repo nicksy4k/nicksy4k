@@ -103,10 +103,30 @@ async function runCarryover(settings: CycleSettings): Promise<{ inserted: boolea
     return { inserted: false, amount: 0 };
   }
 
+  // Extra guard: if cycle settings changed since the last carryover ran,
+  // the previous-cycle key can shift and bypass the tag check above. Skip
+  // the insert if ANY auto-generated carryover already sits inside the
+  // current cycle window — one per cycle is the invariant.
+  const { getActiveCycle: getActiveCycleForGuard } = await import("@/lib/cycle");
+  const currentForGuard = getActiveCycleForGuard(settings);
+  const { data: existingInCurrent } = await supabase
+    .from("incomes")
+    .select("id")
+    .eq("user_id", uid)
+    .eq("source", CARRYOVER_SOURCE)
+    .like("notes", "Auto-generated carryover:%")
+    .gte("date", currentForGuard.startISO)
+    .lte("date", currentForGuard.endISO)
+    .limit(1);
+  if (existingInCurrent && existingInCurrent.length > 0) {
+    return { inserted: false, amount: 0 };
+  }
+
   const leftover = await computePrevLeftover(uid, prev);
   if (Math.abs(leftover) < 0.005) {
     return { inserted: false, amount: 0 };
   }
+
 
   // Post to the first day of the CURRENT cycle so it counts toward the new window.
   // Compute current cycle start via the same helper by importing lazily.
