@@ -175,10 +175,16 @@ function AuthGate() {
   }, [queryClient, router]);
 
   // Redirect signed-in users away from the auth page in an effect, not
-  // during render (which would trigger a router update mid-render).
+  // during render (which would trigger a router update mid-render). Honor
+  // a same-origin `?next=` so the OAuth consent flow can resume.
   useEffect(() => {
     if (status === "in" && pathname === "/auth") {
-      router.navigate({ to: "/" });
+      const search = typeof window !== "undefined" ? window.location.search : "";
+      const next = new URLSearchParams(search).get("next");
+      const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      if (target !== "/auth") {
+        window.location.replace(target);
+      }
     }
   }, [status, pathname, router]);
 
@@ -190,6 +196,11 @@ function AuthGate() {
   }
   if (pathname === "/auth") {
     return null;
+  }
+  // The OAuth consent route renders its own full-screen layout — bypass the
+  // app chrome (sidebar/header) so it looks like a proper consent screen.
+  if (pathname.startsWith("/.lovable/oauth/consent")) {
+    return <AppLayoutBare />;
   }
   return <AppLayout />;
 }

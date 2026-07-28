@@ -62,6 +62,21 @@ const features = [
   },
 ];
 
+// Read a same-origin relative return path to preserve through sign-in. This
+// is what lets the OAuth consent route (`/.lovable/oauth/consent`) resume
+// after the user authenticates.
+function getReturnPath(): string {
+  if (typeof window === "undefined") return "/";
+  const search = new URLSearchParams(window.location.search);
+  const next = search.get("next");
+  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+  const path = window.location.pathname;
+  if (path && path !== "/auth" && path !== "/" && !path.startsWith("//")) {
+    return path + window.location.search;
+  }
+  return "/";
+}
+
 export function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -78,11 +93,12 @@ export function AuthPage() {
     }
     setLoading(true);
     try {
+      const returnPath = getReturnPath();
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: { emailRedirectTo: `${window.location.origin}${returnPath}` },
         });
         if (error) throw error;
         toast.success("Account created. You're signed in.");
@@ -101,8 +117,9 @@ export function AuthPage() {
   async function signInWithGoogle() {
     setGoogleLoading(true);
     try {
+      const returnPath = getReturnPath();
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}${returnPath}`,
       });
       if (result.error) throw result.error;
       // If we got here without redirect, the session is already set.
