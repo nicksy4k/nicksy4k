@@ -1,42 +1,42 @@
-## Add MCP write tools for assistants
 
-`create_transaction` already exists in `src/lib/mcp/tools/create-transaction.ts`, so this adds the two missing capabilities and tightens the existing one. All tools reuse `supabaseForUser` / `requireAuth` so they run under the signed-in user's RLS.
+## Why Claude can't see your main balance
 
-### 1. `add_items_to_transaction` (new)
-File: `src/lib/mcp/tools/add-items-to-transaction.ts`
+Claude only has the 7 MCP tools we shipped: transactions, commitments, savings, categories, plus three write tools. There's no tool that exposes **income** or the **cycle window** the app uses to compute "Left to Spend" on the dashboard.
 
-- Input: `transaction_id` (uuid), `items` (array of `{ name, price, quantity?, category? }`), optional `mark_settled` boolean, optional `new_total_amount` override.
-- Fetches the row (RLS scopes to the user), appends to the existing `items` JSONB array, and — unless `new_total_amount` is provided — recomputes `total_amount` as the sum of all item `price × (quantity ?? 1)`.
-- When `mark_settled: true`, also sets `is_pending = false`. Otherwise leaves the pending flag as-is (matches the "settle" flow the app already uses).
-- Returns the updated row as `structuredContent.transaction` plus a short text summary.
-- Annotations: `readOnlyHint: false`, `idempotentHint: false`.
+In the app itself, main balance for a cycle is:
 
-### 2. `mark_commitment_paid` (new)
-File: `src/lib/mcp/tools/mark-commitment-paid.ts`
+```text
+leftToSpend = income(in cycle) − mainExpensePortion(transactions in cycle) − netSavings(in cycle)
+```
 
-- Input: `commitment_id` (uuid), optional `paid_date` (YYYY-MM-DD, defaults to today UTC).
-- Updates the commitment: `paid = true`, `last_paid_date = paid_date`. Does **not** advance `next_due_date` — the app's global `useCommitmentRollover` engine owns that on the next cycle, and manual advance stays a UI-only action (matches the existing "unmark paid" contract that relies on `prev_due_date`).
-- Returns the updated commitment.
-- Annotations: `readOnlyHint: false`, `idempotentHint: true` (setting paid to true twice is a no-op).
+Without income rows or the cycle boundaries, Claude has no way to reach that number — which is exactly what it told you.
 
-Note on BNPL sync: the app's `src/lib/bnplSync.ts` mirrors commitment→debt payments only from inside the React UI hook. Doing that from the MCP tool would duplicate business logic on the server. Keeping the tool to a plain commitment update is the safe first cut; we can add a follow-up tool later if assistants need to log the matching debt payment.
+## Plan: add 3 read-only MCP tools
 
-### 3. Small tightening of existing `create_transaction`
-Same file: `src/lib/mcp/tools/create-transaction.ts`
+Add these tools under `src/lib/mcp/tools/` and register them in `src/lib/mcp/index.ts`. All read-only, all scoped by RLS to the signed-in user, matching the existing tool pattern.
 
-- Add `payment_splits` input (optional, same shape the app stores) so assistants can record split payments, not just single-source charges.
-- Keep everything else as-is.
+1. **`list_incomes`** — reads `incomes` table.
+   - Optional inputs: `since`, `until` (YYYY-MM-DD), `limit` (default 25, max 200).
+   - Returns id, date, source, amount, category, notes.
 
-### 4. Register the new tools
-File: `src/lib/mcp/index.ts` — import the two new tool modules and add them to the `tools` array of `defineMcp`.
+2. **`get_active_cycle`** — reads `user_settings` and computes the current cycle window using the same logic as the app (`src/lib/cycle.ts`), including manual override.
+   - No inputs.
+   - Returns `{ type, startISO, endISO, anchor, carryoverEnabled }`.
 
-### 5. Refresh the manifest
-Run `app_mcp_server--extract_mcp_manifest` once to regenerate `.lovable/mcp/manifest.json` so the Agent integrations panel and connected clients see the new tools.
+3. **`get_main_balance`** — the direct answer to "what's left in my main balance".
+   - Optional inputs: `startISO`, `endISO` (default = active cycle from tool #2).
+   - Server-side computes, using the same formulas as `src/routes/index.tsx`:
+     - `totalIncome` = sum of `incomes.amount` in window
+     - `totalExpenses` = sum of `mainExpensePortion(transaction)` for transactions in window (subtracts BNPL splits, ignores pocket splits — reuses the existing `mainExpensePortion` helper from `src/lib/format.ts`)
+     - `netSavings` = deposits − withdrawals in window
+     - `leftToSpend = totalIncome − totalExpenses − netSavings`
+   - Returns all four numbers plus the cycle window used, so Claude can explain the breakdown, not just the total.
 
-### 6. Changelog
-Prepend a `v2.6.1` entry to `src/lib/changelog.ts` noting the three new MCP write capabilities (per the standing changelog rule).
+## Technical notes
 
-### Out of scope
-- No schema changes — every field used already exists on `transactions` / `commitments`.
-- No UI changes.
-- No auto-sync between commitments and BNPL debts from MCP (called out above).
+- Extract the cycle-window math from `src/lib/cycle.ts` into a pure helper (or import the existing pure functions) so the MCP handler can compute the window server-side without React hooks.
+- Reuse `mainExpensePortion` from `src/lib/format.ts` (already covered by `src/lib/__tests__/format.test.ts`) so main-balance math stays identical to the dashboard.
+- After edits, run `app_mcp_server--extract_mcp_manifest` to regenerate `.lovable/mcp/manifest.json`; bump version in `defineMcp` to `0.3.0`.
+- Prepend a `v2.6.2` entry to `src/lib/changelog.ts` covering the new MCP tools.
+
+No schema changes, no new dependencies, no changes to app UI.
