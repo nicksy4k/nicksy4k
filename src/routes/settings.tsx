@@ -534,11 +534,65 @@ function DataCard({
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Changelog</p>
             <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="v2-3-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v2.3.0 — Mobile & Reports polish</span>
+                    <span className="text-xs text-muted-foreground">28 Jul 2026</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Mobile side menu now auto-closes after tapping a link.</li>
+                    <li>Reports export: choose <strong>Summary</strong> (one row per transaction) or <strong>Itemized</strong> for both PDF print and .xlsx.</li>
+                    <li>Search in History highlights matches and shows a running total for matched items.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="v2-2-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Download className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v2.2.0 — Beta launch kit</span>
+                    <span className="text-xs text-muted-foreground">24 Jul 2026</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>New <strong>Reports & Analytics</strong> page with date/category filters, KPIs and a spend-by-category chart.</li>
+                    <li>Print-ready PDF report and <strong>.xlsx</strong> spreadsheet export (Transactions, Income, Summary).</li>
+                    <li>"Download my data" — ZIP of every record plus attached receipts.</li>
+                    <li>Privacy & security dialog explaining RLS and private storage in plain language.</li>
+                    <li>Beta badge, disclaimer footer and one-tap feedback link on the login page.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="v2-1-0" className="border-border/60">
+                <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <span className="font-medium">v2.1.0 — Smarter transactions</span>
+                    <span className="text-xs text-muted-foreground">18 Jul 2026</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li><strong>Refunds</strong> — process full or partial refunds against any past transaction; refunds post as positive income.</li>
+                    <li><strong>Quick Add</strong> grids on New Spend and History for one-tap re-entry of frequent items.</li>
+                    <li>Historical auto-fill: picking a known item pre-fills its last price and category.</li>
+                    <li>Pending / placeholder transactions with amber badges and a "Settle" flow.</li>
+                    <li>Bi-directional BNPL ↔ Commitment sync — paying one now marks the other.</li>
+                    <li>Google sign-in, guided setup wizard and interactive tutorial.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
               <AccordionItem value="v2-0-0" className="border-border/60">
                 <AccordionTrigger className="py-3 text-sm hover:no-underline">
                   <div className="flex items-center gap-2">
                     <Rocket className="h-4 w-4 text-primary" />
-                    <span className="font-medium">v2.0.0 — Midnight Indigo UI Refresh</span>
+                    <span className="font-medium">v2.0.0 — Midnight Indigo UI refresh</span>
+                    <span className="text-xs text-muted-foreground">10 Jul 2026</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
@@ -554,6 +608,7 @@ function DataCard({
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-primary" />
                     <span className="font-medium">v1.9.0 — Dynamic Income Routing</span>
+                    <span className="text-xs text-muted-foreground">02 Jul 2026</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
@@ -569,6 +624,7 @@ function DataCard({
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-primary" />
                     <span className="font-medium">v1.8.0 — BNPL Engine & Cross-Tab Sync</span>
+                    <span className="text-xs text-muted-foreground">20 Jun 2026</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
