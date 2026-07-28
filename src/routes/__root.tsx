@@ -201,7 +201,7 @@ function AuthGate() {
   // The OAuth consent route renders its own full-screen layout — bypass the
   // app chrome (sidebar/header) so it looks like a proper consent screen.
   if (pathname.startsWith("/.lovable/oauth/consent")) {
-    return <AppLayoutBare />;
+    return <Outlet />;
   }
   return <AppLayout />;
 }
