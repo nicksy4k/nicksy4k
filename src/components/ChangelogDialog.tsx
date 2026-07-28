@@ -55,8 +55,8 @@ export function ChangelogDialogTrigger({ children, onOpen }: Props) {
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] p-0 flex flex-col overflow-hidden">
-        <DialogHeader className="p-6 pb-3 border-b">
+      <DialogContent className="max-w-2xl h-[85vh] p-0 flex flex-col overflow-hidden">
+        <DialogHeader className="p-6 pb-3 border-b shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div>
               <DialogTitle>Ledgerly changelog</DialogTitle>
