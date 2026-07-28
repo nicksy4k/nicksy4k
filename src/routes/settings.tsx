@@ -570,8 +570,10 @@ function DataCard({
               <Button size="sm" variant="ghost" onClick={downloadChangelogCsv} className="gap-1.5 h-8">
                 <FileDown className="h-3.5 w-3.5" /> Export CSV
               </Button>
-              <Button size="sm" variant="ghost" onClick={printChangelog} className="gap-1.5 h-8">
-                <Printer className="h-3.5 w-3.5" /> Print / PDF
+              <Button asChild size="sm" variant="ghost" className="gap-1.5 h-8">
+                <Link to="/changelog">
+                  <Printer className="h-3.5 w-3.5" /> Print / PDF
+                </Link>
               </Button>
             </div>
           </div>
