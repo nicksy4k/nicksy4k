@@ -1,54 +1,42 @@
-## Split "About" into its own Settings tab
+## Add MCP write tools for assistants
 
-Right now the What's New card, changelog link, privacy dialog, feedback link, and data-export tools all live inside the **Data** tab. Give **About** its own home and turn it into a proper "meet the app" surface.
+`create_transaction` already exists in `src/lib/mcp/tools/create-transaction.ts`, so this adds the two missing capabilities and tightens the existing one. All tools reuse `supabaseForUser` / `requireAuth` so they run under the signed-in user's RLS.
 
-### 1. New tab wiring (`src/routes/settings.tsx`)
-- Add an `"about"` value to the `Tabs` list alongside Cycle / Categories / Data.
-- Move everything About-related out of the Data tab. Data tab keeps only: Download my data (ZIP), Connected accounts, and destructive/account actions.
-- If the URL hash is `#about` (used by the header version badge and What's New links), default the tab to About.
+### 1. `add_items_to_transaction` (new)
+File: `src/lib/mcp/tools/add-items-to-transaction.ts`
 
-### 2. About tab layout (top → bottom)
+- Input: `transaction_id` (uuid), `items` (array of `{ name, price, quantity?, category? }`), optional `mark_settled` boolean, optional `new_total_amount` override.
+- Fetches the row (RLS scopes to the user), appends to the existing `items` JSONB array, and — unless `new_total_amount` is provided — recomputes `total_amount` as the sum of all item `price × (quantity ?? 1)`.
+- When `mark_settled: true`, also sets `is_pending = false`. Otherwise leaves the pending flag as-is (matches the "settle" flow the app already uses).
+- Returns the updated row as `structuredContent.transaction` plus a short text summary.
+- Annotations: `readOnlyHint: false`, `idempotentHint: false`.
 
-````text
-┌─────────────────────────────────────────────┐
-│  App identity card                          │
-│   Ledgerly logo · tagline · Beta badge      │
-│   v2.4.0 · updated 28 Jul 2026              │
-├─────────────────────────────────────────────┤
-│  What's New card (existing WhatsNewCard)    │
-├─────────────────────────────────────────────┤
-│  Changelog card                             │
-│   • "Open full changelog" (dialog / route)  │
-│   • Export CSV · Print PDF                  │
-├─────────────────────────────────────────────┤
-│  Privacy & security card                    │
-│   • Opens PrivacyDetailsDialog              │
-│   • Short "how your data is stored" blurb   │
-├─────────────────────────────────────────────┤
-│  Help & feedback card                       │
-│   • Report a bug   · Share an idea          │
-│   • General feedback (mailto helpers)       │
-├─────────────────────────────────────────────┤
-│  Credits & legal footer                     │
-│   Built by Nick · © 2026 · Beta disclaimer  │
-└─────────────────────────────────────────────┘
-````
+### 2. `mark_commitment_paid` (new)
+File: `src/lib/mcp/tools/mark-commitment-paid.ts`
 
-### 3. Suggested additions worth including
-- **App identity card** with logo, one-line tagline ("Personal money, on your terms."), Beta badge, and the version pill.
-- **Feedback split buttons** — three mailto CTAs (`bug`, `idea`, `general`) using the existing `buildFeedbackMailto` helper, instead of the single header link.
-- **Roadmap teaser** (static list, 3–5 bullets: "coming soon: shared households, bank sync trial, category budgets") so testers know what's next.
-- **Keyboard shortcuts** collapsible (if/when we add any — placeholder for now, or skip until we ship shortcuts).
-- **Credits line**: "Built with TanStack Start, Tailwind, shadcn/ui, Lovable Cloud." Small, muted.
-- **Legal footer**: reuse the softened beta disclaimer text already on the auth page so it lives in one place.
+- Input: `commitment_id` (uuid), optional `paid_date` (YYYY-MM-DD, defaults to today UTC).
+- Updates the commitment: `paid = true`, `last_paid_date = paid_date`. Does **not** advance `next_due_date` — the app's global `useCommitmentRollover` engine owns that on the next cycle, and manual advance stays a UI-only action (matches the existing "unmark paid" contract that relies on `prev_due_date`).
+- Returns the updated commitment.
+- Annotations: `readOnlyHint: false`, `idempotentHint: true` (setting paid to true twice is a no-op).
 
-### 4. Data tab after the move
-Keeps: Download my data (ZIP), Connected accounts, Sign out, Delete account. Purely account/data ops — no marketing/about content.
+Note on BNPL sync: the app's `src/lib/bnplSync.ts` mirrors commitment→debt payments only from inside the React UI hook. Doing that from the MCP tool would duplicate business logic on the server. Keeping the tool to a plain commitment update is the safe first cut; we can add a follow-up tool later if assistants need to log the matching debt payment.
 
-### Technical notes
-- No new deps; reuses `WhatsNewCard`, `ChangelogDialogTrigger`, `PrivacyDetailsDialog`, `buildFeedbackMailto`, `currentVersion`/`currentVersionDate`.
-- Header version badge continues to link to `#about` and now lands on the dedicated tab.
-- Prepend a `v2.5.0` entry to `src/lib/changelog.ts` per the standing rule.
+### 3. Small tightening of existing `create_transaction`
+Same file: `src/lib/mcp/tools/create-transaction.ts`
 
-### Open question
-Anything you'd like cut from the suggested additions (e.g. skip the Roadmap teaser or the Credits line)? Otherwise I'll build it as above.
+- Add `payment_splits` input (optional, same shape the app stores) so assistants can record split payments, not just single-source charges.
+- Keep everything else as-is.
+
+### 4. Register the new tools
+File: `src/lib/mcp/index.ts` — import the two new tool modules and add them to the `tools` array of `defineMcp`.
+
+### 5. Refresh the manifest
+Run `app_mcp_server--extract_mcp_manifest` once to regenerate `.lovable/mcp/manifest.json` so the Agent integrations panel and connected clients see the new tools.
+
+### 6. Changelog
+Prepend a `v2.6.1` entry to `src/lib/changelog.ts` noting the three new MCP write capabilities (per the standing changelog rule).
+
+### Out of scope
+- No schema changes — every field used already exists on `transactions` / `commitments`.
+- No UI changes.
+- No auto-sync between commitments and BNPL debts from MCP (called out above).

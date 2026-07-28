@@ -4,6 +4,8 @@ import listCommitments from "./tools/list-commitments";
 import listSavings from "./tools/list-savings";
 import listCategories from "./tools/list-categories";
 import createTransaction from "./tools/create-transaction";
+import addItemsToTransaction from "./tools/add-items-to-transaction";
+import markCommitmentPaid from "./tools/mark-commitment-paid";
 
 // The OAuth issuer MUST be the direct Supabase host. On publish, SUPABASE_URL
 // is rewritten to the `.lovable.cloud` proxy, which mcp-js rejects (RFC 8414
@@ -16,12 +18,20 @@ const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unse
 export default defineMcp({
   name: "ledgerly-mcp",
   title: "Ledgerly",
-  version: "0.1.0",
+  version: "0.2.0",
   instructions:
-    "Tools for a signed-in Ledgerly user. Read transactions, commitments, savings pockets, and categories, and log new spending transactions. Every tool acts as the authenticated user under Row Level Security.",
+    "Tools for a signed-in Ledgerly user. Read transactions, commitments, savings pockets, and categories; log new spending transactions (including split payments); append line items to an existing (typically pending) transaction; and mark commitments as paid. Every tool acts as the authenticated user under Row Level Security.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [listTransactions, listCommitments, listSavings, listCategories, createTransaction],
+  tools: [
+    listTransactions,
+    listCommitments,
+    listSavings,
+    listCategories,
+    createTransaction,
+    addItemsToTransaction,
+    markCommitmentPaid,
+  ],
 });

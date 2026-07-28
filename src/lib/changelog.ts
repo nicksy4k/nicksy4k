@@ -16,6 +16,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.6.1",
+    title: "More MCP write tools",
+    date: "2026-07-28",
+    icon: Zap,
+    highlights: [
+      "MCP: add_items_to_transaction — assistants can append line items to an existing (typically pending) transaction and optionally settle it.",
+      "MCP: mark_commitment_paid — assistants can tick off a bill/subscription/BNPL installment for the current cycle.",
+      "MCP: create_transaction now supports payment_splits so assistants can record split payments too.",
+    ],
+  },
+  {
     version: "v2.6.0",
     title: "Agent integrations (MCP)",
     date: "2026-07-28",
