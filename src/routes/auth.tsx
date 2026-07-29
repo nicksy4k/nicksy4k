@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import {
@@ -77,6 +85,49 @@ function getReturnPath(): string {
   return "/";
 }
 
+const COUNTRIES = [
+  { value: "GB", label: "United Kingdom" },
+  { value: "US", label: "United States" },
+  { value: "CA", label: "Canada" },
+  { value: "AU", label: "Australia" },
+  { value: "IE", label: "Ireland" },
+  { value: "NZ", label: "New Zealand" },
+  { value: "OTHER", label: "Other" },
+];
+
+const CURRENCIES = [
+  { value: "GBP", label: "GBP £ — British Pound" },
+  { value: "USD", label: "USD $ — US Dollar" },
+  { value: "EUR", label: "EUR € — Euro" },
+  { value: "CAD", label: "CAD $ — Canadian Dollar" },
+  { value: "AUD", label: "AUD $ — Australian Dollar" },
+  { value: "NZD", label: "NZD $ — New Zealand Dollar" },
+  { value: "JPY", label: "JPY ¥ — Japanese Yen" },
+  { value: "OTHER", label: "Other" },
+];
+
+const HEARD_ABOUT = [
+  "Friend or family",
+  "Social media",
+  "Beta tester group",
+  "Search engine",
+  "Blog or article",
+  "Other",
+];
+
+const signupSchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your name").max(80),
+  displayName: z.string().trim().min(2, "Pick a display name").max(40),
+  email: z.string().trim().email("Enter a valid email").max(255),
+  password: z.string().min(6, "Password must be at least 6 characters").max(200),
+  country: z.string().min(1, "Select your country"),
+  currency: z.string().min(1, "Select a currency"),
+  heardAbout: z.string().optional(),
+  acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: "You must accept the Privacy Policy" }) }),
+  acceptedBeta: z.literal(true, { errorMap: () => ({ message: "You must accept the Beta Disclaimer" }) }),
+});
+
+
 export function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -85,24 +136,54 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Signup-only state
+  const [fullName, setFullName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [country, setCountry] = useState("GB");
+  const [currency, setCurrency] = useState("GBP");
+  const [heardAbout, setHeardAbout] = useState<string>("");
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptedBeta, setAcceptedBeta] = useState(false);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || password.length < 6) {
-      toast.error("Enter an email and a password of at least 6 characters.");
-      return;
-    }
     setLoading(true);
     try {
       const returnPath = getReturnPath();
       if (mode === "signup") {
+        const parsed = signupSchema.safeParse({
+          fullName, displayName, email, password, country, currency,
+          heardAbout: heardAbout || undefined,
+          acceptedPrivacy, acceptedBeta,
+        });
+        if (!parsed.success) {
+          toast.error(parsed.error.issues[0]?.message ?? "Please check the form");
+          return;
+        }
+        const now = new Date().toISOString();
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}${returnPath}` },
+          email: parsed.data.email,
+          password: parsed.data.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}${returnPath}`,
+            data: {
+              full_name: parsed.data.fullName,
+              display_name: parsed.data.displayName,
+              country: parsed.data.country,
+              currency: parsed.data.currency,
+              heard_about: parsed.data.heardAbout ?? "",
+              accepted_privacy_at: now,
+              accepted_beta_disclaimer_at: now,
+            },
+          },
         });
         if (error) throw error;
-        toast.success("Account created. You're signed in.");
+        toast.success("Account created. Welcome to Ledgerly.");
       } else {
+        if (!email || password.length < 6) {
+          toast.error("Enter an email and a password of at least 6 characters.");
+          return;
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Welcome back.");
@@ -122,7 +203,6 @@ export function AuthPage() {
         redirect_uri: `${window.location.origin}${returnPath}`,
       });
       if (result.error) throw result.error;
-      // If we got here without redirect, the session is already set.
       toast.success("Signed in with Google.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
@@ -130,6 +210,8 @@ export function AuthPage() {
       setGoogleLoading(false);
     }
   }
+
+  const isSignup = mode === "signup";
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -162,8 +244,8 @@ export function AuthPage() {
           </Badge>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-center">
-          <div className="space-y-6">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-start">
+          <div className="space-y-6 lg:sticky lg:top-8">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold leading-[1.1] tracking-tight">
                 Track, budget, and protect your spending.
@@ -187,17 +269,16 @@ export function AuthPage() {
           </div>
 
           <div className="grid gap-4">
-
             <Card className="border-border/60 shadow-xl shadow-black/20">
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto h-12 w-12 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid place-items-center mb-3">
                   <Wallet className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="text-2xl font-semibold">
-                  {mode === "signin" ? "Sign in to Ledgerly" : "Create your account"}
+                  {isSignup ? "Create your account" : "Sign in to Ledgerly"}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your finances, private and synced.
+                  {isSignup ? "Join the beta — takes under a minute." : "Your finances, private and synced."}
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -219,6 +300,21 @@ export function AuthPage() {
                 </div>
 
                 <form onSubmit={onSubmit} className="space-y-4">
+                  {isSignup && (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="fullName">Full name</Label>
+                          <Input id="fullName" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="displayName">Display name</Label>
+                          <Input id="displayName" autoComplete="nickname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -236,7 +332,7 @@ export function AuthPage() {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                        autoComplete={isSignup ? "new-password" : "current-password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -253,23 +349,86 @@ export function AuthPage() {
                       </button>
                     </div>
                   </div>
+
+                  {isSignup && (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="country">Country / region</Label>
+                          <Select value={country} onValueChange={setCountry}>
+                            <SelectTrigger id="country"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {COUNTRIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="currency">Main currency</Label>
+                          <Select value={currency} onValueChange={setCurrency}>
+                            <SelectTrigger id="currency"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {CURRENCIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="heardAbout">How did you hear about us? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Select value={heardAbout} onValueChange={setHeardAbout}>
+                          <SelectTrigger id="heardAbout"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            {HEARD_ABOUT.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                        <label className="flex items-start gap-2 text-sm">
+                          <Checkbox
+                            checked={acceptedPrivacy}
+                            onCheckedChange={(v) => setAcceptedPrivacy(v === true)}
+                            className="mt-0.5"
+                          />
+                          <span className="text-muted-foreground leading-relaxed">
+                            I have read and agree to the{" "}
+                            <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+                          </span>
+                        </label>
+                        <label className="flex items-start gap-2 text-sm">
+                          <Checkbox
+                            checked={acceptedBeta}
+                            onCheckedChange={(v) => setAcceptedBeta(v === true)}
+                            className="mt-0.5"
+                          />
+                          <span className="text-muted-foreground leading-relaxed">
+                            I understand Ledgerly is in beta — features may change, some flows may be incomplete,
+                            and I will not rely on it as an official financial record. As a beta tester I'll use
+                            fake or non-critical data where possible. See the{" "}
+                            <Link to="/beta-disclaimer" target="_blank" className="text-primary hover:underline">Beta Disclaimer</Link>.
+                          </span>
+                        </label>
+                      </div>
+                    </>
+                  )}
+
                   <Button type="submit" className="w-full group" disabled={loading}>
-                    {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+                    {loading ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
                     {!loading && <ArrowRight className="ml-1 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition" />}
                   </Button>
                 </form>
 
                 <div className="text-center text-sm text-muted-foreground">
-                  {mode === "signin" ? (
-                    <>No account?{" "}
-                      <button className="text-primary hover:underline" onClick={() => setMode("signup")}>
-                        Sign up
-                      </button>
-                    </>
-                  ) : (
+                  {isSignup ? (
                     <>Already registered?{" "}
                       <button className="text-primary hover:underline" onClick={() => setMode("signin")}>
                         Sign in
+                      </button>
+                    </>
+                  ) : (
+                    <>No account?{" "}
+                      <button className="text-primary hover:underline" onClick={() => setMode("signup")}>
+                        Sign up
                       </button>
                     </>
                   )}
@@ -303,7 +462,9 @@ export function AuthPage() {
                 Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and should not be relied upon for absolute accuracy or as a professional financial manager. All data and calculations rely entirely on manual user input.
               </p>
               <p className="mt-2">
-                Privacy & Security: Your financial records are secured with Row Level Security (RLS) and encrypted storage, so they are only accessible to you.
+                Privacy & Security: Your financial records are secured with Row Level Security (RLS) and encrypted storage, so they are only accessible to you. See our{" "}
+                <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link> and{" "}
+                <Link to="/beta-disclaimer" className="text-primary hover:underline">Beta Disclaimer</Link>.
               </p>
             </footer>
           </div>

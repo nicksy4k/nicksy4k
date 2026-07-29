@@ -381,6 +381,45 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          accepted_beta_disclaimer_at: string | null
+          accepted_privacy_at: string | null
+          country: string
+          created_at: string
+          currency: string
+          display_name: string
+          full_name: string
+          heard_about: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_beta_disclaimer_at?: string | null
+          accepted_privacy_at?: string | null
+          country?: string
+          created_at?: string
+          currency?: string
+          display_name?: string
+          full_name?: string
+          heard_about?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_beta_disclaimer_at?: string | null
+          accepted_privacy_at?: string | null
+          country?: string
+          created_at?: string
+          currency?: string
+          display_name?: string
+          full_name?: string
+          heard_about?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recurring_incomes: {
         Row: {
           active: boolean

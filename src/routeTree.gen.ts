@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BetaDisclaimerRouteImport } from './routes/beta-disclaimer'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as CreditRouteImport } from './routes/credit'
@@ -19,6 +20,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -48,6 +50,11 @@ const ArchiveRoute = ArchiveRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BetaDisclaimerRoute = BetaDisclaimerRouteImport.update({
+  id: '/beta-disclaimer',
+  path: '/beta-disclaimer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangelogRoute = ChangelogRouteImport.update({
@@ -83,6 +90,11 @@ const McpRoute = McpRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -171,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -178,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -198,6 +212,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -205,6 +220,7 @@ export interface FileRoutesByTo {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -226,6 +242,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -233,6 +250,7 @@ export interface FileRoutesById {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -255,6 +273,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -262,6 +281,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -282,6 +302,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -289,6 +310,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -309,6 +331,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -316,6 +339,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -337,6 +361,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArchiveRoute: typeof ArchiveRoute
   AuthRoute: typeof AuthRoute
+  BetaDisclaimerRoute: typeof BetaDisclaimerRoute
   ChangelogRoute: typeof ChangelogRoute
   CommitmentsRoute: typeof CommitmentsRoute
   CreditRoute: typeof CreditRoute
@@ -344,6 +369,7 @@ export interface RootRouteChildren {
   IncomeRoute: typeof IncomeRoute
   McpRoute: typeof McpRoute
   NewRoute: typeof NewRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
@@ -382,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beta-disclaimer': {
+      id: '/beta-disclaimer'
+      path: '/beta-disclaimer'
+      fullPath: '/beta-disclaimer'
+      preLoaderRoute: typeof BetaDisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changelog': {
@@ -431,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -545,6 +585,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchiveRoute: ArchiveRoute,
   AuthRoute: AuthRoute,
+  BetaDisclaimerRoute: BetaDisclaimerRoute,
   ChangelogRoute: ChangelogRoute,
   CommitmentsRoute: CommitmentsRoute,
   CreditRoute: CreditRoute,
@@ -552,6 +593,7 @@ const rootRouteChildren: RootRouteChildren = {
   IncomeRoute: IncomeRoute,
   McpRoute: McpRoute,
   NewRoute: NewRoute,
+  PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
