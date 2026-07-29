@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
-import { buildFeedbackMailto } from "@/lib/support";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import {
   Wallet,
   Eye,
@@ -284,11 +284,11 @@ export function AuthPage() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <a href={buildFeedbackMailto({ kind: "bug" })}>
+              <FeedbackDialog defaultType="bug" anonymous>
+                <Button variant="outline" size="sm">
                   <MessageSquare className="h-3.5 w-3.5" /> Share feedback / report a bug
-                </a>
-              </Button>
+                </Button>
+              </FeedbackDialog>
               <PrivacyDetailsDialog
                 trigger={
                   <Button variant="ghost" size="sm">
