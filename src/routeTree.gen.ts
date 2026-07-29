@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BetaDisclaimerRouteImport } from './routes/beta-disclaimer'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as CreditRouteImport } from './routes/credit'
@@ -49,6 +50,11 @@ const ArchiveRoute = ArchiveRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BetaDisclaimerRoute = BetaDisclaimerRouteImport.update({
+  id: '/beta-disclaimer',
+  path: '/beta-disclaimer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangelogRoute = ChangelogRouteImport.update({
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
+  '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/credit': typeof CreditRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/'
     | '/archive'
     | '/auth'
+    | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
     | '/credit'
@@ -349,6 +361,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ArchiveRoute: typeof ArchiveRoute
   AuthRoute: typeof AuthRoute
+  BetaDisclaimerRoute: typeof BetaDisclaimerRoute
   ChangelogRoute: typeof ChangelogRoute
   CommitmentsRoute: typeof CommitmentsRoute
   CreditRoute: typeof CreditRoute
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beta-disclaimer': {
+      id: '/beta-disclaimer'
+      path: '/beta-disclaimer'
+      fullPath: '/beta-disclaimer'
+      preLoaderRoute: typeof BetaDisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changelog': {
@@ -565,6 +585,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ArchiveRoute: ArchiveRoute,
   AuthRoute: AuthRoute,
+  BetaDisclaimerRoute: BetaDisclaimerRoute,
   ChangelogRoute: ChangelogRoute,
   CommitmentsRoute: CommitmentsRoute,
   CreditRoute: CreditRoute,
