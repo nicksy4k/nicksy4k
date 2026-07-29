@@ -7,7 +7,7 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   // Let /lovable/* server routes (email queue, webhooks, previews) pass
   // through untouched — they authenticate themselves.
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/lovable/")) {
+  if (url.pathname.startsWith("/lovable/") || url.pathname === "/email/unsubscribe") {
     return next();
   }
   try {
