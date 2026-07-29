@@ -19,6 +19,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IncomeRouteImport } from './routes/income'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -83,6 +84,11 @@ const McpRoute = McpRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/income': typeof IncomeRoute
   '/mcp': typeof McpRoute
   '/new': typeof NewRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/mcp'
     | '/new'
+    | '/privacy'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -344,6 +356,7 @@ export interface RootRouteChildren {
   IncomeRoute: typeof IncomeRoute
   McpRoute: typeof McpRoute
   NewRoute: typeof NewRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -552,6 +572,7 @@ const rootRouteChildren: RootRouteChildren = {
   IncomeRoute: IncomeRoute,
   McpRoute: McpRoute,
   NewRoute: NewRoute,
+  PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
