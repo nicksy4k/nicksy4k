@@ -14,7 +14,7 @@ import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
 import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart } from "lucide-react";
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
-import { buildFeedbackMailto } from "@/lib/support";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { exportUserData } from "@/lib/exportData";
 import { Link } from "@tanstack/react-router";
 import { useOnboardingStatus } from "@/lib/onboarding";
@@ -661,30 +661,27 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
-          <a
-            href={buildFeedbackMailto({ kind: "bug" })}
-            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
-          >
-            <MessageSquare className="h-5 w-5 text-primary mb-2" />
-            <p className="text-sm font-medium">Report a bug</p>
-            <p className="text-xs text-muted-foreground mt-1">Something not working? Send me the steps.</p>
-          </a>
-          <a
-            href={buildFeedbackMailto({ kind: "idea" })}
-            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
-          >
-            <Lightbulb className="h-5 w-5 text-primary mb-2" />
-            <p className="text-sm font-medium">Share an idea</p>
-            <p className="text-xs text-muted-foreground mt-1">A feature you'd love, or a rough edge to smooth.</p>
-          </a>
-          <a
-            href={buildFeedbackMailto({ kind: "general" })}
-            className="rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background"
-          >
-            <Mail className="h-5 w-5 text-primary mb-2" />
-            <p className="text-sm font-medium">General feedback</p>
-            <p className="text-xs text-muted-foreground mt-1">Anything else — kind words welcome too.</p>
-          </a>
+          <FeedbackDialog defaultType="bug">
+            <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
+              <MessageSquare className="h-5 w-5 text-primary mb-2" />
+              <p className="text-sm font-medium">Report a bug</p>
+              <p className="text-xs text-muted-foreground mt-1">Something not working? Send me the steps.</p>
+            </button>
+          </FeedbackDialog>
+          <FeedbackDialog defaultType="idea">
+            <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
+              <Lightbulb className="h-5 w-5 text-primary mb-2" />
+              <p className="text-sm font-medium">Share an idea</p>
+              <p className="text-xs text-muted-foreground mt-1">A feature you'd love, or a rough edge to smooth.</p>
+            </button>
+          </FeedbackDialog>
+          <FeedbackDialog defaultType="general">
+            <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
+              <Mail className="h-5 w-5 text-primary mb-2" />
+              <p className="text-sm font-medium">General feedback</p>
+              <p className="text-xs text-muted-foreground mt-1">Anything else — kind words welcome too.</p>
+            </button>
+          </FeedbackDialog>
         </CardContent>
       </Card>
 

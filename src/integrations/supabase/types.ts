@@ -177,6 +177,57 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          app_version: string | null
+          attachment_path: string | null
+          created_at: string
+          email: string | null
+          email_sent: boolean
+          email_sent_at: string | null
+          id: string
+          message: string
+          route: string | null
+          severity: string | null
+          subject: string
+          type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          attachment_path?: string | null
+          created_at?: string
+          email?: string | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          message: string
+          route?: string | null
+          severity?: string | null
+          subject: string
+          type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          attachment_path?: string | null
+          created_at?: string
+          email?: string | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          message?: string
+          route?: string | null
+          severity?: string | null
+          subject?: string
+          type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       incomes: {
         Row: {
           amount: number

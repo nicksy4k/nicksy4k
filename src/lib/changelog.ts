@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet } from "lucide-react";
+import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare } from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
@@ -15,6 +15,18 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v2.7.0",
+    title: "In-app feedback form for beta testers",
+    date: "2026-07-29",
+    icon: MessageSquare,
+    highlights: [
+      "New feedback dialog replaces mailto links — pick bug / idea / general, add severity for bugs, and attach a screenshot or PDF (up to 5 MB).",
+      "Submissions are saved securely to a private feedback table with row-level security; only the developer can read them.",
+      "Auto-captures app version, current page, and browser info so bug reports include useful context without extra typing.",
+      "Signed-out visitors on the login page can send feedback too — the form pre-fills your account email when you're signed in.",
+    ],
+  },
   {
     version: "v2.6.2",
     title: "MCP can see your main balance",
