@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import * as React from "react";
 import { render } from "@react-email/render";
-import { z as _z } from "zod"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 const schema = z.object({
   type: z.enum(["bug", "idea", "general"]),
@@ -116,14 +115,19 @@ export const Route = createFileRoute("/api/public/feedback")({
                 : entry.subject;
             const messageId = crypto.randomUUID();
 
-            await supabaseAdmin.from("email_send_log").insert({
+            // Cast to any — email_send_log / enqueue_email are provisioned by
+            // the email infrastructure migration and aren't in the generated
+            // types until the next regeneration.
+            const admin = supabaseAdmin as any;
+
+            await admin.from("email_send_log").insert({
               message_id: messageId,
               template_name: "feedback-notification",
               recipient_email: entry.to,
               status: "pending",
             });
 
-            const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
+            const { error: enqErr } = await admin.rpc("enqueue_email", {
               queue_name: "transactional_emails",
               payload: {
                 message_id: messageId,
