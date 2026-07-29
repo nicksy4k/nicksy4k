@@ -16,6 +16,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.8.0",
+    title: "New beta signup flow",
+    date: "2026-07-29",
+    icon: UserPlus,
+    highlights: [
+      "Redesigned signup form collects name, display name, country, and preferred currency so the app can be personalised from day one.",
+      "Required checkboxes for the Privacy Policy and Beta Disclaimer — with new placeholder pages at /privacy and /beta-disclaimer that spell out what data is stored and why beta testers should avoid real financial data.",
+      "New profiles table stores your details securely with row-level security; automatically created for both email/password and Google sign-ups.",
+    ],
+  },
+  {
     version: "v2.7.0",
     title: "In-app feedback form for beta testers",
     date: "2026-07-29",
