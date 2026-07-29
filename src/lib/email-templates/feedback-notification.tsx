@@ -121,7 +121,7 @@ export const template = {
   subject: (data: Record<string, any>) =>
     `[Ledgerly ${data?.type ?? "feedback"}] ${data?.subject ?? "New feedback"}`,
   displayName: "Beta feedback notification",
-  to: "nicksy4k@gmail.com",
+  to: "admin@itemizedkeeper.co.uk",
   previewData: {
     type: "bug",
     severity: "high",
