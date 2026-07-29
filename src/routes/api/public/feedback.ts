@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import * as React from "react";
+import { render } from "@react-email/render";
 
 const schema = z.object({
   type: z.enum(["bug", "idea", "general"]),
@@ -19,6 +21,10 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+
+const SITE_NAME = "Ledgerly";
+const SENDER_DOMAIN = "notify.itemizedkeeper.co.uk";
+const FROM_DOMAIN = "itemizedkeeper.co.uk";
 
 export const Route = createFileRoute("/api/public/feedback")({
   server: {
@@ -40,8 +46,6 @@ export const Route = createFileRoute("/api/public/feedback")({
         }
         const data = parsed.data;
 
-        // Insert with service role so RLS doesn't get in the way (and we can
-        // record submissions from both signed-in and anonymous testers).
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Simple rate limit: max 5 submissions / 10 min for this email
@@ -83,9 +87,76 @@ export const Route = createFileRoute("/api/public/feedback")({
           );
         }
 
-        // Email delivery to the app owner is wired once the Lovable Emails
-        // domain finishes DNS verification. Submissions are always saved to
-        // the feedback table so nothing is lost in the meantime.
+        // Enqueue the notification email to the app owner. Non-fatal —
+        // submission is already saved to the feedback table.
+        try {
+          const { TEMPLATES } = await import("@/lib/email-templates/registry");
+          const entry = TEMPLATES["feedback-notification"];
+          if (entry && entry.to) {
+            const submittedAt = new Date().toISOString();
+            const templateData = {
+              type: data.type,
+              severity: data.severity ?? null,
+              subject: data.subject,
+              message: data.message,
+              email: data.email,
+              appVersion: data.app_version ?? "",
+              route: data.route ?? "",
+              userAgent: data.user_agent ?? "",
+              attachmentPath: data.attachment_path ?? null,
+              submittedAt,
+            };
+            const element = React.createElement(entry.component, templateData);
+            const html = await render(element);
+            const text = await render(element, { plainText: true });
+            const resolvedSubject =
+              typeof entry.subject === "function"
+                ? entry.subject(templateData)
+                : entry.subject;
+            const messageId = crypto.randomUUID();
+
+            // Cast to any — email_send_log / enqueue_email are provisioned by
+            // the email infrastructure migration and aren't in the generated
+            // types until the next regeneration.
+            const admin = supabaseAdmin as any;
+
+            await admin.from("email_send_log").insert({
+              message_id: messageId,
+              template_name: "feedback-notification",
+              recipient_email: entry.to,
+              status: "pending",
+            });
+
+            const { error: enqErr } = await admin.rpc("enqueue_email", {
+              queue_name: "transactional_emails",
+              payload: {
+                message_id: messageId,
+                to: entry.to,
+                from: `${SITE_NAME} Feedback <noreply@${FROM_DOMAIN}>`,
+                sender_domain: SENDER_DOMAIN,
+                subject: resolvedSubject,
+                html,
+                text,
+                purpose: "transactional",
+                label: "feedback-notification",
+                idempotency_key: `feedback-${inserted?.id}`,
+                // Fixed dev-owner recipient — no user unsubscribe surface needed.
+                unsubscribe_token: "",
+                queued_at: new Date().toISOString(),
+              },
+            });
+            if (enqErr) {
+              console.error("[feedback] enqueue failed", enqErr);
+            } else {
+              await supabaseAdmin
+                .from("feedback")
+                .update({ email_sent: true, email_sent_at: new Date().toISOString() })
+                .eq("id", inserted!.id);
+            }
+          }
+        } catch (mailErr) {
+          console.error("[feedback] email send failed", mailErr);
+        }
 
         return new Response(
           JSON.stringify({ ok: true, id: inserted?.id }),
