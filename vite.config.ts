@@ -26,12 +26,13 @@ export default defineConfig({
     resolve: {
       alias: {
         // React Email pulls in htmlparser2 which needs entities v4.5.0's
-        // ./lib/decode.js. bun may install a nested v7 copy; force-alias to
-        // the hoisted v4.5.0 to keep SSR building.
-        "entities/lib/decode.js": path.resolve(__dirname, "node_modules/entities/lib/decode.js"),
-        "entities/lib/encode.js": path.resolve(__dirname, "node_modules/entities/lib/encode.js"),
-        "entities": path.resolve(__dirname, "node_modules/entities"),
+        // ./lib/decode.js. The hoisted top-level entities is v7 (no lib/),
+        // so alias to the nested v4 copy under htmlparser2.
+        "entities/lib/decode.js": path.resolve(__dirname, "node_modules/htmlparser2/node_modules/entities/lib/decode.js"),
+        "entities/lib/encode.js": path.resolve(__dirname, "node_modules/htmlparser2/node_modules/entities/lib/encode.js"),
+        "entities": path.resolve(__dirname, "node_modules/htmlparser2/node_modules/entities"),
       },
     },
+
   },
 });
