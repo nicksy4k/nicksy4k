@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare } from "lucide-react";
+import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus } from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
