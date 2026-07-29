@@ -127,17 +127,6 @@ const signupSchema = z.object({
   acceptedBeta: z.literal(true, { errorMap: () => ({ message: "You must accept the Beta Disclaimer" }) }),
 });
 
-function getReturnPath(): string {
-  if (typeof window === "undefined") return "/";
-  const search = new URLSearchParams(window.location.search);
-  const next = search.get("next");
-  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  const path = window.location.pathname;
-  if (path && path !== "/auth" && path !== "/" && !path.startsWith("//")) {
-    return path + window.location.search;
-  }
-  return "/";
-}
 
 export function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
