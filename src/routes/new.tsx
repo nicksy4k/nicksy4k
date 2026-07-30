@@ -94,6 +94,11 @@ function NewTransactionPage() {
 
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
+  const lastRowEmpty = useMemo(() => {
+    const last = items[items.length - 1];
+    return Boolean(last) && !last.item_name.trim() && !last.price.trim();
+  }, [items]);
+
   const total = useMemo(
     () => items.reduce((s, i) => s + lineTotal(i), 0),
     [items]
