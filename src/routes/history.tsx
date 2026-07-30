@@ -1432,6 +1432,8 @@ function EditTransactionDialog({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Remove item ${idx + 1}`}
+                        title="Remove item"
                         onClick={() => removeRow(r.id)}
                         disabled={rows.length === 1}
                       >
@@ -1441,18 +1443,32 @@ function EditTransactionDialog({
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
                         <Combobox
-                          autoFocus={idx === 0 && transaction?.is_pending === true}
+                          autoFocus={
+                            r.id === lastAddedRowId ||
+                            (lastAddedRowId === null &&
+                              idx === 0 &&
+                              transaction?.is_pending === true)
+                          }
                           value={r.item_name}
                           onChange={(v) => updateRow(r.id, { item_name: v })}
                           options={itemNameSuggestions}
                           placeholder="Item name"
+                          ariaLabel={`Item ${idx + 1} name`}
+                          onEnterCommit={() => focusRowPrice(r.id)}
                         />
                       </Field>
                       <Field label="Price (£)">
                         <Input
+                          ref={(el) => { rowPriceRefs.current[r.id] = el; }}
                           inputMode="decimal"
+                          aria-label={`Item ${idx + 1} price`}
                           value={r.price}
                           onChange={(e) => updateRow(r.id, { price: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter") return;
+                            e.preventDefault();
+                            if (r.item_name.trim() && r.price.trim()) addRow();
+                          }}
                         />
                       </Field>
                       <Field label="Qty">
