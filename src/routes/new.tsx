@@ -264,6 +264,21 @@ function NewTransactionPage() {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
   }
 
+  function addItem() {
+    const newItem = emptyItem();
+    setItems((a) => [...a, newItem]);
+    setLastAddedId(newItem.id);
+    if (step !== 2) setStep(2);
+    requestAnimationFrame(() => {
+      rowRefs.current[newItem.id]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }
+
+  function focusPrice(id: string) {
+    priceRefs.current[id]?.focus();
+    priceRefs.current[id]?.select();
+  }
+
   async function save() {
     if (saving) return;
 
