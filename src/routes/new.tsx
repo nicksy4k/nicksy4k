@@ -89,6 +89,9 @@ function NewTransactionPage() {
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
 
+  const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
 
   const total = useMemo(
