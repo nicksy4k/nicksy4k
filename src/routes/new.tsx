@@ -832,7 +832,7 @@ function NewTransactionPage() {
                     </Field>
                   </div>
                   <div className="col-span-12 sm:col-span-1 flex justify-end sm:pt-5">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
+                    <Button variant="ghost" size="icon" aria-label={`Remove item ${idx + 1}`} title="Remove item" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
