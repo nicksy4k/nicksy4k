@@ -1019,8 +1019,7 @@ function EditTransactionDialog({
     0,
   );
 
-  const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
-  const rowPriceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
 
   function updateRow(id: string, patch: Partial<DraftRow>) {
     setRows((arr) =>
