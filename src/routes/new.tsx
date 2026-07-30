@@ -612,6 +612,11 @@ function NewTransactionPage() {
                   onChange={setRetailer}
                   options={retailerSuggestions}
                   placeholder="e.g. Asda"
+                  ariaLabel="Retailer or shop"
+                  onEnterCommit={(v) => {
+                    if (isPending) return;
+                    if (v.trim() && date) setStep(2);
+                  }}
                 />
               </Field>
             </div>
