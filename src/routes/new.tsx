@@ -857,14 +857,15 @@ function NewTransactionPage() {
             <Button
               variant="outline"
               className="w-full border-dashed"
-              onClick={() => {
-                const newItem = emptyItem();
-                setItems((a) => [...a, newItem]);
-                setLastAddedId(newItem.id);
-              }}
+              onClick={addItem}
             >
               <Plus className="h-4 w-4" /> Add another item
             </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              {lastRowEmpty
+                ? "Finish the row above first — Enter in Price adds the next item."
+                : "Tip: type a name, press Enter, type the price, press Enter to start the next item. ⌘/Ctrl + Enter saves."}
+            </p>
           </div>
 
           <Card>
