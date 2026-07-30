@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
@@ -945,9 +945,12 @@ function EditTransactionDialog({
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
+  const rowPriceRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
+    setLastAddedRowId(null);
     setDate(transaction.date);
     setRetailer(transaction.retailer);
     setReceiptAttached(transaction.receipt_attached);
@@ -1016,6 +1019,8 @@ function EditTransactionDialog({
     0,
   );
 
+
+
   function updateRow(id: string, patch: Partial<DraftRow>) {
     setRows((arr) =>
       arr.map((r) => {
@@ -1037,10 +1042,11 @@ function EditTransactionDialog({
     setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
   }
   function addRow() {
+    const id = crypto.randomUUID();
     setRows((arr) => [
       ...arr,
       {
-        id: crypto.randomUUID(),
+        id,
         item_name: "",
         price: "",
         quantity: "1",
@@ -1048,6 +1054,12 @@ function EditTransactionDialog({
         notes: "",
       },
     ]);
+    setLastAddedRowId(id);
+  }
+
+  function focusRowPrice(id: string) {
+    rowPriceRefs.current[id]?.focus();
+    rowPriceRefs.current[id]?.select();
   }
 
   const retailerKey = retailer.trim().toLowerCase();
@@ -1245,7 +1257,15 @@ function EditTransactionDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            void save();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
@@ -1422,6 +1442,8 @@ function EditTransactionDialog({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Remove item ${idx + 1}`}
+                        title="Remove item"
                         onClick={() => removeRow(r.id)}
                         disabled={rows.length === 1}
                       >
@@ -1431,18 +1453,32 @@ function EditTransactionDialog({
                     <div className="grid sm:grid-cols-[1fr_100px_80px] gap-3">
                       <Field label="Name">
                         <Combobox
-                          autoFocus={idx === 0 && transaction?.is_pending === true}
+                          autoFocus={
+                            r.id === lastAddedRowId ||
+                            (lastAddedRowId === null &&
+                              idx === 0 &&
+                              transaction?.is_pending === true)
+                          }
                           value={r.item_name}
                           onChange={(v) => updateRow(r.id, { item_name: v })}
                           options={itemNameSuggestions}
                           placeholder="Item name"
+                          ariaLabel={`Item ${idx + 1} name`}
+                          onEnterCommit={() => focusRowPrice(r.id)}
                         />
                       </Field>
                       <Field label="Price (£)">
                         <Input
+                          ref={(el) => { rowPriceRefs.current[r.id] = el; }}
                           inputMode="decimal"
+                          aria-label={`Item ${idx + 1} price`}
                           value={r.price}
                           onChange={(e) => updateRow(r.id, { price: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter") return;
+                            e.preventDefault();
+                            if (r.item_name.trim() && r.price.trim()) addRow();
+                          }}
                         />
                       </Field>
                       <Field label="Qty">

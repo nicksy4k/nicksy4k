@@ -16,6 +16,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.8.1",
+    title: "Keyboard-first transaction entry",
+    date: "2026-07-30",
+    icon: Zap,
+    highlights: [
+      "Retailer and item name fields are now proper text boxes you can type straight into — the suggestion list no longer pops open on its own.",
+      "Adding an item focuses the new name field silently and scrolls it into view.",
+      "Enter chaining: name → price → next item, so a whole receipt can be entered without touching the mouse.",
+      "Arrow keys browse suggestions, Esc closes the list, Tab keeps whatever you typed, and ⌘/Ctrl + Enter saves the transaction or the edit/settle dialog.",
+      "Accessibility polish: labelled remove buttons, visible focus rings, and proper combobox roles.",
+    ],
+  },
+  {
     version: "v2.8.0",
     title: "New beta signup flow",
     date: "2026-07-29",

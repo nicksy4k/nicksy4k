@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
@@ -89,7 +89,15 @@ function NewTransactionPage() {
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
 
+  const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const lineTotal = (i: DraftItem) => (parseFloat(i.price) || 0) * (parseFloat(i.quantity) || 0);
+
+  const lastRowEmpty = useMemo(() => {
+    const last = items[items.length - 1];
+    return Boolean(last) && !last.item_name.trim() && !last.price.trim();
+  }, [items]);
 
   const total = useMemo(
     () => items.reduce((s, i) => s + lineTotal(i), 0),
@@ -262,6 +270,21 @@ function NewTransactionPage() {
   }
   function removeItem(id: string) {
     setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
+  }
+
+  function addItem() {
+    const newItem = emptyItem();
+    setItems((a) => [...a, newItem]);
+    setLastAddedId(newItem.id);
+    if (step !== 2) setStep(2);
+    requestAnimationFrame(() => {
+      rowRefs.current[newItem.id]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }
+
+  function focusPrice(id: string) {
+    priceRefs.current[id]?.focus();
+    priceRefs.current[id]?.select();
   }
 
   async function save() {
@@ -516,7 +539,15 @@ function NewTransactionPage() {
 
 
   return (
-    <div className="p-6 md:p-10 max-w-3xl mx-auto">
+    <div
+      className="p-6 md:p-10 max-w-3xl mx-auto"
+      onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          void save();
+        }
+      }}
+    >
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           {isPending ? "Quick pending hold" : `Step ${step} of 2`}
@@ -546,11 +577,7 @@ function NewTransactionPage() {
                   size="sm"
                   variant="outline"
                   className="border-primary/30 bg-background/80"
-                  onClick={() => {
-                    const newItem = emptyItem();
-                    setItems((a) => [...a, newItem]);
-                    setLastAddedId(newItem.id);
-                  }}
+                  onClick={addItem}
                 >
                   <Plus className="h-4 w-4" /> Add item
                 </Button>
@@ -585,6 +612,11 @@ function NewTransactionPage() {
                   onChange={setRetailer}
                   options={retailerSuggestions}
                   placeholder="e.g. Asda"
+                  ariaLabel="Retailer or shop"
+                  onEnterCommit={(v) => {
+                    if (isPending) return;
+                    if (v.trim() && date) setStep(2);
+                  }}
                 />
               </Field>
             </div>
@@ -749,6 +781,7 @@ function NewTransactionPage() {
             {items.map((item, idx) => (
               <div
                 key={item.id}
+                ref={(el) => { rowRefs.current[item.id] = el; }}
                 className="rounded-lg border border-border bg-card/50 p-3 space-y-3 group/item transition-colors hover:bg-card/70"
               >
                 <div className="grid grid-cols-12 gap-3 items-start">
@@ -759,13 +792,27 @@ function NewTransactionPage() {
                         onChange={(v) => updateItem(item.id, { item_name: v })}
                         options={itemNameSuggestions}
                         placeholder="e.g. Wool overshirt"
+                        ariaLabel={`Item ${idx + 1} name`}
                         autoFocus={item.id === lastAddedId}
+                        onEnterCommit={() => focusPrice(item.id)}
                       />
                     </Field>
                   </div>
                   <div className="col-span-6 sm:col-span-2">
                     <Field label="Price (£)">
-                      <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
+                      <Input
+                        ref={(el) => { priceRefs.current[item.id] = el; }}
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        aria-label={`Item ${idx + 1} price`}
+                        value={item.price}
+                        onChange={(e) => updateItem(item.id, { price: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          e.preventDefault();
+                          if (item.item_name.trim() && item.price.trim()) addItem();
+                        }}
+                      />
                     </Field>
                   </div>
                   <div className="col-span-3 sm:col-span-1">
@@ -803,7 +850,7 @@ function NewTransactionPage() {
                     </Field>
                   </div>
                   <div className="col-span-12 sm:col-span-1 flex justify-end sm:pt-5">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
+                    <Button variant="ghost" size="icon" aria-label={`Remove item ${idx + 1}`} title="Remove item" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -828,14 +875,15 @@ function NewTransactionPage() {
             <Button
               variant="outline"
               className="w-full border-dashed"
-              onClick={() => {
-                const newItem = emptyItem();
-                setItems((a) => [...a, newItem]);
-                setLastAddedId(newItem.id);
-              }}
+              onClick={addItem}
             >
               <Plus className="h-4 w-4" /> Add another item
             </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              {lastRowEmpty
+                ? "Finish the row above first — Enter in Price adds the next item."
+                : "Tip: type a name, press Enter, type the price, press Enter to start the next item. ⌘/Ctrl + Enter saves."}
+            </p>
           </div>
 
           <Card>
