@@ -539,7 +539,15 @@ function NewTransactionPage() {
 
 
   return (
-    <div className="p-6 md:p-10 max-w-3xl mx-auto">
+    <div
+      className="p-6 md:p-10 max-w-3xl mx-auto"
+      onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          void save();
+        }
+      }}
+    >
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           {isPending ? "Quick pending hold" : `Step ${step} of 2`}
