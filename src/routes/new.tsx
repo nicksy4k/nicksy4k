@@ -564,11 +564,7 @@ function NewTransactionPage() {
                   size="sm"
                   variant="outline"
                   className="border-primary/30 bg-background/80"
-                  onClick={() => {
-                    const newItem = emptyItem();
-                    setItems((a) => [...a, newItem]);
-                    setLastAddedId(newItem.id);
-                  }}
+                  onClick={addItem}
                 >
                   <Plus className="h-4 w-4" /> Add item
                 </Button>
