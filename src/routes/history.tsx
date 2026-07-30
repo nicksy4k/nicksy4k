@@ -945,9 +945,12 @@ function EditTransactionDialog({
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
+  const rowPriceRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
+    setLastAddedRowId(null);
     setDate(transaction.date);
     setRetailer(transaction.retailer);
     setReceiptAttached(transaction.receipt_attached);
