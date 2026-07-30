@@ -763,6 +763,7 @@ function NewTransactionPage() {
             {items.map((item, idx) => (
               <div
                 key={item.id}
+                ref={(el) => { rowRefs.current[item.id] = el; }}
                 className="rounded-lg border border-border bg-card/50 p-3 space-y-3 group/item transition-colors hover:bg-card/70"
               >
                 <div className="grid grid-cols-12 gap-3 items-start">
@@ -773,13 +774,27 @@ function NewTransactionPage() {
                         onChange={(v) => updateItem(item.id, { item_name: v })}
                         options={itemNameSuggestions}
                         placeholder="e.g. Wool overshirt"
+                        ariaLabel={`Item ${idx + 1} name`}
                         autoFocus={item.id === lastAddedId}
+                        onEnterCommit={() => focusPrice(item.id)}
                       />
                     </Field>
                   </div>
                   <div className="col-span-6 sm:col-span-2">
                     <Field label="Price (£)">
-                      <Input inputMode="decimal" placeholder="0.00" value={item.price} onChange={(e) => updateItem(item.id, { price: e.target.value })} />
+                      <Input
+                        ref={(el) => { priceRefs.current[item.id] = el; }}
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        aria-label={`Item ${idx + 1} price`}
+                        value={item.price}
+                        onChange={(e) => updateItem(item.id, { price: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          e.preventDefault();
+                          if (item.item_name.trim() && item.price.trim()) addItem();
+                        }}
+                      />
                     </Field>
                   </div>
                   <div className="col-span-3 sm:col-span-1">
