@@ -1037,10 +1037,11 @@ function EditTransactionDialog({
     setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
   }
   function addRow() {
+    const id = crypto.randomUUID();
     setRows((arr) => [
       ...arr,
       {
-        id: crypto.randomUUID(),
+        id,
         item_name: "",
         price: "",
         quantity: "1",
@@ -1048,6 +1049,12 @@ function EditTransactionDialog({
         notes: "",
       },
     ]);
+    setLastAddedRowId(id);
+  }
+
+  function focusRowPrice(id: string) {
+    rowPriceRefs.current[id]?.focus();
+    rowPriceRefs.current[id]?.select();
   }
 
   const retailerKey = retailer.trim().toLowerCase();
