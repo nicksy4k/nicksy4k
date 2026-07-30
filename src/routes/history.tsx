@@ -1257,7 +1257,15 @@ function EditTransactionDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            void save();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
