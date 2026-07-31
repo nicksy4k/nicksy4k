@@ -469,7 +469,13 @@ export function AuthPage() {
             </footer>
           </div>
         </div>
+
+        <section className="mt-12 md:mt-16 grid gap-4 lg:grid-cols-5 lg:gap-6 items-start">
+          <AboutStory className="lg:col-span-3" />
+          <SupportDevCard className="lg:col-span-2" />
+        </section>
       </main>
+
     </div>
   );
 }
