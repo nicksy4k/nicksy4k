@@ -2,9 +2,8 @@ import { Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-/** Swap these for the real handles once the accounts are live. */
-const BUY_ME_A_MONSTER_URL = "https://buymeacoffee.com/ledgerly";
-const KOFI_URL = "https://ko-fi.com/ledgerly";
+const BUY_ME_A_MONSTER_URL = "https://buymeacoffee.com/itemizedkeeper";
+const KOFI_URL = "https://ko-fi.com/itemizedkeeper";
 
 /**
  * Compact "Support Development" card — used on the landing page and in
