@@ -597,6 +597,10 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
 
       <WhatsNewCard />
 
+      <AboutStory variant="condensed" />
+      <SupportDevCard />
+
+
       {/* Changelog */}
       <Card>
         <CardHeader>
