@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus } from "lucide-react";
+import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart } from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.8.2",
+    title: "About Ledgerly & support the build",
+    date: "2026-07-31",
+    icon: Heart,
+    highlights: [
+      "New \"The Story Behind Ledgerly\" section on the landing page explaining why the app exists and how it's built.",
+      "Condensed version of the story added to Settings › About.",
+      "New \"Buy the Dev a Monster\" support card with Buy Me a Coffee and Ko-fi links, for anyone who wants to chip in towards hosting costs.",
+    ],
+  },
+  {
+
     version: "v2.8.1",
     title: "Keyboard-first transaction entry",
     date: "2026-07-30",
