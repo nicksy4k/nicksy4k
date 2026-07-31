@@ -16,6 +16,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.8.3",
+    title: "Donation links updated",
+    date: "2026-07-31",
+    icon: Heart,
+    highlights: [
+      "Buy Me a Monster and Support on Ko-fi buttons now point to the official Itemized Keeper pages: buymeacoffee.com/itemizedkeeper and ko-fi.com/itemizedkeeper.",
+    ],
+  },
+  {
     version: "v2.8.2",
     title: "About Ledgerly & support the build",
     date: "2026-07-31",
