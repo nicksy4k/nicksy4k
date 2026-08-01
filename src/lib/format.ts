@@ -1,6 +1,9 @@
 export function fmt(n: number) {
-  return n.toLocaleString("en-GB", { style: "currency", currency: "GBP" });
+  return formatMoney(n);
 }
+
+export { currencySymbol } from "./money";
+import { formatMoney } from "./money";
 
 /**
  * Today as a local-time `YYYY-MM-DD` string. Use this instead of
