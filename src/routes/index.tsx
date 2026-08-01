@@ -263,9 +263,14 @@ function DashboardPage() {
 
           </CardHeader>
           <CardContent>
-            {byCategory.length === 0 ? (
+            {prefs.hideCategoryChart ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                Chart hidden — you can turn it back on in Settings → Personalise.
+              </p>
+            ) : byCategory.length === 0 ? (
               <EmptyChart />
             ) : (
+
               <div className="grid md:grid-cols-2 gap-4 items-center">
                 <div className="h-[240px]">
                   <ResponsiveContainer>
