@@ -259,16 +259,26 @@ async function persist(patch: Partial<Prefs>) {
   const uid = auth.user?.id;
   if (!uid) return;
 
-  const profilePatch: Record<string, unknown> = {};
+  const profilePatch: {
+    currency?: string;
+    currency_symbol?: string;
+    symbol_position?: string;
+    theme?: string;
+  } = {};
   if (patch.currency !== undefined) profilePatch.currency = patch.currency;
   if (patch.customSymbol !== undefined) profilePatch.currency_symbol = patch.customSymbol;
   if (patch.symbolPosition !== undefined) profilePatch.symbol_position = patch.symbolPosition;
   if (patch.theme !== undefined) profilePatch.theme = patch.theme;
 
-  const settingsPatch: Record<string, unknown> = {};
+  const settingsPatch: {
+    joy_categories?: string[];
+    blur_amounts?: boolean;
+    hide_category_chart?: boolean;
+  } = {};
   if (patch.joyCategories !== undefined) settingsPatch.joy_categories = patch.joyCategories;
   if (patch.blurAmounts !== undefined) settingsPatch.blur_amounts = patch.blurAmounts;
   if (patch.hideCategoryChart !== undefined) settingsPatch.hide_category_chart = patch.hideCategoryChart;
+
 
   await Promise.all([
     Object.keys(profilePatch).length
