@@ -12,7 +12,9 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart, Palette } from "lucide-react";
+import { CurrencySettingsCard, ThemePickerCard, ComfortCard } from "@/components/PreferencesCards";
+
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
 import { SupportDevCard } from "@/components/SupportDevCard";
