@@ -83,9 +83,11 @@ function DashboardPage() {
       0,
     );
     const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
+    const receiptsAttached = cycleItems.filter((t) => t.receipt_attached).length;
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, receiptsAttached, leftToSpend, count: cycleItems.length };
   }, [cycleItems, cycleIncomes, cycleSavings, demo.extraSpend]);
+
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
