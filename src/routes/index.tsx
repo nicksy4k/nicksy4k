@@ -53,6 +53,9 @@ function DashboardPage() {
   const incomes = demo.active ? demo.incomes : realIncomes;
   const savings = demo.active ? demo.savings : realSavings;
   const cycle = useActiveCycle();
+  const { prefs } = usePreferences();
+  const blur = prefs.blurAmounts ? "amount-blur" : "";
+
   const { openWelcome } = useTutorial();
   const { completed: tutorialCompleted } = useTutorialStatus();
 
