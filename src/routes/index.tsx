@@ -22,6 +22,9 @@ import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
+import { usePreferences } from "@/lib/preferences";
+import { encouragementFor } from "@/lib/encouragement";
+
 
 
 export const Route = createFileRoute("/")({
