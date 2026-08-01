@@ -12,6 +12,7 @@ import { useCycleCarryover } from "@/lib/carryover";
 import { useOnboardingStatus } from "@/lib/onboarding";
 import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import { DemoModeProvider } from "@/lib/demoMode";
+import { usePreferences } from "@/lib/preferences";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -19,6 +20,10 @@ export function AppLayout() {
   useCommitmentRollover();
   useRecurringIncomeGenerator();
   useCycleCarryover();
+
+  const { prefs } = usePreferences();
+  const moneyKey = `${prefs.currency}:${prefs.customSymbol}:${prefs.symbolPosition}`;
+
 
   const { completed } = useOnboardingStatus();
   const navigate = useNavigate();
