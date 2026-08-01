@@ -9,36 +9,16 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  CURRENCIES,
+  CUSTOM_CURRENCY,
+  currencySymbol,
+  formatMoney,
+  setActiveMoney,
+  type MoneyFormat,
+} from "@/lib/money";
 
-// ---------- currencies ----------
-
-export interface CurrencyDef {
-  code: string;
-  symbol: string;
-  locale: string;
-  label: string;
-}
-
-export const CURRENCIES: CurrencyDef[] = [
-  { code: "GBP", symbol: "£", locale: "en-GB", label: "British Pound" },
-  { code: "USD", symbol: "$", locale: "en-US", label: "US Dollar" },
-  { code: "EUR", symbol: "€", locale: "en-IE", label: "Euro" },
-  { code: "ZAR", symbol: "R", locale: "en-ZA", label: "South African Rand" },
-  { code: "CAD", symbol: "CA$", locale: "en-CA", label: "Canadian Dollar" },
-  { code: "AUD", symbol: "AU$", locale: "en-AU", label: "Australian Dollar" },
-  { code: "NZD", symbol: "NZ$", locale: "en-NZ", label: "New Zealand Dollar" },
-  { code: "INR", symbol: "₹", locale: "en-IN", label: "Indian Rupee" },
-  { code: "JPY", symbol: "¥", locale: "ja-JP", label: "Japanese Yen" },
-  { code: "CHF", symbol: "CHF", locale: "de-CH", label: "Swiss Franc" },
-  { code: "SEK", symbol: "kr", locale: "sv-SE", label: "Swedish Krona" },
-  { code: "NOK", symbol: "kr", locale: "nb-NO", label: "Norwegian Krone" },
-  { code: "DKK", symbol: "kr", locale: "da-DK", label: "Danish Krone" },
-  { code: "PLN", symbol: "zł", locale: "pl-PL", label: "Polish Złoty" },
-  { code: "AED", symbol: "AED", locale: "en-AE", label: "UAE Dirham" },
-  { code: "NGN", symbol: "₦", locale: "en-NG", label: "Nigerian Naira" },
-];
-
-export const CUSTOM_CURRENCY = "CUSTOM";
+export { CURRENCIES, CUSTOM_CURRENCY };
 
 // ---------- themes ----------
 
@@ -81,12 +61,7 @@ export const THEME_IDS = THEMES.map((t) => t.id);
 
 // ---------- store ----------
 
-export interface Prefs {
-  /** Currency code from CURRENCIES, or CUSTOM_CURRENCY. */
-  currency: string;
-  /** Only used when currency === CUSTOM_CURRENCY. */
-  customSymbol: string;
-  symbolPosition: "before" | "after";
+export interface Prefs extends MoneyFormat {
   theme: string;
   joyCategories: string[];
   blurAmounts: boolean;
@@ -130,7 +105,7 @@ function emit() {
 function readCache(): Prefs {
   if (typeof window === "undefined") return DEFAULT_PREFS;
   try {
-    return coerce(JSON.parse(localStorage.getItem(CACHE_KEY) || "null"));
+    return coerce(JSON.parse(localStorage.getItem(CACHE_KEY) || "null") as Partial<Prefs>);
   } catch {
     return DEFAULT_PREFS;
   }
@@ -146,22 +121,6 @@ function writeCache(p: Prefs) {
   }
 }
 
-if (typeof window !== "undefined") {
-  state = readCache();
-  applyThemeClass(state.theme);
-}
-
-export function getPrefs(): Prefs {
-  return state;
-}
-
-function setLocal(next: Prefs) {
-  state = next;
-  writeCache(next);
-  applyThemeClass(next.theme);
-  emit();
-}
-
 export function applyThemeClass(theme: string) {
   if (typeof document === "undefined") return;
   const el = document.documentElement;
@@ -170,33 +129,29 @@ export function applyThemeClass(theme: string) {
   el.style.colorScheme = theme === "daylight" ? "light" : "dark";
 }
 
-// ---------- formatting ----------
+function setLocal(next: Prefs) {
+  state = next;
+  setActiveMoney(next);
+  writeCache(next);
+  applyThemeClass(next.theme);
+  emit();
+}
+
+if (typeof window !== "undefined") {
+  state = readCache();
+  setActiveMoney(state);
+  applyThemeClass(state.theme);
+}
+
+export function getPrefs(): Prefs {
+  return state;
+}
 
 export function activeSymbol(p: Prefs = state): string {
-  if (p.currency === CUSTOM_CURRENCY) return p.customSymbol || "¤";
-  return CURRENCIES.find((c) => c.code === p.currency)?.symbol ?? "£";
+  return currencySymbol(p);
 }
 
-export function formatMoney(n: number, p: Prefs = state): string {
-  const value = Number.isFinite(n) ? n : 0;
-  const def = CURRENCIES.find((c) => c.code === p.currency);
-
-  if (def && p.symbolPosition === "before") {
-    try {
-      return value.toLocaleString(def.locale, { style: "currency", currency: def.code });
-    } catch {
-      /* fall through to manual formatting */
-    }
-  }
-
-  const symbol = activeSymbol(p);
-  const abs = Math.abs(value).toLocaleString(def?.locale ?? "en-GB", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  const sign = value < 0 ? "-" : "";
-  return p.symbolPosition === "after" ? `${sign}${abs} ${symbol}` : `${sign}${symbol}${abs}`;
-}
+export { formatMoney };
 
 // ---------- hydration from Supabase ----------
 
@@ -248,7 +203,7 @@ async function hydrate() {
   );
 }
 
-/** Reset hydration when the signed-in user changes. */
+/** Called when the signed-in user changes so preferences don't leak across accounts. */
 export function resetPreferences() {
   hydrated = false;
   setLocal(DEFAULT_PREFS);
@@ -279,13 +234,14 @@ async function persist(patch: Partial<Prefs>) {
   if (patch.blurAmounts !== undefined) settingsPatch.blur_amounts = patch.blurAmounts;
   if (patch.hideCategoryChart !== undefined) settingsPatch.hide_category_chart = patch.hideCategoryChart;
 
-
   await Promise.all([
     Object.keys(profilePatch).length
       ? supabase.from("profiles").update(profilePatch).eq("id", uid)
       : Promise.resolve(),
     Object.keys(settingsPatch).length
-      ? supabase.from("user_settings").upsert({ user_id: uid, ...settingsPatch }, { onConflict: "user_id" })
+      ? supabase
+          .from("user_settings")
+          .upsert({ user_id: uid, ...settingsPatch }, { onConflict: "user_id" })
       : Promise.resolve(),
   ]);
 }
@@ -312,9 +268,9 @@ export function usePreferences() {
   return { prefs, update };
 }
 
-/** Currency-aware formatter for components. */
+/** Currency-aware formatter + symbol for components. */
 export function useMoney() {
   const { prefs } = usePreferences();
   const fmt = useCallback((n: number) => formatMoney(n, prefs), [prefs]);
-  return { fmt, symbol: activeSymbol(prefs), prefs };
+  return { fmt, symbol: currencySymbol(prefs), prefs };
 }
