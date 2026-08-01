@@ -166,7 +166,10 @@ function AuthGate() {
           localStorage.removeItem("ledgerly.commitments.lastCycleStart");
           localStorage.removeItem("ledgerly.recurringIncome.lastRunISO");
         } catch { /* ignore */ }
+        // Personalisation is per-account, so don't carry it over.
+        resetPreferences();
       }
+
       lastUserId = nextUserId;
       setStatus(session ? "in" : "out");
       router.invalidate();
