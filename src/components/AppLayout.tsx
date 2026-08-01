@@ -12,6 +12,7 @@ import { useCycleCarryover } from "@/lib/carryover";
 import { useOnboardingStatus } from "@/lib/onboarding";
 import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import { DemoModeProvider } from "@/lib/demoMode";
+import { usePreferences } from "@/lib/preferences";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -19,6 +20,10 @@ export function AppLayout() {
   useCommitmentRollover();
   useRecurringIncomeGenerator();
   useCycleCarryover();
+
+  const { prefs } = usePreferences();
+  const moneyKey = `${prefs.currency}:${prefs.customSymbol}:${prefs.symbolPosition}`;
+
 
   const { completed } = useOnboardingStatus();
   const navigate = useNavigate();
@@ -34,7 +39,9 @@ export function AppLayout() {
     <SidebarProvider defaultOpen={true}>
       <DemoModeProvider>
         <TutorialProvider>
-          <div className="flex min-h-svh w-full">
+          {/* Remount on currency change so every `fmt()` call re-renders. */}
+          <div key={moneyKey} className="flex min-h-svh w-full">
+
             <AppSidebar />
             <SidebarInset className="min-h-svh">
               <header className="flex h-14 items-center gap-2 border-b border-border/60 px-4 md:px-6 bg-background/80 backdrop-blur-xl sticky top-0 z-10">

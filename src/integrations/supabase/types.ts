@@ -388,10 +388,13 @@ export type Database = {
           country: string
           created_at: string
           currency: string
+          currency_symbol: string | null
           display_name: string
           full_name: string
           heard_about: string | null
           id: string
+          symbol_position: string
+          theme: string
           updated_at: string
         }
         Insert: {
@@ -400,10 +403,13 @@ export type Database = {
           country?: string
           created_at?: string
           currency?: string
+          currency_symbol?: string | null
           display_name?: string
           full_name?: string
           heard_about?: string | null
           id: string
+          symbol_position?: string
+          theme?: string
           updated_at?: string
         }
         Update: {
@@ -412,10 +418,13 @@ export type Database = {
           country?: string
           created_at?: string
           currency?: string
+          currency_symbol?: string | null
           display_name?: string
           full_name?: string
           heard_about?: string | null
           id?: string
+          symbol_position?: string
+          theme?: string
           updated_at?: string
         }
         Relationships: []
@@ -601,6 +610,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          blur_amounts: boolean
           carryover_enabled: boolean
           created_at: string
           cycle_anchor: string
@@ -609,6 +619,8 @@ export type Database = {
           cycle_type: string
           hidden_items: string[]
           hidden_retailers: string[]
+          hide_category_chart: boolean
+          joy_categories: string[]
           last_carryover_cycle_key: string | null
           onboarding_completed: boolean
           tutorial_completed: boolean
@@ -616,6 +628,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          blur_amounts?: boolean
           carryover_enabled?: boolean
           created_at?: string
           cycle_anchor?: string
@@ -624,6 +637,8 @@ export type Database = {
           cycle_type?: string
           hidden_items?: string[]
           hidden_retailers?: string[]
+          hide_category_chart?: boolean
+          joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
           tutorial_completed?: boolean
@@ -631,6 +646,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          blur_amounts?: boolean
           carryover_enabled?: boolean
           created_at?: string
           cycle_anchor?: string
@@ -639,6 +655,8 @@ export type Database = {
           cycle_type?: string
           hidden_items?: string[]
           hidden_retailers?: string[]
+          hide_category_chart?: boolean
+          joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
           tutorial_completed?: boolean

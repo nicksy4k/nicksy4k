@@ -22,6 +22,9 @@ import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
+import { usePreferences } from "@/lib/preferences";
+import { encouragementFor } from "@/lib/encouragement";
+
 
 
 export const Route = createFileRoute("/")({
@@ -53,6 +56,9 @@ function DashboardPage() {
   const incomes = demo.active ? demo.incomes : realIncomes;
   const savings = demo.active ? demo.savings : realSavings;
   const cycle = useActiveCycle();
+  const { prefs } = usePreferences();
+  const blur = prefs.blurAmounts ? "amount-blur" : "";
+
   const { openWelcome } = useTutorial();
   const { completed: tutorialCompleted } = useTutorialStatus();
 
@@ -83,9 +89,11 @@ function DashboardPage() {
       0,
     );
     const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
+    const receiptsAttached = cycleItems.filter((t) => t.receipt_attached).length;
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, leftToSpend, count: cycleItems.length };
+    return { totalExpenses, totalIncome, savingsBalance, itemCount, receiptsAttached, leftToSpend, count: cycleItems.length };
   }, [cycleItems, cycleIncomes, cycleSavings, demo.extraSpend]);
+
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
@@ -118,6 +126,32 @@ function DashboardPage() {
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
   }, [analyticsItems, demo.filterCategory]);
+
+  // "Planned fun" roll-up: categories the user has flagged as joy spending are
+  // summarised as one friendly line instead of being singled out in the chart.
+  const joySpend = useMemo(() => {
+    const joy = new Set(prefs.joyCategories.map((c) => c.toLowerCase()));
+    if (joy.size === 0) return 0;
+    return byCategory
+      .filter((c) => joy.has(c.name.toLowerCase()))
+      .reduce((s, c) => s + c.value, 0);
+  }, [byCategory, prefs.joyCategories]);
+
+  const encouragement = useMemo(
+    () =>
+      encouragementFor({
+        leftToSpend: stats.leftToSpend,
+        totalIncome: stats.totalIncome,
+        totalExpenses: stats.totalExpenses,
+        savingsBalance: stats.savingsBalance,
+        itemCount: stats.itemCount,
+        receiptsAttached: stats.receiptsAttached,
+        transactionCount: stats.count,
+        cycleEnd: cycle.end,
+      }),
+    [stats, cycle.end],
+  );
+
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
@@ -156,20 +190,30 @@ function DashboardPage() {
             {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
+          {encouragement && (
+            <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>
+          )}
         </div>
       </header>
+
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
         <Card data-tour="left-to-spend" className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
-              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
+              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
                 {fmt(stats.leftToSpend)}
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className={`text-sm text-muted-foreground mt-2 ${blur}`}>
                 {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income · {fmt(stats.savingsBalance)} saved
               </p>
+              {joySpend > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Including <span className={`font-medium text-foreground ${blur}`}>{fmt(joySpend)}</span> of planned fun — budgeted for, guilt-free.
+                </p>
+              )}
+
             </div>
             <Button asChild size="lg" className="shrink-0">
               <Link to="/new"><Plus className="h-4 w-4" />Log transaction</Link>
@@ -214,13 +258,19 @@ function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Spending by category</CardTitle>
+            <CardTitle>Where your money went</CardTitle>
             <span className="text-xs text-muted-foreground">This cycle</span>
+
           </CardHeader>
           <CardContent>
-            {byCategory.length === 0 ? (
+            {prefs.hideCategoryChart ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                Chart hidden — you can turn it back on in Settings → Personalise.
+              </p>
+            ) : byCategory.length === 0 ? (
               <EmptyChart />
             ) : (
+
               <div className="grid md:grid-cols-2 gap-4 items-center">
                 <div className="h-[240px]">
                   <ResponsiveContainer>

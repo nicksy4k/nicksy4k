@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppLayout } from "../components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { resetPreferences } from "@/lib/preferences";
+
 import { AuthPage } from "./auth";
 
 function NotFoundComponent() {
@@ -110,11 +112,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const THEME_BOOTSTRAP = `try{var t=localStorage.getItem('ledgerly.theme')||'midnight';var d=document.documentElement;d.classList.add('theme-'+t);d.style.colorScheme=(t==='daylight'?'light':'dark');}catch(e){}`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Paint the saved theme before hydration so there's no flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
       <body>
         {children}
@@ -123,6 +129,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -161,7 +168,10 @@ function AuthGate() {
           localStorage.removeItem("ledgerly.commitments.lastCycleStart");
           localStorage.removeItem("ledgerly.recurringIncome.lastRunISO");
         } catch { /* ignore */ }
+        // Personalisation is per-account, so don't carry it over.
+        resetPreferences();
       }
+
       lastUserId = nextUserId;
       setStatus(session ? "in" : "out");
       router.invalidate();

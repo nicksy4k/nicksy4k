@@ -12,7 +12,9 @@ import {
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart } from "lucide-react";
+import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart, Palette } from "lucide-react";
+import { CurrencySettingsCard, ThemePickerCard, ComfortCard } from "@/components/PreferencesCards";
+
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
 import { SupportDevCard } from "@/components/SupportDevCard";
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/settings")({
   errorComponent: RouteError,
 });
 
-const VALID_TABS = ["cycle", "account", "categories", "suggestions", "data", "about"] as const;
+const VALID_TABS = ["cycle", "personalise", "account", "categories", "suggestions", "data", "about"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 function readHashTab(): TabValue {
@@ -110,8 +112,9 @@ function SettingsPage() {
       </header>
 
       <Tabs value={tab} onValueChange={selectTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 h-auto md:h-12 mb-6 gap-1">
+        <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 h-auto md:h-12 mb-6 gap-1">
           <TabsTrigger value="cycle" className="gap-2"><CalendarCog className="h-4 w-4" /> Cycle</TabsTrigger>
+          <TabsTrigger value="personalise" className="gap-2"><Palette className="h-4 w-4" /> Personalise</TabsTrigger>
           <TabsTrigger value="account" className="gap-2"><UserCircle2 className="h-4 w-4" /> Account</TabsTrigger>
           <TabsTrigger value="categories" className="gap-2"><Tag className="h-4 w-4" /> Categories</TabsTrigger>
           <TabsTrigger value="suggestions" className="gap-2"><Sparkles className="h-4 w-4" /> Suggestions</TabsTrigger>
@@ -119,9 +122,16 @@ function SettingsPage() {
           <TabsTrigger value="about" className="gap-2"><Info className="h-4 w-4" /> About</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="personalise" className="mt-0 space-y-6">
+          <CurrencySettingsCard />
+          <ThemePickerCard />
+          <ComfortCard categories={itemCats.list} />
+        </TabsContent>
+
         <TabsContent value="account" className="mt-0 space-y-6">
           <ConnectedAccountsCard />
         </TabsContent>
+
 
         <TabsContent value="cycle" className="mt-0">
           <CycleSettingsCard />
