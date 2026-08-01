@@ -190,8 +190,12 @@ function DashboardPage() {
             {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
+          {encouragement && (
+            <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>
+          )}
         </div>
       </header>
+
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
         <Card data-tour="left-to-spend" className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
