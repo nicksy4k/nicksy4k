@@ -258,8 +258,9 @@ function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Spending by category</CardTitle>
+            <CardTitle>Where your money went</CardTitle>
             <span className="text-xs text-muted-foreground">This cycle</span>
+
           </CardHeader>
           <CardContent>
             {byCategory.length === 0 ? (
