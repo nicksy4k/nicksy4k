@@ -202,12 +202,18 @@ function DashboardPage() {
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
-              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
+              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
                 {fmt(stats.leftToSpend)}
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className={`text-sm text-muted-foreground mt-2 ${blur}`}>
                 {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income · {fmt(stats.savingsBalance)} saved
               </p>
+              {joySpend > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Including <span className={`font-medium text-foreground ${blur}`}>{fmt(joySpend)}</span> of planned fun — budgeted for, guilt-free.
+                </p>
+              )}
+
             </div>
             <Button asChild size="lg" className="shrink-0">
               <Link to="/new"><Plus className="h-4 w-4" />Log transaction</Link>
