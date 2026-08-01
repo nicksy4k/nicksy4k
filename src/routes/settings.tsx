@@ -58,7 +58,7 @@ export const Route = createFileRoute("/settings")({
   errorComponent: RouteError,
 });
 
-const VALID_TABS = ["cycle", "account", "categories", "suggestions", "data", "about"] as const;
+const VALID_TABS = ["cycle", "personalise", "account", "categories", "suggestions", "data", "about"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 function readHashTab(): TabValue {
