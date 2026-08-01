@@ -127,6 +127,32 @@ function DashboardPage() {
       .sort((a, b) => b.value - a.value);
   }, [analyticsItems, demo.filterCategory]);
 
+  // "Planned fun" roll-up: categories the user has flagged as joy spending are
+  // summarised as one friendly line instead of being singled out in the chart.
+  const joySpend = useMemo(() => {
+    const joy = new Set(prefs.joyCategories.map((c) => c.toLowerCase()));
+    if (joy.size === 0) return 0;
+    return byCategory
+      .filter((c) => joy.has(c.name.toLowerCase()))
+      .reduce((s, c) => s + c.value, 0);
+  }, [byCategory, prefs.joyCategories]);
+
+  const encouragement = useMemo(
+    () =>
+      encouragementFor({
+        leftToSpend: stats.leftToSpend,
+        totalIncome: stats.totalIncome,
+        totalExpenses: stats.totalExpenses,
+        savingsBalance: stats.savingsBalance,
+        itemCount: stats.itemCount,
+        receiptsAttached: stats.receiptsAttached,
+        transactionCount: stats.count,
+        cycleEnd: cycle.end,
+      }),
+    [stats, cycle.end],
+  );
+
+
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
     analyticsItems.forEach((t) =>
