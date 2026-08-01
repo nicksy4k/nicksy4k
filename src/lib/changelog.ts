@@ -16,6 +16,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.9.0",
+    title: "Make it yours: currency, themes & comfort",
+    date: "2026-08-01",
+    icon: Palette,
+    highlights: [
+      "New Settings → Personalise tab: pick your currency (GBP, USD, EUR, ZAR, CAD, AUD and more) or set a custom symbol and position — every amount in the app reformats instantly.",
+      "Theme presets: Midnight Indigo (now softer), Blush, Muted Slate and Daylight, applied before the page paints so there's no flash.",
+      "Comfort controls: blur amounts for privacy, hide the category pie chart, and flag 'joy' categories so planned fun rolls up as one guilt-free line.",
+      "Friendlier dashboard wording with honest, encouraging summaries instead of judgemental ones.",
+    ],
+  },
+  {
+
     version: "v2.8.3",
     title: "Donation links updated",
     date: "2026-07-31",
