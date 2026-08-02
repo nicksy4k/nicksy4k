@@ -188,7 +188,7 @@ function ReportsPage() {
   );
   const avg = filtered.length ? totalSpent / filtered.length : 0;
 
-  const categoryBreakdown = useMemo(() => {
+  const rawCategoryBreakdown = useMemo(() => {
     const totals = new Map<string, number>();
     for (const t of filtered) {
       const main = mainExpensePortion(t);
@@ -205,7 +205,15 @@ function ReportsPage() {
       .sort((a, b) => b.value - a.value);
   }, [filtered, selectedCats, catFilterActive]);
 
+  // Joy-flagged categories collapse into one "Planned fun" slice.
+  const categoryBreakdown = useMemo(
+    () => rollUpJoy(rawCategoryBreakdown, prefs.joyCategories),
+    [rawCategoryBreakdown, prefs.joyCategories],
+  );
+
   const breakdownTotal = categoryBreakdown.reduce((s, d) => s + d.value, 0);
+
+
 
   const exportPayload = {
     startDate,
