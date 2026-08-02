@@ -43,6 +43,8 @@ export const Route = createFileRoute("/")({
 });
 
 import { colorForKey } from "@/lib/colors";
+import { rollUpJoy, sliceColor } from "@/lib/joy";
+
 
 function DashboardPage() {
   const { items: realItems, dismiss } = useTransactions();
