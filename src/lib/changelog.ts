@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.9.1",
+    title: "Bubblegum blush & a working fun roll-up",
+    date: "2026-08-02",
+    icon: Palette,
+    highlights: [
+      "The Blush theme is now unapologetically hot pink — vivid accents, pink-tinted surfaces and borders, with text contrast kept comfortably readable.",
+      "Joy / planned fun categories now genuinely collapse into a single 'Planned fun' slice in the dashboard chart and legend instead of being listed one by one.",
+      "The same roll-up applies on Reports, and hiding the category chart in Settings → Personalise now hides it there too.",
+    ],
+  },
+
+  {
     version: "v2.9.0",
     title: "Make it yours: currency, themes & comfort",
     date: "2026-08-01",
