@@ -11,6 +11,9 @@ import { useCategories } from "@/lib/store";
 import type { IncomeEntry, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
+import { rollUpJoy, sliceColor } from "@/lib/joy";
+import { usePreferences } from "@/lib/preferences";
+
 import { cn } from "@/lib/utils";
 import { downloadWorkbook, printReport } from "@/lib/reportExport";
 import { PrintableReport } from "@/components/PrintableReport";
