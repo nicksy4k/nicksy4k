@@ -131,6 +131,8 @@ function CategoryMultiSelect({
 
 function ReportsPage() {
   const { list: categories } = useCategories();
+  const { prefs } = usePreferences();
+
   const [startDate, setStartDate] = useState(() => format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => todayLocalISO());
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
