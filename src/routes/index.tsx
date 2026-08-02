@@ -43,6 +43,8 @@ export const Route = createFileRoute("/")({
 });
 
 import { colorForKey } from "@/lib/colors";
+import { rollUpJoy, sliceColor } from "@/lib/joy";
+
 
 function DashboardPage() {
   const { items: realItems, dismiss } = useTransactions();
@@ -130,12 +132,19 @@ function DashboardPage() {
   // "Planned fun" roll-up: categories the user has flagged as joy spending are
   // summarised as one friendly line instead of being singled out in the chart.
   const joySpend = useMemo(() => {
-    const joy = new Set(prefs.joyCategories.map((c) => c.toLowerCase()));
+    const joy = new Set(prefs.joyCategories.map((c) => c.trim().toLowerCase()));
     if (joy.size === 0) return 0;
     return byCategory
-      .filter((c) => joy.has(c.name.toLowerCase()))
+      .filter((c) => joy.has(c.name.trim().toLowerCase()))
       .reduce((s, c) => s + c.value, 0);
   }, [byCategory, prefs.joyCategories]);
+
+  /** What the pie chart and legend actually render: joy categories collapsed. */
+  const chartCategories = useMemo(
+    () => rollUpJoy(byCategory, prefs.joyCategories),
+    [byCategory, prefs.joyCategories],
+  );
+
 
   const encouragement = useMemo(
     () =>
@@ -267,7 +276,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-8 text-center">
                 Chart hidden — you can turn it back on in Settings → Personalise.
               </p>
-            ) : byCategory.length === 0 ? (
+            ) : chartCategories.length === 0 ? (
               <EmptyChart />
             ) : (
 
@@ -275,9 +284,9 @@ function DashboardPage() {
                 <div className="h-[240px]">
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
-                        {byCategory.map((c) => (
-                          <Cell key={c.name} fill={colorForKey(c.name)} />
+                      <Pie data={chartCategories} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
+                        {chartCategories.map((c) => (
+                          <Cell key={c.name} fill={sliceColor(c.name, colorForKey)} />
                         ))}
                       </Pie>
                       <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v)} />
@@ -285,10 +294,10 @@ function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <ul className="space-y-2.5">
-                  {byCategory.map((c) => (
+                  {chartCategories.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(c.name) }} />
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: sliceColor(c.name, colorForKey) }} />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>
@@ -296,6 +305,7 @@ function DashboardPage() {
                   ))}
                 </ul>
               </div>
+
             )}
           </CardContent>
         </Card>

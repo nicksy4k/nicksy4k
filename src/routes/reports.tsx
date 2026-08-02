@@ -11,6 +11,9 @@ import { useCategories } from "@/lib/store";
 import type { IncomeEntry, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
+import { rollUpJoy, sliceColor } from "@/lib/joy";
+import { usePreferences } from "@/lib/preferences";
+
 import { cn } from "@/lib/utils";
 import { downloadWorkbook, printReport } from "@/lib/reportExport";
 import { PrintableReport } from "@/components/PrintableReport";
@@ -128,6 +131,8 @@ function CategoryMultiSelect({
 
 function ReportsPage() {
   const { list: categories } = useCategories();
+  const { prefs } = usePreferences();
+
   const [startDate, setStartDate] = useState(() => format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => todayLocalISO());
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
@@ -188,7 +193,7 @@ function ReportsPage() {
   );
   const avg = filtered.length ? totalSpent / filtered.length : 0;
 
-  const categoryBreakdown = useMemo(() => {
+  const rawCategoryBreakdown = useMemo(() => {
     const totals = new Map<string, number>();
     for (const t of filtered) {
       const main = mainExpensePortion(t);
@@ -205,7 +210,15 @@ function ReportsPage() {
       .sort((a, b) => b.value - a.value);
   }, [filtered, selectedCats, catFilterActive]);
 
+  // Joy-flagged categories collapse into one "Planned fun" slice.
+  const categoryBreakdown = useMemo(
+    () => rollUpJoy(rawCategoryBreakdown, prefs.joyCategories),
+    [rawCategoryBreakdown, prefs.joyCategories],
+  );
+
   const breakdownTotal = categoryBreakdown.reduce((s, d) => s + d.value, 0);
+
+
 
   const exportPayload = {
     startDate,
@@ -323,7 +336,11 @@ function ReportsPage() {
           <CardTitle className="text-base">Spend by category</CardTitle>
         </CardHeader>
         <CardContent>
-          {categoryBreakdown.length === 0 ? (
+          {prefs.hideCategoryChart ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Chart hidden — you can turn it back on in Settings → Personalise.
+            </p>
+          ) : categoryBreakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               {isLoading ? "Loading…" : "No spending in the selected range."}
             </p>
@@ -341,9 +358,10 @@ function ReportsPage() {
                       paddingAngle={2}
                     >
                       {categoryBreakdown.map((d) => (
-                        <Cell key={d.name} fill={colorForKey(d.name)} />
+                        <Cell key={d.name} fill={sliceColor(d.name, colorForKey)} />
                       ))}
                     </Pie>
+
                     <Tooltip
                       formatter={(v: number) => fmt(v)}
                       contentStyle={{
@@ -364,7 +382,7 @@ function ReportsPage() {
                   const pct = breakdownTotal ? (d.value / breakdownTotal) * 100 : 0;
                   return (
                     <div key={d.name} className="flex items-center gap-3 text-sm">
-                      <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: colorForKey(d.name) }} />
+                      <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: sliceColor(d.name, colorForKey) }} />
                       <span className="flex-1 truncate">{d.name}</span>
                       <span className="tabular-nums text-muted-foreground text-xs w-12 text-right">{pct.toFixed(1)}%</span>
                       <span className="tabular-nums font-medium w-20 text-right">{fmt(d.value)}</span>
