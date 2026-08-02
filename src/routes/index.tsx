@@ -274,7 +274,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-8 text-center">
                 Chart hidden — you can turn it back on in Settings → Personalise.
               </p>
-            ) : byCategory.length === 0 ? (
+            ) : chartCategories.length === 0 ? (
               <EmptyChart />
             ) : (
 
@@ -282,9 +282,9 @@ function DashboardPage() {
                 <div className="h-[240px]">
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
-                        {byCategory.map((c) => (
-                          <Cell key={c.name} fill={colorForKey(c.name)} />
+                      <Pie data={chartCategories} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
+                        {chartCategories.map((c) => (
+                          <Cell key={c.name} fill={sliceColor(c.name, colorForKey)} />
                         ))}
                       </Pie>
                       <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v)} />
@@ -292,10 +292,10 @@ function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <ul className="space-y-2.5">
-                  {byCategory.map((c) => (
+                  {chartCategories.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(c.name) }} />
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: sliceColor(c.name, colorForKey) }} />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>
@@ -303,6 +303,7 @@ function DashboardPage() {
                   ))}
                 </ul>
               </div>
+
             )}
           </CardContent>
         </Card>
