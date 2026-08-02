@@ -130,12 +130,19 @@ function DashboardPage() {
   // "Planned fun" roll-up: categories the user has flagged as joy spending are
   // summarised as one friendly line instead of being singled out in the chart.
   const joySpend = useMemo(() => {
-    const joy = new Set(prefs.joyCategories.map((c) => c.toLowerCase()));
+    const joy = new Set(prefs.joyCategories.map((c) => c.trim().toLowerCase()));
     if (joy.size === 0) return 0;
     return byCategory
-      .filter((c) => joy.has(c.name.toLowerCase()))
+      .filter((c) => joy.has(c.name.trim().toLowerCase()))
       .reduce((s, c) => s + c.value, 0);
   }, [byCategory, prefs.joyCategories]);
+
+  /** What the pie chart and legend actually render: joy categories collapsed. */
+  const chartCategories = useMemo(
+    () => rollUpJoy(byCategory, prefs.joyCategories),
+    [byCategory, prefs.joyCategories],
+  );
+
 
   const encouragement = useMemo(
     () =>
