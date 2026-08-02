@@ -336,7 +336,11 @@ function ReportsPage() {
           <CardTitle className="text-base">Spend by category</CardTitle>
         </CardHeader>
         <CardContent>
-          {categoryBreakdown.length === 0 ? (
+          {prefs.hideCategoryChart ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Chart hidden — you can turn it back on in Settings → Personalise.
+            </p>
+          ) : categoryBreakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               {isLoading ? "Loading…" : "No spending in the selected range."}
             </p>
@@ -354,9 +358,10 @@ function ReportsPage() {
                       paddingAngle={2}
                     >
                       {categoryBreakdown.map((d) => (
-                        <Cell key={d.name} fill={colorForKey(d.name)} />
+                        <Cell key={d.name} fill={sliceColor(d.name, colorForKey)} />
                       ))}
                     </Pie>
+
                     <Tooltip
                       formatter={(v: number) => fmt(v)}
                       contentStyle={{
