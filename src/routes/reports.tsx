@@ -382,7 +382,7 @@ function ReportsPage() {
                   const pct = breakdownTotal ? (d.value / breakdownTotal) * 100 : 0;
                   return (
                     <div key={d.name} className="flex items-center gap-3 text-sm">
-                      <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: colorForKey(d.name) }} />
+                      <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: sliceColor(d.name, colorForKey) }} />
                       <span className="flex-1 truncate">{d.name}</span>
                       <span className="tabular-nums text-muted-foreground text-xs w-12 text-right">{pct.toFixed(1)}%</span>
                       <span className="tabular-nums font-medium w-20 text-right">{fmt(d.value)}</span>
