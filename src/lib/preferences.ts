@@ -49,6 +49,7 @@ export const THEMES: ThemeDef[] = [
     blurb: "Bright candy pink — light, warm and unapologetic.",
     swatches: ["oklch(0.98 0.015 345)", "oklch(0.62 0.24 350)", "oklch(0.62 0.19 15)", "oklch(0.60 0.18 320)"],
   },
+  {
     id: "slate",
     name: "Muted Slate",
     blurb: "Low-contrast greys. The calmest of the dark themes.",
