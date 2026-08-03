@@ -44,6 +44,11 @@ export const THEMES: ThemeDef[] = [
     swatches: ["oklch(0.21 0.02 350)", "oklch(0.70 0.13 350)", "oklch(0.74 0.11 25)", "oklch(0.72 0.10 320)"],
   },
   {
+    id: "bubblegum",
+    name: "Bubblegum Pink",
+    blurb: "Bright candy pink — light, warm and unapologetic.",
+    swatches: ["oklch(0.98 0.015 345)", "oklch(0.62 0.24 350)", "oklch(0.62 0.19 15)", "oklch(0.60 0.18 320)"],
+  },
     id: "slate",
     name: "Muted Slate",
     blurb: "Low-contrast greys. The calmest of the dark themes.",
