@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.9.2",
+    title: "New theme: Bubblegum Pink",
+    date: "2026-08-02",
+    icon: Palette,
+    highlights: [
+      "Added a fifth theme preset — Bubblegum Pink: light candy-pink surfaces with punchy hot-pink accents, borders and focus rings.",
+      "Soft Blush stays as the deep plum option, so you can pick dark or light pink.",
+      "Pick either from Settings → Personalise → Theme.",
+    ],
+  },
+
+  {
     version: "v2.9.1",
     title: "Bubblegum blush & a working fun roll-up",
     date: "2026-08-02",

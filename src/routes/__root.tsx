@@ -112,7 +112,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const THEME_BOOTSTRAP = `try{var t=localStorage.getItem('ledgerly.theme')||'midnight';var d=document.documentElement;d.classList.add('theme-'+t);d.style.colorScheme=(t==='daylight'?'light':'dark');}catch(e){}`;
+const THEME_BOOTSTRAP = `try{var t=localStorage.getItem('ledgerly.theme')||'midnight';var d=document.documentElement;d.classList.add('theme-'+t);d.style.colorScheme=((t==='daylight'||t==='bubblegum')?'light':'dark');}catch(e){}`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
