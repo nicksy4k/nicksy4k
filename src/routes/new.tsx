@@ -96,6 +96,8 @@ function NewTransactionPage() {
   const clearError = (key: string) =>
     setErrors((e) => (e[key] === undefined ? e : { ...e, [key]: "" }));
   const errorOf = (key: string) => errors[key] || undefined;
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
 
 
   const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
