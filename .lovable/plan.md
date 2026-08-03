@@ -1,59 +1,53 @@
-## Goal
+## What's already there vs. missing
 
-Keep "Soft Blush" as the deep plum option and add a 5th preset: **Bubblegum Pink** (`.theme-bubblegum`) — a light, candy-pink surface theme with punchy hot-pink accents.
+Checked `src/routes/new.tsx` and `src/routes/history.tsx`:
 
-Note on files: this project doesn't have `src/components/ThemePickerCard.tsx` or `src/lib/theme.tsx`. The equivalents are `src/lib/preferences.ts` (theme registry + apply logic) and `src/components/PreferencesCards.tsx` (the picker UI, which renders from the registry automatically).
+- Removing an item row (`removeItem` in new.tsx, `removeRow` in history.tsx) deletes silently — **no undo**.
+- Validation exists but is **toast-only** (e.g. "Retailer is required", "Add at least one line item with a price") — nothing highlights the offending field.
+- There is a one-line keyboard tip under the itemise step in new.tsx, but **no shortcut reference** anywhere, and none in the history edit/settle dialogs.
 
-## 1. Theme registry — `src/lib/preferences.ts`
+So all three requests are still outstanding.
 
-Add to the `THEMES` array after Blush:
+## 1. Undo on item removal
+
+Both routes: capture the removed row (plus its index) before dropping it, then show a sonner toast with an Undo action that re-inserts it at the same position.
 
 ```
-id: "bubblegum"
-name: "Bubblegum Pink"
-blurb: "Bright candy pink — light, warm and unapologetic."
-swatches: ["oklch(0.97 0.02 345)", "oklch(0.62 0.24 350)", "oklch(0.66 0.21 15)", "oklch(0.64 0.18 320)"]
+toast("Item removed", { action: { label: "Undo", onClick: () => restore() } })
 ```
 
-`THEME_IDS`, the `coerce()` validator, and the Settings picker all derive from this array, so no other wiring is needed there.
+- Keeps the existing guard that the last remaining row can't be removed in new.tsx.
+- Restores all row fields (name, price, qty, category, joy flag) exactly, so undo is lossless.
+- Same treatment for the history edit dialog rows.
 
-Also update `applyThemeClass()`: `colorScheme` is currently `theme === "daylight" ? "light" : "dark"`. Change to a light-theme set so `bubblegum` also reports `light` (otherwise native form controls, scrollbars and autofill render dark on a light page).
+## 2. Inline validation
 
-## 2. CSS tokens — `src/styles.css`
+Add a lightweight per-form error state (`Record<string, string>`) in each route, set during the existing save/validation paths instead of only firing toasts.
 
-New `.theme-bubblegum` block placed after `.theme-blush`, mirroring the full token list every theme defines (background/foreground, card, popover, primary, secondary, muted, accent, destructive, success, warning, joy, border, input, ring, chart-1..6, sidebar-*, glow-1/2, radius).
+- Fields covered: retailer, pending estimate, per-row item name and price, per-row category, protection expiry date, split amounts/BNPL details.
+- Offending input gets `aria-invalid` plus a destructive border, with a small `text-destructive` message under it.
+- The first invalid field is focused and scrolled into view on failed save.
+- Errors clear as soon as the field is edited.
+- Keep a single summary toast ("Fix N field(s) before saving") so the existing feedback isn't lost.
 
-Proposed values (light surfaces, high-chroma pink accents):
+## 3. Keyboard shortcut reference
 
-```text
---background        oklch(0.98 0.015 345)   ~ #fdf2f8 candy white-pink
---card              oklch(1.00 0.006 345)   near-white with a pink cast
---foreground        oklch(0.26 0.08 345)    deep berry text (AA on both above)
---primary           oklch(0.62 0.24 350)    ~ #ec4899 hot pink
---primary-foreground oklch(0.99 0.01 345)   white on hot pink (AA at body size)
---secondary         oklch(0.94 0.035 345)
---muted             oklch(0.95 0.025 345)
---muted-foreground  oklch(0.48 0.08 345)    AA-passing secondary text
---accent            oklch(0.92 0.06 340)
---border            oklch(0.86 0.09 345)    visible bubblegum edges
---input             oklch(0.88 0.075 345)
---ring              oklch(0.62 0.24 350)    pink focus ring
---destructive       oklch(0.58 0.20 25)
---success           oklch(0.55 0.13 160)
---warning           oklch(0.70 0.14 75)
---joy               oklch(0.66 0.20 15)
-charts              rotating pinks/rose/coral/violet/teal tuned for light bg
-sidebar             slightly deeper pink (oklch(0.96 0.03 345)) with pink border
-glow-1/2            low-alpha hot pink / coral
-```
+New `src/components/KeyboardShortcutsDialog.tsx` — a small dialog listing:
 
-Contrast targets: body text ≥ 7:1 on background, muted text ≥ 4.5:1, white on `--primary` ≥ 4.5:1 (chosen lightness 0.62 keeps this true). Any token that fails gets its lightness nudged before shipping.
+- `Enter` — move from item name to price / start next item
+- `Shift + Enter` — previous field
+- `↑ / ↓` — move between suggestion results in the item and retailer comboboxes
+- `Esc` — dismiss suggestions / close dialog
+- `⌘ / Ctrl + Enter` — save the transaction
 
-## 3. Verification
+Triggered by a keyboard icon button in the header of the new-transaction page and of the history edit/settle dialogs, and by pressing `?` when focus isn't in a text field. The existing inline tip line in new.tsx stays, with a "See all shortcuts" link into the dialog.
 
-- Switch through all five presets in Settings → Personalise and screenshot the dashboard, Reports charts and sidebar under Bubblegum to check chart legibility on light surfaces.
-- Confirm the pre-hydration theme bootstrap in `src/routes/__root.tsx` picks up the new class (it reads the cached theme id, so no change expected — will verify no flash of dark).
+## Technical notes
 
-## 4. Changelog
+- Undo uses sonner's `action` API (already the project's toast lib) — no new dependencies.
+- Validation state is local to each route; no changes to the store, save logic, or database.
+- All work is presentational — save behaviour and data written are unchanged.
 
-Prepend a dated v2.9.x entry to `src/lib/changelog.ts` noting the new Bubblegum Pink preset.
+## Changelog
+
+Prepend a dated v2.9.3 entry to `src/lib/changelog.ts` covering undo-on-remove, inline validation, and the shortcuts reference.
