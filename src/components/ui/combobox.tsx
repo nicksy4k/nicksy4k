@@ -15,9 +15,11 @@ export interface ComboboxProps {
   emptyHint?: string;
   className?: string;
   autoFocus?: boolean;
+  invalid?: boolean;
   id?: string;
   ariaLabel?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+
   /** Fired when the user presses Enter (after the value has been committed). */
   onEnterCommit?: (value: string) => void;
 }
@@ -30,6 +32,8 @@ export function Combobox({
   emptyHint = "Press Enter to add",
   className,
   autoFocus = false,
+  invalid = false,
+
   id,
   ariaLabel,
   inputRef,
@@ -137,6 +141,7 @@ export function Combobox({
             aria-controls={open ? listId : undefined}
             aria-autocomplete="list"
             aria-label={ariaLabel}
+            aria-invalid={invalid || undefined}
             autoComplete="off"
             value={value}
             placeholder={placeholder}
@@ -146,7 +151,11 @@ export function Combobox({
               if (!open) setOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            className="flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-9 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(
+              "flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-9 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              invalid && "border-destructive focus-visible:ring-destructive",
+            )}
+
           />
           <button
             type="button"

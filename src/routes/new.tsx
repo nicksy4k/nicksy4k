@@ -4,7 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
-import { sortLabels } from "@/lib/utils";
+import { sortLabels, cn } from "@/lib/utils";
+import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
+import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
+
 import { useHiddenSuggestions, filterHidden } from "@/lib/hiddenSuggestions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,6 +91,14 @@ function NewTransactionPage() {
   const [isPending, setIsPending] = useState(false);
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (key: string) =>
+    setErrors((e) => (e[key] === undefined ? e : { ...e, [key]: "" }));
+  const errorOf = (key: string) => errors[key] || undefined;
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+
 
   const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -248,6 +259,7 @@ function NewTransactionPage() {
 
 
   function updateItem(id: string, patch: Partial<DraftItem>) {
+    for (const k of Object.keys(patch)) clearError(`item.${id}.${k}`);
     setItems((arr) =>
       arr.map((it) => {
         if (it.id !== id) return it;
@@ -269,8 +281,27 @@ function NewTransactionPage() {
     );
   }
   function removeItem(id: string) {
-    setItems((arr) => (arr.length === 1 ? arr : arr.filter((it) => it.id !== id)));
+    if (items.length === 1) return;
+    const idx = items.findIndex((it) => it.id === id);
+    if (idx < 0) return;
+    const removed = items[idx];
+    setItems((arr) => arr.filter((it) => it.id !== id));
+    // Offer a lossless undo — the row is re-inserted at its original index.
+    toast(removed.item_name.trim() ? `Removed "${removed.item_name.trim()}"` : "Item removed", {
+      action: {
+        label: "Undo",
+        onClick: () =>
+          setItems((cur) => {
+            if (cur.some((it) => it.id === removed.id)) return cur;
+            const next = [...cur];
+            next.splice(Math.min(idx, next.length), 0, removed);
+            return next;
+          }),
+      },
+    });
   }
+
+
 
   function addItem() {
     const newItem = emptyItem();
@@ -287,20 +318,28 @@ function NewTransactionPage() {
     priceRefs.current[id]?.select();
   }
 
+  /** Surface a validation failure inline, focus the first bad field, summarise in a toast. */
+  function reportErrors(errs: Record<string, string>, focusLabel?: string) {
+    setErrors(errs);
+    const n = Object.values(errs).filter(Boolean).length;
+    toast.error(`Fix ${n} field${n === 1 ? "" : "s"} before saving.`);
+    if (focusLabel) focusByAriaLabel(focusLabel);
+  }
+
   async function save() {
     if (saving) return;
 
     // Fast-path: pending pre-authorization hold.
     if (isPending) {
       const estimate = parseFloat(pendingEstimate);
-      if (!retailer.trim()) {
-        toast.error("Retailer is required");
+      const errs: Record<string, string> = {};
+      if (!retailer.trim()) errs.retailer = "Enter the shop or retailer name.";
+      if (!(estimate > 0)) errs.pendingEstimate = "Enter an estimated total greater than 0.";
+      if (Object.keys(errs).length > 0) {
+        reportErrors(errs, errs.retailer ? "Retailer or shop" : "Estimated total");
         return;
       }
-      if (!(estimate > 0)) {
-        toast.error("Enter an estimated total greater than zero.");
-        return;
-      }
+      setErrors({});
       setSaving(true);
       try {
         const placeholder: LineItem = {
@@ -338,14 +377,44 @@ function NewTransactionPage() {
 
     const qualifyingItems = items.filter((i) => i.item_name.trim() && !isNaN(parseFloat(i.price)));
 
-    if (qualifyingItems.length === 0) {
-      toast.error("Add at least one line item with a price.");
-      return;
+    const errs: Record<string, string> = {};
+    let focusLabel: string | undefined;
+
+    if (!retailer.trim()) {
+      errs.retailer = "Enter the shop or retailer name.";
+      focusLabel = "Retailer or shop";
     }
 
-    if (qualifyingItems.some((i) => !i.category.trim())) {
-      toast.error("Pick a category for every item.");
-      return;
+    if (qualifyingItems.length === 0) {
+      const first = items[0];
+      if (first) {
+        if (!first.item_name.trim()) errs[`item.${first.id}.item_name`] = "Give this item a name.";
+        errs[`item.${first.id}.price`] = "Enter a price for this item.";
+        focusLabel = focusLabel ?? (first.item_name.trim() ? "Item 1 price" : "Item 1 name");
+      }
+    } else {
+      items.forEach((i, idx) => {
+        const named = i.item_name.trim();
+        const priced = i.price.trim() && !isNaN(parseFloat(i.price));
+        // A half-filled row would be silently dropped — flag it instead.
+        if (named && !priced) {
+          errs[`item.${i.id}.price`] = "Enter a price, or remove this item.";
+          focusLabel = focusLabel ?? `Item ${idx + 1} price`;
+        } else if (!named && i.price.trim()) {
+          errs[`item.${i.id}.item_name`] = "Give this item a name, or remove it.";
+          focusLabel = focusLabel ?? `Item ${idx + 1} name`;
+        } else if (named && priced && !i.category.trim()) {
+          errs[`item.${i.id}.category`] = "Pick a category.";
+        }
+      });
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) {
+        errs.protection = "Pick an expiration date for the protection.";
+      } else if (protection.expiration < date) {
+        errs.protection = "Protection expiration must be on or after the transaction date.";
+      }
     }
 
     const cleanItems: LineItem[] = qualifyingItems.map((i) => {
@@ -362,33 +431,27 @@ function NewTransactionPage() {
 
     const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
 
-    if (protection.enabled) {
-      if (!protection.expiration) {
-        toast.error("Pick an expiration date for the protection.");
-        return;
-      }
-      if (protection.expiration < date) {
-        toast.error("Protection expiration must be on or after the transaction date.");
-        return;
-      }
-    }
-
     // Validate splits
     const allocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
     const remainder = +(totalAmt - allocated).toFixed(2);
     if (remainder < 0) {
-      toast.error("Split amounts exceed the transaction total.");
-      return;
+      errs.splits = `Split amounts (${fmt(allocated)}) exceed the transaction total (${fmt(totalAmt)}).`;
     }
     for (const s of splits) {
       if (s.source === "bnpl:new" && s.bnpl) {
         const n = parseInt(s.bnpl.installments, 10);
         if (!s.bnpl.name.trim() || !(n > 0) || !s.bnpl.firstDate) {
-          toast.error("Complete the BNPL plan details (name, installments, first date).");
-          return;
+          errs.splits = "Complete the BNPL plan details (name, installments, first date).";
         }
       }
     }
+
+    if (Object.values(errs).filter(Boolean).length > 0) {
+      reportErrors(errs, focusLabel);
+      return;
+    }
+    setErrors({});
+
 
     setSaving(true);
     try {
@@ -548,16 +611,20 @@ function NewTransactionPage() {
         }
       }}
     >
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
-          {isPending ? "Quick pending hold" : `Step ${step} of 2`}
-        </p>
-        <h1 className="text-3xl md:text-4xl font-semibold">
-          {isPending
-            ? "Reserve a pending amount"
-            : step === 1 ? "Transaction details" : "Itemize your purchase"}
-        </h1>
+      <header className="mb-8 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            {isPending ? "Quick pending hold" : `Step ${step} of 2`}
+          </p>
+          <h1 className="text-3xl md:text-4xl font-semibold">
+            {isPending
+              ? "Reserve a pending amount"
+              : step === 1 ? "Transaction details" : "Itemize your purchase"}
+          </h1>
+        </div>
+        <ShortcutsHelp className="shrink-0 text-muted-foreground" onOpenChange={setShortcutsOpen} open={shortcutsOpen} />
       </header>
+
 
       {!isPending && (
         <div className="sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 mb-6 md:-mx-10 md:px-10">
@@ -609,15 +676,17 @@ function NewTransactionPage() {
               <Field label="Retailer / shop">
                 <Combobox
                   value={retailer}
-                  onChange={setRetailer}
+                  onChange={(v) => { clearError("retailer"); setRetailer(v); }}
                   options={retailerSuggestions}
                   placeholder="e.g. Asda"
                   ariaLabel="Retailer or shop"
+                  invalid={Boolean(errorOf("retailer"))}
                   onEnterCommit={(v) => {
                     if (isPending) return;
                     if (v.trim() && date) setStep(2);
                   }}
                 />
+                <FieldError message={errorOf("retailer")} />
               </Field>
             </div>
 
@@ -627,10 +696,15 @@ function NewTransactionPage() {
                   <Input
                     inputMode="decimal"
                     placeholder="0.00"
+                    aria-label="Estimated total"
+                    aria-invalid={Boolean(errorOf("pendingEstimate")) || undefined}
+                    className={cn(errorOf("pendingEstimate") && invalidCls)}
                     value={pendingEstimate}
-                    onChange={(e) => setPendingEstimate(e.target.value)}
+                    onChange={(e) => { clearError("pendingEstimate"); setPendingEstimate(e.target.value); }}
                   />
+                  <FieldError message={errorOf("pendingEstimate")} />
                 </Field>
+
                 <Field label="Notes (optional)">
                   <Textarea
                     rows={2}
@@ -680,7 +754,15 @@ function NewTransactionPage() {
                   )}
                 </div>
 
-                <ProtectionFields transactionDate={date} value={protection} onChange={setProtection} />
+                <div>
+                  <ProtectionFields
+                    transactionDate={date}
+                    value={protection}
+                    onChange={(v) => { clearError("protection"); setProtection(v); }}
+                  />
+                  <FieldError message={errorOf("protection")} />
+                </div>
+
 
                 <Field label="Notes (optional)">
                   <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -794,8 +876,10 @@ function NewTransactionPage() {
                         placeholder="e.g. Wool overshirt"
                         ariaLabel={`Item ${idx + 1} name`}
                         autoFocus={item.id === lastAddedId}
+                        invalid={Boolean(errorOf(`item.${item.id}.item_name`))}
                         onEnterCommit={() => focusPrice(item.id)}
                       />
+                      <FieldError message={errorOf(`item.${item.id}.item_name`)} />
                     </Field>
                   </div>
                   <div className="col-span-6 sm:col-span-2">
@@ -805,6 +889,8 @@ function NewTransactionPage() {
                         inputMode="decimal"
                         placeholder="0.00"
                         aria-label={`Item ${idx + 1} price`}
+                        aria-invalid={Boolean(errorOf(`item.${item.id}.price`)) || undefined}
+                        className={cn(errorOf(`item.${item.id}.price`) && invalidCls)}
                         value={item.price}
                         onChange={(e) => updateItem(item.id, { price: e.target.value })}
                         onKeyDown={(e) => {
@@ -813,8 +899,10 @@ function NewTransactionPage() {
                           if (item.item_name.trim() && item.price.trim()) addItem();
                         }}
                       />
+                      <FieldError message={errorOf(`item.${item.id}.price`)} />
                     </Field>
                   </div>
+
                   <div className="col-span-3 sm:col-span-1">
                     <Field label="Qty">
                       <Select value={item.quantity} onValueChange={(v) => updateItem(item.id, { quantity: v })}>
@@ -839,7 +927,12 @@ function NewTransactionPage() {
                           updateItem(item.id, { category: v });
                         }}
                       >
-                        <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
+                        <SelectTrigger
+                          aria-invalid={Boolean(errorOf(`item.${item.id}.category`)) || undefined}
+                          className={cn(errorOf(`item.${item.id}.category`) && invalidCls)}
+                        >
+                          <SelectValue placeholder="Choose" />
+                        </SelectTrigger>
                         <SelectContent>
                           {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                           <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
@@ -847,8 +940,10 @@ function NewTransactionPage() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      <FieldError message={errorOf(`item.${item.id}.category`)} />
                     </Field>
                   </div>
+
                   <div className="col-span-12 sm:col-span-1 flex justify-end sm:pt-5">
                     <Button variant="ghost" size="icon" aria-label={`Remove item ${idx + 1}`} title="Remove item" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
                       <Trash2 className="h-4 w-4" />
@@ -883,7 +978,16 @@ function NewTransactionPage() {
               {lastRowEmpty
                 ? "Finish the row above first — Enter in Price adds the next item."
                 : "Tip: type a name, press Enter, type the price, press Enter to start the next item. ⌘/Ctrl + Enter saves."}
+              {" "}
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => setShortcutsOpen(true)}
+              >
+                See all shortcuts
+              </button>
             </p>
+
           </div>
 
           <Card>
@@ -896,8 +1000,10 @@ function NewTransactionPage() {
                 retailer={retailer}
                 transactionDate={date}
                 splits={splits}
-                onChange={setSplits}
+                onChange={(s) => { clearError("splits"); setSplits(s); }}
               />
+              <FieldError message={errorOf("splits")} />
+
               <p className="text-xs text-muted-foreground mt-3">
                 Pocket splits auto-record a withdrawal. BNPL splits create a new debt plan. Any
                 unallocated remainder defaults to your main balance.

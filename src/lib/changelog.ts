@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.9.3",
+    title: "Safer, faster transaction entry",
+    date: "2026-02-16",
+    icon: Sparkles,
+    highlights: [
+      "Undo when you remove an item row — one tap in the toast restores it in place.",
+      "Inline validation highlights the exact field to fix (item name, price, category, retailer, dates) instead of a generic error.",
+      "New keyboard shortcuts help — press ? or use \"See all shortcuts\" on the transaction form.",
+    ],
+  },
+
+  {
     version: "v2.9.2",
     title: "New theme: Bubblegum Pink",
     date: "2026-08-02",
