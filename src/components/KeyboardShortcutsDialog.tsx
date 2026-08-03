@@ -58,8 +58,23 @@ export function ShortcutsDialog({
  * Keyboard-icon button plus the shortcuts dialog. Also opens on "?" when the
  * user isn't typing in a field.
  */
-export function ShortcutsHelp({ className }: { className?: string }) {
-  const [open, setOpen] = useState(false);
+export function ShortcutsHelp({
+  className,
+  open: openProp,
+  onOpenChange,
+}: {
+  className?: string;
+  /** Optional controlled state so a parent can open the dialog from elsewhere. */
+  open?: boolean;
+  onOpenChange?: (o: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (o: boolean) => {
+    setInternalOpen(o);
+    onOpenChange?.(o);
+  };
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
