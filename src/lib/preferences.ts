@@ -132,7 +132,7 @@ export function applyThemeClass(theme: string) {
   const el = document.documentElement;
   for (const id of THEME_IDS) el.classList.remove(`theme-${id}`);
   el.classList.add(`theme-${THEME_IDS.includes(theme) ? theme : "midnight"}`);
-  el.style.colorScheme = theme === "daylight" ? "light" : "dark";
+  el.style.colorScheme = LIGHT_THEMES.has(theme) ? "light" : "dark";
 }
 
 function setLocal(next: Prefs) {
