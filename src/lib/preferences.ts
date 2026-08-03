@@ -127,6 +127,8 @@ function writeCache(p: Prefs) {
   }
 }
 
+export const LIGHT_THEMES = new Set(["daylight", "bubblegum"]);
+
 export function applyThemeClass(theme: string) {
   if (typeof document === "undefined") return;
   const el = document.documentElement;
