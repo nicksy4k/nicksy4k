@@ -946,7 +946,13 @@ function EditTransactionDialog({
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const rowPriceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  function clearError(key: string) {
+    setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
+  }
+
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
