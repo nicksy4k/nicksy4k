@@ -1267,10 +1267,14 @@ function EditTransactionDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>
-            {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-3">
+            <DialogTitle>
+              {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
+            </DialogTitle>
+            <ShortcutsHelp className="-mt-1 mr-6 shrink-0" />
+          </div>
         </DialogHeader>
+
 
         <div className="space-y-5">
           {transaction?.is_pending && isPending && (
