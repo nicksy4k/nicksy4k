@@ -1039,8 +1039,26 @@ function EditTransactionDialog({
     );
   }
   function removeRow(id: string) {
-    setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
+    if (rows.length === 1) return;
+    const idx = rows.findIndex((r) => r.id === id);
+    if (idx < 0) return;
+    const removed = rows[idx];
+    setRows((arr) => arr.filter((r) => r.id !== id));
+    // Lossless undo — the row is re-inserted at its original position.
+    toast(removed.item_name.trim() ? `Removed "${removed.item_name.trim()}"` : "Item removed", {
+      action: {
+        label: "Undo",
+        onClick: () =>
+          setRows((cur) => {
+            if (cur.some((r) => r.id === removed.id)) return cur;
+            const next = [...cur];
+            next.splice(Math.min(idx, next.length), 0, removed);
+            return next;
+          }),
+      },
+    });
   }
+
   function addRow() {
     const id = crypto.randomUUID();
     setRows((arr) => [
