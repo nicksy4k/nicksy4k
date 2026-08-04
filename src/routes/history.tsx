@@ -1460,27 +1460,39 @@ function EditTransactionDialog({
                               transaction?.is_pending === true)
                           }
                           value={r.item_name}
-                          onChange={(v) => updateRow(r.id, { item_name: v })}
+                          onChange={(v) => {
+                            updateRow(r.id, { item_name: v });
+                            clearError(`row-${r.id}-name`);
+                          }}
                           options={itemNameSuggestions}
                           placeholder="Item name"
                           ariaLabel={`Item ${idx + 1} name`}
+                          invalid={!!errors[`row-${r.id}-name`]}
                           onEnterCommit={() => focusRowPrice(r.id)}
                         />
+                        <FieldError message={errors[`row-${r.id}-name`]} />
                       </Field>
                       <Field label="Price (£)">
                         <Input
                           ref={(el) => { rowPriceRefs.current[r.id] = el; }}
                           inputMode="decimal"
                           aria-label={`Item ${idx + 1} price`}
+                          aria-invalid={!!errors[`row-${r.id}-price`] || undefined}
+                          className={errors[`row-${r.id}-price`] ? invalidCls : undefined}
                           value={r.price}
-                          onChange={(e) => updateRow(r.id, { price: e.target.value })}
+                          onChange={(e) => {
+                            updateRow(r.id, { price: e.target.value });
+                            clearError(`row-${r.id}-price`);
+                          }}
                           onKeyDown={(e) => {
                             if (e.key !== "Enter") return;
                             e.preventDefault();
                             if (r.item_name.trim() && r.price.trim()) addRow();
                           }}
                         />
+                        <FieldError message={errors[`row-${r.id}-price`]} />
                       </Field>
+
                       <Field label="Qty">
                         <Input
                           inputMode="numeric"
