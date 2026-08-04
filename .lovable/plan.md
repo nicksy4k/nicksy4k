@@ -50,16 +50,19 @@ Where that comes from: a single receipt photo is ~1,000–2,500 input tokens onc
 
 ## Technical approach
 
-1. **Server function** `src/lib/api/receipt-scan.functions.ts` — `scanReceipt`, protected with `requireSupabaseAuth`:
+1. **Roles + flag**
+   - Migration: `app_role` enum, `user_roles` table (with GRANTs + RLS), `has_role(_user_id, _role)` security-definer function, and a seed granting `admin` to the account with email `nicksy4k@gmail.com`.
+   - `src/lib/features.ts`: `FEATURES.receiptScan = { requiredRole: "admin" }` plus a `useCanScanReceipts()` hook (queries the user's roles once, cached).
+2. **Server function** `src/lib/api/receipt-scan.functions.ts` — `scanReceipt`, protected with `requireSupabaseAuth`:
+   - First line of the handler: `has_role(userId, 'admin')` via the request-scoped client; reject with a friendly message if false.
    - Input: the storage path of the already-uploaded file in `receipts` (so the raw file never round-trips through the client twice).
-   - Creates a short-lived signed URL, sends it to the Lovable AI Gateway (`openai/gpt-5.6-sol`) with a structured-output schema: `{ retailer, date, currency, total, items: [{ name, price, quantity, category, confidence }] }`.
+   - Creates a short-lived signed URL, sends it to the Lovable AI Gateway (`openai/gpt-5.6-sol`, Responses API, streamed and consumed server-side) with a strict structured-output schema: `{ retailer, date, currency, total, items: [{ name, price, quantity, category, confidence }] }`.
    - Prompt pins the user's currency and their existing category list so the AI picks from real categories.
-   - Streams the gateway call inside the handler (avoids the ~2 min buffered-request cutoff on large PDFs).
    - Returns parsed, validated (zod) data; surfaces 429/402 gateway errors as readable messages.
-2. **Rate limiting**: a small `receipt_scans` table (user_id, created_at) with RLS, counted in the handler before calling the model.
-3. **UI**: new `src/components/ReceiptScanDialog.tsx` (upload → progress → review table), reusing `ReceiptUpload`'s upload logic. It calls back with a normalised payload; `new.tsx` and the settle dialog map that onto their existing form state — no changes to save logic or the database schema for transactions.
-4. **Normalisation helpers** in `src/lib/receiptParse.ts` (currency stripping, multi-buy expansion, retailer fuzzy match against past transactions) with vitest coverage.
-5. **Changelog**: prepend a dated v2.10.0 entry to `src/lib/changelog.ts`.
+3. **Rate limiting**: a small `receipt_scans` table (user_id, created_at) with RLS, counted in the handler before calling the model — in place from day one so it's ready when the feature opens up.
+4. **UI**: new `src/components/ReceiptScanDialog.tsx` (upload → progress → review table), reusing `ReceiptUpload`'s upload logic. Its trigger button renders only when `useCanScanReceipts()` is true. It calls back with a normalised payload; `new.tsx` and the settle dialog map that onto their existing form state — no changes to save logic or the transactions schema.
+5. **Normalisation helpers** in `src/lib/receiptParse.ts` (currency stripping, multi-buy expansion, retailer fuzzy match against past transactions) with vitest coverage.
+6. **Changelog**: prepend a dated v2.10.0 entry to `src/lib/changelog.ts` (noted as admin-only preview).
 
 ## Out of scope for v1
 
