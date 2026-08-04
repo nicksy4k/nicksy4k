@@ -21,9 +21,25 @@ The scanned file itself is stored in your existing private `receipts` bucket and
 
 Failure handling: if the AI can't read the receipt, you get a clear message and the form is untouched (never a half-filled mess). If it reads the retailer/total but no items, it fills what it found and says so.
 
-## AI service
+## Access control — admin only for now
 
-No new provider or API key needed — Lovable AI is already available to the app and handles image + PDF input. Cost is a small per-scan charge against your existing workspace credits, so a rate cap (e.g. 30 scans/day per user) protects against runaway usage.
+The scanner ships behind a proper, reversible gate so beta testers can't spend your credits.
+
+- A new `user_roles` table (the secure pattern: roles live in their own table, never on the profile) plus a `has_role()` check. Your account gets the `admin` role seeded by email.
+- A single `feature_flags` config in `src/lib/features.ts` that says: *receipt scanning requires role `admin`*. One line changes it to "any signed-in user" or "role `beta`" later.
+- **UI**: the "Scan receipt" button is hidden entirely (not just disabled) unless the check passes — no teasing, no dead button.
+- **Server**: the scan server function re-checks the role before touching the AI Gateway and returns "Not available on your account" otherwise. The UI gate is convenience; the server gate is the real lock, so no one can call it directly.
+
+Unlocking later is: grant a `beta` role (or flip the flag to allow all), optionally add a per-user daily scan cap or a Bring-Your-Own-Key field that the server prefers over `LOVABLE_API_KEY`. The BYOK hook is designed for now (the handler resolves "which key do I use for this user") but not built.
+
+## AI service and cost per scan
+
+No new provider or API key needed — Lovable AI is already available and handles image + PDF input.
+
+**Rough cost per scan: about 0.1–0.3 credits**, i.e. roughly 3–10 scans per credit.
+
+Where that comes from: a single receipt photo is ~1,000–2,500 input tokens once tiled, plus a short prompt, and the structured JSON output for a big Asda shop (40–60 items) is ~800–1,500 output tokens. Long multi-page PDFs or very long till receipts sit at the top of that range; a takeaway receipt at the bottom. It is an estimate, not a quote — after the first few real scans we can read the actual per-request credit cost from the gateway logs and tune (e.g. a cheaper model tier, or downscaling images client-side before upload, which typically halves input tokens with no accuracy loss on receipts).
+
 
 ## Smart touches worth including
 
