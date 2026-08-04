@@ -1296,7 +1296,17 @@ function EditTransactionDialog({
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
             <Field label="Retailer / shop">
-              <Input value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+              <Input
+                value={retailer}
+                aria-label="Retailer"
+                aria-invalid={!!errors.retailer || undefined}
+                className={errors.retailer ? invalidCls : undefined}
+                onChange={(e) => {
+                  setRetailer(e.target.value);
+                  clearError("retailer");
+                }}
+              />
+              <FieldError message={errors.retailer} />
             </Field>
           </div>
 
@@ -1306,10 +1316,18 @@ function EditTransactionDialog({
                 <Input
                   inputMode="decimal"
                   placeholder="0.00"
+                  aria-label="Estimated total"
+                  aria-invalid={!!errors.estimate || undefined}
+                  className={errors.estimate ? invalidCls : undefined}
                   value={rows[0]?.price ?? ""}
-                  onChange={(e) => updateRow(rows[0]?.id ?? "", { price: e.target.value })}
+                  onChange={(e) => {
+                    updateRow(rows[0]?.id ?? "", { price: e.target.value });
+                    clearError("estimate");
+                  }}
                 />
+                <FieldError message={errors.estimate} />
               </Field>
+
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
