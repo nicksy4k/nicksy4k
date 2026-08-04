@@ -74,6 +74,9 @@ import {
   type ProtectionValue,
 } from "@/components/ProtectionFields";
 import { RefundDialog } from "@/components/RefundDialog";
+import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
+import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
+
 
 
 export const Route = createFileRoute("/history")({
@@ -946,7 +949,13 @@ function EditTransactionDialog({
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const rowPriceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  function clearError(key: string) {
+    setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
+  }
+
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
@@ -1039,8 +1048,26 @@ function EditTransactionDialog({
     );
   }
   function removeRow(id: string) {
-    setRows((arr) => (arr.length === 1 ? arr : arr.filter((r) => r.id !== id)));
+    if (rows.length === 1) return;
+    const idx = rows.findIndex((r) => r.id === id);
+    if (idx < 0) return;
+    const removed = rows[idx];
+    setRows((arr) => arr.filter((r) => r.id !== id));
+    // Lossless undo — the row is re-inserted at its original position.
+    toast(removed.item_name.trim() ? `Removed "${removed.item_name.trim()}"` : "Item removed", {
+      action: {
+        label: "Undo",
+        onClick: () =>
+          setRows((cur) => {
+            if (cur.some((r) => r.id === removed.id)) return cur;
+            const next = [...cur];
+            next.splice(Math.min(idx, next.length), 0, removed);
+            return next;
+          }),
+      },
+    });
   }
+
   function addRow() {
     const id = crypto.randomUUID();
     setRows((arr) => [
@@ -1114,10 +1141,59 @@ function EditTransactionDialog({
 
   async function save() {
     if (!transaction) return;
-    if (!retailer.trim()) {
-      toast.error("Retailer is required");
+
+    // Collect every problem first so the user sees all of them at once,
+    // inline against the offending field.
+    const errs: Record<string, string> = {};
+    if (!retailer.trim()) errs.retailer = "Enter the retailer or shop name.";
+
+    if (isPending) {
+      const est = parseFloat(rows[0]?.price ?? "");
+      if (!(est > 0)) errs.estimate = "Enter an estimated total greater than zero.";
+    } else {
+      let usable = 0;
+      for (const r of rows) {
+        const hasName = !!r.item_name.trim();
+        const hasPrice = !isNaN(parseFloat(r.price));
+        if (hasName && hasPrice) usable++;
+        else if (hasName && !hasPrice) errs[`row-${r.id}-price`] = "Enter a price.";
+        else if (!hasName && hasPrice) errs[`row-${r.id}-name`] = "Name this item.";
+      }
+      if (usable === 0 && rows[0]) {
+        errs[`row-${rows[0].id}-name`] ||= "Name this item.";
+        errs[`row-${rows[0].id}-price`] ||= "Enter a price.";
+      }
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) errs.protection = "Pick an expiration date for the protection.";
+      else if (protection.expiration < date)
+        errs.protection = "Protection expiration must be on or after the transaction date.";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const count = Object.keys(errs).length;
+      toast.error(`Fix ${count} field${count === 1 ? "" : "s"} before saving.`);
+      if (errs.retailer) focusByAriaLabel("Retailer");
+      else if (errs.estimate) focusByAriaLabel("Estimated total");
+      else {
+        const firstRow = rows.findIndex(
+          (r) => errs[`row-${r.id}-name`] || errs[`row-${r.id}-price`],
+        );
+        if (firstRow >= 0) {
+          const r = rows[firstRow];
+          focusByAriaLabel(
+            errs[`row-${r.id}-name`]
+              ? `Item ${firstRow + 1} name`
+              : `Item ${firstRow + 1} price`,
+          );
+        }
+      }
       return;
     }
+    setErrors({});
+
     const cleanItems: LineItem[] = rows
       .filter((r) => r.item_name.trim() && !isNaN(parseFloat(r.price)))
       .map((r) => ({
@@ -1129,21 +1205,12 @@ function EditTransactionDialog({
         notes: r.notes.trim() || undefined,
       }));
 
-    // When settling (was pending, now unchecked), require real items.
-    if (!isPending && cleanItems.length === 0) {
-      toast.error("Add at least one line item with a price.");
-      return;
-    }
-
-    // Still-pending: require an estimated total via the first row price.
+    // Still-pending: the estimated total comes from the first row price.
     let finalItems: LineItem[];
     let finalTotal: number;
     if (isPending) {
       const estimate = parseFloat(rows[0]?.price ?? "");
-      if (!(estimate > 0)) {
-        toast.error("Enter an estimated total greater than zero.");
-        return;
-      }
+
       finalItems = [
         {
           id: rows[0]?.id ?? crypto.randomUUID(),
@@ -1267,10 +1334,14 @@ function EditTransactionDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>
-            {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-3">
+            <DialogTitle>
+              {transaction?.is_pending ? "Settle pending hold" : "Edit transaction"}
+            </DialogTitle>
+            <ShortcutsHelp className="-mt-1 mr-6 shrink-0" />
+          </div>
         </DialogHeader>
+
 
         <div className="space-y-5">
           {transaction?.is_pending && isPending && (
@@ -1296,7 +1367,17 @@ function EditTransactionDialog({
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
             <Field label="Retailer / shop">
-              <Input value={retailer} onChange={(e) => setRetailer(e.target.value)} />
+              <Input
+                value={retailer}
+                aria-label="Retailer"
+                aria-invalid={!!errors.retailer || undefined}
+                className={errors.retailer ? invalidCls : undefined}
+                onChange={(e) => {
+                  setRetailer(e.target.value);
+                  clearError("retailer");
+                }}
+              />
+              <FieldError message={errors.retailer} />
             </Field>
           </div>
 
@@ -1306,10 +1387,18 @@ function EditTransactionDialog({
                 <Input
                   inputMode="decimal"
                   placeholder="0.00"
+                  aria-label="Estimated total"
+                  aria-invalid={!!errors.estimate || undefined}
+                  className={errors.estimate ? invalidCls : undefined}
                   value={rows[0]?.price ?? ""}
-                  onChange={(e) => updateRow(rows[0]?.id ?? "", { price: e.target.value })}
+                  onChange={(e) => {
+                    updateRow(rows[0]?.id ?? "", { price: e.target.value });
+                    clearError("estimate");
+                  }}
                 />
+                <FieldError message={errors.estimate} />
               </Field>
+
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
@@ -1460,27 +1549,39 @@ function EditTransactionDialog({
                               transaction?.is_pending === true)
                           }
                           value={r.item_name}
-                          onChange={(v) => updateRow(r.id, { item_name: v })}
+                          onChange={(v) => {
+                            updateRow(r.id, { item_name: v });
+                            clearError(`row-${r.id}-name`);
+                          }}
                           options={itemNameSuggestions}
                           placeholder="Item name"
                           ariaLabel={`Item ${idx + 1} name`}
+                          invalid={!!errors[`row-${r.id}-name`]}
                           onEnterCommit={() => focusRowPrice(r.id)}
                         />
+                        <FieldError message={errors[`row-${r.id}-name`]} />
                       </Field>
                       <Field label="Price (£)">
                         <Input
                           ref={(el) => { rowPriceRefs.current[r.id] = el; }}
                           inputMode="decimal"
                           aria-label={`Item ${idx + 1} price`}
+                          aria-invalid={!!errors[`row-${r.id}-price`] || undefined}
+                          className={errors[`row-${r.id}-price`] ? invalidCls : undefined}
                           value={r.price}
-                          onChange={(e) => updateRow(r.id, { price: e.target.value })}
+                          onChange={(e) => {
+                            updateRow(r.id, { price: e.target.value });
+                            clearError(`row-${r.id}-price`);
+                          }}
                           onKeyDown={(e) => {
                             if (e.key !== "Enter") return;
                             e.preventDefault();
                             if (r.item_name.trim() && r.price.trim()) addRow();
                           }}
                         />
+                        <FieldError message={errors[`row-${r.id}-price`]} />
                       </Field>
+
                       <Field label="Qty">
                         <Input
                           inputMode="numeric"

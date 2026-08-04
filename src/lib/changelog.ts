@@ -18,12 +18,13 @@ export const changelog: ChangelogEntry[] = [
   {
     version: "v2.9.3",
     title: "Safer, faster transaction entry",
-    date: "2026-02-16",
+    date: "2026-08-04",
     icon: Sparkles,
     highlights: [
-      "Undo when you remove an item row — one tap in the toast restores it in place.",
-      "Inline validation highlights the exact field to fix (item name, price, category, retailer, dates) instead of a generic error.",
-      "New keyboard shortcuts help — press ? or use \"See all shortcuts\" on the transaction form.",
+      "Undo when you remove an item row — one tap in the toast restores it in place, on both New transaction and the History edit/settle dialog.",
+      "Inline validation highlights the exact field to fix (item name, price, retailer, estimate, dates) instead of a generic error.",
+      "New keyboard shortcuts help — press ? or use the Shortcuts button on the transaction form and History dialogs.",
+
     ],
   },
 
