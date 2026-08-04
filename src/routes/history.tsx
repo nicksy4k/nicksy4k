@@ -1114,10 +1114,59 @@ function EditTransactionDialog({
 
   async function save() {
     if (!transaction) return;
-    if (!retailer.trim()) {
-      toast.error("Retailer is required");
+
+    // Collect every problem first so the user sees all of them at once,
+    // inline against the offending field.
+    const errs: Record<string, string> = {};
+    if (!retailer.trim()) errs.retailer = "Enter the retailer or shop name.";
+
+    if (isPending) {
+      const est = parseFloat(rows[0]?.price ?? "");
+      if (!(est > 0)) errs.estimate = "Enter an estimated total greater than zero.";
+    } else {
+      let usable = 0;
+      for (const r of rows) {
+        const hasName = !!r.item_name.trim();
+        const hasPrice = !isNaN(parseFloat(r.price));
+        if (hasName && hasPrice) usable++;
+        else if (hasName && !hasPrice) errs[`row-${r.id}-price`] = "Enter a price.";
+        else if (!hasName && hasPrice) errs[`row-${r.id}-name`] = "Name this item.";
+      }
+      if (usable === 0 && rows[0]) {
+        errs[`row-${rows[0].id}-name`] ||= "Name this item.";
+        errs[`row-${rows[0].id}-price`] ||= "Enter a price.";
+      }
+    }
+
+    if (protection.enabled) {
+      if (!protection.expiration) errs.protection = "Pick an expiration date for the protection.";
+      else if (protection.expiration < date)
+        errs.protection = "Protection expiration must be on or after the transaction date.";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const count = Object.keys(errs).length;
+      toast.error(`Fix ${count} field${count === 1 ? "" : "s"} before saving.`);
+      if (errs.retailer) focusByAriaLabel("Retailer");
+      else if (errs.estimate) focusByAriaLabel("Estimated total");
+      else {
+        const firstRow = rows.findIndex(
+          (r) => errs[`row-${r.id}-name`] || errs[`row-${r.id}-price`],
+        );
+        if (firstRow >= 0) {
+          const r = rows[firstRow];
+          focusByAriaLabel(
+            errs[`row-${r.id}-name`]
+              ? `Item ${firstRow + 1} name`
+              : `Item ${firstRow + 1} price`,
+          );
+        }
+      }
       return;
     }
+    setErrors({});
+
     const cleanItems: LineItem[] = rows
       .filter((r) => r.item_name.trim() && !isNaN(parseFloat(r.price)))
       .map((r) => ({
@@ -1129,21 +1178,12 @@ function EditTransactionDialog({
         notes: r.notes.trim() || undefined,
       }));
 
-    // When settling (was pending, now unchecked), require real items.
-    if (!isPending && cleanItems.length === 0) {
-      toast.error("Add at least one line item with a price.");
-      return;
-    }
-
-    // Still-pending: require an estimated total via the first row price.
+    // Still-pending: the estimated total comes from the first row price.
     let finalItems: LineItem[];
     let finalTotal: number;
     if (isPending) {
       const estimate = parseFloat(rows[0]?.price ?? "");
-      if (!(estimate > 0)) {
-        toast.error("Enter an estimated total greater than zero.");
-        return;
-      }
+
       finalItems = [
         {
           id: rows[0]?.id ?? crypto.randomUUID(),
