@@ -74,6 +74,9 @@ import {
   type ProtectionValue,
 } from "@/components/ProtectionFields";
 import { RefundDialog } from "@/components/RefundDialog";
+import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
+import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
+
 
 
 export const Route = createFileRoute("/history")({
