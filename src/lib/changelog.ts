@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.11.1",
+    title: "Demo dashboard lights up",
+    date: "2026-08-05",
+    icon: Compass,
+    highlights: [
+      "Demo sample data is now dated relative to today and always lands inside the active cycle, so the dashboard KPIs populate straight away.",
+      "Demo commitments are due within the current week — one already paid, one coming up.",
+      "Starting a demo clears any cached settings and data from a previous session for a clean first load.",
+    ],
+  },
+  {
+
     version: "v2.11.0",
     title: "Demo mode",
     date: "2026-08-06",

@@ -2,10 +2,29 @@
 // Every statement is scoped to the demo user's id — no other account is touched.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-function iso(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
+function fmt(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * A date `offsetDays` from today, clamped to never fall before the 1st of the
+ * current month. The demo cycle is monthly anchored to the 1st, so clamping
+ * guarantees every seeded row lands inside the active cycle whatever day the
+ * demo is opened on.
+ */
+function iso(offsetDays = 0): string {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays);
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  return fmt(d < first ? first : d);
+}
+
+/** A future date, clamped to stay inside the current month. */
+function isoAhead(offsetDays: number): string {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return fmt(d > lastDay ? lastDay : d);
 }
 
 function startOfMonth(): string {
@@ -16,6 +35,7 @@ function startOfMonth(): string {
 function id() {
   return crypto.randomUUID();
 }
+
 
 /** Tables the demo account owns, cleared before every demo session. */
 const OWNED_TABLES = [
@@ -40,16 +60,17 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     await admin.from(table).delete().eq("user_id", userId);
   }
 
-  // 2. Cycle settings — monthly, anchored to the 1st. A manual override window
-  // guarantees every seeded row falls inside the active cycle, whatever today
-  // happens to be, so the dashboard looks alive on first load.
+  // 2. Cycle settings — monthly, anchored to the 1st, no manual override. The
+  // derived active window is therefore "1st of this month → end of month",
+  // which always contains today and every clamped seeded date below.
   const { error: settingsError } = await admin.from("user_settings").upsert(
     {
       user_id: userId,
       cycle_type: "monthly",
       cycle_anchor: startOfMonth(),
-      cycle_override_start: iso(-21),
-      cycle_override_end: iso(9),
+      cycle_override_start: null,
+      cycle_override_end: null,
+
 
       carryover_enabled: true,
       last_carryover_cycle_key: null,
@@ -85,15 +106,16 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     { account: "Hobbies", amount: 60 },
   ];
   await admin.from("savings").insert(
-    pockets.map((p, i) => ({
+    pockets.map((p) => ({
       id: id(),
       user_id: userId,
-      date: iso(-20 + i),
+      date: startOfMonth(),
       kind: "deposit",
       amount: p.amount,
       account: p.account,
       notes: "Opening balance",
     })),
+
   );
 
   // 4. Categories
@@ -120,7 +142,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-6),
+      date: iso(-5),
       retailer: "Asda",
       total_amount: 68.42,
       receipt_attached: false,
@@ -144,7 +166,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-5),
+      date: iso(-3),
       retailer: "Netflix",
       total_amount: 10.99,
       receipt_attached: false,
@@ -158,7 +180,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-4),
+      date: iso(-2),
       retailer: "Steam",
       total_amount: 24.99,
       receipt_attached: false,
@@ -172,7 +194,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-2),
+      date: iso(-1),
       retailer: "Costa Coffee",
       total_amount: 8.6,
       receipt_attached: false,
@@ -189,7 +211,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-1),
+      date: iso(0),
       retailer: "Currys",
       total_amount: 149.0,
       receipt_attached: false,
@@ -217,9 +239,9 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       amount: 750,
       category: "Housing",
       paid: true,
-      last_paid_date: iso(-13),
-      prev_due_date: iso(-13),
-      next_due_date: iso(17),
+      last_paid_date: iso(-2),
+      prev_due_date: iso(-2),
+      next_due_date: iso(28),
       notes: "Paid this cycle",
     },
     {
@@ -231,7 +253,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       amount: 22.5,
       category: "Utilities",
       paid: false,
-      next_due_date: iso(5),
+      next_due_date: isoAhead(2),
       notes: "Due soon",
     },
   ]);
