@@ -100,6 +100,37 @@ function NewTransactionPage() {
     setErrors((e) => (e[key] === undefined ? e : { ...e, [key]: "" }));
   const errorOf = (key: string) => errors[key] || undefined;
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const canScan = useCanScanReceipts();
+  const [scanOpen, setScanOpen] = useState(false);
+
+  function applyScan(payload: ScanApplyPayload) {
+    if (payload.retailer) { clearError("retailer"); setRetailer(payload.retailer); }
+    if (payload.date) setDate(payload.date);
+    if (payload.storagePath) {
+      setReceiptAttached(true);
+      setReceiptType("Digital");
+      setReceiptLocation(payload.storagePath);
+    }
+    if (payload.items.length > 0) {
+      const scanned: DraftItem[] = payload.items.map((i) => ({
+        id: crypto.randomUUID(),
+        item_name: i.name,
+        price: String(i.price),
+        quantity: String(i.quantity),
+        category: (i.category && categories.includes(i.category) ? i.category : "") as Category,
+        notes: "",
+      }));
+      setItems((cur) => {
+        const kept = cur.filter((c) => c.item_name.trim() || c.price.trim());
+        return [...kept, ...scanned];
+      });
+      setIsPending(false);
+      setStep(2);
+    }
+    toast.success("Receipt applied — review the lines and save.");
+  }
+
+
 
 
 
