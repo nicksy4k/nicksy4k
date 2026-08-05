@@ -19,9 +19,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Check, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
+import { useCanScanReceipts } from "@/lib/features";
+
 import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
 import {
   PaymentSplitEditor,
