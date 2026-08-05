@@ -62,10 +62,13 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  ScanLine,
 } from "lucide-react";
 
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
+import { useCanScanReceipts } from "@/lib/features";
 import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -880,6 +883,8 @@ function EditTransactionDialog({
   const { update, items: pastTransactions } = useTransactions();
   const { add: addSaving } = useSavings();
   const { hidden } = useHiddenSuggestions();
+  const canScan = useCanScanReceipts();
+  const [scanOpen, setScanOpen] = useState(false);
   const open = transaction !== null;
 
   const itemNameSuggestions = useMemo(() => {
@@ -954,6 +959,40 @@ function EditTransactionDialog({
 
   function clearError(key: string) {
     setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
+  }
+
+  const retailerOptionsForScan = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.retailer?.trim()) set.add(t.retailer.trim());
+    }
+    return Array.from(set);
+  }, [pastTransactions]);
+
+  function applyScan(payload: ScanApplyPayload) {
+    if (payload.retailer) { setRetailer(payload.retailer); clearError("retailer"); }
+    if (payload.date) setDate(payload.date);
+    if (payload.storagePath) {
+      setReceiptAttached(true);
+      setReceiptType("Digital");
+      setReceiptLocation(payload.storagePath);
+    }
+    if (payload.items.length > 0) {
+      const scanned: DraftRow[] = payload.items.map((i) => ({
+        id: crypto.randomUUID(),
+        item_name: i.name,
+        price: String(i.price),
+        quantity: String(i.quantity),
+        category: i.category && categories.includes(i.category) ? i.category : "",
+        notes: "",
+      }));
+      setRows((cur) => {
+        const kept = cur.filter((r) => r.item_name.trim() || r.price.trim());
+        return [...kept, ...scanned];
+      });
+      setIsPending(false);
+    }
+    toast.success("Receipt applied — review the lines and save.");
   }
 
 
@@ -1362,7 +1401,31 @@ function EditTransactionDialog({
             <Switch checked={isPending} onCheckedChange={setIsPending} />
           </div>
 
+          {canScan && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+              <div>
+                <Label className="text-sm">Scan a receipt</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Upload the receipt and let AI fill in the line items for you.
+                </p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setScanOpen(true)}>
+                <ScanLine className="h-4 w-4" /> Scan
+              </Button>
+            </div>
+          )}
+          {canScan && (
+            <ReceiptScanDialog
+              open={scanOpen}
+              onOpenChange={setScanOpen}
+              knownRetailers={retailerOptionsForScan}
+              categories={categories}
+              onApply={applyScan}
+            />
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
+
             <Field label="Date">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>

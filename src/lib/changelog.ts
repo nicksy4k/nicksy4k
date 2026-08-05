@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart, Palette } from "lucide-react";
+import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart, Palette, ScanLine } from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
@@ -16,6 +16,20 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.10.0",
+    title: "AI receipt scanner (early preview)",
+    date: "2026-08-05",
+    icon: ScanLine,
+    highlights: [
+      "Upload a photo or PDF of a receipt and have the retailer, date, total and every line item filled in for you.",
+      "Review sheet lets you tick, rename, re-price or drop any detected line before it touches your ledger.",
+      "Automatic \"items vs receipt total\" check flags anything the scan missed or double-counted.",
+      "The uploaded receipt is attached to the transaction automatically — no second upload.",
+      "Limited preview: currently enabled on admin accounts only while we test accuracy and running costs.",
+    ],
+  },
+  {
+
     version: "v2.9.3",
     title: "Safer, faster transaction entry",
     date: "2026-08-04",

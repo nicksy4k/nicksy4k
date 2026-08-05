@@ -19,9 +19,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Check, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
+import { useCanScanReceipts } from "@/lib/features";
+
 import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
 import {
   PaymentSplitEditor,
@@ -97,6 +100,37 @@ function NewTransactionPage() {
     setErrors((e) => (e[key] === undefined ? e : { ...e, [key]: "" }));
   const errorOf = (key: string) => errors[key] || undefined;
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const canScan = useCanScanReceipts();
+  const [scanOpen, setScanOpen] = useState(false);
+
+  function applyScan(payload: ScanApplyPayload) {
+    if (payload.retailer) { clearError("retailer"); setRetailer(payload.retailer); }
+    if (payload.date) setDate(payload.date);
+    if (payload.storagePath) {
+      setReceiptAttached(true);
+      setReceiptType("Digital");
+      setReceiptLocation(payload.storagePath);
+    }
+    if (payload.items.length > 0) {
+      const scanned: DraftItem[] = payload.items.map((i) => ({
+        id: crypto.randomUUID(),
+        item_name: i.name,
+        price: String(i.price),
+        quantity: String(i.quantity),
+        category: (i.category && categories.includes(i.category) ? i.category : "") as Category,
+        notes: "",
+      }));
+      setItems((cur) => {
+        const kept = cur.filter((c) => c.item_name.trim() || c.price.trim());
+        return [...kept, ...scanned];
+      });
+      setIsPending(false);
+      setStep(2);
+    }
+    toast.success("Receipt applied — review the lines and save.");
+  }
+
+
 
 
 
@@ -654,10 +688,34 @@ function NewTransactionPage() {
         </div>
       )}
 
+      {canScan && (
+        <ReceiptScanDialog
+          open={scanOpen}
+          onOpenChange={setScanOpen}
+          knownRetailers={retailerSuggestions}
+          categories={categories}
+          onApply={applyScan}
+        />
+      )}
+
       {step === 1 && (
         <Card>
           <CardContent className="p-6 space-y-5">
+            {canScan && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div>
+                  <Label className="text-sm">Scan a receipt</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Upload a photo or PDF and let AI fill in the retailer, date and every line item.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setScanOpen(true)}>
+                  <ScanLine className="h-4 w-4" /> Scan
+                </Button>
+              </div>
+            )}
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Label className="text-sm">Mark as Pending Hold</Label>
