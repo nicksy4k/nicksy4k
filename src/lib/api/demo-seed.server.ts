@@ -106,15 +106,16 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     { account: "Hobbies", amount: 60 },
   ];
   await admin.from("savings").insert(
-    pockets.map((p, i) => ({
+    pockets.map((p) => ({
       id: id(),
       user_id: userId,
-      date: iso(-20 + i),
+      date: startOfMonth(),
       kind: "deposit",
       amount: p.amount,
       account: p.account,
       notes: "Opening balance",
     })),
+
   );
 
   // 4. Categories
