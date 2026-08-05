@@ -1,0 +1,46 @@
+# Demo Mode
+
+A one-click "View Demo Account" experience on the sign-in screen that drops a visitor into a shared, self-resetting demo account with realistic data, an on-screen "Demo sandbox" banner, and an admin-controlled switch for AI scanner access.
+
+## 1. Demo sign-in
+
+- Add a secondary "View Demo Account" button under the sign-in / Google options on the auth page, with one line of helper text ("Explore Ledgerly with sample data — no signup").
+- Clicking it calls a server function that signs in as `demo@itemizedkeeper.co.uk` using a password held as a server-side secret (never shipped to the browser), returns the session, and the client stores it. The visitor lands on the dashboard.
+- The demo account is created once (confirmed email, `user` role, onboarding already complete) so the setup wizard is skipped.
+
+## 2. Fresh data every session
+
+Each time someone starts a demo session, the demo account's data is wiped and re-seeded server-side, so it always looks pristine and never shows a previous visitor's edits.
+
+Seeded content:
+- 4 pockets/savings accounts: Savings, Bills, Groceries, Hobbies
+- Cycle settings: monthly cycle anchored so today falls inside the active cycle
+- 1 income entry: £1,500 salary, routed across the pockets with a remainder to the main balance
+- 5 transactions dated inside the current cycle: Asda (itemised grocery shop), Netflix, Steam, Costa Coffee, and one larger itemised purchase
+- 2 active commitments with due dates in the current cycle (one paid, one upcoming)
+
+All writes are scoped to the demo account's user id only; your admin account's data is never touched.
+
+## 3. AI scanner access + kill switch
+
+- New app-wide flag table holding `demo_ai_scanner_enabled`. Everyone signed in can read it; only admins can change it.
+- New "Admin" tab in Settings, visible only to admin accounts, containing the toggle **"Enable AI Scanner for Demo Account"**.
+- The scanner is unlocked for the demo user only while that toggle is ON; when OFF the button is hidden in the UI and the server function refuses the call for the demo account. Your own admin access is unaffected either way.
+- Demo scans upload to a `demo/` prefix in the receipts bucket and the file is deleted immediately after the AI reads it, so nothing accumulates. The existing daily scan cap still applies to the demo account.
+
+## 4. Guardrails
+
+- A slim amber banner at the top of the app when signed in as demo: "Demo sandbox — sample data, resets on each visit" plus an "Exit demo" button that signs out.
+- The demo user can add and edit its own transactions, income, commitments and try the scanner; those writes stay inside the demo account.
+- Settings is off-limits for the demo user: the sidebar link is hidden and `/settings` redirects to the dashboard, so the demo can't change core configuration, roles, privacy content, or flip the AI kill switch. Privacy/changelog pages stay readable.
+
+## Technical notes
+
+- `supabase--migration`: create `app_flags` (key text PK, value boolean/jsonb, updated_at) with GRANT + RLS — SELECT to `authenticated`, INSERT/UPDATE only via `has_role(auth.uid(),'admin')`; seed `demo_ai_scanner_enabled = false`.
+- Demo account credentials: `DEMO_ACCOUNT_PASSWORD` added via the secrets tool; user created with the Auth Admin API from a server function on first use if missing.
+- `src/lib/api/demo.functions.ts` — `startDemoSession()` (public server fn: ensure demo user exists, wipe + seed via `supabaseAdmin` restricted to the demo uid, `signInWithPassword`, return session tokens). Seed rows live in a separate `demo-seed.server.ts` helper so the functions file stays a thin wrapper.
+- `src/lib/demoAccount.ts` — `useIsDemoUser()` hook comparing the session email to the demo email; used by the banner, sidebar and settings guard.
+- `src/lib/features.ts` — extend `useCanScanReceipts()` to also return true for the demo user when the flag is on; mirror the same rule in `receipt-scan.functions.ts` (allow when caller is the demo uid AND `app_flags.demo_ai_scanner_enabled` is true).
+- `src/components/ReceiptScanDialog.tsx` — demo uploads go to `demo/<uid>/…` and are removed after the scan resolves.
+- `src/components/AppLayout.tsx` — render the demo banner; `src/routes/settings.tsx` — new admin-only tab + demo redirect; `src/components/app-sidebar.tsx` — hide Settings for demo.
+- Prepend a v2.11.0 entry to `src/lib/changelog.ts`.
