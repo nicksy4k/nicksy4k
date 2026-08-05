@@ -40,14 +40,17 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     await admin.from(table).delete().eq("user_id", userId);
   }
 
-  // 2. Cycle settings — monthly, anchored to the 1st, onboarding already done
+  // 2. Cycle settings — monthly, anchored to the 1st. A manual override window
+  // guarantees every seeded row falls inside the active cycle, whatever today
+  // happens to be, so the dashboard looks alive on first load.
   await admin.from("user_settings").upsert(
     {
       user_id: userId,
       cycle_type: "monthly",
       cycle_anchor: startOfMonth(),
-      cycle_override_start: null,
-      cycle_override_end: null,
+      cycle_override_start: iso(-21),
+      cycle_override_end: iso(9),
+
       carryover_enabled: true,
       last_carryover_cycle_key: null,
       onboarding_completed: true,
