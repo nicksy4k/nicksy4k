@@ -43,7 +43,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
   // 2. Cycle settings — monthly, anchored to the 1st. A manual override window
   // guarantees every seeded row falls inside the active cycle, whatever today
   // happens to be, so the dashboard looks alive on first load.
-  await admin.from("user_settings").upsert(
+  const { error: settingsError } = await admin.from("user_settings").upsert(
     {
       user_id: userId,
       cycle_type: "monthly",
@@ -63,6 +63,8 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     },
     { onConflict: "user_id" },
   );
+  if (settingsError) console.error("[demo-seed] user_settings", settingsError);
+
 
   await admin
     .from("profiles")
