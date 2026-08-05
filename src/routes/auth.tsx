@@ -231,8 +231,15 @@ export function AuthPage() {
         refresh_token: tokens.refresh_token,
       });
       if (error) throw error;
+      // Start from a clean slate: the cached cycle window and any query data
+      // from a previous session must not leak into the demo dashboard.
+      try {
+        localStorage.removeItem("ledgerly.cycle.v2");
+      } catch { /* storage unavailable */ }
+      queryClient.clear();
       toast.success("Demo sandbox ready — sample data loaded.");
       window.location.assign("/");
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the demo");
       setDemoLoading(false);
