@@ -961,6 +961,40 @@ function EditTransactionDialog({
     setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
   }
 
+  const retailerOptionsForScan = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of pastTransactions) {
+      if (t.retailer?.trim()) set.add(t.retailer.trim());
+    }
+    return Array.from(set);
+  }, [pastTransactions]);
+
+  function applyScan(payload: ScanApplyPayload) {
+    if (payload.retailer) { setRetailer(payload.retailer); clearError("retailer"); }
+    if (payload.date) setDate(payload.date);
+    if (payload.storagePath) {
+      setReceiptAttached(true);
+      setReceiptType("Digital");
+      setReceiptLocation(payload.storagePath);
+    }
+    if (payload.items.length > 0) {
+      const scanned: DraftRow[] = payload.items.map((i) => ({
+        id: crypto.randomUUID(),
+        item_name: i.name,
+        price: String(i.price),
+        quantity: String(i.quantity),
+        category: i.category && categories.includes(i.category) ? i.category : "",
+        notes: "",
+      }));
+      setRows((cur) => {
+        const kept = cur.filter((r) => r.item_name.trim() || r.price.trim());
+        return [...kept, ...scanned];
+      });
+      setIsPending(false);
+    }
+    toast.success("Receipt applied — review the lines and save.");
+  }
+
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
