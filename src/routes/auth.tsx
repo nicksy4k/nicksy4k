@@ -144,6 +144,8 @@ export function AuthPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const beginDemo = useServerFn(startDemoSession);
+  const queryClient = useQueryClient();
+
 
 
   // Signup-only state
