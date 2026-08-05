@@ -38,6 +38,9 @@ import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
 import { filterHidden } from "@/lib/hiddenSuggestions";
 import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
 import { UserCircle2, FileDown, Printer, BookOpen } from "lucide-react";
+import { useIsDemoUser } from "@/lib/demoAccount";
+import { useUserRoles } from "@/lib/features";
+import { AdminDemoCard } from "@/components/AdminDemoCard";
 import { WhatsNewCard } from "@/components/WhatsNewCard";
 import { ChangelogDialogTrigger } from "@/components/ChangelogDialog";
 import { changelog, currentVersion, currentVersionDate, downloadChangelogCsv } from "@/lib/changelog";
@@ -58,7 +61,7 @@ export const Route = createFileRoute("/settings")({
   errorComponent: RouteError,
 });
 
-const VALID_TABS = ["cycle", "personalise", "account", "categories", "suggestions", "data", "about"] as const;
+const VALID_TABS = ["cycle", "personalise", "account", "categories", "suggestions", "data", "about", "admin"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 function readHashTab(): TabValue {
@@ -75,7 +78,18 @@ function SettingsPage() {
   const incomeCats = useIncomeCategories();
   const hidden = useHiddenSuggestions();
 
+  // The shared demo account must not reach app configuration.
+  const isDemo = useIsDemoUser();
+  const navigateGuard = useNavigate();
+  useEffect(() => {
+    if (isDemo) navigateGuard({ to: "/", replace: true });
+  }, [isDemo, navigateGuard]);
+
+  const { data: roles } = useUserRoles();
+  const isAdmin = (roles ?? []).includes("admin");
+
   const [tab, setTab] = useState<TabValue>(() => readHashTab());
+
 
   useEffect(() => {
     const sync = () => setTab(readHashTab());
@@ -112,7 +126,7 @@ function SettingsPage() {
       </header>
 
       <Tabs value={tab} onValueChange={selectTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 h-auto md:h-12 mb-6 gap-1">
+        <TabsList className={`w-full grid grid-cols-3 ${isAdmin ? "md:grid-cols-8" : "md:grid-cols-7"} h-auto md:h-12 mb-6 gap-1`}>
           <TabsTrigger value="cycle" className="gap-2"><CalendarCog className="h-4 w-4" /> Cycle</TabsTrigger>
           <TabsTrigger value="personalise" className="gap-2"><Palette className="h-4 w-4" /> Personalise</TabsTrigger>
           <TabsTrigger value="account" className="gap-2"><UserCircle2 className="h-4 w-4" /> Account</TabsTrigger>
@@ -120,9 +134,19 @@ function SettingsPage() {
           <TabsTrigger value="suggestions" className="gap-2"><Sparkles className="h-4 w-4" /> Suggestions</TabsTrigger>
           <TabsTrigger value="data" className="gap-2"><HardDrive className="h-4 w-4" /> Data</TabsTrigger>
           <TabsTrigger value="about" className="gap-2"><Info className="h-4 w-4" /> About</TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="admin" className="gap-2"><ShieldCheck className="h-4 w-4" /> Admin</TabsTrigger>
+          )}
         </TabsList>
 
+        {isAdmin && (
+          <TabsContent value="admin" className="mt-0 space-y-6">
+            <AdminDemoCard />
+          </TabsContent>
+        )}
+
         <TabsContent value="personalise" className="mt-0 space-y-6">
+
           <CurrencySettingsCard />
           <ThemePickerCard />
           <ComfortCard categories={itemCats.list} />

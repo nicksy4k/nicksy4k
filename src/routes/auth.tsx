@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { startDemoSession } from "@/lib/api/demo.functions";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -32,6 +34,8 @@ import {
   ArrowRight,
   Sparkles,
   MessageSquare,
+  Compass,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import heroAsset from "@/assets/auth-hero.png.asset.json";
@@ -138,6 +142,9 @@ export function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const beginDemo = useServerFn(startDemoSession);
+
 
   // Signup-only state
   const [fullName, setFullName] = useState("");
@@ -213,6 +220,25 @@ export function AuthPage() {
       setGoogleLoading(false);
     }
   }
+
+
+  async function startDemo() {
+    setDemoLoading(true);
+    try {
+      const tokens = await beginDemo();
+      const { error } = await supabase.auth.setSession({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      });
+      if (error) throw error;
+      toast.success("Demo sandbox ready — sample data loaded.");
+      window.location.assign("/");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start the demo");
+      setDemoLoading(false);
+    }
+  }
+
 
   const isSignup = mode === "signup";
 
@@ -420,6 +446,24 @@ export function AuthPage() {
                     {!loading && <ArrowRight className="ml-1 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition" />}
                   </Button>
                 </form>
+
+                <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 p-3 space-y-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={startDemo}
+                    disabled={demoLoading}
+                  >
+                    <Compass className="mr-2 h-4 w-4" />
+                    {demoLoading ? "Preparing demo…" : "View Demo Account"}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Explore Ledgerly with sample data — no signup. The demo sandbox resets on each visit.
+                  </p>
+                </div>
+
+
 
                 <div className="text-center text-sm text-muted-foreground">
                   {isSignup ? (

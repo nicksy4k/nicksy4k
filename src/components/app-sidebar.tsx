@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsDemoUser } from "@/lib/demoAccount";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
@@ -84,6 +85,13 @@ const groups: NavGroup[] = [
 ];
 
 export function AppSidebar() {
+  const isDemo = useIsDemoUser();
+  // The shared demo account can't reach app configuration.
+  const visibleGroups: NavGroup[] = isDemo
+    ? groups
+        .map((g) => ({ ...g, items: g.items.filter((i) => i.to !== "/settings") }))
+        .filter((g) => g.items.length > 0)
+    : groups;
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const closeIfMobile = () => {
@@ -125,7 +133,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="gap-1">
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label} className="py-1">
             {!collapsed && (
               <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-[0.16em] text-sidebar-foreground/50">

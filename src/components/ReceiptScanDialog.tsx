@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsDemoUser } from "@/lib/demoAccount";
 import { scanReceipt } from "@/lib/api/receipt-scan.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export function ReceiptScanDialog({
   open, onOpenChange, knownRetailers, categories, currency = "GBP", keepHeader = false, onApply,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const isDemo = useIsDemoUser();
   const scan = useServerFn(scanReceipt);
   const [busy, setBusy] = useState(false);
   const [path, setPath] = useState("");
@@ -86,27 +88,37 @@ export function ReceiptScanDialog({
         upsert: false,
       });
       if (error) throw error;
-      setPath(storagePath);
+      // Demo uploads are transient — never keep the file or attach it.
+      setPath(isDemo ? "" : storagePath);
 
-      const result = await scan({
-        data: { path: storagePath, currency, categories },
-      });
+      try {
+        const result = await scan({
+          data: { path: storagePath, currency, categories },
+        });
 
-      const parsed = (result.items ?? [])
-        .map((i) => normaliseItem(i))
-        .filter((i): i is ScannedItem => i !== null)
-        .map((i) => ({ ...i, id: crypto.randomUUID(), include: true }));
+        const parsed = (result.items ?? [])
+          .map((i) => normaliseItem(i))
+          .filter((i): i is ScannedItem => i !== null)
+          .map((i) => ({ ...i, id: crypto.randomUUID(), include: true }));
 
-      setRetailer(matchRetailer(result.retailer ?? "", knownRetailers));
-      setDate(result.date && /^\d{4}-\d{2}-\d{2}$/.test(result.date) ? result.date : "");
-      setTotal(result.total != null ? String(result.total) : "");
-      setRows(parsed);
+        setRetailer(matchRetailer(result.retailer ?? "", knownRetailers));
+        setDate(result.date && /^\d{4}-\d{2}-\d{2}$/.test(result.date) ? result.date : "");
+        setTotal(result.total != null ? String(result.total) : "");
+        setRows(parsed);
 
-      if (parsed.length === 0) {
-        toast.warning("No line items found — I filled in what I could read.");
-      } else {
-        toast.success(`Found ${parsed.length} item${parsed.length === 1 ? "" : "s"}.`);
+        if (parsed.length === 0) {
+          toast.warning("No line items found — I filled in what I could read.");
+        } else {
+          toast.success(`Found ${parsed.length} item${parsed.length === 1 ? "" : "s"}.`);
+        }
+      } finally {
+        if (isDemo) {
+          try {
+            await supabase.storage.from("receipts").remove([storagePath]);
+          } catch { /* best-effort cleanup */ }
+        }
       }
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Receipt scan failed");
       setRows(null);
@@ -115,6 +127,7 @@ export function ReceiptScanDialog({
       if (inputRef.current) inputRef.current.value = "";
     }
   }
+
 
   const included = (rows ?? []).filter((r) => r.include);
   const sum = itemsTotal(included);

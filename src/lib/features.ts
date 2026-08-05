@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsDemoUser, useDemoScannerFlag } from "@/lib/demoAccount";
 
 export type AppRole = "admin" | "beta" | "user";
 
@@ -43,7 +44,16 @@ export function useFeature(key: FeatureKey): boolean {
   return roles.some((r) => required.includes(r));
 }
 
-/** Convenience wrapper used by the transaction forms. */
+/**
+ * Convenience wrapper used by the transaction forms.
+ *
+ * Admins always have access. The shared demo account additionally gets access
+ * while the `demo_ai_scanner_enabled` kill switch is ON (admin-controlled).
+ */
 export function useCanScanReceipts(): boolean {
-  return useFeature("receiptScan");
+  const byRole = useFeature("receiptScan");
+  const isDemo = useIsDemoUser();
+  const { data: demoFlag } = useDemoScannerFlag();
+  return byRole || (isDemo && demoFlag === true);
 }
+

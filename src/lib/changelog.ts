@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart, Palette, ScanLine } from "lucide-react";
+import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart, Palette, ScanLine, Compass } from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
@@ -16,6 +16,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.11.0",
+    title: "Demo mode",
+    date: "2026-08-06",
+    icon: Compass,
+    highlights: [
+      "New \"View Demo Account\" button on the sign-in page — explore Ledgerly instantly with realistic sample data.",
+      "The demo sandbox is re-seeded on every visit with pockets, income, transactions and commitments.",
+      "A clear \"Demo sandbox\" banner appears while you're in the demo, and app settings stay locked.",
+      "Admins get a new Admin tab with a kill switch for AI scanner access in the demo (off by default).",
+    ],
+  },
+  {
+
     version: "v2.10.0",
     title: "AI receipt scanner (early preview)",
     date: "2026-08-05",
