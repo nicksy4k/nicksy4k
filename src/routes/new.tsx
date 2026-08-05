@@ -688,10 +688,34 @@ function NewTransactionPage() {
         </div>
       )}
 
+      {canScan && (
+        <ReceiptScanDialog
+          open={scanOpen}
+          onOpenChange={setScanOpen}
+          knownRetailers={retailerSuggestions}
+          categories={categories}
+          onApply={applyScan}
+        />
+      )}
+
       {step === 1 && (
         <Card>
           <CardContent className="p-6 space-y-5">
+            {canScan && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div>
+                  <Label className="text-sm">Scan a receipt</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Upload a photo or PDF and let AI fill in the retailer, date and every line item.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setScanOpen(true)}>
+                  <ScanLine className="h-4 w-4" /> Scan
+                </Button>
+              </div>
+            )}
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Label className="text-sm">Mark as Pending Hold</Label>
