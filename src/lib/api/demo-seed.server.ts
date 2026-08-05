@@ -142,7 +142,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-6),
+      date: iso(-5),
       retailer: "Asda",
       total_amount: 68.42,
       receipt_attached: false,
@@ -166,7 +166,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-5),
+      date: iso(-3),
       retailer: "Netflix",
       total_amount: 10.99,
       receipt_attached: false,
@@ -180,7 +180,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-4),
+      date: iso(-2),
       retailer: "Steam",
       total_amount: 24.99,
       receipt_attached: false,
@@ -194,7 +194,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-2),
+      date: iso(-1),
       retailer: "Costa Coffee",
       total_amount: 8.6,
       receipt_attached: false,
@@ -211,7 +211,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     {
       id: id(),
       user_id: userId,
-      date: iso(-1),
+      date: iso(0),
       retailer: "Currys",
       total_amount: 149.0,
       receipt_attached: false,
@@ -239,9 +239,9 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       amount: 750,
       category: "Housing",
       paid: true,
-      last_paid_date: iso(-13),
-      prev_due_date: iso(-13),
-      next_due_date: iso(17),
+      last_paid_date: iso(-2),
+      prev_due_date: iso(-2),
+      next_due_date: iso(28),
       notes: "Paid this cycle",
     },
     {
@@ -253,7 +253,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       amount: 22.5,
       category: "Utilities",
       paid: false,
-      next_due_date: iso(5),
+      next_due_date: isoAhead(2),
       notes: "Due soon",
     },
   ]);
