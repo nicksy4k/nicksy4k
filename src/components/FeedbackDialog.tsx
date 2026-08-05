@@ -126,13 +126,18 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
         attachment_path = key;
       }
 
-      // 2) Submit through the public feedback endpoint
+      // 2) Submit through the public feedback endpoint. The server derives the
+      // account from this token — it never trusts a client-supplied user id.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       const res = await fetch("/api/public/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken && !anonymous ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           ...parsed.data,
-          user_id: userId,
           app_version: APP_VERSION,
           route: pathname,
           user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
