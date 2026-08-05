@@ -312,16 +312,17 @@ export function useCycleSettings() {
     async function refresh() {
       const remote = await fetchRemote();
       if (cancelled) return;
-      if (remote) {
-        writeCache(remote);
-        setSettings(remote);
+      if (remote.status === "ok") {
+        writeCache(remote.settings);
+        setSettings(remote.settings);
         broadcast();
-      } else {
-        // No row yet — seed the remote with whatever we currently have so
-        // future devices pick it up too. (No-op when signed out.)
+      } else if (remote.status === "missing") {
+        // Genuinely no row yet — seed the remote with whatever we currently
+        // have so future devices pick it up too.
         const cached = readCache();
         await upsertRemote(cached);
       }
+
     }
 
     refresh();
