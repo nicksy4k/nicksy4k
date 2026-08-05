@@ -2,10 +2,29 @@
 // Every statement is scoped to the demo user's id — no other account is touched.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-function iso(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
+function fmt(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * A date `offsetDays` from today, clamped to never fall before the 1st of the
+ * current month. The demo cycle is monthly anchored to the 1st, so clamping
+ * guarantees every seeded row lands inside the active cycle whatever day the
+ * demo is opened on.
+ */
+function iso(offsetDays = 0): string {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays);
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  return fmt(d < first ? first : d);
+}
+
+/** A future date, clamped to stay inside the current month. */
+function isoAhead(offsetDays: number): string {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return fmt(d > lastDay ? lastDay : d);
 }
 
 function startOfMonth(): string {
@@ -16,6 +35,7 @@ function startOfMonth(): string {
 function id() {
   return crypto.randomUUID();
 }
+
 
 /** Tables the demo account owns, cleared before every demo session. */
 const OWNED_TABLES = [
