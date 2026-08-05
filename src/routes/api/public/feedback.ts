@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/public/feedback")({
             subject: data.subject,
             message: data.message,
             email: data.email,
-            user_id: data.user_id ?? null,
+            user_id: verifiedUserId,
             app_version: data.app_version ?? null,
             route: data.route ?? null,
             user_agent: data.user_agent ?? null,
