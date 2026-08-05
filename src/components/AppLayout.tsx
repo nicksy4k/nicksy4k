@@ -13,6 +13,7 @@ import { useOnboardingStatus } from "@/lib/onboarding";
 import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import { DemoModeProvider } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
+import { useIsDemoUser } from "@/lib/demoAccount";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -22,6 +23,7 @@ export function AppLayout() {
   useCycleCarryover();
 
   const { prefs } = usePreferences();
+  const isDemo = useIsDemoUser();
   const moneyKey = `${prefs.currency}:${prefs.customSymbol}:${prefs.symbolPosition}`;
 
 
@@ -59,9 +61,16 @@ export function AppLayout() {
                   </FeedbackDialog>
                 </div>
               </header>
+              {isDemo && (
+                <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400 md:px-6">
+                  <span className="font-medium">Demo sandbox</span> — you're exploring Ledgerly with sample data.
+                  Changes here are temporary and reset on the next demo visit.
+                </div>
+              )}
               <main className="flex-1 min-w-0 p-4 md:p-6">
                 <Outlet />
               </main>
+
             </SidebarInset>
             <Toaster richColors position="top-right" />
           </div>

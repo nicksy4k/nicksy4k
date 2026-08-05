@@ -11,6 +11,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * feature up to beta testers later.
  */
 const ALLOWED_ROLES: string[] | null = ["admin"];
+const DEMO_EMAIL = "demo@itemizedkeeper.co.uk";
+const DEMO_SCANNER_FLAG = "demo_ai_scanner_enabled";
 const DAILY_SCAN_LIMIT = 30;
 const MODEL = "openai/gpt-5.6-sol";
 
@@ -73,11 +75,26 @@ export const scanReceipt = createServerFn({ method: "POST" })
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
-      const has = (roles ?? []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role));
+      let has = (roles ?? []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role));
+
+      // Demo account: allowed only while the admin kill switch is ON.
+      if (!has) {
+        const email = (context.claims["email"] as string | undefined) ?? "";
+        if (email.toLowerCase() === DEMO_EMAIL) {
+          const { data: flag } = await supabase
+            .from("app_flags")
+            .select("enabled")
+            .eq("key", DEMO_SCANNER_FLAG)
+            .maybeSingle();
+          has = Boolean(flag?.enabled);
+        }
+      }
+
       if (!has) {
         throw new Error("Receipt scanning isn't available on your account yet.");
       }
     }
+
 
     // 2. Daily rate limit
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

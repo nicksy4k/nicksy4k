@@ -107,18 +107,27 @@ function rowToSettings(r: Row): CycleSettings {
   };
 }
 
-async function fetchRemote(): Promise<CycleSettings | null> {
+type RemoteFetch =
+  | { status: "ok"; settings: CycleSettings }
+  | { status: "missing" }
+  | { status: "unavailable" };
+
+async function fetchRemote(): Promise<RemoteFetch> {
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
-  if (!uid) return null;
+  if (!uid) return { status: "unavailable" };
   const { data, error } = await supabase
     .from("user_settings")
     .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled, last_carryover_cycle_key")
     .eq("user_id", uid)
     .maybeSingle();
-  if (error || !data) return null;
-  return rowToSettings(data as Row);
+  // An error is NOT "no settings" — never overwrite the server row on a
+  // transient read failure (e.g. the token hasn't propagated yet).
+  if (error) return { status: "unavailable" };
+  if (!data) return { status: "missing" };
+  return { status: "ok", settings: rowToSettings(data as Row) };
 }
+
 
 async function upsertRemote(s: CycleSettings): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
@@ -303,16 +312,17 @@ export function useCycleSettings() {
     async function refresh() {
       const remote = await fetchRemote();
       if (cancelled) return;
-      if (remote) {
-        writeCache(remote);
-        setSettings(remote);
+      if (remote.status === "ok") {
+        writeCache(remote.settings);
+        setSettings(remote.settings);
         broadcast();
-      } else {
-        // No row yet — seed the remote with whatever we currently have so
-        // future devices pick it up too. (No-op when signed out.)
+      } else if (remote.status === "missing") {
+        // Genuinely no row yet — seed the remote with whatever we currently
+        // have so future devices pick it up too.
         const cached = readCache();
         await upsertRemote(cached);
       }
+
     }
 
     refresh();
