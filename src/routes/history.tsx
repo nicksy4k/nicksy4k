@@ -62,10 +62,13 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  ScanLine,
 } from "lucide-react";
 
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
+import { useCanScanReceipts } from "@/lib/features";
 import { ReceiptUpload, isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -880,6 +883,8 @@ function EditTransactionDialog({
   const { update, items: pastTransactions } = useTransactions();
   const { add: addSaving } = useSavings();
   const { hidden } = useHiddenSuggestions();
+  const canScan = useCanScanReceipts();
+  const [scanOpen, setScanOpen] = useState(false);
   const open = transaction !== null;
 
   const itemNameSuggestions = useMemo(() => {
