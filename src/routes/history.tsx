@@ -1362,7 +1362,31 @@ function EditTransactionDialog({
             <Switch checked={isPending} onCheckedChange={setIsPending} />
           </div>
 
+          {canScan && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+              <div>
+                <Label className="text-sm">Scan a receipt</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Upload the receipt and let AI fill in the line items for you.
+                </p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setScanOpen(true)}>
+                <ScanLine className="h-4 w-4" /> Scan
+              </Button>
+            </div>
+          )}
+          {canScan && (
+            <ReceiptScanDialog
+              open={scanOpen}
+              onOpenChange={setScanOpen}
+              knownRetailers={retailerOptionsForScan}
+              categories={categories}
+              onApply={applyScan}
+            />
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
+
             <Field label="Date">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
