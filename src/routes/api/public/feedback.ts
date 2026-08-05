@@ -48,6 +48,18 @@ export const Route = createFileRoute("/api/public/feedback")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        // Never trust a client-supplied user_id. Only attribute feedback to an
+        // account when a valid access token is presented and verified here.
+        let verifiedUserId: string | null = null;
+        const authHeader = request.headers.get("authorization") ?? "";
+        const token = authHeader.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice(7).trim()
+          : "";
+        if (token) {
+          const { data: userData } = await supabaseAdmin.auth.getUser(token);
+          verifiedUserId = userData.user?.id ?? null;
+        }
+
         // Simple rate limit: max 5 submissions / 10 min for this email
         const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { count } = await supabaseAdmin
