@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
-import { useTransactions, useIncomes, useSavings } from "@/lib/store";
+import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
+import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -213,6 +214,8 @@ function DashboardPage() {
         (a, b) => parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
       );
   }, [items]);
+
+  const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
   const recent = items.slice(0, 5);
 
