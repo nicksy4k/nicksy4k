@@ -72,6 +72,8 @@ function DashboardPage() {
   const { items: realItems, dismiss } = useTransactions();
   const { items: realIncomes } = useIncomes();
   const { items: realSavings } = useSavings();
+  const { items: commitments } = useCommitments();
+
   const demo = useDemoMode();
   // While the tour is active we swap the whole dataset for a curated demo
   // slice so users can safely try filtering / expanding / logging without
