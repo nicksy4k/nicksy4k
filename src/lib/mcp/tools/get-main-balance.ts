@@ -63,10 +63,7 @@ export default defineTool({
       return { content: [{ type: "text", text: firstError.message }], isError: true };
     }
 
-    const totalIncome = (incRes.data ?? []).reduce(
-      (s, r) => s + Number(r.amount ?? 0),
-      0,
-    );
+    const totalIncome = (incRes.data ?? []).reduce((s, r) => s + Number(r.amount ?? 0), 0);
     const totalExpenses = (txRes.data ?? []).reduce(
       (s, t) =>
         s +
@@ -77,8 +74,7 @@ export default defineTool({
       0,
     );
     const netSavings = (savRes.data ?? []).reduce(
-      (s, r) =>
-        s + (r.kind === "deposit" ? Number(r.amount ?? 0) : -Number(r.amount ?? 0)),
+      (s, r) => s + (r.kind === "deposit" ? Number(r.amount ?? 0) : -Number(r.amount ?? 0)),
       0,
     );
     const leftToSpend = totalIncome - totalExpenses - netSavings;

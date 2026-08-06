@@ -14,10 +14,7 @@ import type { Commitment, Debt, LedgerPayment } from "@/lib/types";
  * logged. Marks paid + rolls next_due_date forward to the next entry in
  * `debt.installment_dates` (or clears it if this was the final one).
  */
-export async function syncCommitmentAfterDebtPayment(
-  debt: Debt,
-  paidDate: string,
-): Promise<void> {
+export async function syncCommitmentAfterDebtPayment(debt: Debt, paidDate: string): Promise<void> {
   const { data: rows, error } = await supabase
     .from("commitments")
     .select("*")
@@ -28,8 +25,7 @@ export async function syncCommitmentAfterDebtPayment(
 
   const dates = (debt.installment_dates ?? []).slice().sort();
   const currentDue = commitment.next_due_date ?? null;
-  const nextDue =
-    dates.find((d) => currentDue == null || d > currentDue) ?? null;
+  const nextDue = dates.find((d) => currentDue == null || d > currentDue) ?? null;
 
   await supabase
     .from("commitments")
@@ -62,9 +58,7 @@ export async function syncDebtAfterCommitmentPayment(
   if (!debt) return;
 
   // Avoid double-logging if this commitment already has a payment on file.
-  const existing = (debt.payments ?? []).find(
-    (p) => p.commitment_id === commitment.id,
-  );
+  const existing = (debt.payments ?? []).find((p) => p.commitment_id === commitment.id);
   if (existing) return;
 
   const payment: LedgerPayment = {
@@ -87,9 +81,7 @@ export async function syncDebtAfterCommitmentPayment(
  * Reverse the most recent auto-logged payment for a commitment when the
  * user hits "Undo" on the Commitments tab.
  */
-export async function undoDebtPaymentForCommitment(
-  commitment: Commitment,
-): Promise<void> {
+export async function undoDebtPaymentForCommitment(commitment: Commitment): Promise<void> {
   if (!commitment.debt_id) return;
   const { data: row, error } = await supabase
     .from("debts")
@@ -101,9 +93,7 @@ export async function undoDebtPaymentForCommitment(
   if (!debt) return;
 
   const payments = debt.payments ?? [];
-  const idx = [...payments]
-    .reverse()
-    .findIndex((p) => p.commitment_id === commitment.id);
+  const idx = [...payments].reverse().findIndex((p) => p.commitment_id === commitment.id);
   if (idx === -1) return;
   const removeAt = payments.length - 1 - idx;
   const next = payments.slice(0, removeAt).concat(payments.slice(removeAt + 1));

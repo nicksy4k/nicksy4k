@@ -77,9 +77,7 @@ export function planDebit(source: LedgerSource, args: LedgerArgs): DebitPlan {
       notes: args.notes,
       category: args.category ?? "Debt",
       payment_splits:
-        source.kind === "pocket"
-          ? [{ source: `pocket:${source.name}`, amount: args.amount }]
-          : [],
+        source.kind === "pocket" ? [{ source: `pocket:${source.name}`, amount: args.amount }] : [],
     },
   };
 }

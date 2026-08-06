@@ -1,10 +1,24 @@
 import {
-  createContext, useCallback, useContext, useEffect, useLayoutEffect,
-  useMemo, useRef, useState, type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sparkles, ChevronLeft, ChevronRight, X, Wand2, Check } from "lucide-react";
 import { useTutorialStatus } from "@/lib/tutorial";
 import type { TourStep, TourAction } from "@/lib/dashboardTourSteps";
@@ -40,12 +54,15 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
     setPhase("welcome");
   }, []);
 
-  const start = useCallback((s: TourStep[]) => {
-    setSteps(s);
-    setIndex(0);
-    demo.start();
-    setPhase("running");
-  }, [demo]);
+  const start = useCallback(
+    (s: TourStep[]) => {
+      setSteps(s);
+      setIndex(0);
+      demo.start();
+      setPhase("running");
+    },
+    [demo],
+  );
 
   const finish = useCallback(async () => {
     setPhase("idle");
@@ -83,7 +100,12 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
       {children}
 
       {/* Welcome modal */}
-      <Dialog open={phase === "welcome"} onOpenChange={(o) => { if (!o) void finish(); }}>
+      <Dialog
+        open={phase === "welcome"}
+        onOpenChange={(o) => {
+          if (!o) void finish();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="h-11 w-11 rounded-xl bg-primary/15 grid place-items-center mb-2">
@@ -92,21 +114,27 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
             <DialogTitle>Welcome to Ledgerly</DialogTitle>
             <DialogDescription className="space-y-3 pt-2 text-sm leading-relaxed">
               <span className="block">
-                Your workspace is ready. Ledgerly runs on <strong>cycles</strong> —
-                every dashboard number, chart, and bill window is scoped to the current
-                one, so you always know exactly what's left to spend.
+                Your workspace is ready. Ledgerly runs on <strong>cycles</strong> — every dashboard
+                number, chart, and bill window is scoped to the current one, so you always know
+                exactly what's left to spend.
               </span>
               <span className="block">
-                Take a hands-on tour of the dashboard — we'll swap in some example
-                data so you can try filtering, expanding, and logging a spend without
-                touching your real ledger. You can re-run this any time from
-                Settings → Data.
+                Take a hands-on tour of the dashboard — we'll swap in some example data so you can
+                try filtering, expanding, and logging a spend without touching your real ledger. You
+                can re-run this any time from Settings → Data.
               </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => void finish()}>Skip</Button>
-            <Button onClick={() => { demo.start(); setPhase("running"); }}>
+            <Button variant="ghost" onClick={() => void finish()}>
+              Skip
+            </Button>
+            <Button
+              onClick={() => {
+                demo.start();
+                setPhase("running");
+              }}
+            >
               Start tour <ChevronRight className="h-4 w-4" />
             </Button>
           </DialogFooter>
@@ -131,8 +159,12 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
 // ---------- spotlight ----------
 
 function SpotlightHost(props: {
-  step: TourStep; currentIndex: number; total: number;
-  onBack: () => void; onNext: () => void; onSkip: () => void;
+  step: TourStep;
+  currentIndex: number;
+  total: number;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip: () => void;
 }) {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
 
@@ -146,9 +178,16 @@ function SpotlightHost(props: {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { e.preventDefault(); props.onSkip(); }
-      else if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); props.onNext(); }
-      else if (e.key === "ArrowLeft") { e.preventDefault(); props.onBack(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        props.onSkip();
+      } else if (e.key === "ArrowRight" || e.key === "Enter") {
+        e.preventDefault();
+        props.onNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        props.onBack();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -158,13 +197,27 @@ function SpotlightHost(props: {
   return createPortal(<Spotlight {...props} />, document.body);
 }
 
-interface Rect { top: number; left: number; width: number; height: number }
+interface Rect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
 
 function Spotlight({
-  step, currentIndex, total, onBack, onNext, onSkip,
+  step,
+  currentIndex,
+  total,
+  onBack,
+  onNext,
+  onSkip,
 }: {
-  step: TourStep; currentIndex: number; total: number;
-  onBack: () => void; onNext: () => void; onSkip: () => void;
+  step: TourStep;
+  currentIndex: number;
+  total: number;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip: () => void;
 }) {
   const [rect, setRect] = useState<Rect | null>(null);
   const [viewport, setViewport] = useState<{ w: number; h: number }>(() => ({
@@ -176,7 +229,10 @@ function Spotlight({
   const measure = useCallback(() => {
     setViewport({ w: window.innerWidth, h: window.innerHeight });
     const el = document.querySelector(step.selector) as HTMLElement | null;
-    if (!el) { setRect(null); return; }
+    if (!el) {
+      setRect(null);
+      return;
+    }
     const r = el.getBoundingClientRect();
     setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
   }, [step.selector]);
@@ -191,7 +247,6 @@ function Spotlight({
     if (outOfView) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.selector]);
 
   useLayoutEffect(() => {
@@ -220,11 +275,15 @@ function Spotlight({
     };
   }, [measure]);
 
-
   const pad = 8;
   const hasTarget = !!rect;
   const cutout = rect
-    ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
+    ? {
+        top: rect.top - pad,
+        left: rect.left - pad,
+        width: rect.width + pad * 2,
+        height: rect.height + pad * 2,
+      }
     : { top: 0, left: 0, width: 0, height: 0 };
 
   // Tooltip placement
@@ -237,32 +296,56 @@ function Spotlight({
     const placement = step.placement ?? "bottom";
     const cx = cutout.left + cutout.width / 2;
     const cy = cutout.top + cutout.height / 2;
-    const below = { top: cutout.top + cutout.height + TT_MARGIN, left: Math.max(TT_MARGIN, Math.min(cx - TT_W / 2, viewport.w - TT_W - TT_MARGIN)) };
-    const above = { top: cutout.top - TT_MARGIN, left: below.left, transform: "translateY(-100%)" as const };
-    const right = { top: Math.max(TT_MARGIN, cy - 60), left: cutout.left + cutout.width + TT_MARGIN };
-    const left = { top: right.top, left: cutout.left - TT_MARGIN, transform: "translateX(-100%)" as const };
+    const below = {
+      top: cutout.top + cutout.height + TT_MARGIN,
+      left: Math.max(TT_MARGIN, Math.min(cx - TT_W / 2, viewport.w - TT_W - TT_MARGIN)),
+    };
+    const above = {
+      top: cutout.top - TT_MARGIN,
+      left: below.left,
+      transform: "translateY(-100%)" as const,
+    };
+    const right = {
+      top: Math.max(TT_MARGIN, cy - 60),
+      left: cutout.left + cutout.width + TT_MARGIN,
+    };
+    const left = {
+      top: right.top,
+      left: cutout.left - TT_MARGIN,
+      transform: "translateX(-100%)" as const,
+    };
     let picked: React.CSSProperties;
     if (placement === "top" && cutout.top > 200) picked = above;
     else if (placement === "left" && cutout.left > TT_W + 40) picked = left;
-    else if (placement === "right" && viewport.w - (cutout.left + cutout.width) > TT_W + 40) picked = right;
+    else if (placement === "right" && viewport.w - (cutout.left + cutout.width) > TT_W + 40)
+      picked = right;
     else picked = below;
     // Vertical overflow fallback
-    if (placement !== "top" && (below.top + 200 > viewport.h) && cutout.top > 220) picked = above;
+    if (placement !== "top" && below.top + 200 > viewport.h && cutout.top > 220) picked = above;
     ttStyle = { ...picked, width: TT_W };
   }
 
   return (
     <div className="fixed inset-0 z-[100]" aria-live="polite">
       {/* Dim + cutout via SVG mask */}
-      <svg width="100%" height="100%" className="absolute inset-0 pointer-events-auto" onClick={onSkip}>
+      <svg
+        width="100%"
+        height="100%"
+        className="absolute inset-0 pointer-events-auto"
+        onClick={onSkip}
+      >
         <defs>
           <mask id="tour-mask">
             <rect width="100%" height="100%" fill="white" />
             {hasTarget && (
               <rect
-                x={cutout.left} y={cutout.top}
-                width={cutout.width} height={cutout.height}
-                rx={10} ry={10} fill="black"
+                x={cutout.left}
+                y={cutout.top}
+                width={cutout.width}
+                height={cutout.height}
+                rx={10}
+                ry={10}
+                fill="black"
               />
             )}
           </mask>
@@ -270,9 +353,12 @@ function Spotlight({
         <rect width="100%" height="100%" fill="rgba(9,10,20,0.72)" mask="url(#tour-mask)" />
         {hasTarget && (
           <rect
-            x={cutout.left} y={cutout.top}
-            width={cutout.width} height={cutout.height}
-            rx={10} ry={10}
+            x={cutout.left}
+            y={cutout.top}
+            width={cutout.width}
+            height={cutout.height}
+            rx={10}
+            ry={10}
             fill="none"
             stroke="oklch(0.72 0.15 268)"
             strokeWidth={2}
@@ -298,7 +384,9 @@ function Spotlight({
             aria-label="Skip tour"
             className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted"
             onClick={onSkip}
-          ><X className="h-4 w-4" /></button>
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">{step.body}</p>
         {step.action && <TryItButton action={step.action} stepIndex={currentIndex} />}
@@ -329,14 +417,24 @@ function Spotlight({
 function TryItButton({ action, stepIndex }: { action: TourAction; stepIndex: number }) {
   const demo = useDemoMode();
   const [done, setDone] = useState(false);
-  useEffect(() => { setDone(false); }, [stepIndex]);
+  useEffect(() => {
+    setDone(false);
+  }, [stepIndex]);
 
   const run = () => {
     switch (action.kind) {
-      case "add-spend": demo.addExtraSpend(12); break;
-      case "filter-category": demo.setFilterCategory(DEMO_FILTER_CATEGORY); break;
-      case "open-alert": demo.setOpenAlertId(DEMO_ALERT_TXN_ID); break;
-      case "expand-txn": demo.setExpandedTxnId(DEMO_EXPAND_TXN_ID); break;
+      case "add-spend":
+        demo.addExtraSpend(12);
+        break;
+      case "filter-category":
+        demo.setFilterCategory(DEMO_FILTER_CATEGORY);
+        break;
+      case "open-alert":
+        demo.setOpenAlertId(DEMO_ALERT_TXN_ID);
+        break;
+      case "expand-txn":
+        demo.setExpandedTxnId(DEMO_EXPAND_TXN_ID);
+        break;
     }
     setDone(true);
   };

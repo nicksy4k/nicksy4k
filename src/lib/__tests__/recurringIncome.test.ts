@@ -13,10 +13,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 import { applyAllocations, computeCoverAmount } from "../recurringIncome";
 import type { RecurringIncome } from "../types";
 
-function template(
-  amount: number,
-  allocations: RecurringIncome["allocations"],
-): RecurringIncome {
+function template(amount: number, allocations: RecurringIncome["allocations"]): RecurringIncome {
   return {
     id: "t1",
     user_id: "user-1",
@@ -48,35 +45,33 @@ describe("computeCoverAmount", () => {
     ];
     const bal = new Map<string, number>();
     const inFlight = new Map<string, number>();
-    expect(
-      computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight),
-    ).toBe(100);
+    expect(computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight)).toBe(
+      100,
+    );
   });
 
   it("subtracts existing pocket balance", () => {
     const commits = [{ amount: 300, next_due_date: "2026-07-05" }];
     const bal = new Map([["Bills", 200]]);
     const inFlight = new Map<string, number>();
-    expect(
-      computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight),
-    ).toBe(100);
+    expect(computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight)).toBe(
+      100,
+    );
   });
 
   it("subtracts in-flight deposits so a second template doesn't double-fund", () => {
     const commits = [{ amount: 300, next_due_date: "2026-07-05" }];
     const bal = new Map<string, number>();
     const inFlight = new Map([["Bills", 300]]);
-    expect(
-      computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight),
-    ).toBe(0);
+    expect(computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, inFlight)).toBe(0);
   });
 
   it("clamps to zero when balance exceeds need", () => {
     const commits = [{ amount: 100, next_due_date: "2026-07-05" }];
     const bal = new Map([["Bills", 500]]);
-    expect(
-      computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, new Map()),
-    ).toBe(0);
+    expect(computeCoverAmount("Bills", "2026-07-01", "2026-08-01", commits, bal, new Map())).toBe(
+      0,
+    );
   });
 });
 

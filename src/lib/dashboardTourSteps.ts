@@ -1,8 +1,4 @@
-export type TourActionKind =
-  | "add-spend"
-  | "filter-category"
-  | "open-alert"
-  | "expand-txn";
+export type TourActionKind = "add-spend" | "filter-category" | "open-alert" | "expand-txn";
 
 export interface TourAction {
   label: string;
@@ -36,7 +32,11 @@ export const dashboardTourSteps: TourStep[] = [
     title: "Where your money goes",
     body: "A live breakdown by category for the active cycle. Try filtering the chart to Groceries to see how focus works.",
     placement: "top",
-    action: { label: "Filter to Groceries", doneLabel: "Filter on — hit Next", kind: "filter-category" },
+    action: {
+      label: "Filter to Groceries",
+      doneLabel: "Filter on — hit Next",
+      kind: "filter-category",
+    },
   },
   {
     selector: "[data-tour='warranty-alerts']",
@@ -50,7 +50,11 @@ export const dashboardTourSteps: TourStep[] = [
     title: "Recent activity",
     body: "The five most recent transactions, itemized. Expand one to see the line items and prices Ledgerly tracks per receipt.",
     placement: "top",
-    action: { label: "Expand this transaction", doneLabel: "Expanded — hit Next", kind: "expand-txn" },
+    action: {
+      label: "Expand this transaction",
+      doneLabel: "Expanded — hit Next",
+      kind: "expand-txn",
+    },
   },
   {
     selector: "[data-tour='nav-new']",

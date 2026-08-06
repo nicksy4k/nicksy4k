@@ -7,12 +7,42 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useTransactions, useIncomes, useSavings,
-  useCategories, useIncomeCategories, clearAllData,
+  useTransactions,
+  useIncomes,
+  useSavings,
+  useCategories,
+  useIncomeCategories,
+  clearAllData,
 } from "@/lib/store";
 import { useHiddenSuggestions } from "@/lib/hiddenSuggestions";
 import { sortLabels } from "@/lib/utils";
-import { Database, Trash2, Download, Plus, X, RotateCcw, Tag, EyeOff, Eye, Store, Package, CalendarCog, Sparkles, HardDrive, Code, Mail, Compass, MessageSquare, ShieldCheck, Loader2, Info, Lightbulb, Rocket, Heart, Palette } from "lucide-react";
+import {
+  Database,
+  Trash2,
+  Download,
+  Plus,
+  X,
+  RotateCcw,
+  Tag,
+  EyeOff,
+  Eye,
+  Store,
+  Package,
+  CalendarCog,
+  Sparkles,
+  HardDrive,
+  Code,
+  Mail,
+  Compass,
+  MessageSquare,
+  ShieldCheck,
+  Loader2,
+  Info,
+  Lightbulb,
+  Rocket,
+  Heart,
+  Palette,
+} from "lucide-react";
 import { CurrencySettingsCard, ThemePickerCard, ComfortCard } from "@/components/PreferencesCards";
 
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
@@ -28,8 +58,15 @@ import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { toast } from "sonner";
@@ -43,16 +80,27 @@ import { useUserRoles } from "@/lib/features";
 import { AdminDemoCard } from "@/components/AdminDemoCard";
 import { WhatsNewCard } from "@/components/WhatsNewCard";
 import { ChangelogDialogTrigger } from "@/components/ChangelogDialog";
-import { changelog, currentVersion, currentVersionDate, downloadChangelogCsv } from "@/lib/changelog";
+import {
+  changelog,
+  currentVersion,
+  currentVersionDate,
+  downloadChangelogCsv,
+} from "@/lib/changelog";
 import { format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Ledgerly" },
-      { name: "description", content: "Manage your Ledgerly cycle, categories, suggestions, and data." },
+      {
+        name: "description",
+        content: "Manage your Ledgerly cycle, categories, suggestions, and data.",
+      },
       { property: "og:title", content: "Settings — Ledgerly" },
-      { property: "og:description", content: "Manage your Ledgerly cycle, categories, suggestions, and data." },
+      {
+        property: "og:description",
+        content: "Manage your Ledgerly cycle, categories, suggestions, and data.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -61,7 +109,16 @@ export const Route = createFileRoute("/settings")({
   errorComponent: RouteError,
 });
 
-const VALID_TABS = ["cycle", "personalise", "account", "categories", "suggestions", "data", "about", "admin"] as const;
+const VALID_TABS = [
+  "cycle",
+  "personalise",
+  "account",
+  "categories",
+  "suggestions",
+  "data",
+  "about",
+  "admin",
+] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 function readHashTab(): TabValue {
@@ -90,7 +147,6 @@ function SettingsPage() {
 
   const [tab, setTab] = useState<TabValue>(() => readHashTab());
 
-
   useEffect(() => {
     const sync = () => setTab(readHashTab());
     window.addEventListener("hashchange", sync);
@@ -109,7 +165,9 @@ function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Preferences</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+          Preferences
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl md:text-4xl font-semibold">Settings</h1>
           <button
@@ -126,16 +184,34 @@ function SettingsPage() {
       </header>
 
       <Tabs value={tab} onValueChange={selectTab} className="w-full">
-        <TabsList className={`w-full grid grid-cols-3 ${isAdmin ? "md:grid-cols-8" : "md:grid-cols-7"} h-auto md:h-12 mb-6 gap-1`}>
-          <TabsTrigger value="cycle" className="gap-2"><CalendarCog className="h-4 w-4" /> Cycle</TabsTrigger>
-          <TabsTrigger value="personalise" className="gap-2"><Palette className="h-4 w-4" /> Personalise</TabsTrigger>
-          <TabsTrigger value="account" className="gap-2"><UserCircle2 className="h-4 w-4" /> Account</TabsTrigger>
-          <TabsTrigger value="categories" className="gap-2"><Tag className="h-4 w-4" /> Categories</TabsTrigger>
-          <TabsTrigger value="suggestions" className="gap-2"><Sparkles className="h-4 w-4" /> Suggestions</TabsTrigger>
-          <TabsTrigger value="data" className="gap-2"><HardDrive className="h-4 w-4" /> Data</TabsTrigger>
-          <TabsTrigger value="about" className="gap-2"><Info className="h-4 w-4" /> About</TabsTrigger>
+        <TabsList
+          className={`w-full grid grid-cols-3 ${isAdmin ? "md:grid-cols-8" : "md:grid-cols-7"} h-auto md:h-12 mb-6 gap-1`}
+        >
+          <TabsTrigger value="cycle" className="gap-2">
+            <CalendarCog className="h-4 w-4" /> Cycle
+          </TabsTrigger>
+          <TabsTrigger value="personalise" className="gap-2">
+            <Palette className="h-4 w-4" /> Personalise
+          </TabsTrigger>
+          <TabsTrigger value="account" className="gap-2">
+            <UserCircle2 className="h-4 w-4" /> Account
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2">
+            <Tag className="h-4 w-4" /> Categories
+          </TabsTrigger>
+          <TabsTrigger value="suggestions" className="gap-2">
+            <Sparkles className="h-4 w-4" /> Suggestions
+          </TabsTrigger>
+          <TabsTrigger value="data" className="gap-2">
+            <HardDrive className="h-4 w-4" /> Data
+          </TabsTrigger>
+          <TabsTrigger value="about" className="gap-2">
+            <Info className="h-4 w-4" /> About
+          </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="admin" className="gap-2"><ShieldCheck className="h-4 w-4" /> Admin</TabsTrigger>
+            <TabsTrigger value="admin" className="gap-2">
+              <ShieldCheck className="h-4 w-4" /> Admin
+            </TabsTrigger>
           )}
         </TabsList>
 
@@ -146,7 +222,6 @@ function SettingsPage() {
         )}
 
         <TabsContent value="personalise" className="mt-0 space-y-6">
-
           <CurrencySettingsCard />
           <ThemePickerCard />
           <ComfortCard categories={itemCats.list} />
@@ -155,7 +230,6 @@ function SettingsPage() {
         <TabsContent value="account" className="mt-0 space-y-6">
           <ConnectedAccountsCard />
         </TabsContent>
-
 
         <TabsContent value="cycle" className="mt-0">
           <CycleSettingsCard />
@@ -234,9 +308,10 @@ function useSortedCatalog(
     if (type === "retailer") {
       for (const t of transactions) if (t.retailer?.trim()) set.add(t.retailer.trim());
     } else {
-      for (const t of transactions) for (const it of t.items ?? []) {
-        if (it.item_name?.trim()) set.add(it.item_name.trim());
-      }
+      for (const t of transactions)
+        for (const it of t.items ?? []) {
+          if (it.item_name?.trim()) set.add(it.item_name.trim());
+        }
     }
     return sortLabels(set);
   }, [transactions, type]);
@@ -251,17 +326,26 @@ function useOccurrences(
     if (type === "retailer") {
       for (const t of transactions) if (t.retailer?.trim()) out.push(t.retailer.trim());
     } else {
-      for (const t of transactions) for (const it of t.items ?? []) {
-        if (it.item_name?.trim()) out.push(it.item_name.trim());
-      }
+      for (const t of transactions)
+        for (const it of t.items ?? []) {
+          if (it.item_name?.trim()) out.push(it.item_name.trim());
+        }
     }
     return out;
   }, [transactions, type]);
 }
 
 function SuggestionSection({
-  kind, title, description, icon, catalog, occurrences,
-  hidden, onHide, onUnhide, onClear,
+  kind,
+  title,
+  description,
+  icon,
+  catalog,
+  occurrences,
+  hidden,
+  onHide,
+  onUnhide,
+  onClear,
 }: {
   kind: "retailer" | "item";
   title: string;
@@ -275,10 +359,7 @@ function SuggestionSection({
   onClear: () => void | Promise<void>;
 }) {
   const [scanOpen, setScanOpen] = useState(false);
-  const visibleForScan = useMemo(
-    () => filterHidden(catalog, hidden),
-    [catalog, hidden],
-  );
+  const visibleForScan = useMemo(() => filterHidden(catalog, hidden), [catalog, hidden]);
 
   return (
     <div className="space-y-3">
@@ -316,7 +397,12 @@ function SuggestionSection({
 }
 
 function CategoryManager({
-  title, description, list, onAdd, onRemove, onReset,
+  title,
+  description,
+  list,
+  onAdd,
+  onRemove,
+  onReset,
 }: {
   title: string;
   description: string;
@@ -343,7 +429,9 @@ function CategoryManager({
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Tag className="h-5 w-5 text-primary" /></div>
+          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+            <Tag className="h-5 w-5 text-primary" />
+          </div>
           <div>
             <CardTitle>{title}</CardTitle>
             <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
@@ -356,9 +444,16 @@ function CategoryManager({
             placeholder="New category name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submit();
+              }
+            }}
           />
-          <Button onClick={submit}><Plus className="h-4 w-4" /> Add</Button>
+          <Button onClick={submit}>
+            <Plus className="h-4 w-4" /> Add
+          </Button>
         </div>
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">No categories yet.</p>
@@ -368,7 +463,10 @@ function CategoryManager({
               <Badge key={c} variant="secondary" className="gap-1.5 pr-1 py-1 font-normal">
                 {c}
                 <button
-                  onClick={() => { onRemove(c); toast.success(`Removed "${c}"`); }}
+                  onClick={() => {
+                    onRemove(c);
+                    toast.success(`Removed "${c}"`);
+                  }}
                   className="rounded-sm hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
                   aria-label={`Remove ${c}`}
                 >
@@ -379,7 +477,14 @@ function CategoryManager({
           </div>
         )}
         <div>
-          <Button variant="ghost" size="sm" onClick={() => { onReset(); toast.success("Reset to defaults"); }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onReset();
+              toast.success("Reset to defaults");
+            }}
+          >
             <RotateCcw className="h-3.5 w-3.5" /> Reset to defaults
           </Button>
         </div>
@@ -423,7 +528,9 @@ function SuggestionManager({
       </CardHeader>
       <CardContent className="space-y-4">
         {catalog.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing to manage yet — add a transaction first.</p>
+          <p className="text-sm text-muted-foreground">
+            Nothing to manage yet — add a transaction first.
+          </p>
         ) : (
           <>
             <div>
@@ -435,10 +542,19 @@ function SuggestionManager({
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {visible.map((name) => (
-                    <Badge key={name} variant="secondary" className="gap-1.5 pr-1 py-1 font-normal max-w-full">
-                      <span className="truncate" title={name}>{name}</span>
+                    <Badge
+                      key={name}
+                      variant="secondary"
+                      className="gap-1.5 pr-1 py-1 font-normal max-w-full"
+                    >
+                      <span className="truncate" title={name}>
+                        {name}
+                      </span>
                       <button
-                        onClick={async () => { await onHide(name); toast.success(`Hidden "${name}"`); }}
+                        onClick={async () => {
+                          await onHide(name);
+                          toast.success(`Hidden "${name}"`);
+                        }}
                         className="rounded-sm hover:bg-destructive/20 hover:text-destructive p-0.5 transition-colors"
                         aria-label={`Hide ${name}`}
                       >
@@ -457,10 +573,19 @@ function SuggestionManager({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {hidden.map((name) => (
-                    <Badge key={name} variant="outline" className="gap-1.5 pr-1 py-1 font-normal max-w-full">
-                      <span className="truncate opacity-70 line-through" title={name}>{name}</span>
+                    <Badge
+                      key={name}
+                      variant="outline"
+                      className="gap-1.5 pr-1 py-1 font-normal max-w-full"
+                    >
+                      <span className="truncate opacity-70 line-through" title={name}>
+                        {name}
+                      </span>
                       <button
-                        onClick={async () => { await onUnhide(name); toast.success(`Restored "${name}"`); }}
+                        onClick={async () => {
+                          await onUnhide(name);
+                          toast.success(`Restored "${name}"`);
+                        }}
                         className="rounded-sm hover:bg-primary/20 hover:text-primary p-0.5 transition-colors"
                         aria-label={`Unhide ${name}`}
                       >
@@ -470,7 +595,14 @@ function SuggestionManager({
                   ))}
                 </div>
                 <div className="mt-3">
-                  <Button variant="ghost" size="sm" onClick={async () => { await onClear(); toast.success("All entries restored"); }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      await onClear();
+                      toast.success("All entries restored");
+                    }}
+                  >
                     <RotateCcw className="h-3.5 w-3.5" /> Restore all
                   </Button>
                 </div>
@@ -486,7 +618,9 @@ function SuggestionManager({
 /* ---------------- Data tab ---------------- */
 
 function DataTab({
-  transactions, incomes, savings,
+  transactions,
+  incomes,
+  savings,
 }: {
   transactions: unknown[];
   incomes: unknown[];
@@ -526,16 +660,24 @@ function DataTab({
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Download className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <Download className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>Download my data</CardTitle>
-              <CardDescription>A ZIP with every transaction, income, savings row, and attached receipt.</CardDescription>
+              <CardDescription>
+                A ZIP with every transaction, income, savings row, and attached receipt.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <Button onClick={fullExport} disabled={exporting}>
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             {exporting ? "Preparing…" : "Download full export (ZIP)"}
           </Button>
         </CardContent>
@@ -544,7 +686,9 @@ function DataTab({
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Database className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <Database className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>Storage</CardTitle>
               <CardDescription>Saved to your account in the cloud.</CardDescription>
@@ -556,13 +700,17 @@ function DataTab({
           <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-2">
             <p className="font-medium">Your data is private</p>
             <p className="text-muted-foreground">
-              Transactions, pockets, commitments, and categories are protected by row-level security — only you can read or write them.
+              Transactions, pockets, commitments, and categories are protected by row-level security
+              — only you can read or write them.
             </p>
           </div>
 
           <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
             <p className="font-medium text-foreground mb-1">Account summary</p>
-            <p>{transactions.length} transactions · {incomes.length} income entries · {savings.length} savings entries.</p>
+            <p>
+              {transactions.length} transactions · {incomes.length} income entries ·{" "}
+              {savings.length} savings entries.
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -579,12 +727,20 @@ function DataTab({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Clear all data?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This permanently deletes every transaction, income entry, savings entry, and commitment on your account. Export first if you want a backup.
+                    This permanently deletes every transaction, income entry, savings entry, and
+                    commitment on your account. Export first if you want a backup.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={async () => { await clearAllData(); toast.success("All data cleared"); }}>Clear everything</AlertDialogAction>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      await clearAllData();
+                      toast.success("All data cleared");
+                    }}
+                  >
+                    Clear everything
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -598,13 +754,23 @@ function DataTab({
 /* ---------------- About tab ---------------- */
 
 const ROADMAP: { title: string; blurb: string }[] = [
-  { title: "Shared households", blurb: "Invite a partner and merge pockets, commitments, and reports." },
+  {
+    title: "Shared households",
+    blurb: "Invite a partner and merge pockets, commitments, and reports.",
+  },
   { title: "Bank sync (trial)", blurb: "Optional read-only feed to auto-suggest transactions." },
   { title: "Category budgets", blurb: "Per-category caps with progress rings on the dashboard." },
-  { title: "Recurring rules v2", blurb: "Skip, pause, and end-date any recurring income or commitment." },
+  {
+    title: "Recurring rules v2",
+    blurb: "Skip, pause, and end-date any recurring income or commitment.",
+  },
 ];
 
-function AboutTab({ counts }: { counts: { transactions: number; incomes: number; savings: number } }) {
+function AboutTab({
+  counts,
+}: {
+  counts: { transactions: number; incomes: number; savings: number };
+}) {
   return (
     <div className="space-y-6">
       {/* Identity */}
@@ -617,15 +783,20 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-2xl font-display tracking-tight">Ledgerly</h2>
-                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Beta</Badge>
-                <Badge variant="secondary" className="font-mono text-xs">{currentVersion}</Badge>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                  Beta
+                </Badge>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {currentVersion}
+                </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Personal money, on your terms — pockets, commitments, and receipts in one place.
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Last updated {format(parseISO(currentVersionDate), "d MMM yyyy")} ·{" "}
-                {counts.transactions} transactions · {counts.incomes} income entries · {counts.savings} savings entries
+                {counts.transactions} transactions · {counts.incomes} income entries ·{" "}
+                {counts.savings} savings entries
               </p>
             </div>
           </div>
@@ -637,16 +808,18 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
       <AboutStory variant="condensed" />
       <SupportDevCard />
 
-
       {/* Changelog */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><BookOpen className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>Changelog</CardTitle>
               <CardDescription>
-                {changelog.length} releases · latest {currentVersion} on {format(parseISO(currentVersionDate), "d MMM yyyy")}
+                {changelog.length} releases · latest {currentVersion} on{" "}
+                {format(parseISO(currentVersionDate), "d MMM yyyy")}
               </CardDescription>
             </div>
           </div>
@@ -672,10 +845,14 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><ShieldCheck className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>Privacy &amp; security</CardTitle>
-              <CardDescription>Row-level security, private receipt storage, and update history in plain language.</CardDescription>
+              <CardDescription>
+                Row-level security, private receipt storage, and update history in plain language.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -694,10 +871,14 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><MessageSquare className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <MessageSquare className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>Help &amp; feedback</CardTitle>
-              <CardDescription>Ledgerly is in beta — your notes shape what ships next.</CardDescription>
+              <CardDescription>
+                Ledgerly is in beta — your notes shape what ships next.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -706,21 +887,27 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
             <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
               <MessageSquare className="h-5 w-5 text-primary mb-2" />
               <p className="text-sm font-medium">Report a bug</p>
-              <p className="text-xs text-muted-foreground mt-1">Something not working? Send me the steps.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Something not working? Send me the steps.
+              </p>
             </button>
           </FeedbackDialog>
           <FeedbackDialog defaultType="idea">
             <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
               <Lightbulb className="h-5 w-5 text-primary mb-2" />
               <p className="text-sm font-medium">Share an idea</p>
-              <p className="text-xs text-muted-foreground mt-1">A feature you'd love, or a rough edge to smooth.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                A feature you'd love, or a rough edge to smooth.
+              </p>
             </button>
           </FeedbackDialog>
           <FeedbackDialog defaultType="general">
             <button className="text-left rounded-xl border border-border/60 bg-background/60 p-4 transition hover:border-primary/40 hover:bg-background">
               <Mail className="h-5 w-5 text-primary mb-2" />
               <p className="text-sm font-medium">General feedback</p>
-              <p className="text-xs text-muted-foreground mt-1">Anything else — kind words welcome too.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Anything else — kind words welcome too.
+              </p>
             </button>
           </FeedbackDialog>
         </CardContent>
@@ -730,17 +917,24 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Rocket className="h-5 w-5 text-primary" /></div>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+              <Rocket className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <CardTitle>On the roadmap</CardTitle>
-              <CardDescription>Rough order — nothing here is a promise, but it's what I'm thinking about next.</CardDescription>
+              <CardDescription>
+                Rough order — nothing here is a promise, but it's what I'm thinking about next.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
             {ROADMAP.map((r) => (
-              <li key={r.title} className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+              <li
+                key={r.title}
+                className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/20 p-3"
+              >
                 <div className="h-6 w-6 rounded-full bg-primary/15 grid place-items-center shrink-0 mt-0.5">
                   <Sparkles className="h-3 w-3 text-primary" />
                 </div>
@@ -764,7 +958,8 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
             <div>
               <p className="text-sm font-medium">Designed and developed by Nicksy4K.</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Built with TanStack Start, Tailwind, shadcn/ui, and Lovable Cloud — fuelled by late-night Monster Energy.
+                Built with TanStack Start, Tailwind, shadcn/ui, and Lovable Cloud — fuelled by
+                late-night Monster Energy.
               </p>
             </div>
           </div>
@@ -777,9 +972,10 @@ function AboutTab({ counts }: { counts: { transactions: number; incomes: number;
           <Heart className="h-3.5 w-3.5 text-primary" /> Beta disclaimer
         </p>
         <p>
-          Ledgerly is a personal project in active development. Features may change or break between releases and some
-          functionality may be incomplete. Your data is stored securely with row-level security, but please keep your own
-          backups of anything important. © {new Date().getFullYear()} Ledgerly.
+          Ledgerly is a personal project in active development. Features may change or break between
+          releases and some functionality may be incomplete. Your data is stored securely with
+          row-level security, but please keep your own backups of anything important. ©{" "}
+          {new Date().getFullYear()} Ledgerly.
         </p>
       </div>
     </div>
@@ -807,16 +1003,22 @@ function SetupWizardCard() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center"><Compass className="h-5 w-5 text-primary" /></div>
+          <div className="h-10 w-10 rounded-lg bg-primary/15 grid place-items-center">
+            <Compass className="h-5 w-5 text-primary" />
+          </div>
           <div>
             <CardTitle>Setup &amp; tutorial</CardTitle>
-            <CardDescription>Re-run the guided setup, or replay the dashboard tour any time.</CardDescription>
+            <CardDescription>
+              Re-run the guided setup, or replay the dashboard tour any time.
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">
         <Button asChild variant="outline">
-          <Link to="/setup"><Compass className="h-4 w-4" /> Open setup wizard</Link>
+          <Link to="/setup">
+            <Compass className="h-4 w-4" /> Open setup wizard
+          </Link>
         </Button>
         <Button variant="outline" onClick={runTutorialNow}>
           <Sparkles className="h-4 w-4" /> Run tutorial again
@@ -829,12 +1031,18 @@ function SetupWizardCard() {
             <AlertDialogHeader>
               <AlertDialogTitle>Force the wizard to run again?</AlertDialogTitle>
               <AlertDialogDescription>
-                Marks onboarding as incomplete so the app redirects to the setup wizard the next time it loads. Your data is not touched.
+                Marks onboarding as incomplete so the app redirects to the setup wizard the next
+                time it loads. Your data is not touched.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={async () => { await reset(); toast.success("Wizard will run on next load."); }}>
+              <AlertDialogAction
+                onClick={async () => {
+                  await reset();
+                  toast.success("Wizard will run on next load.");
+                }}
+              >
                 Force re-run
               </AlertDialogAction>
             </AlertDialogFooter>

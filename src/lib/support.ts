@@ -1,9 +1,13 @@
 export const FEEDBACK_EMAIL = "nicksy4k@gmail.com";
 export const APP_VERSION = "v2.0.0-beta";
 
-export function buildFeedbackMailto(opts?: { subject?: string; kind?: "bug" | "idea" | "general" }) {
+export function buildFeedbackMailto(opts?: {
+  subject?: string;
+  kind?: "bug" | "idea" | "general";
+}) {
   const kind = opts?.kind ?? "general";
-  const subject = opts?.subject ?? `Ledgerly Beta feedback${kind !== "general" ? ` — ${kind}` : ""}`;
+  const subject =
+    opts?.subject ?? `Ledgerly Beta feedback${kind !== "general" ? ` — ${kind}` : ""}`;
   const body = [
     `App version: ${APP_VERSION}`,
     `Page: ${typeof window !== "undefined" ? window.location.pathname : "(unknown)"}`,

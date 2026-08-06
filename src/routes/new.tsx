@@ -2,7 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
-import { RECEIPT_TYPES, type Category, type LineItem, type PaymentSplit, type ReceiptType } from "@/lib/types";
+import {
+  RECEIPT_TYPES,
+  type Category,
+  type LineItem,
+  type PaymentSplit,
+  type ReceiptType,
+} from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { sortLabels, cn } from "@/lib/utils";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
@@ -16,7 +22,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check, ScanLine } from "lucide-react";
@@ -25,7 +35,11 @@ import { ReceiptUpload } from "@/components/ReceiptUpload";
 import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
 import { useCanScanReceipts } from "@/lib/features";
 
-import { ProtectionFields, emptyProtection, type ProtectionValue } from "@/components/ProtectionFields";
+import {
+  ProtectionFields,
+  emptyProtection,
+  type ProtectionValue,
+} from "@/components/ProtectionFields";
 import {
   PaymentSplitEditor,
   emptySplit,
@@ -40,14 +54,19 @@ import {
   suggestCategory as lookupCategory,
 } from "@/lib/suggestions";
 
-
 export const Route = createFileRoute("/new")({
   head: () => ({
     meta: [
       { title: "Log Transaction — Ledgerly" },
-      { name: "description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      {
+        name: "description",
+        content: "Add a new itemized expense with receipts, categories, and payment splits.",
+      },
       { property: "og:title", content: "Log Transaction — Ledgerly" },
-      { property: "og:description", content: "Add a new itemized expense with receipts, categories, and payment splits." },
+      {
+        property: "og:description",
+        content: "Add a new itemized expense with receipts, categories, and payment splits.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -66,9 +85,15 @@ interface DraftItem {
 }
 
 function emptyItem(defaultCat: Category = ""): DraftItem {
-  return { id: crypto.randomUUID(), item_name: "", price: "", quantity: "1", category: defaultCat, notes: "" };
+  return {
+    id: crypto.randomUUID(),
+    item_name: "",
+    price: "",
+    quantity: "1",
+    category: defaultCat,
+    notes: "",
+  };
 }
-
 
 function NewTransactionPage() {
   const navigate = useNavigate();
@@ -104,7 +129,10 @@ function NewTransactionPage() {
   const [scanOpen, setScanOpen] = useState(false);
 
   function applyScan(payload: ScanApplyPayload) {
-    if (payload.retailer) { clearError("retailer"); setRetailer(payload.retailer); }
+    if (payload.retailer) {
+      clearError("retailer");
+      setRetailer(payload.retailer);
+    }
     if (payload.date) setDate(payload.date);
     if (payload.storagePath) {
       setReceiptAttached(true);
@@ -130,10 +158,6 @@ function NewTransactionPage() {
     toast.success("Receipt applied — review the lines and save.");
   }
 
-
-
-
-
   const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -144,10 +168,7 @@ function NewTransactionPage() {
     return Boolean(last) && !last.item_name.trim() && !last.price.trim();
   }, [items]);
 
-  const total = useMemo(
-    () => items.reduce((s, i) => s + lineTotal(i), 0),
-    [items]
-  );
+  const total = useMemo(() => items.reduce((s, i) => s + lineTotal(i), 0), [items]);
 
   const retailerSuggestions = useMemo(() => {
     const set = new Set<string>();
@@ -258,8 +279,7 @@ function NewTransactionPage() {
     if (additions.length === 0) return;
     setItems((arr) => {
       // Drop an initial empty row if present, so quick-add doesn't leave a blank at top.
-      const base =
-        arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim() ? [] : arr;
+      const base = arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim() ? [] : arr;
       return [...base, ...additions];
     });
     setLastAddedId(additions[additions.length - 1].id);
@@ -273,8 +293,6 @@ function NewTransactionPage() {
   function suggestCategory(itemName: string): string | null {
     return lookupCategory(categoryHistory, itemName);
   }
-
-
 
   const canStep2 = retailer.trim().length > 0 && date.length > 0;
 
@@ -290,7 +308,6 @@ function NewTransactionPage() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retailer, priceHistory]);
-
 
   function updateItem(id: string, patch: Partial<DraftItem>) {
     for (const k of Object.keys(patch)) clearError(`item.${id}.${k}`);
@@ -334,8 +351,6 @@ function NewTransactionPage() {
       },
     });
   }
-
-
 
   function addItem() {
     const newItem = emptyItem();
@@ -486,7 +501,6 @@ function NewTransactionPage() {
     }
     setErrors({});
 
-
     setSaving(true);
     try {
       // Build effective splits: drop empty rows, add remainder→main if needed.
@@ -496,7 +510,8 @@ function NewTransactionPage() {
       if (remainder > 0) {
         const mainIdx = effective.findIndex((s) => s.source === "main");
         if (mainIdx >= 0) effective[mainIdx].amt += remainder;
-        else effective.push({ id: crypto.randomUUID(), source: "main", amount: "", amt: remainder });
+        else
+          effective.push({ id: crypto.randomUUID(), source: "main", amount: "", amt: remainder });
       }
 
       const retailerName = retailer.trim();
@@ -535,14 +550,26 @@ function NewTransactionPage() {
                 account,
                 notes: `Auto: ${retailerName || "Transaction"} · ${planName} installment 1/${installments}`,
               });
-              finalSplits.push({ source: firstSource, amount: firstAmt, label: `${account} · ${planName} 1/${installments}` });
+              finalSplits.push({
+                source: firstSource,
+                amount: firstAmt,
+                label: `${account} · ${planName} 1/${installments}`,
+              });
             } else {
-              finalSplits.push({ source: "main", amount: firstAmt, label: `${planName} 1/${installments} (today)` });
+              finalSplits.push({
+                source: "main",
+                amount: firstAmt,
+                label: `${planName} 1/${installments} (today)`,
+              });
             }
 
             // Remaining installments live in the BNPL debt. Drop the first
             // date (today) and keep the rest at the cadence.
-            const allDates = generateInstallmentDates(s.bnpl.firstDate, installments, s.bnpl.cadence);
+            const allDates = generateInstallmentDates(
+              s.bnpl.firstDate,
+              installments,
+              s.bnpl.cadence,
+            );
             const remainingDates = allDates.slice(1);
             const newId = await addDebt({
               name: planName,
@@ -605,7 +632,8 @@ function NewTransactionPage() {
           finalSplits.push({
             source: s.source,
             amount: s.amt,
-            label: s.source === "main" ? "Main balance" : s.source === "other" ? "Other" : undefined,
+            label:
+              s.source === "main" ? "Main balance" : s.source === "other" ? "Other" : undefined,
           });
         }
       }
@@ -634,7 +662,6 @@ function NewTransactionPage() {
     }
   }
 
-
   return (
     <div
       className="p-6 md:p-10 max-w-3xl mx-auto"
@@ -653,25 +680,42 @@ function NewTransactionPage() {
           <h1 className="text-3xl md:text-4xl font-semibold">
             {isPending
               ? "Reserve a pending amount"
-              : step === 1 ? "Transaction details" : "Itemize your purchase"}
+              : step === 1
+                ? "Transaction details"
+                : "Itemize your purchase"}
           </h1>
         </div>
-        <ShortcutsHelp className="shrink-0 text-muted-foreground" onOpenChange={setShortcutsOpen} open={shortcutsOpen} />
+        <ShortcutsHelp
+          className="shrink-0 text-muted-foreground"
+          onOpenChange={setShortcutsOpen}
+          open={shortcutsOpen}
+        />
       </header>
-
 
       {!isPending && (
         <div className="sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 mb-6 md:-mx-10 md:px-10">
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <StepDot active={step >= 1} done={step > 1} label="Receipt" onClick={() => setStep(1)} />
+              <StepDot
+                active={step >= 1}
+                done={step > 1}
+                label="Receipt"
+                onClick={() => setStep(1)}
+              />
               <div className="flex-1 h-px bg-border self-center" />
-              <StepDot active={step >= 2} done={false} label="Items" onClick={() => canStep2 && setStep(2)} />
+              <StepDot
+                active={step >= 2}
+                done={false}
+                label="Items"
+                onClick={() => canStep2 && setStep(2)}
+              />
             </div>
             {step === 2 && (
               <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calculated total</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Calculated total
+                  </p>
                   <p className="text-xl font-semibold tabular-nums leading-none">{fmt(total)}</p>
                 </div>
                 <Button
@@ -715,12 +759,12 @@ function NewTransactionPage() {
               </div>
             )}
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Label className="text-sm">Mark as Pending Hold</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    For supermarket pre-auths and other estimates. Reserves the money now; settle the exact amount later.
+                    For supermarket pre-auths and other estimates. Reserves the money now; settle
+                    the exact amount later.
                   </p>
                 </div>
                 <Switch checked={isPending} onCheckedChange={setIsPending} />
@@ -734,7 +778,10 @@ function NewTransactionPage() {
               <Field label="Retailer / shop">
                 <Combobox
                   value={retailer}
-                  onChange={(v) => { clearError("retailer"); setRetailer(v); }}
+                  onChange={(v) => {
+                    clearError("retailer");
+                    setRetailer(v);
+                  }}
                   options={retailerSuggestions}
                   placeholder="e.g. Asda"
                   ariaLabel="Retailer or shop"
@@ -758,7 +805,10 @@ function NewTransactionPage() {
                     aria-invalid={Boolean(errorOf("pendingEstimate")) || undefined}
                     className={cn(errorOf("pendingEstimate") && invalidCls)}
                     value={pendingEstimate}
-                    onChange={(e) => { clearError("pendingEstimate"); setPendingEstimate(e.target.value); }}
+                    onChange={(e) => {
+                      clearError("pendingEstimate");
+                      setPendingEstimate(e.target.value);
+                    }}
                   />
                   <FieldError message={errorOf("pendingEstimate")} />
                 </Field>
@@ -783,17 +833,28 @@ function NewTransactionPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <Label className="text-sm">Receipt attached</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Track where the receipt lives for returns or warranty claims.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Track where the receipt lives for returns or warranty claims.
+                      </p>
                     </div>
                     <Switch checked={receiptAttached} onCheckedChange={setReceiptAttached} />
                   </div>
                   {receiptAttached && (
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field label="Type">
-                        <Select value={receiptType} onValueChange={(v) => setReceiptType(v as ReceiptType)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                          value={receiptType}
+                          onValueChange={(v) => setReceiptType(v as ReceiptType)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
-                            {RECEIPT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            {RECEIPT_TYPES.map((t) => (
+                              <SelectItem key={t} value={t}>
+                                {t}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </Field>
@@ -816,14 +877,21 @@ function NewTransactionPage() {
                   <ProtectionFields
                     transactionDate={date}
                     value={protection}
-                    onChange={(v) => { clearError("protection"); setProtection(v); }}
+                    onChange={(v) => {
+                      clearError("protection");
+                      setProtection(v);
+                    }}
                   />
                   <FieldError message={errorOf("protection")} />
                 </div>
 
-
                 <Field label="Notes (optional)">
-                  <Textarea rows={3} placeholder="Anything worth remembering…" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  <Textarea
+                    rows={3}
+                    placeholder="Anything worth remembering…"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
                 </Field>
 
                 <div className="flex justify-end pt-2">
@@ -836,8 +904,6 @@ function NewTransactionPage() {
           </CardContent>
         </Card>
       )}
-
-
 
       {step === 2 && (
         <div className="space-y-4">
@@ -854,9 +920,7 @@ function NewTransactionPage() {
                   const selected = quickSelected.has(f.key);
                   const isRetailerMatch = retailerKey && f.retailers.has(retailerKey);
                   const showDivider =
-                    retailerMatchCount > 0 &&
-                    i === retailerMatchCount &&
-                    i < visibleQuick.length;
+                    retailerMatchCount > 0 && i === retailerMatchCount && i < visibleQuick.length;
                   return (
                     <span key={f.key} className="contents">
                       {showDivider && (
@@ -895,21 +959,13 @@ function NewTransactionPage() {
                     Add {quickSelected.size || ""} item{quickSelected.size === 1 ? "" : "s"}
                   </Button>
                   {quickSelected.size > 0 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setQuickSelected(new Set())}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => setQuickSelected(new Set())}>
                       Clear
                     </Button>
                   )}
                 </div>
                 {rankedQuick.length > 12 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setQuickShowMore((v) => !v)}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setQuickShowMore((v) => !v)}>
                     {quickShowMore ? "Show less" : `Show more (${rankedQuick.length - 12})`}
                   </Button>
                 )}
@@ -921,7 +977,9 @@ function NewTransactionPage() {
             {items.map((item, idx) => (
               <div
                 key={item.id}
-                ref={(el) => { rowRefs.current[item.id] = el; }}
+                ref={(el) => {
+                  rowRefs.current[item.id] = el;
+                }}
                 className="rounded-lg border border-border bg-card/50 p-3 space-y-3 group/item transition-colors hover:bg-card/70"
               >
                 <div className="grid grid-cols-12 gap-3 items-start">
@@ -943,7 +1001,9 @@ function NewTransactionPage() {
                   <div className="col-span-6 sm:col-span-2">
                     <Field label="Price (£)">
                       <Input
-                        ref={(el) => { priceRefs.current[item.id] = el; }}
+                        ref={(el) => {
+                          priceRefs.current[item.id] = el;
+                        }}
                         inputMode="decimal"
                         placeholder="0.00"
                         aria-label={`Item ${idx + 1} price`}
@@ -963,11 +1023,18 @@ function NewTransactionPage() {
 
                   <div className="col-span-3 sm:col-span-1">
                     <Field label="Qty">
-                      <Select value={item.quantity} onValueChange={(v) => updateItem(item.id, { quantity: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={item.quantity}
+                        onValueChange={(v) => updateItem(item.id, { quantity: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {Array.from({ length: 20 }, (_, i) => String(i + 1)).map((n) => (
-                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                            <SelectItem key={n} value={n}>
+                              {n}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -992,7 +1059,11 @@ function NewTransactionPage() {
                           <SelectValue placeholder="Choose" />
                         </SelectTrigger>
                         <SelectContent>
-                          {sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {sortLabels(categories).map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
                           <SelectItem value={ADD_CATEGORY_SENTINEL} className="text-primary">
                             <Plus className="h-3.5 w-3.5 inline mr-1" /> New category…
                           </SelectItem>
@@ -1003,7 +1074,15 @@ function NewTransactionPage() {
                   </div>
 
                   <div className="col-span-12 sm:col-span-1 flex justify-end sm:pt-5">
-                    <Button variant="ghost" size="icon" aria-label={`Remove item ${idx + 1}`} title="Remove item" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remove item ${idx + 1}`}
+                      title="Remove item"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeItem(item.id)}
+                      disabled={items.length === 1}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1012,31 +1091,33 @@ function NewTransactionPage() {
                 <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                   <div className="flex-1">
                     <Field label="Notes (optional)">
-                      <Input placeholder="Serial #, color, size…" value={item.notes} onChange={(e) => updateItem(item.id, { notes: e.target.value })} />
+                      <Input
+                        placeholder="Serial #, color, size…"
+                        value={item.notes}
+                        onChange={(e) => updateItem(item.id, { notes: e.target.value })}
+                      />
                     </Field>
                   </div>
                   {(parseFloat(item.quantity) || 1) > 1 && (
                     <p className="text-xs text-muted-foreground shrink-0">
-                      Line total: <span className="tabular-nums font-medium text-foreground">{fmt(lineTotal(item))}</span>
-                      {" "}({item.price || "0"} × {item.quantity || "1"})
+                      Line total:{" "}
+                      <span className="tabular-nums font-medium text-foreground">
+                        {fmt(lineTotal(item))}
+                      </span>{" "}
+                      ({item.price || "0"} × {item.quantity || "1"})
                     </p>
                   )}
                 </div>
               </div>
             ))}
 
-            <Button
-              variant="outline"
-              className="w-full border-dashed"
-              onClick={addItem}
-            >
+            <Button variant="outline" className="w-full border-dashed" onClick={addItem}>
               <Plus className="h-4 w-4" /> Add another item
             </Button>
             <p className="text-[11px] text-muted-foreground text-center">
               {lastRowEmpty
                 ? "Finish the row above first — Enter in Price adds the next item."
-                : "Tip: type a name, press Enter, type the price, press Enter to start the next item. ⌘/Ctrl + Enter saves."}
-              {" "}
+                : "Tip: type a name, press Enter, type the price, press Enter to start the next item. ⌘/Ctrl + Enter saves."}{" "}
               <button
                 type="button"
                 className="underline underline-offset-2 hover:text-foreground"
@@ -1045,7 +1126,6 @@ function NewTransactionPage() {
                 See all shortcuts
               </button>
             </p>
-
           </div>
 
           <Card>
@@ -1058,7 +1138,10 @@ function NewTransactionPage() {
                 retailer={retailer}
                 transactionDate={date}
                 splits={splits}
-                onChange={(s) => { clearError("splits"); setSplits(s); }}
+                onChange={(s) => {
+                  clearError("splits");
+                  setSplits(s);
+                }}
               />
               <FieldError message={errorOf("splits")} />
 
@@ -1081,7 +1164,9 @@ function NewTransactionPage() {
       )}
       <AddCategoryDialog
         open={addCategoryForItemId !== null}
-        onOpenChange={(o) => { if (!o) setAddCategoryForItemId(null); }}
+        onOpenChange={(o) => {
+          if (!o) setAddCategoryForItemId(null);
+        }}
         onCreated={(name) => {
           if (addCategoryForItemId) updateItem(addCategoryForItemId, { category: name });
           setAddCategoryForItemId(null);
@@ -1100,12 +1185,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function StepDot({ active, done, label, onClick }: { active: boolean; done: boolean; label: string; onClick: () => void }) {
+function StepDot({
+  active,
+  done,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  done: boolean;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button onClick={onClick} className="flex items-center gap-2 text-sm">
-      <span className={`h-7 w-7 rounded-full grid place-items-center text-xs font-semibold transition-colors ${
-        done ? "bg-primary text-primary-foreground" : active ? "bg-primary/20 text-primary ring-1 ring-primary/40" : "bg-muted text-muted-foreground"
-      }`}>
+      <span
+        className={`h-7 w-7 rounded-full grid place-items-center text-xs font-semibold transition-colors ${
+          done
+            ? "bg-primary text-primary-foreground"
+            : active
+              ? "bg-primary/20 text-primary ring-1 ring-primary/40"
+              : "bg-muted text-muted-foreground"
+        }`}
+      >
         {done ? <Check className="h-3.5 w-3.5" /> : label[0]}
       </span>
       <span className={active ? "text-foreground" : "text-muted-foreground"}>{label}</span>

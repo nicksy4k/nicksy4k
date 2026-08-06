@@ -8,8 +8,14 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { colorForKey } from "@/lib/colors";
 import {
-  Plus, Trash2, HandCoins, CreditCard as CreditIcon, Wallet,
-  ChevronRight, ArrowUpRight, History,
+  Plus,
+  Trash2,
+  HandCoins,
+  CreditCard as CreditIcon,
+  Wallet,
+  ChevronRight,
+  ArrowUpRight,
+  History,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,26 +25,41 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 
 import {
-  useCommitments, useDebts, useDebtItems, useIncomes, useLoans, useSavings, useTransactions,
+  useCommitments,
+  useDebts,
+  useDebtItems,
+  useIncomes,
+  useLoans,
+  useSavings,
+  useTransactions,
 } from "@/lib/store";
 import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
 import { planCredit, planDebit } from "@/lib/ledgerSync";
-
-
 
 export const Route = createFileRoute("/credit")({
   head: () => ({
@@ -60,9 +81,7 @@ function todayISO() {
 }
 
 function loanPaid(l: Loan) {
-  return (l.payments ?? [])
-    .filter((p) => p.type !== "topup")
-    .reduce((s, p) => s + p.amount, 0);
+  return (l.payments ?? []).filter((p) => p.type !== "topup").reduce((s, p) => s + p.amount, 0);
 }
 function loanRemaining(l: Loan) {
   return Math.max(0, l.total_amount - loanPaid(l));
@@ -103,7 +122,12 @@ function usePockets(): string[] {
 }
 
 function FundingSourceDialog({
-  open, onOpenChange, title, description, direction, onConfirm,
+  open,
+  onOpenChange,
+  title,
+  description,
+  direction,
+  onConfirm,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -134,7 +158,9 @@ function FundingSourceDialog({
                 : "Where should this money go?")}
           </p>
           <Select value={value} onValueChange={setValue}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="main">Main balance</SelectItem>
               {pockets.map((p) => (
@@ -156,13 +182,17 @@ function FundingSourceDialog({
           </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button
             onClick={() => {
               const choice: SourceChoice =
-                value === "main" ? { kind: "main" }
-                : value === "other" ? { kind: "other" }
-                : { kind: "pocket", name: value.slice(7) };
+                value === "main"
+                  ? { kind: "main" }
+                  : value === "other"
+                    ? { kind: "other" }
+                    : { kind: "pocket", name: value.slice(7) };
               onConfirm(choice);
             }}
           >
@@ -205,13 +235,15 @@ function useLedgerSync() {
         receipt_type: "None",
         receipt_location: "",
         notes: t.notes,
-        items: [{
-          id: crypto.randomUUID(),
-          item_name: t.retailer,
-          price: t.total_amount,
-          quantity: 1,
-          category: t.category,
-        }],
+        items: [
+          {
+            id: crypto.randomUUID(),
+            item_name: t.retailer,
+            price: t.total_amount,
+            quantity: 1,
+            category: t.category,
+          },
+        ],
         payment_splits: t.payment_splits,
       });
     }
@@ -231,8 +263,6 @@ function useLedgerSync() {
     if (plan.income) await addIncome(plan.income);
   }
 
-
-
   return { debit, credit };
 }
 
@@ -248,7 +278,9 @@ function CreditPage() {
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Loans &amp; liabilities</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+          Loans &amp; liabilities
+        </p>
         <h1 className="text-3xl md:text-4xl font-semibold">Credit &amp; Debt</h1>
       </header>
 
@@ -313,13 +345,16 @@ function HistoryList({ payments }: { payments: LedgerPayment[] }) {
                 </span>
               )}
               <span className="font-medium tabular-nums">
-                {p.type === "topup" ? "+" : "−"}{fmt(p.amount)}
+                {p.type === "topup" ? "+" : "−"}
+                {fmt(p.amount)}
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {format(new Date(p.date), "d MMM yyyy")} · {sourceLabel(p.source)}
             </p>
-            {p.notes && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{p.notes}</p>}
+            {p.notes && (
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{p.notes}</p>
+            )}
           </div>
         </li>
       ))}
@@ -347,15 +382,22 @@ function OwedToMeTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4" /> New loan
         </Button>
       </div>
 
       {items.length === 0 ? (
-        <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
-          No loans tracked yet. Log money you've lent out to keep tabs on repayments.
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-center text-sm text-muted-foreground">
+            No loans tracked yet. Log money you've lent out to keep tabs on repayments.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((l) => {
@@ -376,7 +418,10 @@ function OwedToMeTab() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setEditing(l); setOpen(true); }}
+                      onClick={() => {
+                        setEditing(l);
+                        setOpen(true);
+                      }}
                       className="text-xs text-muted-foreground hover:text-foreground"
                     >
                       Edit
@@ -384,7 +429,9 @@ function OwedToMeTab() {
                   </div>
                   <div>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-xs uppercase tracking-wider text-muted-foreground">Remaining</span>
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Remaining
+                      </span>
                       <span className="text-xl font-semibold tabular-nums">{fmt(remaining)}</span>
                     </div>
                     <Progress value={pct} className="mt-2" />
@@ -413,7 +460,8 @@ function OwedToMeTab() {
                     <AccordionItem value="hist" className="border-none">
                       <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
                         <span className="flex items-center gap-1.5">
-                          <History className="h-3.5 w-3.5" /> View history ({(l.payments ?? []).length})
+                          <History className="h-3.5 w-3.5" /> View history (
+                          {(l.payments ?? []).length})
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
@@ -462,12 +510,17 @@ function OwedToMeTab() {
 
       <FundingSourceDialog
         open={!!pending}
-        onOpenChange={(v) => { if (!v) setPending(null); }}
+        onOpenChange={(v) => {
+          if (!v) setPending(null);
+        }}
         title={
-          pending?.kind === "create" ? "Loan funded from"
-          : pending?.kind === "topup" ? "Top-up funded from"
-          : pending?.kind === "repay" ? "Repayment goes to"
-          : ""
+          pending?.kind === "create"
+            ? "Loan funded from"
+            : pending?.kind === "topup"
+              ? "Top-up funded from"
+              : pending?.kind === "repay"
+                ? "Repayment goes to"
+                : ""
         }
         direction={pending?.kind === "repay" ? "in" : "out"}
         onConfirm={async (choice) => {
@@ -542,7 +595,10 @@ function OwedToMeTab() {
 }
 
 function RepaymentLauncher({
-  disabled, label, max, onSubmit,
+  disabled,
+  label,
+  max,
+  onSubmit,
 }: {
   disabled: boolean;
   label: string;
@@ -560,14 +616,18 @@ function RepaymentLauncher({
         onOpenChange={setOpen}
         title={label}
         max={max}
-        onSave={(v) => { setOpen(false); onSubmit(v); }}
+        onSave={(v) => {
+          setOpen(false);
+          onSubmit(v);
+        }}
       />
     </>
   );
 }
 
 function TopUpLauncher({
-  label, onSubmit,
+  label,
+  onSubmit,
 }: {
   label: string;
   onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
@@ -584,14 +644,20 @@ function TopUpLauncher({
         title={label}
         max={Number.POSITIVE_INFINITY}
         hideRemaining
-        onSave={(v) => { setOpen(false); onSubmit(v); }}
+        onSave={(v) => {
+          setOpen(false);
+          onSubmit(v);
+        }}
       />
     </>
   );
 }
 
 function LoanDialog({
-  open, onOpenChange, editing, onSave,
+  open,
+  onOpenChange,
+  editing,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -615,7 +681,9 @@ function LoanDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>{editing ? "Edit loan" : "New loan"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edit loan" : "New loan"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Person</Label>
@@ -626,10 +694,17 @@ function LoanDialog({
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                 {editing ? "Total (£)" : "Starting amount (£)"}
               </Label>
-              <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Loan date</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Loan date
+              </Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
           </div>
@@ -639,7 +714,9 @@ function LoanDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button
             onClick={() => {
               const amt = parseFloat(amount);
@@ -682,7 +759,10 @@ function DebtItemsSection({ debtId }: { debtId: string }) {
         price: parseFloat(price) || 0,
         quantity: parseInt(qty, 10) || 1,
       });
-      setName(""); setPrice(""); setQty("1"); setAdding(false);
+      setName("");
+      setPrice("");
+      setQty("1");
+      setAdding(false);
     } catch (e) {
       console.error(e);
       toast.error("Could not add item");
@@ -727,13 +807,37 @@ function DebtItemsSection({ debtId }: { debtId: string }) {
           )}
           {adding ? (
             <div className="mt-2 grid grid-cols-12 gap-1.5 items-center">
-              <Input className="col-span-5 h-8 text-xs" placeholder="Item" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input className="col-span-3 h-8 text-xs" inputMode="decimal" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
-              <Input className="col-span-2 h-8 text-xs" inputMode="numeric" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} />
-              <Button size="sm" className="col-span-2 h-8 text-xs px-2" onClick={submit}>Add</Button>
+              <Input
+                className="col-span-5 h-8 text-xs"
+                placeholder="Item"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Input
+                className="col-span-3 h-8 text-xs"
+                inputMode="decimal"
+                placeholder="Price"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+              <Input
+                className="col-span-2 h-8 text-xs"
+                inputMode="numeric"
+                placeholder="Qty"
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
+              />
+              <Button size="sm" className="col-span-2 h-8 text-xs px-2" onClick={submit}>
+                Add
+              </Button>
             </div>
           ) : (
-            <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs" onClick={() => setAdding(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-1 h-7 text-xs"
+              onClick={() => setAdding(true)}
+            >
               <Plus className="h-3 w-3" /> Add item
             </Button>
           )}
@@ -743,7 +847,6 @@ function DebtItemsSection({ debtId }: { debtId: string }) {
   );
 }
 
-
 function DebtsTab() {
   const { items, update, remove } = useDebts();
   const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
@@ -751,13 +854,14 @@ function DebtsTab() {
   const qc = useQueryClient();
   const ledger = useLedgerSync();
 
-
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Debt | null>(null);
-  const [pending, setPending] = useState<
-    | { debt: Debt; amount: number; date: string; notes?: string }
-    | null
-  >(null);
+  const [pending, setPending] = useState<{
+    debt: Debt;
+    amount: number;
+    date: string;
+    notes?: string;
+  } | null>(null);
 
   // Kill-switch: when a BNPL/debt is fully repaid, drop any linked
   // recurring commitment so it stops appearing in future bills.
@@ -767,14 +871,18 @@ function DebtsTab() {
     for (const c of linked) await removeCommitment(c.id);
   }
 
-
   const standard = items.filter((d) => d.kind === "standard");
   const bnpl = items.filter((d) => d.kind === "bnpl");
 
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4" /> New debt
         </Button>
       </div>
@@ -783,12 +891,16 @@ function DebtsTab() {
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">Standard debts</h2>
-          <span className="text-xs text-muted-foreground">Open-ended balances (rent arrears, IOUs, etc.)</span>
+          <span className="text-xs text-muted-foreground">
+            Open-ended balances (rent arrears, IOUs, etc.)
+          </span>
         </div>
         {standard.length === 0 ? (
-          <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No standard debts. Add one to track its running balance.
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No standard debts. Add one to track its running balance.
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {standard.map((d) => {
@@ -802,19 +914,25 @@ function DebtsTab() {
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{d.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Total: <span className="tabular-nums">{fmt(d.total_amount)}</span> · Paid: <span className="tabular-nums">{fmt(paid)}</span>
+                          Total: <span className="tabular-nums">{fmt(d.total_amount)}</span> · Paid:{" "}
+                          <span className="tabular-nums">{fmt(paid)}</span>
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => { setEditing(d); setOpen(true); }}
+                        onClick={() => {
+                          setEditing(d);
+                          setOpen(true);
+                        }}
                         className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         Edit
                       </button>
                     </div>
                     <div className="rounded-lg bg-secondary/40 p-3">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Running balance</p>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Running balance
+                      </p>
                       <p className="text-2xl font-semibold tabular-nums">{fmt(remaining)}</p>
                     </div>
 
@@ -831,7 +949,8 @@ function DebtsTab() {
                       <AccordionItem value="hist" className="border-none">
                         <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
                           <span className="flex items-center gap-1.5">
-                            <History className="h-3.5 w-3.5" /> View history ({(d.payments ?? []).length})
+                            <History className="h-3.5 w-3.5" /> View history (
+                            {(d.payments ?? []).length})
                           </span>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -869,9 +988,11 @@ function DebtsTab() {
           <span className="text-xs text-muted-foreground">Clearpay, PayPal Pay in 4, Klarna…</span>
         </div>
         {bnpl.length === 0 ? (
-          <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No installment plans. Add one to track each scheduled payment.
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No installment plans. Add one to track each scheduled payment.
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {bnpl.map((d) => {
@@ -898,7 +1019,10 @@ function DebtsTab() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => { setEditing(d); setOpen(true); }}
+                        onClick={() => {
+                          setEditing(d);
+                          setOpen(true);
+                        }}
                         className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         Edit
@@ -909,7 +1033,9 @@ function DebtsTab() {
                         <span className="text-xs uppercase tracking-wider text-muted-foreground">
                           {paidCount} of {totalInstallments} Paid
                         </span>
-                        <span className="text-sm font-semibold tabular-nums">{fmt(remaining)} left</span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {fmt(remaining)} left
+                        </span>
                       </div>
                       <Progress value={pct} />
                     </div>
@@ -931,7 +1057,8 @@ function DebtsTab() {
                       <AccordionItem value="hist" className="border-none">
                         <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
                           <span className="flex items-center gap-1.5">
-                            <History className="h-3.5 w-3.5" /> View history ({(d.payments ?? []).length})
+                            <History className="h-3.5 w-3.5" /> View history (
+                            {(d.payments ?? []).length})
                           </span>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -976,7 +1103,10 @@ function DebtsTab() {
 
           // ===== New debt =====
           const { data: u } = await supabase.auth.getUser();
-          if (!u.user) { toast.error("Not signed in"); return; }
+          if (!u.user) {
+            toast.error("Not signed in");
+            return;
+          }
 
           const n = Math.max(1, data.installments_total ?? 1);
           const per = data.kind === "bnpl" && n > 0 ? data.total_amount / n : 0;
@@ -1073,7 +1203,9 @@ function DebtsTab() {
 
       <FundingSourceDialog
         open={!!pending}
-        onOpenChange={(v) => { if (!v) setPending(null); }}
+        onOpenChange={(v) => {
+          if (!v) setPending(null);
+        }}
         title={pending ? `Payment funded from` : ""}
         direction="out"
         onConfirm={async (choice) => {
@@ -1094,9 +1226,10 @@ function DebtsTab() {
             await ledger.debit(choice, {
               amount: pending.amount,
               date: pending.date,
-              label: pending.debt.kind === "bnpl"
-                ? `BNPL · ${pending.debt.name}`
-                : `Debt · ${pending.debt.name}`,
+              label:
+                pending.debt.kind === "bnpl"
+                  ? `BNPL · ${pending.debt.name}`
+                  : `Debt · ${pending.debt.name}`,
               category: "Debt",
               notes: pending.notes,
             });
@@ -1129,14 +1262,19 @@ function DebtsTab() {
           }
         }}
       />
-
     </div>
   );
 }
 
 function DebtPaymentLauncher({
-  disabled, label, defaultAmount, defaultDate, max, onSubmit,
-  buttonIcon, buttonLabel,
+  disabled,
+  label,
+  defaultAmount,
+  defaultDate,
+  max,
+  onSubmit,
+  buttonIcon,
+  buttonLabel,
 }: {
   disabled?: boolean;
   label: string;
@@ -1160,14 +1298,20 @@ function DebtPaymentLauncher({
         defaultAmount={defaultAmount}
         defaultDate={defaultDate}
         max={max}
-        onSave={(v) => { setOpen(false); onSubmit(v); }}
+        onSave={(v) => {
+          setOpen(false);
+          onSubmit(v);
+        }}
       />
     </>
   );
 }
 
 function DebtDialog({
-  open, onOpenChange, editing, onSave,
+  open,
+  onOpenChange,
+  editing,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1191,7 +1335,9 @@ function DebtDialog({
   const [notes, setNotes] = useState("");
   const [payFirstNow, setPayFirstNow] = useState(false);
   const [sourceValue, setSourceValue] = useState<string>("main");
-  const [itemRows, setItemRows] = useState<Array<{ item_name: string; price: string; quantity: string }>>([]);
+  const [itemRows, setItemRows] = useState<
+    Array<{ item_name: string; price: string; quantity: string }>
+  >([]);
   const [totalDirty, setTotalDirty] = useState(false);
 
   useEffect(() => {
@@ -1227,7 +1373,6 @@ function DebtDialog({
     setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
   }, [itemsTotal, totalDirty, editing, itemRows.length]);
 
-
   // Keep date array length aligned with installments count.
   const n = parseInt(installments, 10) || 4;
   useEffect(() => {
@@ -1250,17 +1395,25 @@ function DebtDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{editing ? "Edit debt" : "New debt"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edit debt" : "New debt"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Rent arrears, Clearpay – Nike" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Rent arrears, Clearpay – Nike"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Type</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as "standard" | "bnpl")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="standard">Standard debt</SelectItem>
                   <SelectItem value="bnpl">BNPL plan</SelectItem>
@@ -1268,46 +1421,68 @@ function DebtDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Total (£)</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Total (£)
+              </Label>
               <Input
                 inputMode="decimal"
                 value={amount}
-                onChange={(e) => { setAmount(e.target.value); setTotalDirty(true); }}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setTotalDirty(true);
+                }}
                 placeholder="0.00"
               />
-              {!editing && itemRows.length > 0 && totalDirty && itemsTotal > 0 && Math.abs((parseFloat(amount) || 0) - itemsTotal) > 0.005 && (
-                <p className="text-[11px] text-amber-600">
-                  Items total {fmt(itemsTotal)} doesn't match.{" "}
-                  <button
-                    type="button"
-                    className="underline hover:no-underline"
-                    onClick={() => { setAmount(itemsTotal.toFixed(2)); setTotalDirty(false); }}
-                  >
-                    Use items total
-                  </button>
-                </p>
-              )}
+              {!editing &&
+                itemRows.length > 0 &&
+                totalDirty &&
+                itemsTotal > 0 &&
+                Math.abs((parseFloat(amount) || 0) - itemsTotal) > 0.005 && (
+                  <p className="text-[11px] text-amber-600">
+                    Items total {fmt(itemsTotal)} doesn't match.{" "}
+                    <button
+                      type="button"
+                      className="underline hover:no-underline"
+                      onClick={() => {
+                        setAmount(itemsTotal.toFixed(2));
+                        setTotalDirty(false);
+                      }}
+                    >
+                      Use items total
+                    </button>
+                  </p>
+                )}
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Start date</Label>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Start date
+            </Label>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           {kind === "bnpl" && (
             <>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Installments</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Installments
+                </Label>
                 <Select value={installments} onValueChange={setInstallments}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {[2, 3, 4, 6, 8, 12].map((nn) => (
-                      <SelectItem key={nn} value={String(nn)}>{nn}</SelectItem>
+                      <SelectItem key={nn} value={String(nn)}>
+                        {nn}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Scheduled due dates</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Scheduled due dates
+                </Label>
                 <div className="space-y-2">
                   {dates.map((d, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -1352,7 +1527,9 @@ function DebtDialog({
                     Source pocket
                   </Label>
                   <Select value={sourceValue} onValueChange={setSourceValue}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="main">Main balance</SelectItem>
                       {pockets.map((p) => (
@@ -1377,7 +1554,9 @@ function DebtDialog({
           {!editing && (
             <div className="space-y-2 rounded-lg border border-border/60 p-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Items (optional)</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Items (optional)
+                </Label>
                 {itemRows.length > 0 && (
                   <span className="text-[11px] text-muted-foreground tabular-nums">
                     Sum {fmt(itemsTotal)}
@@ -1440,7 +1619,9 @@ function DebtDialog({
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => setItemRows([...itemRows, { item_name: "", price: "", quantity: "1" }])}
+                onClick={() =>
+                  setItemRows([...itemRows, { item_name: "", price: "", quantity: "1" }])
+                }
               >
                 <Plus className="h-3.5 w-3.5" /> Add item
               </Button>
@@ -1453,7 +1634,9 @@ function DebtDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button
             onClick={() => {
               const amt = parseFloat(amount);
@@ -1461,11 +1644,14 @@ function DebtDialog({
                 toast.error("Name and a valid amount are required.");
                 return;
               }
-              const firstPaymentSource: SourceChoice | null = showPayFirst && payFirstNow
-                ? (sourceValue === "main" ? { kind: "main" }
-                  : sourceValue === "other" ? { kind: "other" }
-                  : { kind: "pocket", name: sourceValue.slice(7) })
-                : null;
+              const firstPaymentSource: SourceChoice | null =
+                showPayFirst && payFirstNow
+                  ? sourceValue === "main"
+                    ? { kind: "main" }
+                    : sourceValue === "other"
+                      ? { kind: "other" }
+                      : { kind: "pocket", name: sourceValue.slice(7) }
+                  : null;
               onSave(
                 {
                   name: name.trim(),
@@ -1500,11 +1686,17 @@ function DebtDialog({
   );
 }
 
-
 // ============ Shared payment dialog ============
 
 function PaymentDialog({
-  open, onOpenChange, title, defaultAmount, defaultDate, max, hideRemaining, onSave,
+  open,
+  onOpenChange,
+  title,
+  defaultAmount,
+  defaultDate,
+  max,
+  hideRemaining,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1530,11 +1722,20 @@ function PaymentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount (£)</Label>
-            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Amount (£)
+            </Label>
+            <Input
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+            />
             {!hideRemaining && Number.isFinite(max) && (
               <p className="text-[11px] text-muted-foreground">Remaining: {fmt(max)}</p>
             )}
@@ -1549,7 +1750,9 @@ function PaymentDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button
             onClick={() => {
               const amt = parseFloat(amount);

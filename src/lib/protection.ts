@@ -24,12 +24,23 @@ export function computeExpiration(
   const base = parseISO(transactionDate);
   let result: Date;
   switch (duration) {
-    case "14 Days": result = addDays(base, 14); break;
-    case "30 Days": result = addDays(base, 30); break;
-    case "90 Days": result = addDays(base, 90); break;
-    case "1 Year": result = addYears(base, 1); break;
-    case "2 Years": result = addYears(base, 2); break;
-    case "Custom Date": return null;
+    case "14 Days":
+      result = addDays(base, 14);
+      break;
+    case "30 Days":
+      result = addDays(base, 30);
+      break;
+    case "90 Days":
+      result = addDays(base, 90);
+      break;
+    case "1 Year":
+      result = addYears(base, 1);
+      break;
+    case "2 Years":
+      result = addYears(base, 2);
+      break;
+    case "Custom Date":
+      return null;
   }
   return result.toISOString().slice(0, 10);
 }

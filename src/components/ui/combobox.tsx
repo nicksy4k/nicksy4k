@@ -1,11 +1,7 @@
 import * as React from "react";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 
 export interface ComboboxProps {
   value: string;
@@ -98,7 +94,7 @@ export function Combobox({
         openList();
         return;
       }
-      setHighlight((h) => (rowCount === 0 ? -1 : (h <= 0 ? rowCount - 1 : h - 1)));
+      setHighlight((h) => (rowCount === 0 ? -1 : h <= 0 ? rowCount - 1 : h - 1));
       return;
     }
     if (e.key === "Escape") {
@@ -155,7 +151,6 @@ export function Combobox({
               "flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-9 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
               invalid && "border-destructive focus-visible:ring-destructive",
             )}
-
           />
           <button
             type="button"

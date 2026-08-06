@@ -27,7 +27,9 @@ export default defineTool({
     payment_splits: z
       .array(
         z.object({
-          source: z.string().describe("Funding source label (e.g. 'main', pocket name, BNPL name)."),
+          source: z
+            .string()
+            .describe("Funding source label (e.g. 'main', pocket name, BNPL name)."),
           amount: z.number(),
           kind: z.string().optional().describe("Optional split kind: 'main' | 'pocket' | 'bnpl'."),
         }),
@@ -36,7 +38,10 @@ export default defineTool({
       .describe("Optional split-payment breakdown; amounts should sum to total_amount."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-  handler: async ({ retailer, total_amount, date, notes, items, is_pending, payment_splits }, ctx) => {
+  handler: async (
+    { retailer, total_amount, date, notes, items, is_pending, payment_splits },
+    ctx,
+  ) => {
     const guard = requireAuth(ctx);
     if (guard) return guard;
     const sb = supabaseForUser(ctx);
@@ -59,7 +64,10 @@ export default defineTool({
     }
     return {
       content: [
-        { type: "text", text: `Recorded ${retailer} — ${total_amount} on ${date} (id ${data.id}).` },
+        {
+          type: "text",
+          text: `Recorded ${retailer} — ${total_amount} on ${date} (id ${data.id}).`,
+        },
       ],
       structuredContent: { transaction: data },
     };

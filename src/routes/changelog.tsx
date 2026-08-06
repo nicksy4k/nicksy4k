@@ -87,12 +87,9 @@ function ChangelogPage() {
         <header className="print-header">
           <h1>Ledgerly changelog</h1>
           <p>
-            {currentVersion} · Updated{" "}
-            {format(parseISO(currentVersionDate), "d MMM yyyy")}
+            {currentVersion} · Updated {format(parseISO(currentVersionDate), "d MMM yyyy")}
           </p>
-          <p className="print-muted">
-            Generated {format(new Date(), "d MMM yyyy HH:mm")}
-          </p>
+          <p className="print-muted">Generated {format(new Date(), "d MMM yyyy HH:mm")}</p>
         </header>
         {changelog.map((e) => (
           <section key={e.version}>

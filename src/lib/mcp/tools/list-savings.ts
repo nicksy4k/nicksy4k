@@ -13,10 +13,7 @@ export default defineTool({
     const guard = requireAuth(ctx);
     if (guard) return guard;
     const sb = supabaseForUser(ctx);
-    const { data, error } = await sb
-      .from("savings")
-      .select("*")
-      .eq("user_id", ctx.getUserId()!);
+    const { data, error } = await sb.from("savings").select("*").eq("user_id", ctx.getUserId()!);
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
     }

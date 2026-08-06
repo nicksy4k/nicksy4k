@@ -37,7 +37,6 @@ import {
   Sparkles,
   MessageSquare,
   Compass,
-
 } from "lucide-react";
 import { toast } from "sonner";
 import heroAsset from "@/assets/auth-hero.png.asset.json";
@@ -46,9 +45,17 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Ledgerly — Track, budget, and protect your spending" },
-      { name: "description", content: "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence." },
+      {
+        name: "description",
+        content:
+          "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence.",
+      },
       { property: "og:title", content: "Ledgerly — Track, budget, and protect your spending" },
-      { property: "og:description", content: "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence." },
+      {
+        property: "og:description",
+        content:
+          "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -132,10 +139,13 @@ const signupSchema = z.object({
   country: z.string().min(1, "Select your country"),
   currency: z.string().min(1, "Select a currency"),
   heardAbout: z.string().optional(),
-  acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: "You must accept the Privacy Policy" }) }),
-  acceptedBeta: z.literal(true, { errorMap: () => ({ message: "You must accept the Beta Disclaimer" }) }),
+  acceptedPrivacy: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Privacy Policy" }),
+  }),
+  acceptedBeta: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Beta Disclaimer" }),
+  }),
 });
-
 
 export function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -147,8 +157,6 @@ export function AuthPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const beginDemo = useServerFn(startDemoSession);
   const queryClient = useQueryClient();
-
-
 
   // Signup-only state
   const [fullName, setFullName] = useState("");
@@ -166,9 +174,15 @@ export function AuthPage() {
       const returnPath = getReturnPath();
       if (mode === "signup") {
         const parsed = signupSchema.safeParse({
-          fullName, displayName, email, password, country, currency,
+          fullName,
+          displayName,
+          email,
+          password,
+          country,
+          currency,
           heardAbout: heardAbout || undefined,
-          acceptedPrivacy, acceptedBeta,
+          acceptedPrivacy,
+          acceptedBeta,
         });
         if (!parsed.success) {
           toast.error(parsed.error.issues[0]?.message ?? "Please check the form");
@@ -225,7 +239,6 @@ export function AuthPage() {
     }
   }
 
-
   async function startDemo() {
     setDemoLoading(true);
     try {
@@ -239,17 +252,17 @@ export function AuthPage() {
       // from a previous session must not leak into the demo dashboard.
       try {
         localStorage.removeItem("ledgerly.cycle.v2");
-      } catch { /* storage unavailable */ }
+      } catch {
+        /* storage unavailable */
+      }
       queryClient.clear();
       toast.success("Demo sandbox ready — sample data loaded.");
       window.location.assign("/");
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the demo");
       setDemoLoading(false);
     }
   }
-
 
   const isSignup = mode === "signup";
 
@@ -266,7 +279,9 @@ export function AuthPage() {
                 Ledgerly is in beta — features and design are evolving
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Things may change without notice, some flows are still being polished, and occasional bugs are expected. Please share anything you spot — it directly shapes what ships next.
+                Things may change without notice, some flows are still being polished, and
+                occasional bugs are expected. Please share anything you spot — it directly shapes
+                what ships next.
               </p>
             </div>
           </div>
@@ -279,7 +294,10 @@ export function AuthPage() {
             <Wallet className="h-5 w-5 text-primary" />
           </div>
           <span className="text-xl font-display font-semibold tracking-tight">Ledgerly</span>
-          <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-card/50 border-border/60 text-muted-foreground">
+          <Badge
+            variant="outline"
+            className="text-xs font-medium px-2 py-0.5 rounded-full bg-card/50 border-border/60 text-muted-foreground"
+          >
             Beta
           </Badge>
         </header>
@@ -291,7 +309,8 @@ export function AuthPage() {
                 Track, budget, and protect your spending.
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl">
-                A personal ledger built around your income cycle. Log every item, attach receipts, track warranties, and route income into pockets.
+                A personal ledger built around your income cycle. Log every item, attach receipts,
+                track warranties, and route income into pockets.
               </p>
             </div>
 
@@ -318,7 +337,9 @@ export function AuthPage() {
                   {isSignup ? "Create your account" : "Sign in to Ledgerly"}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {isSignup ? "Join the beta — takes under a minute." : "Your finances, private and synced."}
+                  {isSignup
+                    ? "Join the beta — takes under a minute."
+                    : "Your finances, private and synced."}
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -336,7 +357,9 @@ export function AuthPage() {
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border/60" />
                   </div>
-                  <span className="relative bg-card px-2 text-xs text-muted-foreground">or email</span>
+                  <span className="relative bg-card px-2 text-xs text-muted-foreground">
+                    or email
+                  </span>
                 </div>
 
                 <form onSubmit={onSubmit} className="space-y-4">
@@ -345,11 +368,23 @@ export function AuthPage() {
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Label htmlFor="fullName">Full name</Label>
-                          <Input id="fullName" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                          <Input
+                            id="fullName"
+                            autoComplete="name"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            required
+                          />
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor="displayName">Display name</Label>
-                          <Input id="displayName" autoComplete="nickname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+                          <Input
+                            id="displayName"
+                            autoComplete="nickname"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            required
+                          />
                         </div>
                       </div>
                     </>
@@ -385,7 +420,11 @@ export function AuthPage() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -396,29 +435,50 @@ export function AuthPage() {
                         <div className="space-y-1.5">
                           <Label htmlFor="country">Country / region</Label>
                           <Select value={country} onValueChange={setCountry}>
-                            <SelectTrigger id="country"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectTrigger id="country">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {COUNTRIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                              {COUNTRIES.map((c) => (
+                                <SelectItem key={c.value} value={c.value}>
+                                  {c.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor="currency">Main currency</Label>
                           <Select value={currency} onValueChange={setCurrency}>
-                            <SelectTrigger id="currency"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectTrigger id="currency">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {CURRENCIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                              {CURRENCIES.map((c) => (
+                                <SelectItem key={c.value} value={c.value}>
+                                  {c.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="heardAbout">How did you hear about us? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Label htmlFor="heardAbout">
+                          How did you hear about us?{" "}
+                          <span className="text-muted-foreground font-normal">(optional)</span>
+                        </Label>
                         <Select value={heardAbout} onValueChange={setHeardAbout}>
-                          <SelectTrigger id="heardAbout"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectTrigger id="heardAbout">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
                           <SelectContent>
-                            {HEARD_ABOUT.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                            {HEARD_ABOUT.map((h) => (
+                              <SelectItem key={h} value={h}>
+                                {h}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -432,7 +492,14 @@ export function AuthPage() {
                           />
                           <span className="text-muted-foreground leading-relaxed">
                             I have read and agree to the{" "}
-                            <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
+                            <Link
+                              to="/privacy"
+                              target="_blank"
+                              className="text-primary hover:underline"
+                            >
+                              Privacy Policy
+                            </Link>
+                            .
                           </span>
                         </label>
                         <label className="flex items-start gap-2 text-sm">
@@ -442,10 +509,18 @@ export function AuthPage() {
                             className="mt-0.5"
                           />
                           <span className="text-muted-foreground leading-relaxed">
-                            I understand Ledgerly is in beta — features may change, some flows may be incomplete,
-                            and I will not rely on it as an official financial record. As a beta tester I'll use
-                            fake or non-critical data where possible. See the{" "}
-                            <Link to="/beta-disclaimer" target="_blank" className="text-primary hover:underline">Beta Disclaimer</Link>.
+                            I understand Ledgerly is in beta — features may change, some flows may
+                            be incomplete, and I will not rely on it as an official financial
+                            record. As a beta tester I'll use fake or non-critical data where
+                            possible. See the{" "}
+                            <Link
+                              to="/beta-disclaimer"
+                              target="_blank"
+                              className="text-primary hover:underline"
+                            >
+                              Beta Disclaimer
+                            </Link>
+                            .
                           </span>
                         </label>
                       </div>
@@ -454,7 +529,9 @@ export function AuthPage() {
 
                   <Button type="submit" className="w-full group" disabled={loading}>
                     {loading ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
-                    {!loading && <ArrowRight className="ml-1 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition" />}
+                    {!loading && (
+                      <ArrowRight className="ml-1 h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition" />
+                    )}
                   </Button>
                 </form>
 
@@ -470,22 +547,29 @@ export function AuthPage() {
                     {demoLoading ? "Preparing demo…" : "View Demo Account"}
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    Explore Ledgerly with sample data — no signup. The demo sandbox resets on each visit.
+                    Explore Ledgerly with sample data — no signup. The demo sandbox resets on each
+                    visit.
                   </p>
                 </div>
 
-
-
                 <div className="text-center text-sm text-muted-foreground">
                   {isSignup ? (
-                    <>Already registered?{" "}
-                      <button className="text-primary hover:underline" onClick={() => setMode("signin")}>
+                    <>
+                      Already registered?{" "}
+                      <button
+                        className="text-primary hover:underline"
+                        onClick={() => setMode("signin")}
+                      >
                         Sign in
                       </button>
                     </>
                   ) : (
-                    <>No account?{" "}
-                      <button className="text-primary hover:underline" onClick={() => setMode("signup")}>
+                    <>
+                      No account?{" "}
+                      <button
+                        className="text-primary hover:underline"
+                        onClick={() => setMode("signup")}
+                      >
                         Sign up
                       </button>
                     </>
@@ -517,12 +601,21 @@ export function AuthPage() {
 
             <footer className="text-xs text-muted-foreground text-center text-balance leading-relaxed">
               <p>
-                Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and should not be relied upon for absolute accuracy or as a professional financial manager. All data and calculations rely entirely on manual user input.
+                Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and
+                should not be relied upon for absolute accuracy or as a professional financial
+                manager. All data and calculations rely entirely on manual user input.
               </p>
               <p className="mt-2">
-                Privacy & Security: Your financial records are secured with Row Level Security (RLS) and encrypted storage, so they are only accessible to you. See our{" "}
-                <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link> and{" "}
-                <Link to="/beta-disclaimer" className="text-primary hover:underline">Beta Disclaimer</Link>.
+                Privacy & Security: Your financial records are secured with Row Level Security (RLS)
+                and encrypted storage, so they are only accessible to you. See our{" "}
+                <Link to="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>{" "}
+                and{" "}
+                <Link to="/beta-disclaimer" className="text-primary hover:underline">
+                  Beta Disclaimer
+                </Link>
+                .
               </p>
             </footer>
           </div>
@@ -533,7 +626,6 @@ export function AuthPage() {
           <SupportDevCard className="lg:col-span-2" />
         </section>
       </main>
-
     </div>
   );
 }
@@ -551,9 +643,7 @@ function FeatureCard({
     <Card className="border-border/60 bg-card/40 backdrop-blur-sm transition hover:border-primary/30 hover:bg-card/60">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-2 text-primary">
-            {icon}
-          </div>
+          <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-2 text-primary">{icon}</div>
           <div>
             <h3 className="text-sm font-semibold">{title}</h3>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
@@ -567,10 +657,22 @@ function FeatureCard({
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M23.766 12.2764c0-.8511-.0762-1.6742-.2183-2.4636H12.2422v4.6606h6.4671c-.2789 1.5079-1.1186 2.7842-2.3804 3.6406v3.0278h3.8551c2.2565-2.0773 3.5562-5.1406 3.5562-8.8654z" fill="#4285F4" />
-      <path d="M12.2422 24c3.2186 0 5.9187-1.0678 7.892-2.8942l-3.8551-3.0278c-1.0678.715-2.4339 1.1369-4.0369 1.1369-3.1056 0-5.7353-2.0965-6.6698-4.9187H1.71094v3.126C3.67969 21.324 7.67734 24 12.2422 24z" fill="#34A853" />
-      <path d="M5.57242 14.2961c-.2406-.715-.3789-1.4735-.3789-2.2606s.1383-1.5456.3789-2.2606V6.64844H1.71094C.620312 8.81328 0 11.2141 0 13.8355s.620312 5.0222 1.71094 7.1871l3.86148-2.7265z" fill="#FBBC05" />
-      <path d="M12.2422 4.75c1.7515 0 3.3256.6031 4.5612 1.7867l3.4211-3.4209C17.1548 1.1604 14.9545 0 12.2422 0 7.67734 0 3.67969 2.676 1.71094 6.64844l3.86148 2.7265c.9345-2.8222 3.5642-4.9187 6.6698-4.9187z" fill="#EA4335" />
+      <path
+        d="M23.766 12.2764c0-.8511-.0762-1.6742-.2183-2.4636H12.2422v4.6606h6.4671c-.2789 1.5079-1.1186 2.7842-2.3804 3.6406v3.0278h3.8551c2.2565-2.0773 3.5562-5.1406 3.5562-8.8654z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12.2422 24c3.2186 0 5.9187-1.0678 7.892-2.8942l-3.8551-3.0278c-1.0678.715-2.4339 1.1369-4.0369 1.1369-3.1056 0-5.7353-2.0965-6.6698-4.9187H1.71094v3.126C3.67969 21.324 7.67734 24 12.2422 24z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.57242 14.2961c-.2406-.715-.3789-1.4735-.3789-2.2606s.1383-1.5456.3789-2.2606V6.64844H1.71094C.620312 8.81328 0 11.2141 0 13.8355s.620312 5.0222 1.71094 7.1871l3.86148-2.7265z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12.2422 4.75c1.7515 0 3.3256.6031 4.5612 1.7867l3.4211-3.4209C17.1548 1.1604 14.9545 0 12.2422 0 7.67734 0 3.67969 2.676 1.71094 6.64844l3.86148 2.7265c.9345-2.8222 3.5642-4.9187 6.6698-4.9187z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }

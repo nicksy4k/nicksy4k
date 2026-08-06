@@ -53,13 +53,20 @@ const IMAGE_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif", "gif"];
 
 function mimeFor(ext: string): string {
   switch (ext) {
-    case "pdf": return "application/pdf";
-    case "png": return "image/png";
-    case "webp": return "image/webp";
-    case "heic": return "image/heic";
-    case "heif": return "image/heif";
-    case "gif": return "image/gif";
-    default: return "image/jpeg";
+    case "pdf":
+      return "application/pdf";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "heic":
+      return "image/heic";
+    case "heif":
+      return "image/heif";
+    case "gif":
+      return "image/gif";
+    default:
+      return "image/jpeg";
   }
 }
 
@@ -94,7 +101,6 @@ export const scanReceipt = createServerFn({ method: "POST" })
         throw new Error("Receipt scanning isn't available on your account yet.");
       }
     }
-
 
     // 2. Daily rate limit
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -172,10 +178,7 @@ export const scanReceipt = createServerFn({ method: "POST" })
         input: [
           {
             role: "user",
-            content: [
-              { type: "input_text", text: "Extract this receipt." },
-              filePart,
-            ],
+            content: [{ type: "input_text", text: "Extract this receipt." }, filePart],
           },
         ],
         reasoning: { effort: "low", summary: "auto" },

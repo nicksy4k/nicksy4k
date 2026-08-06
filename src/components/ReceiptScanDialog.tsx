@@ -7,18 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScanLine, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import {
-  matchRetailer, normaliseItem, itemsTotal, type ScannedItem,
-} from "@/lib/receiptParse";
+import { matchRetailer, normaliseItem, itemsTotal, type ScannedItem } from "@/lib/receiptParse";
 
-const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const ALLOWED = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export interface ScanApplyPayload {
@@ -45,7 +54,13 @@ interface Props {
 type Row = ScannedItem & { id: string; include: boolean };
 
 export function ReceiptScanDialog({
-  open, onOpenChange, knownRetailers, categories, currency = "GBP", keepHeader = false, onApply,
+  open,
+  onOpenChange,
+  knownRetailers,
+  categories,
+  currency = "GBP",
+  keepHeader = false,
+  onApply,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isDemo = useIsDemoUser();
@@ -115,10 +130,11 @@ export function ReceiptScanDialog({
         if (isDemo) {
           try {
             await supabase.storage.from("receipts").remove([storagePath]);
-          } catch { /* best-effort cleanup */ }
+          } catch {
+            /* best-effort cleanup */
+          }
         }
       }
-
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Receipt scan failed");
       setRows(null);
@@ -127,7 +143,6 @@ export function ReceiptScanDialog({
       if (inputRef.current) inputRef.current.value = "";
     }
   }
-
 
   const included = (rows ?? []).filter((r) => r.include);
   const sum = itemsTotal(included);
@@ -217,7 +232,11 @@ export function ReceiptScanDialog({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Receipt total</Label>
-                <Input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} />
+                <Input
+                  inputMode="decimal"
+                  value={total}
+                  onChange={(e) => setTotal(e.target.value)}
+                />
               </div>
             </div>
 
@@ -244,7 +263,9 @@ export function ReceiptScanDialog({
                     className={cn("flex-1 h-8", r.confidence < 0.6 && "border-amber-500/60")}
                     onChange={(e) =>
                       setRows((cur) =>
-                        (cur ?? []).map((x) => (x.id === r.id ? { ...x, name: e.target.value } : x)),
+                        (cur ?? []).map((x) =>
+                          x.id === r.id ? { ...x, name: e.target.value } : x,
+                        ),
                       )
                     }
                   />

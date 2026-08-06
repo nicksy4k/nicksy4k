@@ -41,9 +41,7 @@ export async function loadCycleSettings(ctx: ToolContext): Promise<CycleSettings
   const sb = supabaseForUser(ctx);
   const { data } = await sb
     .from("user_settings")
-    .select(
-      "cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled",
-    )
+    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled")
     .eq("user_id", ctx.getUserId()!)
     .maybeSingle();
   const today = fmtDate(new Date());
@@ -61,10 +59,7 @@ export async function loadCycleSettings(ctx: ToolContext): Promise<CycleSettings
   };
 }
 
-export function computeActiveCycle(
-  settings: CycleSettings,
-  today: Date = new Date(),
-): ActiveCycle {
+export function computeActiveCycle(settings: CycleSettings, today: Date = new Date()): ActiveCycle {
   const t = startOfDay(today);
 
   if (settings.override) {
@@ -101,8 +96,7 @@ export function computeActiveCycle(
 
   const anchorDom = anchor.getDate();
   const thisMonth = new Date(t.getFullYear(), t.getMonth(), 1);
-  const clamp = (base: Date) =>
-    setDate(base, Math.min(anchorDom, getDaysInMonth(base)));
+  const clamp = (base: Date) => setDate(base, Math.min(anchorDom, getDaysInMonth(base)));
   let start = clamp(thisMonth);
   if (t < start) start = clamp(addMonths(thisMonth, -1));
   const nextStart = clamp(addMonths(start, 1));

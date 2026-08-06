@@ -7,6 +7,7 @@ In the Credit & Debt module, choosing a Pocket as the funding source records **o
 This is confirmed in the shared ledger helper used by Credit & Debt: for a pocket source it writes the savings withdrawal and returns early, skipping the transaction it writes for a "Main balance" source.
 
 The same helper backs every outgoing action in the module, so the bug applies to:
+
 - Creating a new loan funded from a pocket
 - Logging a loan top-up from a pocket
 - Paying a debt / first BNPL installment from a pocket
@@ -15,12 +16,12 @@ The mirror case has the same shape: logging a loan **repayment** into a pocket w
 
 ## How the rest of the app already does it
 
-The New Transaction split-payment flow (pocket-funded spend) writes **both**: a pocket withdrawal *and* a full transaction tagged with a `pocket:<name>` payment split. The two net out, so the main balance stays correct and the spend shows in history. Credit & Debt should follow the same convention.
+The New Transaction split-payment flow (pocket-funded spend) writes **both**: a pocket withdrawal _and_ a full transaction tagged with a `pocket:<name>` payment split. The two net out, so the main balance stays correct and the spend shows in history. Credit & Debt should follow the same convention.
 
 ## The fix
 
-1. **Outgoing from a pocket** — write the pocket withdrawal *and* the outgoing transaction (labelled e.g. "Loan to Sarah" / "Top-up loan · Sarah", category Loans/Debt), tagged with a `pocket:<name>` payment split so reporting knows it was pocket-funded and doesn't double-count.
-2. **Incoming into a pocket** — write the pocket deposit *and* the matching income entry, so the main balance nets out instead of dipping.
+1. **Outgoing from a pocket** — write the pocket withdrawal _and_ the outgoing transaction (labelled e.g. "Loan to Sarah" / "Top-up loan · Sarah", category Loans/Debt), tagged with a `pocket:<name>` payment split so reporting knows it was pocket-funded and doesn't double-count.
+2. **Incoming into a pocket** — write the pocket deposit _and_ the matching income entry, so the main balance nets out instead of dipping.
 3. "Other / external" source keeps behaving as today (no ledger entries) since that money never touches your accounts.
 4. Add tests covering: pocket-funded loan create, pocket-funded top-up, pocket-funded debt payment, and pocket repayment — each asserting both rows are written and the net main-balance effect is zero.
 

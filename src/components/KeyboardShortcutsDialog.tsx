@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/dialog";
 
 const SHORTCUTS: { keys: string[]; label: string }[] = [
-  { keys: ["Enter"], label: "In Item name: commit and jump to Price. In Price: start the next item." },
+  {
+    keys: ["Enter"],
+    label: "In Item name: commit and jump to Price. In Price: start the next item.",
+  },
   { keys: ["↑", "↓"], label: "Move through suggestions in the item and retailer fields." },
   { keys: ["Esc"], label: "Dismiss the suggestion list, or close this dialog." },
   { keys: ["Tab"], label: "Move to the next field and close any open suggestions." },
@@ -70,11 +73,13 @@ export function ShortcutsHelp({
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = openProp ?? internalOpen;
-  const setOpen = (o: boolean) => {
-    setInternalOpen(o);
-    onOpenChange?.(o);
-  };
-
+  const setOpen = useCallback(
+    (o: boolean) => {
+      setInternalOpen(o);
+      onOpenChange?.(o);
+    },
+    [onOpenChange],
+  );
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -87,7 +92,7 @@ export function ShortcutsHelp({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [setOpen]);
 
   return (
     <>

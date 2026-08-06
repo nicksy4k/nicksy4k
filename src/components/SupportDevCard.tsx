@@ -22,8 +22,8 @@ export function SupportDevCard({ className }: { className?: string }) {
               Buy the Dev a Monster ⚡
             </h3>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground max-w-prose">
-              Enjoying Ledgerly? If this app saves you spreadsheet headaches, consider
-              supporting hosting costs or fueling the next feature update!
+              Enjoying Ledgerly? If this app saves you spreadsheet headaches, consider supporting
+              hosting costs or fueling the next feature update!
             </p>
           </div>
         </div>

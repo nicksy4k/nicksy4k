@@ -35,8 +35,7 @@ function singularise(word: string): string {
 export function normalise(raw: string, kind: SimilarityKind): string {
   const cleaned = stripPunct(raw.toLowerCase()).replace(/\s+/g, " ").trim();
   const tokens = cleaned.split(" ").filter(Boolean);
-  const filtered =
-    kind === "retailer" ? tokens.filter((t) => !RETAILER_NOISE.has(t)) : tokens;
+  const filtered = kind === "retailer" ? tokens.filter((t) => !RETAILER_NOISE.has(t)) : tokens;
   return filtered.map(singularise).join(" ");
 }
 
@@ -53,17 +52,8 @@ export function editDistance(a: string, b: string): number {
   for (let i = 1; i <= al; i++) {
     for (let j = 1; j <= bl; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost,
-      );
-      if (
-        i > 1 &&
-        j > 1 &&
-        a[i - 1] === b[j - 2] &&
-        a[i - 2] === b[j - 1]
-      ) {
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
         dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
       }
     }
@@ -73,9 +63,7 @@ export function editDistance(a: string, b: string): number {
 
 function isWholeWordSubstring(shorter: string, longer: string): boolean {
   if (!shorter || shorter === longer) return false;
-  const pattern = new RegExp(
-    `(^|\\s)${shorter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`,
-  );
+  const pattern = new RegExp(`(^|\\s)${shorter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`);
   return pattern.test(longer);
 }
 
@@ -158,10 +146,7 @@ export function findDuplicateGroups(
 }
 
 /** Build a normalised frequency map from a list of raw occurrences. */
-export function buildFrequency(
-  occurrences: string[],
-  kind: SimilarityKind,
-): Map<string, number> {
+export function buildFrequency(occurrences: string[], kind: SimilarityKind): Map<string, number> {
   const m = new Map<string, number>();
   for (const raw of occurrences) {
     const n = normalise(raw ?? "", kind);

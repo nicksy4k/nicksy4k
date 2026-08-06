@@ -30,9 +30,15 @@ export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
       { title: "Reports & Analytics — Ledgerly" },
-      { name: "description", content: "Explore spending trends, category breakdowns, and CSV exports." },
+      {
+        name: "description",
+        content: "Explore spending trends, category breakdowns, and CSV exports.",
+      },
       { property: "og:title", content: "Reports & Analytics — Ledgerly" },
-      { property: "og:description", content: "Explore spending trends, category breakdowns, and CSV exports." },
+      {
+        property: "og:description",
+        content: "Explore spending trends, category breakdowns, and CSV exports.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -41,14 +47,28 @@ export const Route = createFileRoute("/reports")({
   errorComponent: RouteError,
 });
 
-function DateField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+function DateField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
   const date = value ? parseISO(value) : undefined;
   return (
     <div className="flex-1 min-w-[160px]">
       <Label className="text-xs text-muted-foreground mb-1.5 block">{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !date && "text-muted-foreground",
+            )}
+          >
             <CalendarIcon className="h-4 w-4 mr-2" />
             {date ? format(date, "PPP") : "Pick a date"}
           </Button>
@@ -96,15 +116,32 @@ function CategoryMultiSelect({
           <div className="flex items-center justify-between px-2 py-1.5">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Filter</span>
             <div className="flex gap-1">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onChange(new Set(all))}>All</Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onChange(new Set())}>Clear</Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => onChange(new Set(all))}
+              >
+                All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => onChange(new Set())}
+              >
+                Clear
+              </Button>
             </div>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {all.map((c) => {
               const checked = selected.has(c);
               return (
-                <label key={c} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/40 cursor-pointer">
+                <label
+                  key={c}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/40 cursor-pointer"
+                >
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(v) => {
@@ -218,8 +255,6 @@ function ReportsPage() {
 
   const breakdownTotal = categoryBreakdown.reduce((s, d) => s + d.value, 0);
 
-
-
   const exportPayload = {
     startDate,
     endDate,
@@ -233,7 +268,9 @@ function ReportsPage() {
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Analytics</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            Analytics
+          </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Reports</h1>
           <p className="text-sm text-muted-foreground mt-2">
             Query your spending across any date range — independent of the active 28-day cycle.
@@ -248,7 +285,9 @@ function ReportsPage() {
                 onClick={() => setDetailMode("summary")}
                 className={cn(
                   "px-3 py-1.5 text-xs rounded-sm transition-colors",
-                  detailMode === "summary" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                  detailMode === "summary"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Summary
@@ -258,7 +297,9 @@ function ReportsPage() {
                 onClick={() => setDetailMode("itemized")}
                 className={cn(
                   "px-3 py-1.5 text-xs rounded-sm transition-colors",
-                  detailMode === "itemized" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                  detailMode === "itemized"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Itemized
@@ -287,7 +328,11 @@ function ReportsPage() {
         <CardContent className="p-5 flex flex-col sm:flex-row gap-4">
           <DateField label="Start date" value={startDate} onChange={setStartDate} />
           <DateField label="End date" value={endDate} onChange={setEndDate} />
-          <CategoryMultiSelect all={categories} selected={selectedCats} onChange={setSelectedCats} />
+          <CategoryMultiSelect
+            all={categories}
+            selected={selectedCats}
+            onChange={setSelectedCats}
+          />
         </CardContent>
       </Card>
 
@@ -301,11 +346,12 @@ function ReportsPage() {
         mode={detailMode}
       />
 
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="sm:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Total spent</CardTitle>
+            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Total spent
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">{fmt(totalSpent)}</p>
@@ -314,7 +360,9 @@ function ReportsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Transactions</CardTitle>
+            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Transactions
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">{filtered.length}</p>
@@ -322,7 +370,9 @@ function ReportsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Average</CardTitle>
+            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Average
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">{fmt(avg)}</p>
@@ -382,10 +432,17 @@ function ReportsPage() {
                   const pct = breakdownTotal ? (d.value / breakdownTotal) * 100 : 0;
                   return (
                     <div key={d.name} className="flex items-center gap-3 text-sm">
-                      <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: sliceColor(d.name, colorForKey) }} />
+                      <span
+                        className="h-3 w-3 rounded-sm shrink-0"
+                        style={{ background: sliceColor(d.name, colorForKey) }}
+                      />
                       <span className="flex-1 truncate">{d.name}</span>
-                      <span className="tabular-nums text-muted-foreground text-xs w-12 text-right">{pct.toFixed(1)}%</span>
-                      <span className="tabular-nums font-medium w-20 text-right">{fmt(d.value)}</span>
+                      <span className="tabular-nums text-muted-foreground text-xs w-12 text-right">
+                        {pct.toFixed(1)}%
+                      </span>
+                      <span className="tabular-nums font-medium w-20 text-right">
+                        {fmt(d.value)}
+                      </span>
                     </div>
                   );
                 })}
@@ -401,7 +458,9 @@ function ReportsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No transactions in this range.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No transactions in this range.
+            </p>
           ) : (
             <div className="divide-y">
               {filtered.map((t) => {

@@ -50,8 +50,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     }
   },
   loader: async ({ location }) => {
-    const authorizationId =
-      new URLSearchParams(location.search).get("authorization_id") ?? "";
+    const authorizationId = new URLSearchParams(location.search).get("authorization_id") ?? "";
     const { data, error } = await getOAuth().getAuthorizationDetails(authorizationId);
     if (error) throw new Error(error.message);
     const immediate = data?.redirect_url ?? data?.redirect_to;
@@ -65,8 +64,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   errorComponent: ({ error }) => (
     <div className="min-h-screen grid place-items-center bg-background px-4">
       <p className="text-sm text-muted-foreground">
-        Could not load this authorization request:{" "}
-        {String((error as Error)?.message ?? error)}
+        Could not load this authorization request: {String((error as Error)?.message ?? error)}
       </p>
     </div>
   ),
@@ -108,15 +106,12 @@ function Consent() {
           <div className="mx-auto h-12 w-12 rounded-xl bg-primary/15 ring-1 ring-primary/30 grid place-items-center mb-3">
             <Wallet className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-xl font-semibold">
-            Connect {clientName} to Ledgerly
-          </CardTitle>
+          <CardTitle className="text-xl font-semibold">Connect {clientName} to Ledgerly</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            {clientName} will be able to call Ledgerly's tools while you are
-            signed in. It will act as you under your normal Row Level Security
-            — no other user's data is exposed.
+            {clientName} will be able to call Ledgerly's tools while you are signed in. It will act
+            as you under your normal Row Level Security — no other user's data is exposed.
           </p>
           {error && (
             <p className="text-sm text-destructive text-center" role="alert">

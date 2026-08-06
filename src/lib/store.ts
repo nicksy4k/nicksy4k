@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
 import type {
   Commitment,
   Debt,
@@ -31,7 +32,7 @@ export function useTransactions() {
     },
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["transactions"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["transactions"] }), [qc]);
 
   const add = useCallback(
     async (t: Omit<Transaction, "id" | "created_at">) => {
@@ -58,18 +59,21 @@ export function useTransactions() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   const update = useCallback(
     async (id: string, patch: Partial<Omit<Transaction, "id" | "created_at">>) => {
       const clean: Record<string, unknown> = { ...patch };
       if (patch.items) clean.items = patch.items as never;
-      const { error } = await supabase.from("transactions").update(clean as never).eq("id", id);
+      const { error } = await supabase
+        .from("transactions")
+        .update(clean as never)
+        .eq("id", id);
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   const remove = useCallback(
@@ -77,7 +81,7 @@ export function useTransactions() {
       await supabase.from("transactions").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   const dismiss = useCallback(
@@ -89,7 +93,7 @@ export function useTransactions() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   const clear = useCallback(async () => {
@@ -97,11 +101,10 @@ export function useTransactions() {
     if (!u.user) return;
     await supabase.from("transactions").delete().eq("user_id", u.user.id);
     await invalidate();
-  }, [qc]);
+  }, [invalidate]);
 
   return { items: data ?? [], add, update, remove, dismiss, clear };
 }
-
 
 // ===== Incomes =====
 export function useIncomes() {
@@ -119,20 +122,26 @@ export function useIncomes() {
       return (data ?? []) as unknown as IncomeEntry[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["incomes"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["incomes"] }), [qc]);
 
-  const add = useCallback(async (i: Omit<IncomeEntry, "id" | "created_at">) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("incomes").insert({ ...i, user_id: u.user.id });
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const add = useCallback(
+    async (i: Omit<IncomeEntry, "id" | "created_at">) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("incomes").insert({ ...i, user_id: u.user.id });
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    await supabase.from("incomes").delete().eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      await supabase.from("incomes").delete().eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, remove };
 }
@@ -152,39 +161,57 @@ export function useRecurringIncomes() {
       return (data ?? []) as unknown as RecurringIncome[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
+  const invalidate = useCallback(
+    () => qc.invalidateQueries({ queryKey: ["recurring_incomes"] }),
+    [qc],
+  );
 
-  const add = useCallback(async (r: Omit<RecurringIncome, "id" | "created_at" | "updated_at">) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("recurring_incomes").insert({
-      user_id: u.user.id,
-      source: r.source,
-      amount: r.amount,
-      category: r.category,
-      notes: r.notes ?? null,
-      cadence: r.cadence,
-      next_date: r.next_date,
-      last_generated_date: r.last_generated_date ?? null,
-      active: r.active,
-      allocations: (r.allocations ?? []) as never,
-    });
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const add = useCallback(
+    async (r: Omit<RecurringIncome, "id" | "created_at" | "updated_at">) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("recurring_incomes").insert({
+        user_id: u.user.id,
+        source: r.source,
+        amount: r.amount,
+        category: r.category,
+        notes: r.notes ?? null,
+        cadence: r.cadence,
+        next_date: r.next_date,
+        last_generated_date: r.last_generated_date ?? null,
+        active: r.active,
+        allocations: (r.allocations ?? []) as never,
+      });
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const update = useCallback(async (id: string, patch: Partial<Omit<RecurringIncome, "id" | "created_at" | "updated_at">>) => {
-    const clean: Record<string, unknown> = { ...patch };
-    if (patch.allocations !== undefined) clean.allocations = patch.allocations as never;
-    const { error } = await supabase.from("recurring_incomes").update(clean as never).eq("id", id);
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const update = useCallback(
+    async (
+      id: string,
+      patch: Partial<Omit<RecurringIncome, "id" | "created_at" | "updated_at">>,
+    ) => {
+      const clean: Record<string, unknown> = { ...patch };
+      if (patch.allocations !== undefined) clean.allocations = patch.allocations as never;
+      const { error } = await supabase
+        .from("recurring_incomes")
+        .update(clean as never)
+        .eq("id", id);
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    await supabase.from("recurring_incomes").delete().eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      await supabase.from("recurring_incomes").delete().eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, update, remove };
 }
@@ -205,20 +232,26 @@ export function useSavings() {
       return (data ?? []) as unknown as SavingsEntry[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["savings"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["savings"] }), [qc]);
 
-  const add = useCallback(async (s: Omit<SavingsEntry, "id" | "created_at">) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("savings").insert({ ...s, user_id: u.user.id });
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const add = useCallback(
+    async (s: Omit<SavingsEntry, "id" | "created_at">) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("savings").insert({ ...s, user_id: u.user.id });
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    await supabase.from("savings").delete().eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      await supabase.from("savings").delete().eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, remove };
 }
@@ -226,7 +259,7 @@ export function useSavings() {
 // ===== Categories =====
 function useCategoryList(kind: "expense" | "income", defaults: string[]) {
   const qc = useQueryClient();
-  const queryKey = ["categories", kind];
+  const queryKey = useMemo(() => ["categories", kind], [kind]);
 
   const { data } = useQuery({
     queryKey,
@@ -255,28 +288,34 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey }), [qc, queryKey]);
 
-  const add = useCallback(async (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    await supabase.from("categories").insert({ user_id: u.user.id, kind, name: trimmed });
-    await invalidate();
-  }, [qc, kind]);
+  const add = useCallback(
+    async (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("categories").insert({ user_id: u.user.id, kind, name: trimmed });
+      await invalidate();
+    },
+    [invalidate, kind],
+  );
 
-  const remove = useCallback(async (name: string) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    await supabase
-      .from("categories")
-      .delete()
-      .eq("user_id", u.user.id)
-      .eq("kind", kind)
-      .eq("name", name);
-    await invalidate();
-  }, [qc, kind]);
+  const remove = useCallback(
+    async (name: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase
+        .from("categories")
+        .delete()
+        .eq("user_id", u.user.id)
+        .eq("kind", kind)
+        .eq("name", name);
+      await invalidate();
+    },
+    [invalidate, kind],
+  );
 
   const reset = useCallback(async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -285,7 +324,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
     const rows = defaults.map((name) => ({ user_id: u.user!.id, kind, name }));
     await supabase.from("categories").insert(rows);
     await invalidate();
-  }, [qc, kind, defaults]);
+  }, [invalidate, kind, defaults]);
 
   return { list: data ?? [], add, remove, reset };
 }
@@ -313,25 +352,34 @@ export function useCommitments() {
       return (data ?? []) as unknown as Commitment[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["commitments"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["commitments"] }), [qc]);
 
-  const add = useCallback(async (c: Omit<Commitment, "id" | "created_at">) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("commitments").insert({ ...c, user_id: u.user.id });
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const add = useCallback(
+    async (c: Omit<Commitment, "id" | "created_at">) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("commitments").insert({ ...c, user_id: u.user.id });
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const update = useCallback(async (id: string, patch: Partial<Omit<Commitment, "id" | "created_at">>) => {
-    await supabase.from("commitments").update(patch).eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const update = useCallback(
+    async (id: string, patch: Partial<Omit<Commitment, "id" | "created_at">>) => {
+      await supabase.from("commitments").update(patch).eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    await supabase.from("commitments").delete().eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      await supabase.from("commitments").delete().eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, update, remove };
 }
@@ -351,40 +399,58 @@ export function useLoans() {
       return (data ?? []) as unknown as Loan[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["loans"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["loans"] }), [qc]);
 
-  const add = useCallback(async (l: Omit<Loan, "id" | "created_at">) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { error } = await supabase.from("loans").insert({
-      user_id: u.user.id,
-      person_name: l.person_name,
-      total_amount: l.total_amount,
-      start_date: l.start_date ?? null,
-      notes: l.notes,
-      payments: (l.payments ?? []) as never,
-    } as never);
-    if (error) throw error;
-    await invalidate();
-  }, [qc]);
+  const add = useCallback(
+    async (l: Omit<Loan, "id" | "created_at">) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error } = await supabase.from("loans").insert({
+        user_id: u.user.id,
+        person_name: l.person_name,
+        total_amount: l.total_amount,
+        start_date: l.start_date ?? null,
+        notes: l.notes,
+        payments: (l.payments ?? []) as never,
+      } as never);
+      if (error) throw error;
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const update = useCallback(async (id: string, patch: Partial<Omit<Loan, "id" | "created_at">>) => {
-    const clean: Record<string, unknown> = { ...patch };
-    if (patch.payments) clean.payments = patch.payments as never;
-    await supabase.from("loans").update(clean as never).eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const update = useCallback(
+    async (id: string, patch: Partial<Omit<Loan, "id" | "created_at">>) => {
+      const clean: Record<string, unknown> = { ...patch };
+      if (patch.payments) clean.payments = patch.payments as never;
+      await supabase
+        .from("loans")
+        .update(clean as never)
+        .eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    await supabase.from("loans").delete().eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      await supabase.from("loans").delete().eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const addPayment = useCallback(async (loan: Loan, p: Omit<LedgerPayment, "id">) => {
-    const next = [...(loan.payments ?? []), { id: crypto.randomUUID(), ...p }];
-    await supabase.from("loans").update({ payments: next as never } as never).eq("id", loan.id);
-    await invalidate();
-  }, [qc]);
+  const addPayment = useCallback(
+    async (loan: Loan, p: Omit<LedgerPayment, "id">) => {
+      const next = [...(loan.payments ?? []), { id: crypto.randomUUID(), ...p }];
+      await supabase
+        .from("loans")
+        .update({ payments: next as never } as never)
+        .eq("id", loan.id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, update, remove, addPayment };
 }
@@ -404,49 +470,71 @@ export function useDebts() {
       return (data ?? []) as unknown as Debt[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["debts"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["debts"] }), [qc]);
 
-  const add = useCallback(async (d: Omit<Debt, "id" | "created_at">): Promise<string> => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw new Error("Not signed in");
-    const { data: inserted, error } = await supabase.from("debts").insert({
-      user_id: u.user.id,
-      name: d.name,
-      kind: d.kind,
-      total_amount: d.total_amount,
-      installments_total: d.installments_total ?? null,
-      installment_dates: (d.installment_dates ?? []) as never,
-      start_date: d.start_date ?? null,
-      notes: d.notes,
-      payments: (d.payments ?? []) as never,
-    } as never).select("id").single();
-    if (error) throw error;
-    await invalidate();
-    return (inserted as { id: string }).id;
-  }, [qc]);
+  const add = useCallback(
+    async (d: Omit<Debt, "id" | "created_at">): Promise<string> => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { data: inserted, error } = await supabase
+        .from("debts")
+        .insert({
+          user_id: u.user.id,
+          name: d.name,
+          kind: d.kind,
+          total_amount: d.total_amount,
+          installments_total: d.installments_total ?? null,
+          installment_dates: (d.installment_dates ?? []) as never,
+          start_date: d.start_date ?? null,
+          notes: d.notes,
+          payments: (d.payments ?? []) as never,
+        } as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+      await invalidate();
+      return (inserted as { id: string }).id;
+    },
+    [invalidate],
+  );
 
-  const update = useCallback(async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
-    const clean: Record<string, unknown> = { ...patch };
-    if (patch.payments) clean.payments = patch.payments as never;
-    if (patch.installment_dates) clean.installment_dates = patch.installment_dates as never;
-    await supabase.from("debts").update(clean as never).eq("id", id);
-    await invalidate();
-  }, [qc]);
+  const update = useCallback(
+    async (id: string, patch: Partial<Omit<Debt, "id" | "created_at">>) => {
+      const clean: Record<string, unknown> = { ...patch };
+      if (patch.payments) clean.payments = patch.payments as never;
+      if (patch.installment_dates) clean.installment_dates = patch.installment_dates as never;
+      await supabase
+        .from("debts")
+        .update(clean as never)
+        .eq("id", id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    // Remove any commitment rows linked to this debt (BNPL installment
-    // trackers) so we don't leave orphans rolling over forever.
-    await supabase.from("commitments").delete().eq("debt_id", id);
-    await supabase.from("debts").delete().eq("id", id);
-    await invalidate();
-    qc.invalidateQueries({ queryKey: ["commitments"] });
-  }, [qc]);
+  const remove = useCallback(
+    async (id: string) => {
+      // Remove any commitment rows linked to this debt (BNPL installment
+      // trackers) so we don't leave orphans rolling over forever.
+      await supabase.from("commitments").delete().eq("debt_id", id);
+      await supabase.from("debts").delete().eq("id", id);
+      await invalidate();
+      qc.invalidateQueries({ queryKey: ["commitments"] });
+    },
+    [invalidate, qc],
+  );
 
-  const addPayment = useCallback(async (debt: Debt, p: Omit<LedgerPayment, "id">) => {
-    const next = [...(debt.payments ?? []), { id: crypto.randomUUID(), ...p }];
-    await supabase.from("debts").update({ payments: next as never } as never).eq("id", debt.id);
-    await invalidate();
-  }, [qc]);
+  const addPayment = useCallback(
+    async (debt: Debt, p: Omit<LedgerPayment, "id">) => {
+      const next = [...(debt.payments ?? []), { id: crypto.randomUUID(), ...p }];
+      await supabase
+        .from("debts")
+        .update({ payments: next as never } as never)
+        .eq("id", debt.id);
+      await invalidate();
+    },
+    [invalidate],
+  );
 
   return { items: data ?? [], add, update, remove, addPayment };
 }
@@ -466,7 +554,7 @@ export function useDebtItems() {
       return (data ?? []) as unknown as DebtItem[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["debt_items"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["debt_items"] }), [qc]);
 
   const addMany = useCallback(
     async (debt_id: string, rows: Array<Omit<DebtItem, "id" | "created_at" | "debt_id">>) => {
@@ -485,7 +573,7 @@ export function useDebtItems() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   const add = useCallback(
@@ -501,7 +589,7 @@ export function useDebtItems() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [invalidate],
   );
 
   return { items: data ?? [], add, addMany, remove };

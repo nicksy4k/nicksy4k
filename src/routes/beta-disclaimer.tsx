@@ -8,9 +8,15 @@ export const Route = createFileRoute("/beta-disclaimer")({
   head: () => ({
     meta: [
       { title: "Beta Disclaimer — Ledgerly" },
-      { name: "description", content: "Terms and expectations for using Ledgerly during its beta period." },
+      {
+        name: "description",
+        content: "Terms and expectations for using Ledgerly during its beta period.",
+      },
       { property: "og:title", content: "Beta Disclaimer — Ledgerly" },
-      { property: "og:description", content: "Terms and expectations for using Ledgerly during its beta period." },
+      {
+        property: "og:description",
+        content: "Terms and expectations for using Ledgerly during its beta period.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -23,7 +29,9 @@ function BetaPage() {
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-3xl px-4 py-10 md:px-6 md:py-16">
         <Button asChild variant="ghost" size="sm" className="mb-6">
-          <Link to="/auth"><ArrowLeft className="h-4 w-4" /> Back to sign in</Link>
+          <Link to="/auth">
+            <ArrowLeft className="h-4 w-4" /> Back to sign in
+          </Link>
         </Button>
 
         <div className="mb-8 flex items-start gap-3">
@@ -31,9 +39,13 @@ function BetaPage() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">Beta Disclaimer</h1>
+            <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">
+              Beta Disclaimer
+            </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs">Placeholder</Badge>
+              <Badge variant="outline" className="text-xs">
+                Placeholder
+              </Badge>
               <span className="text-xs text-muted-foreground">Last updated: 29 July 2026</span>
             </div>
           </div>
@@ -43,8 +55,9 @@ function BetaPage() {
           <CardContent className="p-4 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Ledgerly is in <strong className="text-foreground">active beta</strong>. Features, layouts, and data
-              structures may change without notice. Some flows are still being polished and bugs are expected.
+              Ledgerly is in <strong className="text-foreground">active beta</strong>. Features,
+              layouts, and data structures may change without notice. Some flows are still being
+              polished and bugs are expected.
             </p>
           </CardContent>
         </Card>
@@ -52,20 +65,21 @@ function BetaPage() {
         <div className="space-y-4">
           <Section title="Not a financial record">
             <p>
-              Ledgerly is a personal tracking tool. It is <strong>not</strong> an accounting system, tax record,
-              or professional financial manager. All calculations depend entirely on the data you enter manually
-              and may contain errors, omissions, or bugs.
+              Ledgerly is a personal tracking tool. It is <strong>not</strong> an accounting system,
+              tax record, or professional financial manager. All calculations depend entirely on the
+              data you enter manually and may contain errors, omissions, or bugs.
             </p>
             <p>
-              Do not rely on Ledgerly as a source of truth for tax filings, loan applications, legal disputes,
-              or any decision where accuracy matters.
+              Do not rely on Ledgerly as a source of truth for tax filings, loan applications, legal
+              disputes, or any decision where accuracy matters.
             </p>
           </Section>
 
           <Section title="Use test data where possible">
             <p>
-              As a beta tester, we strongly recommend using <strong>fake or non-critical data</strong>. Because
-              features can change, data may occasionally need to be migrated, reset, or removed while we iterate.
+              As a beta tester, we strongly recommend using{" "}
+              <strong>fake or non-critical data</strong>. Because features can change, data may
+              occasionally need to be migrated, reset, or removed while we iterate.
             </p>
           </Section>
 
@@ -80,15 +94,19 @@ function BetaPage() {
 
           <Section title="No warranty">
             <p>
-              The app is provided "as is" during beta, without warranty of any kind. To the extent permitted by
-              law, the developer is not liable for any loss or damage arising from use of the app.
+              The app is provided "as is" during beta, without warranty of any kind. To the extent
+              permitted by law, the developer is not liable for any loss or damage arising from use
+              of the app.
             </p>
           </Section>
 
           <Section title="Contact">
             <p>
               Report bugs or share ideas via the in-app feedback button, or email{" "}
-              <a className="text-primary hover:underline" href="mailto:admin@itemizedkeeper.co.uk">admin@itemizedkeeper.co.uk</a>.
+              <a className="text-primary hover:underline" href="mailto:admin@itemizedkeeper.co.uk">
+                admin@itemizedkeeper.co.uk
+              </a>
+              .
             </p>
           </Section>
         </div>

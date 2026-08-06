@@ -35,8 +35,7 @@ export function parseMoney(raw: string | number | null | undefined): number | nu
 export function tidyName(raw: string): string {
   const s = raw.replace(/\s+/g, " ").trim();
   if (!s) return "";
-  const mostlyUpper = s.replace(/[^A-Za-z]/g, "").length > 0 &&
-    s === s.toUpperCase();
+  const mostlyUpper = s.replace(/[^A-Za-z]/g, "").length > 0 && s === s.toUpperCase();
   if (!mostlyUpper) return s;
   return s
     .toLowerCase()

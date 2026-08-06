@@ -26,7 +26,7 @@ Failure handling: if the AI can't read the receipt, you get a clear message and 
 The scanner ships behind a proper, reversible gate so beta testers can't spend your credits.
 
 - A new `user_roles` table (the secure pattern: roles live in their own table, never on the profile) plus a `has_role()` check. Your account gets the `admin` role seeded by email.
-- A single `feature_flags` config in `src/lib/features.ts` that says: *receipt scanning requires role `admin`*. One line changes it to "any signed-in user" or "role `beta`" later.
+- A single `feature_flags` config in `src/lib/features.ts` that says: _receipt scanning requires role `admin`_. One line changes it to "any signed-in user" or "role `beta`" later.
 - **UI**: the "Scan receipt" button is hidden entirely (not just disabled) unless the check passes — no teasing, no dead button.
 - **Server**: the scan server function re-checks the role before touching the AI Gateway and returns "Not available on your account" otherwise. The UI gate is convenience; the server gate is the real lock, so no one can call it directly.
 
@@ -39,7 +39,6 @@ No new provider or API key needed — Lovable AI is already available and handle
 **Rough cost per scan: about 0.1–0.3 credits**, i.e. roughly 3–10 scans per credit.
 
 Where that comes from: a single receipt photo is ~1,000–2,500 input tokens once tiled, plus a short prompt, and the structured JSON output for a big Asda shop (40–60 items) is ~800–1,500 output tokens. Long multi-page PDFs or very long till receipts sit at the top of that range; a takeaway receipt at the bottom. It is an estimate, not a quote — after the first few real scans we can read the actual per-request credit cost from the gateway logs and tune (e.g. a cheaper model tier, or downscaling images client-side before upload, which typically halves input tokens with no accuracy loss on receipts).
-
 
 ## Smart touches worth including
 

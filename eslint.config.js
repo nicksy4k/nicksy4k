@@ -6,7 +6,17 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "routeTree.gen.ts",
+      "src/routes/mcp.ts",
+      "src/routes/\\[.mcp\\]/**/*.ts",
+      "src/routes/\\[.well-known\\]/oauth-protected-resource.ts",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -34,6 +44,22 @@ export default tseslint.config(
       ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: [
+      "src/components/ui/**/*",
+      "src/lib/email-templates/*",
+      "src/components/ChangelogDialog.tsx",
+      "src/components/FieldError.tsx",
+      "src/components/PaymentSplitEditor.tsx",
+      "src/components/ProtectionFields.tsx",
+      "src/components/ReceiptUpload.tsx",
+      "src/components/tutorial/TutorialProvider.tsx",
+      "src/lib/demoMode.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
   eslintPluginPrettier,

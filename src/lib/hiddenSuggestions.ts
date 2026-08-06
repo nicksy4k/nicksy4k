@@ -111,10 +111,7 @@ export function useHiddenSuggestions() {
     [data, write],
   );
 
-  const clearRetailers = useCallback(
-    () => write({ ...data, retailers: [] }),
-    [data, write],
-  );
+  const clearRetailers = useCallback(() => write({ ...data, retailers: [] }), [data, write]);
   const clearItems = useCallback(() => write({ ...data, items: [] }), [data, write]);
 
   return {

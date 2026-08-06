@@ -137,8 +137,8 @@ export function SmartCleanupDialog({
         <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs flex gap-2">
           <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <p className="text-muted-foreground">
-            Only hides duplicates from future dropdowns.
-            Past transactions, receipts, and history are never modified.
+            Only hides duplicates from future dropdowns. Past transactions, receipts, and history
+            are never modified.
           </p>
         </div>
 
@@ -149,7 +149,9 @@ export function SmartCleanupDialog({
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Group {index + 1} of {total}</span>
+              <span>
+                Group {index + 1} of {total}
+              </span>
               <span>{totalHide} will be hidden overall</span>
             </div>
 
@@ -185,7 +187,10 @@ export function SmartCleanupDialog({
                             : "border-primary/40 bg-primary/5"
                         }`}
                       >
-                        <span className={`flex-1 truncate ${isHidden ? "line-through text-muted-foreground" : ""}`} title={name}>
+                        <span
+                          className={`flex-1 truncate ${isHidden ? "line-through text-muted-foreground" : ""}`}
+                          title={name}
+                        >
                           {name}
                         </span>
                         <Badge variant="secondary" className="font-normal">

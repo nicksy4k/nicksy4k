@@ -56,4 +56,3 @@ export function useCanScanReceipts(): boolean {
   const { data: demoFlag } = useDemoScannerFlag();
   return byRole || (isDemo && demoFlag === true);
 }
-

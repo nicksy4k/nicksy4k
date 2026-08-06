@@ -11,11 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChangelogList } from "@/components/ChangelogList";
-import {
-  currentVersion,
-  downloadChangelogCsv,
-  printChangelog,
-} from "@/lib/changelog";
+import { currentVersion, downloadChangelogCsv, printChangelog } from "@/lib/changelog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
@@ -60,16 +56,10 @@ export function ChangelogDialogTrigger({ children, onOpen }: Props) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <DialogTitle>Ledgerly changelog</DialogTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Currently on {currentVersion}
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Currently on {currentVersion}</p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadChangelogCsv}
-              >
+              <Button variant="outline" size="sm" onClick={downloadChangelogCsv}>
                 <FileDown className="h-4 w-4" /> CSV
               </Button>
               <Button variant="outline" size="sm" onClick={printChangelog}>
