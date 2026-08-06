@@ -11,6 +11,8 @@ import {
   Palette,
   ScanLine,
   Compass,
+  Repeat,
+
 } from "lucide-react";
 
 export interface ChangelogEntry {
