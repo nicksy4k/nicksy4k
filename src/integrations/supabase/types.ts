@@ -59,10 +59,12 @@ export type Database = {
       commitments: {
         Row: {
           amount: number
+          cadence: string
           category: string
           created_at: string
           debt_id: string | null
           id: string
+          is_subscription: boolean
           item_name: string
           last_paid_date: string | null
           next_due_date: string | null
@@ -70,15 +72,21 @@ export type Database = {
           paid: boolean
           payment_method: string
           prev_due_date: string | null
+          promo_alert_snoozed_until: string | null
+          promo_ends_on: string | null
+          promo_price: number | null
+          standard_price: number | null
           store: string
           user_id: string
         }
         Insert: {
           amount?: number
+          cadence?: string
           category?: string
           created_at?: string
           debt_id?: string | null
           id?: string
+          is_subscription?: boolean
           item_name: string
           last_paid_date?: string | null
           next_due_date?: string | null
@@ -86,15 +94,21 @@ export type Database = {
           paid?: boolean
           payment_method?: string
           prev_due_date?: string | null
+          promo_alert_snoozed_until?: string | null
+          promo_ends_on?: string | null
+          promo_price?: number | null
+          standard_price?: number | null
           store?: string
           user_id: string
         }
         Update: {
           amount?: number
+          cadence?: string
           category?: string
           created_at?: string
           debt_id?: string | null
           id?: string
+          is_subscription?: boolean
           item_name?: string
           last_paid_date?: string | null
           next_due_date?: string | null
@@ -102,6 +116,10 @@ export type Database = {
           paid?: boolean
           payment_method?: string
           prev_due_date?: string | null
+          promo_alert_snoozed_until?: string | null
+          promo_ends_on?: string | null
+          promo_price?: number | null
+          standard_price?: number | null
           store?: string
           user_id?: string
         }

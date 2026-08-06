@@ -25,6 +25,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -117,6 +118,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscriptionsRoute = SubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/setup'
+    | '/subscriptions'
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/setup'
+    | '/subscriptions'
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/setup'
+    | '/subscriptions'
     | '/unsubscribe'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -374,6 +386,7 @@ export interface RootRouteChildren {
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  SubscriptionsRoute: typeof SubscriptionsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -501,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscriptions': {
+      id: '/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof SubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/unsubscribe': {
       id: '/unsubscribe'
       path: '/unsubscribe'
@@ -598,6 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  SubscriptionsRoute: SubscriptionsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:

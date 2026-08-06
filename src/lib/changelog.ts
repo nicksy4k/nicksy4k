@@ -11,6 +11,8 @@ import {
   Palette,
   ScanLine,
   Compass,
+  Repeat,
+
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -28,6 +30,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.0",
+    title: "Subscriptions tracker",
+    date: "2026-08-06",
+    icon: Repeat,
+    highlights: [
+      "New Subscriptions page: track recurring charges, renewal dates, categories and monthly or annual billing.",
+      "Subscriptions are paid from the same Bill Money pocket as your commitments, so your outgoings total stays as one number.",
+      "Record discounted offer prices with the date they end and the price you'll revert to.",
+      "You get a reminder a few days before an offer ends — log a new offer, snooze it, or let it renew at full price. If you do nothing, the price updates automatically on the end date.",
+    ],
+  },
+  {
+
     version: "v2.11.2",
     title: "Pocket-funded loans balance properly",
     date: "2026-08-06",

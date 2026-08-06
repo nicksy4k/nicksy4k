@@ -132,6 +132,8 @@ export interface SavingsEntry {
   created_at: string;
 }
 
+export type CommitmentCadence = "monthly" | "annual";
+
 export interface Commitment {
   id: string;
   item_name: string;
@@ -146,8 +148,22 @@ export interface Commitment {
   paid: boolean;
   /** When set, this commitment is auto-managed by a BNPL debt plan. */
   debt_id?: string | null;
+  /** True when this row is a subscription (rendered on /subscriptions). */
+  is_subscription?: boolean;
+  /** Renewal cadence for subscriptions — defaults to "monthly". */
+  cadence?: CommitmentCadence | string;
+
+  /** Discounted intro price currently in effect (mirrors `amount`). */
+  promo_price?: number | null;
+  /** Date the discounted price ends (yyyy-mm-dd). */
+  promo_ends_on?: string | null;
+  /** Price the subscription reverts to once the offer ends. */
+  standard_price?: number | null;
+  /** Offer-ending reminder is hidden until this timestamp. */
+  promo_alert_snoozed_until?: string | null;
   created_at: string;
 }
+
 
 export interface LedgerPayment {
   id: string;

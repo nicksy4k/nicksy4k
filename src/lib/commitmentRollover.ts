@@ -61,13 +61,30 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
   if (error) throw error;
 
   const rows = (data ?? []) as unknown as Commitment[];
+  const todayISO = new Date().toISOString().slice(0, 10);
 
   await Promise.all(
     rows.map(async (c) => {
       const patch: Partial<Commitment> = {};
 
+      // Promo expiry: once the discounted period is over, revert to the
+      // standard price so cycle totals stay honest even if the user never
+      // acted on the reminder.
+      if (
+        c.promo_ends_on &&
+        c.promo_ends_on <= todayISO &&
+        typeof c.standard_price === "number" &&
+        c.standard_price > 0
+      ) {
+        patch.amount = c.standard_price;
+        patch.promo_price = null;
+        patch.promo_ends_on = null;
+        patch.standard_price = null;
+        patch.promo_alert_snoozed_until = null;
+      }
+
       if (c.next_due_date && c.next_due_date < cycle.startISO) {
-        patch.next_due_date = rollDueDateForward(c.next_due_date, cycle.startISO, cycle);
+        patch.next_due_date = rollDueDateForward(c.next_due_date, cycle.startISO, cycle, c.cadence);
         patch.prev_due_date = c.next_due_date;
       }
 

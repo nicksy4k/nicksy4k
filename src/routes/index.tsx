@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
-import { useTransactions, useIncomes, useSavings } from "@/lib/store";
+import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
+import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -71,6 +72,8 @@ function DashboardPage() {
   const { items: realItems, dismiss } = useTransactions();
   const { items: realIncomes } = useIncomes();
   const { items: realSavings } = useSavings();
+  const { items: commitments } = useCommitments();
+
   const demo = useDemoMode();
   // While the tour is active we swap the whole dataset for a curated demo
   // slice so users can safely try filtering / expanding / logging without
@@ -213,6 +216,8 @@ function DashboardPage() {
         (a, b) => parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
       );
   }, [items]);
+
+  const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
   const recent = items.slice(0, 5);
 
@@ -372,6 +377,32 @@ function DashboardPage() {
         </Card>
 
         <Card data-tour="warranty-alerts">
+          {subsPromoAlerts.length > 0 && (
+            <div className="border-b border-border p-4 space-y-2">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Subscription offers ending
+              </p>
+              <ul className="space-y-1.5">
+                {subsPromoAlerts.slice(0, 3).map((c) => {
+                  const days = daysUntilPromoEnd(c) ?? 0;
+                  return (
+                    <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">
+                        {c.item_name}{" "}
+                        <span className="text-muted-foreground">
+                          · {days > 0 ? `in ${days}d` : "today"}
+                        </span>
+                      </span>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/subscriptions">Review</Link>
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <CardHeader className="flex-row items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <CardTitle>Return / warranty alerts</CardTitle>

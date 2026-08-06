@@ -68,11 +68,15 @@ function todayISO() {
 }
 
 function CommitmentsPage() {
-  const { items, add, update, remove } = useCommitments();
+  const { items: allItems, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const qc = useQueryClient();
+
+  // Subscriptions live on their own page but share the same Bill Money pocket.
+  const items = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
+  const subscriptions = useMemo(() => allItems.filter((c) => c.is_subscription), [allItems]);
 
   const cycle = useActiveCycle();
   // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
@@ -86,18 +90,27 @@ function CommitmentsPage() {
 
   const totalCommitments = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
 
+  const subsDueThisCycle = useMemo(
+    () =>
+      subscriptions
+        .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
+        .reduce((s, i) => s + i.amount, 0),
+    [subscriptions, resetDate],
+  );
+
+  // Funding math covers commitments AND subscriptions — they share the pocket.
   const leftToPay = useMemo(() => {
-    return items
+    return allItems
       .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
       .reduce((s, i) => s + i.amount, 0);
-  }, [items, resetDate]);
+  }, [allItems, resetDate]);
 
   const shortfall = leftToPay - billPocketBalance;
 
   // Waterfall: order unpaid THIS-CYCLE bills by due date, allocate Bill Money down the list.
   // Bills falling in a future cycle are not part of the funding race — they're "covered" for now.
   const fundedMap = useMemo(() => {
-    const unpaidSorted = items
+    const unpaidSorted = allItems
       .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
       .slice()
       .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
@@ -112,7 +125,7 @@ function CommitmentsPage() {
       }
     }
     return map;
-  }, [items, billPocketBalance, resetDate]);
+  }, [allItems, billPocketBalance, resetDate]);
 
   // NOTE: Page-level rollover logic intentionally removed.
   // The single master rollover engine lives in `useCommitmentRollover`,
@@ -174,7 +187,7 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 mb-4">
+      <div className="grid gap-4 sm:grid-cols-3 mb-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
@@ -183,6 +196,21 @@ function CommitmentsPage() {
             <p className="text-2xl font-semibold tabular-nums">{fmt(totalCommitments)}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Subscriptions this cycle
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(subsDueThisCycle)}</p>
+            <Link
+              to="/subscriptions"
+              className="text-xs text-muted-foreground underline underline-offset-2 mt-1 inline-block"
+            >
+              {subscriptions.length} tracked · manage
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
