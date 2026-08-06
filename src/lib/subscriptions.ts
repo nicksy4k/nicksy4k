@@ -41,15 +41,15 @@ export function promoAlerts(items: Commitment[], today = new Date()): Commitment
 }
 
 /**
- * Snooze until the next sign-in: we use a far-future-safe marker that the
- * app clears on sign-in. Stored as an ISO timestamp 30 days out; the
- * sign-in handler wipes snoozes so the reminder returns next session.
+ * Snooze until the next session: hides the reminder for the rest of today,
+ * so it reappears the next time the user opens the app on another day.
  */
 export function snoozeUntilNextLogin(): string {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setHours(23, 59, 59, 999);
   return d.toISOString();
 }
+
 
 /** Patch applied when the user accepts the full price going forward. */
 export function acceptFullPricePatch(c: Commitment): Partial<Commitment> {
