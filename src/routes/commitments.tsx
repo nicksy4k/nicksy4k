@@ -188,7 +188,7 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 mb-4">
+      <div className="grid gap-4 sm:grid-cols-3 mb-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
@@ -197,6 +197,21 @@ function CommitmentsPage() {
             <p className="text-2xl font-semibold tabular-nums">{fmt(totalCommitments)}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Subscriptions this cycle
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(subsDueThisCycle)}</p>
+            <Link
+              to="/subscriptions"
+              className="text-xs text-muted-foreground underline underline-offset-2 mt-1 inline-block"
+            >
+              {subscriptions.length} tracked · manage
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
