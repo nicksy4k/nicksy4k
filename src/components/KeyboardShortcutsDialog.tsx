@@ -73,10 +73,14 @@ export function ShortcutsHelp({
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = openProp ?? internalOpen;
-  const setOpen = (o: boolean) => {
-    setInternalOpen(o);
-    onOpenChange?.(o);
-  };
+  const setOpen = useCallback(
+    (o: boolean) => {
+      setInternalOpen(o);
+      onOpenChange?.(o);
+    },
+    [onOpenChange],
+  );
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
