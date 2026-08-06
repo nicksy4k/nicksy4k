@@ -270,15 +270,34 @@ export function advanceByCadence(
   return fmt(next);
 }
 
-export function rollDueDateForward(dueISO: string, targetISO: string, cycle: ActiveCycle): string {
+/**
+ * Advance a commitment's due date by ITS OWN cadence when it has one
+ * (subscriptions can renew annually), otherwise by the global cycle.
+ */
+export function advanceForCommitment(
+  dueISO: string,
+  cadence: string | null | undefined,
+  cycle: ActiveCycle | CycleType,
+): string {
+  if (cadence === "annual") return fmt(addMonths(parseISO(dueISO), 12));
+  return advanceDueDate(dueISO, cycle);
+}
+
+export function rollDueDateForward(
+  dueISO: string,
+  targetISO: string,
+  cycle: ActiveCycle,
+  cadence?: string | null,
+): string {
   let cur = dueISO;
   let guard = 0;
   while (cur < targetISO && guard < 240) {
-    cur = advanceDueDate(cur, cycle);
+    cur = advanceForCommitment(cur, cadence, cycle);
     guard++;
   }
   return cur;
 }
+
 
 // ---------- React hooks ----------
 
