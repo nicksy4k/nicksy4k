@@ -151,7 +151,8 @@ export interface Commitment {
   /** True when this row is a subscription (rendered on /subscriptions). */
   is_subscription?: boolean;
   /** Renewal cadence for subscriptions — defaults to "monthly". */
-  cadence?: CommitmentCadence | string | null;
+  cadence?: CommitmentCadence | string;
+
   /** Discounted intro price currently in effect (mirrors `amount`). */
   promo_price?: number | null;
   /** Date the discounted price ends (yyyy-mm-dd). */
