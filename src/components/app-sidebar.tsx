@@ -8,6 +8,7 @@ import {
   TrendingUp,
   PiggyBank,
   CalendarClock,
+  Repeat,
   LogOut,
   CreditCard,
   Archive,
@@ -42,6 +43,7 @@ type NavItem = {
     | "/income"
     | "/savings"
     | "/commitments"
+    | "/subscriptions"
     | "/credit"
     | "/archive"
     | "/reports"
@@ -77,6 +79,7 @@ const groups: NavGroup[] = [
     label: "Money out",
     items: [
       { to: "/commitments", label: "Commitments", icon: CalendarClock, tour: "nav-commitments" },
+      { to: "/subscriptions", label: "Subscriptions", icon: Repeat },
       { to: "/credit", label: "Credit & Debt", icon: CreditCard },
       { to: "/history", label: "History", icon: Receipt },
     ],
