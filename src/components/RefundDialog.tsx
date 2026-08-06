@@ -79,7 +79,9 @@ export function RefundDialog({ transaction, onClose }: Props) {
       setReason("");
       setSubmitting(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transaction?.id]);
+
 
   const selectedTotal = useMemo(() => {
     if (!transaction) return 0;

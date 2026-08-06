@@ -48,7 +48,7 @@ export function useCommitmentRollover() {
       .finally(() => {
         running.current = false;
       });
-  }, [cycle.startISO, cycle.type, qc]);
+  }, [cycle, cycle.startISO, cycle.type, qc]);
 }
 
 async function rolloverAllCommitments(cycle: ActiveCycle) {

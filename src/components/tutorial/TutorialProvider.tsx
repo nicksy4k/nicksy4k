@@ -247,8 +247,8 @@ function Spotlight({
     if (outOfView) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.selector]);
+
 
   useLayoutEffect(() => {
     measure();

@@ -89,7 +89,8 @@ export function ShortcutsHelp({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [setOpen]);
+
 
   return (
     <>
