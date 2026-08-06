@@ -58,7 +58,7 @@ export function useTransactions() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const update = useCallback(
@@ -72,7 +72,7 @@ export function useTransactions() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -80,7 +80,7 @@ export function useTransactions() {
       await supabase.from("transactions").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const dismiss = useCallback(
@@ -92,7 +92,7 @@ export function useTransactions() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const clear = useCallback(async () => {
@@ -131,7 +131,7 @@ export function useIncomes() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -139,7 +139,7 @@ export function useIncomes() {
       await supabase.from("incomes").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, remove };
@@ -181,7 +181,7 @@ export function useRecurringIncomes() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const update = useCallback(
@@ -198,7 +198,7 @@ export function useRecurringIncomes() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -206,7 +206,7 @@ export function useRecurringIncomes() {
       await supabase.from("recurring_incomes").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, update, remove };
@@ -238,7 +238,7 @@ export function useSavings() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -246,7 +246,7 @@ export function useSavings() {
       await supabase.from("savings").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, remove };
@@ -295,7 +295,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
       await supabase.from("categories").insert({ user_id: u.user.id, kind, name: trimmed });
       await invalidate();
     },
-    [qc, kind],
+    [qc, invalidate, kind],
   );
 
   const remove = useCallback(
@@ -310,7 +310,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
         .eq("name", name);
       await invalidate();
     },
-    [qc, kind],
+    [qc, invalidate, kind],
   );
 
   const reset = useCallback(async () => {
@@ -358,7 +358,7 @@ export function useCommitments() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const update = useCallback(
@@ -366,7 +366,7 @@ export function useCommitments() {
       await supabase.from("commitments").update(patch).eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -374,7 +374,7 @@ export function useCommitments() {
       await supabase.from("commitments").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, update, remove };
@@ -412,7 +412,7 @@ export function useLoans() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const update = useCallback(
@@ -425,7 +425,7 @@ export function useLoans() {
         .eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -433,7 +433,7 @@ export function useLoans() {
       await supabase.from("loans").delete().eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const addPayment = useCallback(
@@ -445,7 +445,7 @@ export function useLoans() {
         .eq("id", loan.id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, update, remove, addPayment };
@@ -491,7 +491,7 @@ export function useDebts() {
       await invalidate();
       return (inserted as { id: string }).id;
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const update = useCallback(
@@ -505,7 +505,7 @@ export function useDebts() {
         .eq("id", id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const remove = useCallback(
@@ -517,7 +517,7 @@ export function useDebts() {
       await invalidate();
       qc.invalidateQueries({ queryKey: ["commitments"] });
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const addPayment = useCallback(
@@ -529,7 +529,7 @@ export function useDebts() {
         .eq("id", debt.id);
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, update, remove, addPayment };
@@ -569,7 +569,7 @@ export function useDebtItems() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   const add = useCallback(
@@ -585,7 +585,7 @@ export function useDebtItems() {
       if (error) throw error;
       await invalidate();
     },
-    [qc],
+    [qc, invalidate],
   );
 
   return { items: data ?? [], add, addMany, remove };
