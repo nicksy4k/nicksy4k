@@ -91,7 +91,6 @@ export function ShortcutsHelp({
     return () => window.removeEventListener("keydown", onKey);
   }, [setOpen]);
 
-
   return (
     <>
       <Button

@@ -160,7 +160,10 @@ export function useRecurringIncomes() {
       return (data ?? []) as unknown as RecurringIncome[];
     },
   });
-  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["recurring_incomes"] }), [qc]);
+  const invalidate = useCallback(
+    () => qc.invalidateQueries({ queryKey: ["recurring_incomes"] }),
+    [qc],
+  );
 
   const add = useCallback(
     async (r: Omit<RecurringIncome, "id" | "created_at" | "updated_at">) => {

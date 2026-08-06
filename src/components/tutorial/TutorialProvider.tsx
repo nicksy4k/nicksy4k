@@ -249,7 +249,6 @@ function Spotlight({
     }
   }, [step.selector]);
 
-
   useLayoutEffect(() => {
     measure();
     const schedule = () => {
