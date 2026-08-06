@@ -77,14 +77,10 @@ function SubscriptionsPage() {
   const cycle = useActiveCycle();
   const resetDate = format(addDays(cycle.end, 1), "yyyy-MM-dd");
 
-  const items = useMemo(
-    () => allCommitments.filter((c) => c.is_subscription),
-    [allCommitments],
-  );
+  const items = useMemo(() => allCommitments.filter((c) => c.is_subscription), [allCommitments]);
 
   const monthlyTotal = useMemo(
-    () =>
-      items.reduce((s, c) => s + (c.cadence === "annual" ? c.amount / 12 : c.amount), 0),
+    () => items.reduce((s, c) => s + (c.cadence === "annual" ? c.amount / 12 : c.amount), 0),
     [items],
   );
 
@@ -403,7 +399,9 @@ function SubscriptionsPage() {
               <div className="space-y-3 text-sm">
                 <Row
                   label="Price"
-                  value={<span className="font-semibold tabular-nums">{fmt(detailsItem.amount)}</span>}
+                  value={
+                    <span className="font-semibold tabular-nums">{fmt(detailsItem.amount)}</span>
+                  }
                 />
                 <Row label="Billing" value={cadenceLabel(detailsItem.cadence)} />
                 <Row label="Category" value={detailsItem.category || "—"} />
@@ -433,7 +431,9 @@ function SubscriptionsPage() {
                 {detailsItem.notes && (
                   <Row
                     label="Notes"
-                    value={<span className="italic text-muted-foreground">{detailsItem.notes}</span>}
+                    value={
+                      <span className="italic text-muted-foreground">{detailsItem.notes}</span>
+                    }
                   />
                 )}
                 <div className="flex items-center justify-between border-t border-border pt-3">
@@ -531,7 +531,9 @@ function SubscriptionDialog({
     setAmount(editing ? String(editing.amount) : "");
     setCategory(
       editing?.category ??
-        (categories.includes("Subscriptions") ? "Subscriptions" : (categories[0] ?? "Subscriptions")),
+        (categories.includes("Subscriptions")
+          ? "Subscriptions"
+          : (categories[0] ?? "Subscriptions")),
     );
     setCadence(editing?.cadence === "annual" ? "annual" : "monthly");
     setNextDue(editing?.next_due_date ?? "");

@@ -127,7 +127,6 @@ function CommitmentsPage() {
     return map;
   }, [allItems, billPocketBalance, resetDate]);
 
-
   // NOTE: Page-level rollover logic intentionally removed.
   // The single master rollover engine lives in `useCommitmentRollover`,
   // mounted globally in <AppLayout/>. It advances next_due_date AND resets

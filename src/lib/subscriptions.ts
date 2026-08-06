@@ -50,7 +50,6 @@ export function snoozeUntilNextLogin(): string {
   return d.toISOString();
 }
 
-
 /** Patch applied when the user accepts the full price going forward. */
 export function acceptFullPricePatch(c: Commitment): Partial<Commitment> {
   return {

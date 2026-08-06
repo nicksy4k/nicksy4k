@@ -84,12 +84,7 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
       }
 
       if (c.next_due_date && c.next_due_date < cycle.startISO) {
-        patch.next_due_date = rollDueDateForward(
-          c.next_due_date,
-          cycle.startISO,
-          cycle,
-          c.cadence,
-        );
+        patch.next_due_date = rollDueDateForward(c.next_due_date, cycle.startISO, cycle, c.cadence);
         patch.prev_due_date = c.next_due_date;
       }
 
@@ -106,7 +101,6 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
         patch.paid = false;
         patch.last_paid_date = null;
       }
-
 
       if (Object.keys(patch).length === 0) return;
 
