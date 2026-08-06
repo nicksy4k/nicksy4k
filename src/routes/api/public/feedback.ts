@@ -125,10 +125,11 @@ export const Route = createFileRoute("/api/public/feedback")({
               typeof entry.subject === "function" ? entry.subject(templateData) : entry.subject;
             const messageId = crypto.randomUUID();
 
-            // Cast to any — email_send_log / enqueue_email are provisioned by
-            // the email infrastructure migration and aren't in the generated
-            // types until the next regeneration.
+            // email_send_log / enqueue_email are provisioned by the email infrastructure
+            // migration and aren't in the generated types until the next regeneration.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const admin = supabaseAdmin as any;
+
 
             await admin.from("email_send_log").insert({
               message_id: messageId,

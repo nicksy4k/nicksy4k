@@ -13,8 +13,8 @@ export default tseslint.config(
       ".vinxi",
       "routeTree.gen.ts",
       "src/routes/mcp.ts",
-      "src/routes/[.mcp]/**/*.ts",
-      "src/routes/[.well-known]/oauth-protected-resource.ts",
+      "src/routes/\\[.mcp\\]/**/*.ts",
+      "src/routes/\\[.well-known\\]/oauth-protected-resource.ts",
     ],
   },
   {
