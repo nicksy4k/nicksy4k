@@ -377,6 +377,32 @@ function DashboardPage() {
         </Card>
 
         <Card data-tour="warranty-alerts">
+          {subsPromoAlerts.length > 0 && (
+            <div className="border-b border-border p-4 space-y-2">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Subscription offers ending
+              </p>
+              <ul className="space-y-1.5">
+                {subsPromoAlerts.slice(0, 3).map((c) => {
+                  const days = daysUntilPromoEnd(c) ?? 0;
+                  return (
+                    <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">
+                        {c.item_name}{" "}
+                        <span className="text-muted-foreground">
+                          · {days > 0 ? `in ${days}d` : "today"}
+                        </span>
+                      </span>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/subscriptions">Review</Link>
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <CardHeader className="flex-row items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
             <CardTitle>Return / warranty alerts</CardTitle>
