@@ -179,7 +179,14 @@ function useLedgerSync() {
   const { add: addIncome } = useIncomes();
   const { add: addSaving } = useSavings();
 
-  /** Money leaves the user's funds. */
+  /**
+   * Money leaves the user's funds.
+   *
+   * Pocket-funded outflows must write BOTH rows, matching the split-payment
+   * convention in `src/lib/splits.ts`: the pocket withdrawal credits the main
+   * balance back, and the transaction (tagged with a `pocket:` split) debits
+   * it again, so main nets out and the spend still shows in history.
+   */
   async function debit(
     source: SourceChoice,
     args: { amount: number; date: string; label: string; category?: string; notes?: string },
@@ -193,7 +200,6 @@ function useLedgerSync() {
         account: source.name,
         notes: args.notes ?? args.label,
       });
-      return;
     }
     await addTransaction({
       date: args.date,
@@ -210,10 +216,18 @@ function useLedgerSync() {
         quantity: 1,
         category: args.category ?? "Debt",
       }],
+      payment_splits:
+        source.kind === "pocket"
+          ? [{ source: `pocket:${source.name}`, amount: args.amount }]
+          : [],
     });
   }
 
-  /** Money arrives in the user's funds. */
+  /**
+   * Money arrives in the user's funds. Into a pocket we write BOTH the pocket
+   * deposit and the income row, so the deposit's drag on the main balance is
+   * offset and main stays flat.
+   */
   async function credit(
     source: SourceChoice,
     args: { amount: number; date: string; label: string; category?: string; notes?: string },
@@ -227,7 +241,6 @@ function useLedgerSync() {
         account: source.name,
         notes: args.notes ?? args.label,
       });
-      return;
     }
     await addIncome({
       date: args.date,
@@ -237,6 +250,7 @@ function useLedgerSync() {
       notes: args.notes,
     });
   }
+
 
   return { debit, credit };
 }
