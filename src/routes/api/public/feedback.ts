@@ -130,7 +130,6 @@ export const Route = createFileRoute("/api/public/feedback")({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const admin = supabaseAdmin as any;
 
-
             await admin.from("email_send_log").insert({
               message_id: messageId,
               template_name: "feedback-notification",
