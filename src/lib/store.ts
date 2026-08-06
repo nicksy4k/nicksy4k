@@ -261,7 +261,6 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
   const qc = useQueryClient();
   const queryKey = useMemo(() => ["categories", kind], [kind]);
 
-
   const { data } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -523,7 +522,6 @@ export function useDebts() {
       qc.invalidateQueries({ queryKey: ["commitments"] });
     },
     [invalidate, qc],
-
   );
 
   const addPayment = useCallback(
