@@ -82,8 +82,6 @@ export interface Transaction {
   created_at: string;
 }
 
-
-
 export interface IncomeEntry {
   id: string;
   date: string;
@@ -151,7 +149,6 @@ export interface Commitment {
   created_at: string;
 }
 
-
 export interface LedgerPayment {
   id: string;
   date: string;
@@ -199,4 +196,3 @@ export interface Debt {
   payments: LedgerPayment[];
   created_at: string;
 }
-

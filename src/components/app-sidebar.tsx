@@ -35,7 +35,17 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 type NavItem = {
-  to: "/" | "/new" | "/history" | "/income" | "/savings" | "/commitments" | "/credit" | "/archive" | "/reports" | "/settings";
+  to:
+    | "/"
+    | "/new"
+    | "/history"
+    | "/income"
+    | "/savings"
+    | "/commitments"
+    | "/credit"
+    | "/archive"
+    | "/reports"
+    | "/settings";
   label: string;
   icon: LucideIcon;
   exact?: boolean;
@@ -151,7 +161,7 @@ export function AppSidebar() {
                         accent &&
                           !isActive(to, exact) &&
                           "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
-                        accent && isActive(to, exact) && "bg-primary text-primary-foreground"
+                        accent && isActive(to, exact) && "bg-primary text-primary-foreground",
                       )}
                       tooltip={collapsed ? label : undefined}
                     >
@@ -184,7 +194,10 @@ export function AppSidebar() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                onClick={() => { closeIfMobile(); supabase.auth.signOut(); }}
+                onClick={() => {
+                  closeIfMobile();
+                  supabase.auth.signOut();
+                }}
                 title="Sign out"
                 aria-label="Sign out"
               >

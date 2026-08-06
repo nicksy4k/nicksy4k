@@ -1,11 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import type { IncomeEntry, Transaction } from "@/lib/types";
-import {
-  breakdownWithoutBills,
-  computeTotals,
-  type CategoryDatum,
-} from "@/lib/reportExport";
+import { breakdownWithoutBills, computeTotals, type CategoryDatum } from "@/lib/reportExport";
 
 interface Props {
   startDate: string;
@@ -52,9 +48,7 @@ export function PrintableReport(props: Props) {
         <p>
           {fmtDate(props.startDate)} — {fmtDate(props.endDate)}
         </p>
-        <p className="print-muted">
-          Generated {format(new Date(), "dd-MMM-yyyy HH:mm")}
-        </p>
+        <p className="print-muted">Generated {format(new Date(), "dd-MMM-yyyy HH:mm")}</p>
       </header>
 
       <section className="print-summary">
@@ -88,9 +82,7 @@ export function PrintableReport(props: Props) {
             </thead>
             <tbody>
               {props.transactions.map((t) => {
-                const cats = Array.from(
-                  new Set(t.items.map((i) => i.category)),
-                ).join(", ");
+                const cats = Array.from(new Set(t.items.map((i) => i.category))).join(", ");
                 return (
                   <tr key={t.id}>
                     <td>{fmtDate(t.date)}</td>
@@ -119,11 +111,7 @@ export function PrintableReport(props: Props) {
             </thead>
             <tbody>
               {props.transactions.flatMap((t) => {
-                const itemsSum =
-                  t.items.reduce(
-                    (s, i) => s + i.price * (i.quantity ?? 1),
-                    0,
-                  ) || 1;
+                const itemsSum = t.items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0) || 1;
                 const main = mainExpensePortion(t);
                 const method = paymentMethodLabel(t);
                 return t.items.map((it) => {
@@ -186,9 +174,7 @@ export function PrintableReport(props: Props) {
                 <tr key={d.name}>
                   <td>{d.name}</td>
                   <td className="right">{fmt(d.value)}</td>
-                  <td className="right">
-                    {total ? ((d.value / total) * 100).toFixed(1) : "0.0"}%
-                  </td>
+                  <td className="right">{total ? ((d.value / total) * 100).toFixed(1) : "0.0"}%</td>
                 </tr>
               ))}
             </tbody>
@@ -210,10 +196,7 @@ export function PrintableReport(props: Props) {
                   <td>{d.name}</td>
                   <td className="right">{fmt(d.value)}</td>
                   <td className="right">
-                    {nonBillsTotal
-                      ? ((d.value / nonBillsTotal) * 100).toFixed(1)
-                      : "0.0"}
-                    %
+                    {nonBillsTotal ? ((d.value / nonBillsTotal) * 100).toFixed(1) : "0.0"}%
                   </td>
                 </tr>
               ))}

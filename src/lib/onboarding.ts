@@ -60,10 +60,7 @@ export function useOnboardingStatus() {
     if (!u.user) return;
     await supabase
       .from("user_settings")
-      .upsert(
-        { user_id: u.user.id, onboarding_completed: val },
-        { onConflict: "user_id" },
-      );
+      .upsert({ user_id: u.user.id, onboarding_completed: val }, { onConflict: "user_id" });
     writeCache(val);
     setCompleted(val);
   }, []);

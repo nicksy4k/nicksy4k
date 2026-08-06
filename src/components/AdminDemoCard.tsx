@@ -22,7 +22,11 @@ export function AdminDemoCard() {
       return;
     }
     await qc.invalidateQueries({ queryKey: ["app-flag", DEMO_SCANNER_FLAG] });
-    toast.success(next ? "AI scanner enabled for the demo account." : "AI scanner disabled for the demo account.");
+    toast.success(
+      next
+        ? "AI scanner enabled for the demo account."
+        : "AI scanner disabled for the demo account.",
+    );
   }
 
   return (
@@ -42,8 +46,9 @@ export function AdminDemoCard() {
               Enable AI Scanner for Demo Account
             </Label>
             <p className="text-xs text-muted-foreground max-w-md">
-              When off, the AI receipt scanner is completely hidden for the demo account — protecting your
-              AI credits. Demo uploads are never kept: the file is deleted straight after the scan.
+              When off, the AI receipt scanner is completely hidden for the demo account —
+              protecting your AI credits. Demo uploads are never kept: the file is deleted straight
+              after the scan.
             </p>
           </div>
           <Switch

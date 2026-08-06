@@ -9,10 +9,7 @@ export default defineTool({
     "Mark a recurring commitment (bill, subscription, BNPL installment) as paid for the current cycle. Sets paid=true and last_paid_date. The app's rollover engine advances next_due_date on the next cycle automatically.",
   inputSchema: {
     commitment_id: z.string().uuid().describe("Commitment ID to mark paid."),
-    paid_date: z
-      .string()
-      .optional()
-      .describe("Date paid, YYYY-MM-DD. Defaults to today (UTC)."),
+    paid_date: z.string().optional().describe("Date paid, YYYY-MM-DD. Defaults to today (UTC)."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   handler: async ({ commitment_id, paid_date }, ctx) => {

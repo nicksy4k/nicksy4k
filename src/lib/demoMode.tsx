@@ -84,7 +84,18 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
       setExpandedTxnId,
       setOpenAlertId,
     }),
-    [active, dataset, filterCategory, extraSpend, expandedTxnId, openAlertId, start, stop, addExtraSpend, resetExtraSpend],
+    [
+      active,
+      dataset,
+      filterCategory,
+      extraSpend,
+      expandedTxnId,
+      openAlertId,
+      start,
+      stop,
+      addExtraSpend,
+      resetExtraSpend,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -74,7 +78,14 @@ interface Props {
   allowBnpl?: boolean;
 }
 
-export function PaymentSplitEditor({ total, retailer, transactionDate, splits, onChange, allowBnpl = true }: Props) {
+export function PaymentSplitEditor({
+  total,
+  retailer,
+  transactionDate,
+  splits,
+  onChange,
+  allowBnpl = true,
+}: Props) {
   const { items: savings } = useSavings();
 
   const pockets = useMemo(() => {
@@ -155,10 +166,10 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
                           {s.source === "main"
                             ? "Main balance"
                             : s.source === "bnpl:new"
-                            ? "BNPL (new plan)"
-                            : s.source === "other"
-                            ? "Other (not deducted)"
-                            : `Pocket · ${pocketName}`}
+                              ? "BNPL (new plan)"
+                              : s.source === "other"
+                                ? "Other (not deducted)"
+                                : `Pocket · ${pocketName}`}
                         </span>
                       </span>
                     </SelectValue>
@@ -259,8 +270,8 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
                   <div className="min-w-0">
                     <Label className="text-sm">First payment due today</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      For "Pay in 4" plans (Clearpay, Klarna). Installment #1 is
-                      deducted today; the debt covers the remaining installments.
+                      For "Pay in 4" plans (Clearpay, Klarna). Installment #1 is deducted today; the
+                      debt covers the remaining installments.
                     </p>
                   </div>
                   <Switch
@@ -274,46 +285,51 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
                   />
                 </div>
 
-                {s.bnpl.firstPaymentToday && (() => {
-                  const splitAmt = parseFloat(s.amount) || 0;
-                  const n = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
-                  const firstAmt = +(splitAmt / n).toFixed(2);
-                  const remaining = +(splitAmt - firstAmt).toFixed(2);
-                  return (
-                    <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">First installment paid from</Label>
-                        <Select
-                          value={s.bnpl!.firstSource}
-                          onValueChange={(v) => updateBnpl(s.id, { firstSource: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="main">Main balance</SelectItem>
-                            {pockets.map(([name]) => (
-                              <SelectItem key={name} value={`pocket:${name}`}>
-                                <span className="flex items-center gap-2">
-                                  <span
-                                    className="h-2.5 w-2.5 rounded-sm"
-                                    style={{ backgroundColor: colorForKey(name) }}
-                                  />
-                                  Pocket · {name}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                {s.bnpl.firstPaymentToday &&
+                  (() => {
+                    const splitAmt = parseFloat(s.amount) || 0;
+                    const n = Math.max(1, parseInt(s.bnpl.installments, 10) || 1);
+                    const firstAmt = +(splitAmt / n).toFixed(2);
+                    const remaining = +(splitAmt - firstAmt).toFixed(2);
+                    return (
+                      <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">First installment paid from</Label>
+                          <Select
+                            value={s.bnpl!.firstSource}
+                            onValueChange={(v) => updateBnpl(s.id, { firstSource: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="main">Main balance</SelectItem>
+                              {pockets.map(([name]) => (
+                                <SelectItem key={name} value={`pocket:${name}`}>
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className="h-2.5 w-2.5 rounded-sm"
+                                      style={{ backgroundColor: colorForKey(name) }}
+                                    />
+                                    Pocket · {name}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          Today:{" "}
+                          <span className="font-medium text-foreground">{fmt(firstAmt)}</span>
+                          {" · "}Debt:{" "}
+                          <span className="font-medium text-foreground">
+                            {n - 1} × {fmt(+(remaining / Math.max(1, n - 1)).toFixed(2))}
+                          </span>{" "}
+                          ({fmt(remaining)} total)
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground tabular-nums">
-                        Today: <span className="font-medium text-foreground">{fmt(firstAmt)}</span>
-                        {" · "}Debt: <span className="font-medium text-foreground">{n - 1} × {fmt(+(remaining / Math.max(1, n - 1)).toFixed(2))}</span>
-                        {" "}({fmt(remaining)} total)
-                      </p>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
               </div>
             )}
           </div>
@@ -340,15 +356,15 @@ export function PaymentSplitEditor({ total, retailer, transactionDate, splits, o
             remainder === 0
               ? "text-primary"
               : remainder < 0
-              ? "text-destructive"
-              : "text-muted-foreground"
+                ? "text-destructive"
+                : "text-muted-foreground"
           }
         >
           {remainder === 0
             ? "Fully allocated"
             : remainder > 0
-            ? `Remainder ${fmt(remainder)} → Main balance`
-            : `Over-allocated by ${fmt(Math.abs(remainder))}`}
+              ? `Remainder ${fmt(remainder)} → Main balance`
+              : `Over-allocated by ${fmt(Math.abs(remainder))}`}
         </span>
       </div>
     </div>

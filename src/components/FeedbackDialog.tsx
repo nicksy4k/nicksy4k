@@ -22,13 +22,7 @@ import { APP_VERSION, FEEDBACK_EMAIL } from "@/lib/support";
 import { toast } from "sonner";
 
 const MAX_ATTACHMENT_MB = 5;
-const ALLOWED_MIME = [
-  "image/png",
-  "image/jpeg",
-  "image/gif",
-  "image/webp",
-  "application/pdf",
-];
+const ALLOWED_MIME = ["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"];
 
 const schema = z.object({
   type: z.enum(["bug", "idea", "general"]),
@@ -163,18 +157,20 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
   };
 
   const typeIcon =
-    type === "bug" ? <Bug className="h-4 w-4" /> :
-    type === "idea" ? <Lightbulb className="h-4 w-4" /> :
-    <MessageSquare className="h-4 w-4" />;
+    type === "bug" ? (
+      <Bug className="h-4 w-4" />
+    ) : type === "idea" ? (
+      <Lightbulb className="h-4 w-4" />
+    ) : (
+      <MessageSquare className="h-4 w-4" />
+    );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {typeIcon} Share feedback
-          </DialogTitle>
+          <DialogTitle className="flex items-center gap-2">{typeIcon} Share feedback</DialogTitle>
           <DialogDescription>
             Ledgerly is in beta — your notes go straight to the developer's inbox.
           </DialogDescription>
@@ -214,7 +210,9 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
                 {(["low", "medium", "high"] as const).map((s) => (
                   <div key={s} className="flex items-center gap-2">
                     <RadioGroupItem value={s} id={`sev-${s}`} />
-                    <Label htmlFor={`sev-${s}`} className="capitalize text-sm font-normal">{s}</Label>
+                    <Label htmlFor={`sev-${s}`} className="capitalize text-sm font-normal">
+                      {s}
+                    </Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -255,7 +253,14 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="fb-email">Your email {signedInEmail && !anonymous && <span className="text-xs text-muted-foreground font-normal">(from your account)</span>}</Label>
+            <Label htmlFor="fb-email">
+              Your email{" "}
+              {signedInEmail && !anonymous && (
+                <span className="text-xs text-muted-foreground font-normal">
+                  (from your account)
+                </span>
+              )}
+            </Label>
             <Input
               id="fb-email"
               type="email"
@@ -269,7 +274,12 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
 
           {/* Attachment */}
           <div className="space-y-2">
-            <Label>Screenshot or file <span className="text-xs text-muted-foreground font-normal">(optional, max {MAX_ATTACHMENT_MB} MB)</span></Label>
+            <Label>
+              Screenshot or file{" "}
+              <span className="text-xs text-muted-foreground font-normal">
+                (optional, max {MAX_ATTACHMENT_MB} MB)
+              </span>
+            </Label>
             {file ? (
               <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
                 <Paperclip className="h-4 w-4 text-muted-foreground" />
@@ -277,14 +287,22 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
                 <span className="text-[10px] text-muted-foreground">
                   {(file.size / 1024).toFixed(0)} KB
                 </span>
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setFile(null)}
+                >
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ) : (
               <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 bg-muted/30 px-3 py-4 cursor-pointer hover:bg-muted/50 hover:border-primary/40 transition">
                 <Paperclip className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Click to attach an image or PDF</span>
+                <span className="text-xs text-muted-foreground">
+                  Click to attach an image or PDF
+                </span>
                 <input
                   type="file"
                   className="hidden"
@@ -298,11 +316,19 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
 
           {/* Auto-context */}
           <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">Automatically included</p>
+            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
+              Automatically included
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="font-mono text-[10px]">{APP_VERSION}</Badge>
-              <Badge variant="secondary" className="font-mono text-[10px]">page: {pathname}</Badge>
-              <Badge variant="secondary" className="text-[10px]">browser info</Badge>
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {APP_VERSION}
+              </Badge>
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                page: {pathname}
+              </Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                browser info
+              </Badge>
             </div>
           </div>
         </div>
@@ -312,7 +338,11 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
             Cancel
           </Button>
           <Button onClick={submit} disabled={submitting}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
             Send feedback
           </Button>
         </DialogFooter>

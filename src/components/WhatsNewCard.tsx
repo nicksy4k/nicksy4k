@@ -41,16 +41,11 @@ export function WhatsNewCard() {
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold">What's new</p>
                 {hasNew && (
-                  <span
-                    className="h-2 w-2 rounded-full bg-primary"
-                    aria-label="Unread changes"
-                  />
+                  <span className="h-2 w-2 rounded-full bg-primary" aria-label="Unread changes" />
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {lastSeen
-                  ? `You last checked at ${lastSeen}`
-                  : "Latest updates to Ledgerly"}
+                {lastSeen ? `You last checked at ${lastSeen}` : "Latest updates to Ledgerly"}
               </p>
             </div>
           </div>

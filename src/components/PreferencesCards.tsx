@@ -5,11 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Coins, Palette, HeartHandshake, Check } from "lucide-react";
 import {
-  CURRENCIES, CUSTOM_CURRENCY, THEMES, usePreferences, formatMoney,
+  CURRENCIES,
+  CUSTOM_CURRENCY,
+  THEMES,
+  usePreferences,
+  formatMoney,
 } from "@/lib/preferences";
 import { toast } from "sonner";
 
@@ -29,8 +37,8 @@ export function CurrencySettingsCard() {
           <Coins className="h-4 w-4 text-primary" /> Currency
         </CardTitle>
         <CardDescription>
-          Changes how amounts are displayed everywhere. Your recorded figures are never
-          converted or altered — only the symbol and formatting change.
+          Changes how amounts are displayed everywhere. Your recorded figures are never converted or
+          altered — only the symbol and formatting change.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -44,7 +52,9 @@ export function CurrencySettingsCard() {
                 toast.success("Currency updated");
               }}
             >
-              <SelectTrigger id="pref-currency"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="pref-currency">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent className="max-h-72">
                 {CURRENCIES.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
@@ -62,7 +72,9 @@ export function CurrencySettingsCard() {
               value={prefs.symbolPosition}
               onValueChange={(v) => update({ symbolPosition: v === "after" ? "after" : "before" })}
             >
-              <SelectTrigger id="pref-position"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="pref-position">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="before">Before the amount</SelectItem>
                 <SelectItem value="after">After the amount</SelectItem>
@@ -106,8 +118,8 @@ export function ThemePickerCard() {
           <Palette className="h-4 w-4 text-primary" /> Theme
         </CardTitle>
         <CardDescription>
-          Pick the palette that feels most comfortable. Every theme is contrast-checked
-          for readability.
+          Pick the palette that feels most comfortable. Every theme is contrast-checked for
+          readability.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -178,7 +190,9 @@ export function ComfortCard({ categories }: { categories: string[] }) {
       <CardContent className="space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <Label htmlFor="pref-blur" className="text-sm">Blur balances until hovered</Label>
+            <Label htmlFor="pref-blur" className="text-sm">
+              Blur balances until hovered
+            </Label>
             <p className="text-xs text-muted-foreground mt-0.5">
               Keeps headline figures private on shared screens. Hover or tap to reveal.
             </p>
@@ -192,7 +206,9 @@ export function ComfortCard({ categories }: { categories: string[] }) {
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <Label htmlFor="pref-pie" className="text-sm">Hide the category breakdown chart</Label>
+            <Label htmlFor="pref-pie" className="text-sm">
+              Hide the category breakdown chart
+            </Label>
             <p className="text-xs text-muted-foreground mt-0.5">
               No pie chart on the dashboard — your totals stay, the visual judgement goes.
             </p>
@@ -228,7 +244,8 @@ export function ComfortCard({ categories }: { categories: string[] }) {
                       : "border-border/60 text-muted-foreground hover:bg-accent/50"
                   }`}
                 >
-                  {on ? "★ " : ""}{c}
+                  {on ? "★ " : ""}
+                  {c}
                 </button>
               );
             })}

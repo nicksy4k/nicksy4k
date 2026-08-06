@@ -93,10 +93,10 @@ export const Route = createFileRoute("/api/public/feedback")({
 
         if (error) {
           console.error("[feedback] insert failed", error);
-          return new Response(
-            JSON.stringify({ error: "Failed to save feedback." }),
-            { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Failed to save feedback." }), {
+            status: 500,
+            headers: { ...cors, "Content-Type": "application/json" },
+          });
         }
 
         // Enqueue the notification email to the app owner. Non-fatal —
@@ -122,9 +122,7 @@ export const Route = createFileRoute("/api/public/feedback")({
             const html = await render(element);
             const text = await render(element, { plainText: true });
             const resolvedSubject =
-              typeof entry.subject === "function"
-                ? entry.subject(templateData)
-                : entry.subject;
+              typeof entry.subject === "function" ? entry.subject(templateData) : entry.subject;
             const messageId = crypto.randomUUID();
 
             // Cast to any — email_send_log / enqueue_email are provisioned by
@@ -170,10 +168,10 @@ export const Route = createFileRoute("/api/public/feedback")({
           console.error("[feedback] email send failed", mailErr);
         }
 
-        return new Response(
-          JSON.stringify({ ok: true, id: inserted?.id }),
-          { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ ok: true, id: inserted?.id }), {
+          status: 200,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       },
     },
   },

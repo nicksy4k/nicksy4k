@@ -312,9 +312,7 @@ export function RefundDialog({ transaction, onClose }: Props) {
                               style={{ backgroundColor: colorForKey(name) }}
                             />
                             Pocket · {name}
-                            <span className="text-muted-foreground text-xs">
-                              ({fmt(bal)})
-                            </span>
+                            <span className="text-muted-foreground text-xs">({fmt(bal)})</span>
                           </span>
                         </SelectItem>
                       ))}
@@ -341,7 +339,9 @@ export function RefundDialog({ transaction, onClose }: Props) {
                 Cancel
               </Button>
               <Button onClick={confirm} disabled={submitting}>
-                {submitting ? "Processing…" : `Refund ${amount ? fmt(parseFloat(amount) || 0) : ""}`}
+                {submitting
+                  ? "Processing…"
+                  : `Refund ${amount ? fmt(parseFloat(amount) || 0) : ""}`}
               </Button>
             </DialogFooter>
           </>

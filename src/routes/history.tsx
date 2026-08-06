@@ -80,8 +80,6 @@ import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
 
-
-
 export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
@@ -131,9 +129,7 @@ function HistoryPage() {
   const [refunding, setRefunding] = useState<Transaction | null>(null);
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
 
-
-  const hasFilters =
-    q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
+  const hasFilters = q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
@@ -237,10 +233,7 @@ function HistoryPage() {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="sm:w-[220px] justify-between font-normal"
-              >
+              <Button variant="outline" className="sm:w-[220px] justify-between font-normal">
                 <span className="truncate">
                   {selectedCats.size === 0
                     ? "All categories"
@@ -333,9 +326,7 @@ function HistoryPage() {
             {categorySummary.txCount} transaction{categorySummary.txCount !== 1 ? "s" : ""} in{" "}
             {categorySummary.catCount} categor{categorySummary.catCount !== 1 ? "ies" : "y"}
           </span>
-          <span className="font-semibold tabular-nums">
-            Total: {fmt(categorySummary.total)}
-          </span>
+          <span className="font-semibold tabular-nums">Total: {fmt(categorySummary.total)}</span>
         </div>
       )}
 
@@ -372,7 +363,6 @@ function HistoryPage() {
                   ? "full"
                   : "partial";
             return (
-
               <Collapsible key={t.id} asChild>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger className="w-full text-left group">
@@ -412,7 +402,6 @@ function HistoryPage() {
                               Partial refund {fmt(refundedTotal)}
                             </Badge>
                           )}
-
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
                           {format(parseISO(t.date), "MMM d, yyyy")}
@@ -746,7 +735,6 @@ function HistoryPage() {
                                 </tr>
                               );
                             })}
-
                           </tbody>
                         </table>
                       </div>
@@ -846,7 +834,6 @@ function HistoryPage() {
         onClose={() => setEditing(null)}
       />
       <RefundDialog transaction={refunding} onClose={() => setRefunding(null)} />
-
     </div>
   );
 }
@@ -940,7 +927,6 @@ function EditTransactionDialog({
   const [quickSelected, setQuickSelected] = useState<Set<string>>(new Set());
   const [quickShowMore, setQuickShowMore] = useState(false);
 
-
   const [date, setDate] = useState("");
   const [retailer, setRetailer] = useState("");
   const [receiptAttached, setReceiptAttached] = useState(true);
@@ -970,7 +956,10 @@ function EditTransactionDialog({
   }, [pastTransactions]);
 
   function applyScan(payload: ScanApplyPayload) {
-    if (payload.retailer) { setRetailer(payload.retailer); clearError("retailer"); }
+    if (payload.retailer) {
+      setRetailer(payload.retailer);
+      clearError("retailer");
+    }
     if (payload.date) setDate(payload.date);
     if (payload.storagePath) {
       setReceiptAttached(true);
@@ -994,7 +983,6 @@ function EditTransactionDialog({
     }
     toast.success("Receipt applied — review the lines and save.");
   }
-
 
   if (transaction && initialized !== transaction.id) {
     setInitialized(transaction.id);
@@ -1066,8 +1054,6 @@ function EditTransactionDialog({
     (s, r) => s + (parseFloat(r.price) || 0) * (parseFloat(r.quantity) || 0),
     0,
   );
-
-
 
   function updateRow(id: string, patch: Partial<DraftRow>) {
     setRows((arr) =>
@@ -1168,15 +1154,12 @@ function EditTransactionDialog({
       };
     });
     setRows((arr) => {
-      const onlyBlank =
-        arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim();
+      const onlyBlank = arr.length === 1 && !arr[0].item_name.trim() && !arr[0].price.trim();
       return onlyBlank ? newRows : [...arr, ...newRows];
     });
     toast.success(`Added ${newRows.length} item${newRows.length === 1 ? "" : "s"}`);
     setQuickSelected(new Set());
   }
-
-
 
   async function save() {
     if (!transaction) return;
@@ -1223,9 +1206,7 @@ function EditTransactionDialog({
         if (firstRow >= 0) {
           const r = rows[firstRow];
           focusByAriaLabel(
-            errs[`row-${r.id}-name`]
-              ? `Item ${firstRow + 1} name`
-              : `Item ${firstRow + 1} price`,
+            errs[`row-${r.id}-name`] ? `Item ${firstRow + 1} name` : `Item ${firstRow + 1} price`,
           );
         }
       }
@@ -1381,7 +1362,6 @@ function EditTransactionDialog({
           </div>
         </DialogHeader>
 
-
         <div className="space-y-5">
           {transaction?.is_pending && isPending && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
@@ -1425,7 +1405,6 @@ function EditTransactionDialog({
           )}
 
           <div className="grid sm:grid-cols-2 gap-4">
-
             <Field label="Date">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
@@ -1572,11 +1551,7 @@ function EditTransactionDialog({
                       )}
                     </div>
                     {rankedQuick.length > 12 && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQuickShowMore((v) => !v)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => setQuickShowMore((v) => !v)}>
                         {quickShowMore ? "Show less" : `Show more (${rankedQuick.length - 12})`}
                       </Button>
                     )}
@@ -1626,7 +1601,9 @@ function EditTransactionDialog({
                       </Field>
                       <Field label="Price (£)">
                         <Input
-                          ref={(el) => { rowPriceRefs.current[r.id] = el; }}
+                          ref={(el) => {
+                            rowPriceRefs.current[r.id] = el;
+                          }}
                           inputMode="decimal"
                           aria-label={`Item ${idx + 1} price`}
                           aria-invalid={!!errors[`row-${r.id}-price`] || undefined}
@@ -1753,7 +1730,9 @@ function EditTransactionDialog({
       </DialogContent>
       <AddCategoryDialog
         open={addCategoryForRowId !== null}
-        onOpenChange={(o) => { if (!o) setAddCategoryForRowId(null); }}
+        onOpenChange={(o) => {
+          if (!o) setAddCategoryForRowId(null);
+        }}
         onCreated={(name) => {
           if (addCategoryForRowId) updateRow(addCategoryForRowId, { category: name });
           setAddCategoryForRowId(null);

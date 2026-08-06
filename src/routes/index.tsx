@@ -11,10 +11,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
-import { AlertTriangle, ArrowUpRight, Check, FileText, PiggyBank, Plus, Receipt, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Check,
+  FileText,
+  PiggyBank,
+  Plus,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
@@ -25,15 +43,19 @@ import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
 
-
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — Ledgerly Expense Tracker" },
-      { name: "description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      {
+        name: "description",
+        content: "Track itemized purchases, receipts, warranties, income and savings.",
+      },
       { property: "og:title", content: "Dashboard — Ledgerly Expense Tracker" },
-      { property: "og:description", content: "Track itemized purchases, receipts, warranties, income and savings." },
+      {
+        property: "og:description",
+        content: "Track itemized purchases, receipts, warranties, income and savings.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -44,7 +66,6 @@ export const Route = createFileRoute("/")({
 
 import { colorForKey } from "@/lib/colors";
 import { rollUpJoy, sliceColor } from "@/lib/joy";
-
 
 function DashboardPage() {
   const { items: realItems, dismiss } = useTransactions();
@@ -75,16 +96,20 @@ function DashboardPage() {
     // Runs once per mount; status hook re-renders when it resolves.
   }, [tutorialCompleted, openWelcome]);
 
-
-
-
   // Cycle-scoped slices — drive every summary, chart, and alert below.
   const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
-  const cycleIncomes = useMemo(() => incomes.filter((i) => isInCycle(i.date, cycle)), [incomes, cycle]);
-  const cycleSavings = useMemo(() => savings.filter((s) => isInCycle(s.date, cycle)), [savings, cycle]);
+  const cycleIncomes = useMemo(
+    () => incomes.filter((i) => isInCycle(i.date, cycle)),
+    [incomes, cycle],
+  );
+  const cycleSavings = useMemo(
+    () => savings.filter((s) => isInCycle(s.date, cycle)),
+    [savings, cycle],
+  );
 
   const stats = useMemo(() => {
-    const totalExpenses = cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0) + demo.extraSpend;
+    const totalExpenses =
+      cycleItems.reduce((s, t) => s + mainExpensePortion(t), 0) + demo.extraSpend;
     const totalIncome = cycleIncomes.reduce((s, i) => s + i.amount, 0);
     const savingsBalance = cycleSavings.reduce(
       (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
@@ -93,9 +118,16 @@ function DashboardPage() {
     const itemCount = cycleItems.reduce((s, t) => s + t.items.length, 0);
     const receiptsAttached = cycleItems.filter((t) => t.receipt_attached).length;
     const leftToSpend = totalIncome - totalExpenses - savingsBalance;
-    return { totalExpenses, totalIncome, savingsBalance, itemCount, receiptsAttached, leftToSpend, count: cycleItems.length };
+    return {
+      totalExpenses,
+      totalIncome,
+      savingsBalance,
+      itemCount,
+      receiptsAttached,
+      leftToSpend,
+      count: cycleItems.length,
+    };
   }, [cycleItems, cycleIncomes, cycleSavings, demo.extraSpend]);
-
 
   const pocketBalances = useMemo(() => {
     const map = new Map<string, number>();
@@ -110,10 +142,7 @@ function DashboardPage() {
 
   // Exclude pending pre-auth holds from analytics — they're estimates,
   // not real spend, and would double-count once settled.
-  const analyticsItems = useMemo(
-    () => cycleItems.filter((t) => !t.is_pending),
-    [cycleItems],
-  );
+  const analyticsItems = useMemo(() => cycleItems.filter((t) => !t.is_pending), [cycleItems]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -145,7 +174,6 @@ function DashboardPage() {
     [byCategory, prefs.joyCategories],
   );
 
-
   const encouragement = useMemo(
     () =>
       encouragementFor({
@@ -160,7 +188,6 @@ function DashboardPage() {
       }),
     [stats, cycle.end],
   );
-
 
   const byRetailer = useMemo(() => {
     const map = new Map<string, number>();
@@ -182,11 +209,10 @@ function DashboardPage() {
         const days = differenceInCalendarDays(parseISO(t.expiration_date), now);
         return days >= -1; // keep visible 1 day past expiry
       })
-      .sort((a, b) =>
-        parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
+      .sort(
+        (a, b) => parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
       );
   }, [items]);
-
 
   const recent = items.slice(0, 5);
 
@@ -199,33 +225,42 @@ function DashboardPage() {
             {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
-          {encouragement && (
-            <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>
-          )}
+          {encouragement && <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>}
         </div>
       </header>
 
-
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <Card data-tour="left-to-spend" className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
+        <Card
+          data-tour="left-to-spend"
+          className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5"
+        >
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">Left to spend</p>
-              <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}>
+              <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
+                Left to spend
+              </p>
+              <p
+                className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}
+              >
                 {fmt(stats.leftToSpend)}
               </p>
               <p className={`text-sm text-muted-foreground mt-2 ${blur}`}>
-                {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income · {fmt(stats.savingsBalance)} saved
+                {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income ·{" "}
+                {fmt(stats.savingsBalance)} saved
               </p>
               {joySpend > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Including <span className={`font-medium text-foreground ${blur}`}>{fmt(joySpend)}</span> of planned fun — budgeted for, guilt-free.
+                  Including{" "}
+                  <span className={`font-medium text-foreground ${blur}`}>{fmt(joySpend)}</span> of
+                  planned fun — budgeted for, guilt-free.
                 </p>
               )}
-
             </div>
             <Button asChild size="lg" className="shrink-0">
-              <Link to="/new"><Plus className="h-4 w-4" />Log transaction</Link>
+              <Link to="/new">
+                <Plus className="h-4 w-4" />
+                Log transaction
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -239,12 +274,20 @@ function DashboardPage() {
             {pocketBalances.length > 0 ? (
               <ul className="mt-1 space-y-1 overflow-auto pr-1">
                 {pocketBalances.map(([name, bal]) => (
-                  <li key={name} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                  <li
+                    key={name}
+                    className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
+                  >
                     <span className="flex items-center gap-2.5 min-w-0">
-                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                      <span
+                        className="h-2.5 w-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: colorForKey(name) }}
+                      />
                       <span className="font-medium text-foreground text-sm truncate">{name}</span>
                     </span>
-                    <span className={`text-sm font-semibold tabular-nums bg-secondary/40 px-2.5 py-1 rounded-md ${bal < 0 ? "text-destructive" : "text-foreground"}`}>
+                    <span
+                      className={`text-sm font-semibold tabular-nums bg-secondary/40 px-2.5 py-1 rounded-md ${bal < 0 ? "text-destructive" : "text-foreground"}`}
+                    >
                       {fmt(bal)}
                     </span>
                   </li>
@@ -258,18 +301,28 @@ function DashboardPage() {
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 mb-6">
-        <StatCard label="Total expenses" value={fmt(stats.totalExpenses)} icon={<ArrowUpRight className="h-4 w-4" />} />
-        <StatCard label="Total income" value={fmt(stats.totalIncome)} icon={<TrendingUp className="h-4 w-4" />} />
-        <StatCard label="Items tracked" value={String(stats.itemCount)} icon={<Receipt className="h-4 w-4" />} />
+        <StatCard
+          label="Total expenses"
+          value={fmt(stats.totalExpenses)}
+          icon={<ArrowUpRight className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Total income"
+          value={fmt(stats.totalIncome)}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Items tracked"
+          value={String(stats.itemCount)}
+          icon={<Receipt className="h-4 w-4" />}
+        />
       </div>
-
 
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Where your money went</CardTitle>
             <span className="text-xs text-muted-foreground">This cycle</span>
-
           </CardHeader>
           <CardContent>
             {prefs.hideCategoryChart ? (
@@ -279,12 +332,18 @@ function DashboardPage() {
             ) : chartCategories.length === 0 ? (
               <EmptyChart />
             ) : (
-
               <div className="grid md:grid-cols-2 gap-4 items-center">
                 <div className="h-[240px]">
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={chartCategories} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
+                      <Pie
+                        data={chartCategories}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={60}
+                        outerRadius={95}
+                        strokeWidth={0}
+                      >
                         {chartCategories.map((c) => (
                           <Cell key={c.name} fill={sliceColor(c.name, colorForKey)} />
                         ))}
@@ -297,7 +356,10 @@ function DashboardPage() {
                   {chartCategories.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: sliceColor(c.name, colorForKey) }} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ backgroundColor: sliceColor(c.name, colorForKey) }}
+                        />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>
@@ -305,7 +367,6 @@ function DashboardPage() {
                   ))}
                 </ul>
               </div>
-
             )}
           </CardContent>
         </Card>
@@ -339,19 +400,37 @@ function DashboardPage() {
         </Card>
       </div>
 
-
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Top retailers</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Top retailers</CardTitle>
+          </CardHeader>
           <CardContent>
-            {byRetailer.length === 0 ? <EmptyChart /> : (
+            {byRetailer.length === 0 ? (
+              <EmptyChart />
+            ) : (
               <div className="h-[260px]">
                 <ResponsiveContainer>
                   <BarChart data={byRetailer} margin={{ left: -10, right: 8, top: 8, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip {...tooltipStyle} formatter={(v: number) => fmt(v)} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="var(--muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      {...tooltipStyle}
+                      formatter={(v: number) => fmt(v)}
+                      cursor={{ fill: "var(--muted)", opacity: 0.4 }}
+                    />
                     <Bar dataKey="total" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -363,7 +442,9 @@ function DashboardPage() {
         <Card data-tour="recent">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Recent</CardTitle>
-            <Link to="/history" className="text-xs text-primary hover:underline">View all</Link>
+            <Link to="/history" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
           </CardHeader>
           <CardContent>
             {recent.length === 0 ? (
@@ -373,23 +454,38 @@ function DashboardPage() {
                 {recent.map((t) => {
                   const expanded = demo.expandedTxnId === t.id;
                   return (
-                    <li key={t.id} className={`rounded-lg ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""}`}>
+                    <li
+                      key={t.id}
+                      className={`rounded-lg ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""}`}
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{t.retailer}</p>
-                          <p className="text-xs text-muted-foreground">{format(parseISO(t.date), "MMM d")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(parseISO(t.date), "MMM d")} · {t.items.length} item
+                            {t.items.length !== 1 ? "s" : ""}
+                          </p>
                         </div>
-                        <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
+                        <span className="text-sm font-medium tabular-nums">
+                          {fmt(t.total_amount)}
+                        </span>
                       </div>
                       {expanded && (
                         <ul className="mt-2 space-y-1 border-t border-border/40 pt-2">
                           {t.items.map((it) => (
-                            <li key={it.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                            <li
+                              key={it.id}
+                              className="flex items-center justify-between text-xs text-muted-foreground"
+                            >
                               <span className="truncate">
                                 {it.item_name}
-                                <span className="ml-1.5 text-[10px] uppercase tracking-wide opacity-70">{it.category}</span>
+                                <span className="ml-1.5 text-[10px] uppercase tracking-wide opacity-70">
+                                  {it.category}
+                                </span>
                               </span>
-                              <span className="tabular-nums">{fmt(it.price * (it.quantity ?? 1))}</span>
+                              <span className="tabular-nums">
+                                {fmt(it.price * (it.quantity ?? 1))}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -406,28 +502,28 @@ function DashboardPage() {
   );
 }
 
-function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss: () => void; highlighted?: boolean }) {
+function AlertRow({
+  txn,
+  onDismiss,
+  highlighted,
+}: {
+  txn: Transaction;
+  onDismiss: () => void;
+  highlighted?: boolean;
+}) {
   const type = (txn.protection_type as ProtectionType) ?? "Return Window";
   const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
 
-  const itemSummary =
-    txn.items.length === 1
-      ? txn.items[0].item_name
-      : `${txn.items.length} items`;
+  const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
 
   const chipClass =
     status === "expired"
       ? "bg-destructive/15 text-destructive border-destructive/30"
       : status === "warn"
-      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+        : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
 
-  const chipLabel =
-    status === "expired"
-      ? "Expired"
-      : daysLeft === 0
-      ? "Today"
-      : `${daysLeft}d`;
+  const chipLabel = status === "expired" ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`;
 
   const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
 
@@ -435,25 +531,37 @@ function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss
     const { data, error } = await supabase.storage
       .from("receipts")
       .createSignedUrl(txn.receipt_location, 3600);
-    if (error || !data) { toast.error("Could not open receipt"); return; }
+    if (error || !data) {
+      toast.error("Could not open receipt");
+      return;
+    }
     window.open(data.signedUrl, "_blank", "noopener");
   }
 
   return (
-    <li className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}>
+    <li
+      className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <p className="text-sm font-medium truncate">{txn.retailer}</p>
-          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
+          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">
+            {type}
+          </Badge>
           {status === "expired" && (
-            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>
+            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">
+              Expired
+            </Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground truncate mt-0.5">
-          {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
+          {itemSummary} · {fmt(txn.total_amount)} · expires{" "}
+          {format(parseISO(txn.expiration_date!), "MMM d")}
         </p>
       </div>
-      <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>
+      <span
+        className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
+      >
         {chipLabel}
       </span>
       {canOpenReceipt && (
@@ -480,9 +588,12 @@ function AlertRow({ txn, onDismiss, highlighted }: { txn: Transaction; onDismiss
   );
 }
 
-
 function StatCard({
-  label, value, icon, accent, tone,
+  label,
+  value,
+  icon,
+  accent,
+  tone,
 }: {
   label: string;
   value: string;
@@ -499,14 +610,22 @@ function StatCard({
           <span className="text-xs uppercase tracking-wider">{label}</span>
           <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>
         </div>
-        <p className={`text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
+        <p
+          className={`text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}
+        >
+          {value}
+        </p>
       </CardContent>
     </Card>
   );
 }
 
 function EmptyChart() {
-  return <div className="h-[240px] grid place-items-center text-sm text-muted-foreground">Add a transaction to see analytics.</div>;
+  return (
+    <div className="h-[240px] grid place-items-center text-sm text-muted-foreground">
+      Add a transaction to see analytics.
+    </div>
+  );
 }
 
 const tooltipStyle = {

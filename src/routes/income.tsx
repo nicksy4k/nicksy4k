@@ -18,12 +18,33 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectSeparator,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, TrendingUp, Split, PlusCircle, Repeat, Pause, Play, Pencil, Zap } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  TrendingUp,
+  Split,
+  PlusCircle,
+  Repeat,
+  Pause,
+  Play,
+  Pencil,
+  Zap,
+} from "lucide-react";
 import { colorForKey } from "@/lib/colors";
 import { isCarryoverIncome } from "@/lib/carryover";
 import { format, parseISO } from "date-fns";
@@ -33,9 +54,15 @@ export const Route = createFileRoute("/income")({
   head: () => ({
     meta: [
       { title: "Income — Ledgerly" },
-      { name: "description", content: "Log income and route it into pockets or your main balance." },
+      {
+        name: "description",
+        content: "Log income and route it into pockets or your main balance.",
+      },
       { property: "og:title", content: "Income — Ledgerly" },
-      { property: "og:description", content: "Log income and route it into pockets or your main balance." },
+      {
+        property: "og:description",
+        content: "Log income and route it into pockets or your main balance.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -48,7 +75,12 @@ function IncomePage() {
   const { items, add, remove } = useIncomes();
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
-  const { items: recurring, add: addRecurring, update: updateRecurring, remove: removeRecurring } = useRecurringIncomes();
+  const {
+    items: recurring,
+    add: addRecurring,
+    update: updateRecurring,
+    remove: removeRecurring,
+  } = useRecurringIncomes();
   const cycle = useActiveCycle();
   const qc = useQueryClient();
 
@@ -100,7 +132,9 @@ function IncomePage() {
     }
     try {
       const cleanAllocations: RecurringIncomeAllocation[] = recAllocations
-        .filter((a) => a.pocket.trim().length > 0 && (a.kind === "cover_commitments" || a.amount > 0))
+        .filter(
+          (a) => a.pocket.trim().length > 0 && (a.kind === "cover_commitments" || a.amount > 0),
+        )
         .map((a, i) => ({ ...a, pocket: a.pocket.trim(), order: i }));
       const payload = {
         source: recSource.trim(),
@@ -189,9 +223,7 @@ function IncomePage() {
 
   const total = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
   const thisCycle = useMemo(() => {
-    return items
-      .filter((i) => isInCycle(i.date, cycle))
-      .reduce((s, i) => s + i.amount, 0);
+    return items.filter((i) => isInCycle(i.date, cycle)).reduce((s, i) => s + i.amount, 0);
   }, [items, cycle]);
 
   // Match savings deposits back to their originating income so the history
@@ -226,7 +258,10 @@ function IncomePage() {
       if (consumed.has(key)) continue;
       const b = buckets.get(key);
       if (b && b.length > 0) {
-        out.set(i.id, b.map((x) => ({ account: x.account, amount: x.amount })));
+        out.set(
+          i.id,
+          b.map((x) => ({ account: x.account, amount: x.amount })),
+        );
         consumed.add(key);
       }
     }
@@ -242,10 +277,7 @@ function IncomePage() {
     setSplits((s) => {
       const used = s.reduce((n, x) => n + (parseFloat(x.amount) || 0), 0);
       const left = +(totalAmt - used).toFixed(2);
-      return [
-        ...s,
-        { id: crypto.randomUUID(), pocket: "", amount: left > 0 ? String(left) : "" },
-      ];
+      return [...s, { id: crypto.randomUUID(), pocket: "", amount: left > 0 ? String(left) : "" }];
     });
   }
   function updateSplit(id: string, patch: Partial<Split>) {
@@ -313,10 +345,15 @@ function IncomePage() {
         });
       }
 
-      setSource(""); setAmount(""); setNotes("");
-      setSplits([]); setDraftPockets([]);
+      setSource("");
+      setAmount("");
+      setNotes("");
+      setSplits([]);
+      setDraftPockets([]);
       if (validSplits.length > 0) {
-        toast.success(`Income added · ${fmt(sum)} routed to ${validSplits.length} pocket${validSplits.length === 1 ? "" : "s"}, ${fmt(amt - sum)} to main`);
+        toast.success(
+          `Income added · ${fmt(sum)} routed to ${validSplits.length} pocket${validSplits.length === 1 ? "" : "s"}, ${fmt(amt - sum)} to main`,
+        );
       } else {
         toast.success("Income added");
       }
@@ -334,30 +371,55 @@ function IncomePage() {
 
       {/* Add income — at the very top for quick mobile entry */}
       <Card className="mb-6">
-        <CardHeader><CardTitle>Add income</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Add income</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-            <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={source} onChange={(e) => setSource(e.target.value)} /></Field>
+            <Field label="Date">
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+            <Field label="Source">
+              <Input
+                placeholder="e.g. Employer Ltd."
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+              />
+            </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+            <Field label="Amount (£)">
+              <Input
+                inputMode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </Field>
             <Field label="Category">
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {categories.length === 0 ? (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
                       No categories yet — add one in Settings.
                     </div>
                   ) : (
-                    sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
+                    sortLabels(categories).map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))
                   )}
                 </SelectContent>
               </Select>
             </Field>
           </div>
-          <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <Field label="Notes (optional)">
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </Field>
 
           {/* Split income */}
           <Separator />
@@ -397,12 +459,17 @@ function IncomePage() {
                       </SelectTrigger>
                       <SelectContent>
                         {pocketNames.length === 0 ? (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">No pockets yet</div>
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                            No pockets yet
+                          </div>
                         ) : (
                           pocketNames.map((p) => (
                             <SelectItem key={p} value={p}>
                               <span className="inline-flex items-center gap-2">
-                                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(p) }} />
+                                <span
+                                  className="h-2.5 w-2.5 rounded-sm"
+                                  style={{ backgroundColor: colorForKey(p) }}
+                                />
                                 {p}
                               </span>
                             </SelectItem>
@@ -423,7 +490,12 @@ function IncomePage() {
                       value={s.amount}
                       onChange={(e) => updateSplit(s.id, { amount: e.target.value })}
                     />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeSplit(s.id)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSplit(s.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -431,34 +503,51 @@ function IncomePage() {
 
                 <div className="flex items-center justify-between text-xs pt-1">
                   <span className="text-muted-foreground">Allocated</span>
-                  <span className="tabular-nums font-medium">{fmt(splitSum)} / {fmt(totalAmt)}</span>
+                  <span className="tabular-nums font-medium">
+                    {fmt(splitSum)} / {fmt(totalAmt)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Remainder to main balance</span>
-                  <span className={`tabular-nums font-semibold ${overAllocated ? "text-destructive" : remainder === 0 ? "text-muted-foreground" : "text-primary"}`}>
+                  <span
+                    className={`tabular-nums font-semibold ${overAllocated ? "text-destructive" : remainder === 0 ? "text-muted-foreground" : "text-primary"}`}
+                  >
                     {fmt(Math.max(0, remainder))}
                   </span>
                 </div>
                 {overAllocated && (
-                  <p className="text-xs text-destructive">Splits exceed the income amount by {fmt(splitSum - totalAmt)}.</p>
+                  <p className="text-xs text-destructive">
+                    Splits exceed the income amount by {fmt(splitSum - totalAmt)}.
+                  </p>
                 )}
               </div>
             )}
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={save} disabled={overAllocated}><Plus className="h-4 w-4" /> Add income</Button>
+            <Button onClick={save} disabled={overAllocated}>
+              <Plus className="h-4 w-4" /> Add income
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Inline new pocket dialog */}
-      <Dialog open={newPocketOpenFor !== null} onOpenChange={(o) => { if (!o) { setNewPocketOpenFor(null); setNewPocketName(""); } }}>
+      <Dialog
+        open={newPocketOpenFor !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setNewPocketOpenFor(null);
+            setNewPocketName("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create new pocket</DialogTitle>
             <DialogDescription>
-              Pockets are savings buckets. The split amount is deposited here when you save the income.
+              Pockets are savings buckets. The split amount is deposited here when you save the
+              income.
             </DialogDescription>
           </DialogHeader>
           <Field label="Pocket name">
@@ -467,12 +556,27 @@ function IncomePage() {
               placeholder="e.g. Amazon Credit"
               value={newPocketName}
               onChange={(e) => setNewPocketName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmNewPocket(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmNewPocket();
+                }
+              }}
             />
           </Field>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => { setNewPocketOpenFor(null); setNewPocketName(""); }}>Cancel</Button>
-            <Button onClick={confirmNewPocket} disabled={!newPocketName.trim()}>Create & select</Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setNewPocketOpenFor(null);
+                setNewPocketName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmNewPocket} disabled={!newPocketName.trim()}>
+              Create & select
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -486,7 +590,12 @@ function IncomePage() {
           </div>
           <div className="flex items-center gap-2">
             {recurring.length > 0 && (
-              <Button variant="outline" size="sm" onClick={runGenerationNow} title="Post any templates due today">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={runGenerationNow}
+                title="Post any templates due today"
+              >
                 <Zap className="h-4 w-4" /> Run due
               </Button>
             )}
@@ -498,7 +607,8 @@ function IncomePage() {
         <CardContent>
           {recurring.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Set up a template and Ledgerly will post income entries automatically on their next date.
+              Set up a template and Ledgerly will post income entries automatically on their next
+              date.
             </p>
           ) : (
             <ul className="divide-y divide-border">
@@ -507,13 +617,22 @@ function IncomePage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium truncate">{r.source}</p>
-                      <Badge variant="secondary" className="font-normal">{r.category}</Badge>
-                      <Badge variant="outline" className="font-normal capitalize">{cadenceLabel(r.cadence)}</Badge>
-                      {!r.active && <Badge variant="outline" className="font-normal text-muted-foreground">Paused</Badge>}
+                      <Badge variant="secondary" className="font-normal">
+                        {r.category}
+                      </Badge>
+                      <Badge variant="outline" className="font-normal capitalize">
+                        {cadenceLabel(r.cadence)}
+                      </Badge>
+                      {!r.active && (
+                        <Badge variant="outline" className="font-normal text-muted-foreground">
+                          Paused
+                        </Badge>
+                      )}
                       {(r.allocations ?? []).length > 0 && (
                         <Badge variant="outline" className="font-normal">
                           <Split className="h-3 w-3 mr-1" />
-                          {(r.allocations ?? []).length} pocket{(r.allocations ?? []).length === 1 ? "" : "s"}
+                          {(r.allocations ?? []).length} pocket
+                          {(r.allocations ?? []).length === 1 ? "" : "s"}
                         </Badge>
                       )}
                     </div>
@@ -523,34 +642,57 @@ function IncomePage() {
                     </p>
                     {(r.allocations ?? []).length > 0 && (
                       <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                        {(r.allocations ?? []).slice().sort((a, b) => a.order - b.order).map((a) =>
-                          a.kind === "cover_commitments"
-                            ? `${a.pocket} (auto)`
-                            : `${fmt(a.amount)} → ${a.pocket}`
-                        ).join(" · ")}
+                        {(r.allocations ?? [])
+                          .slice()
+                          .sort((a, b) => a.order - b.order)
+                          .map((a) =>
+                            a.kind === "cover_commitments"
+                              ? `${a.pocket} (auto)`
+                              : `${fmt(a.amount)} → ${a.pocket}`,
+                          )
+                          .join(" · ")}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-semibold tabular-nums text-primary mr-1">{fmt(r.amount)}</span>
-                    <Button variant="ghost" size="icon" onClick={() => postRecurringNow(r)} title="Post now">
+                    <span className="text-sm font-semibold tabular-nums text-primary mr-1">
+                      {fmt(r.amount)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => postRecurringNow(r)}
+                      title="Post now"
+                    >
                       <Zap className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateRecurring(r.id, { active: !r.active }).then(() => toast.success(r.active ? "Paused" : "Resumed"))}
+                      onClick={() =>
+                        updateRecurring(r.id, { active: !r.active }).then(() =>
+                          toast.success(r.active ? "Paused" : "Resumed"),
+                        )
+                      }
                       title={r.active ? "Pause" : "Resume"}
                     >
                       {r.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditRecurring(r)} title="Edit">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditRecurring(r)}
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { removeRecurring(r.id); toast.success("Removed"); }}
+                      onClick={() => {
+                        removeRecurring(r.id);
+                        toast.success("Removed");
+                      }}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -567,34 +709,58 @@ function IncomePage() {
       <Dialog open={recOpen} onOpenChange={setRecOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{recEditing ? "Edit recurring income" : "New recurring income"}</DialogTitle>
+            <DialogTitle>
+              {recEditing ? "Edit recurring income" : "New recurring income"}
+            </DialogTitle>
             <DialogDescription>
-              Ledgerly will auto-post an income entry on the next date and roll it forward by the chosen cadence.
+              Ledgerly will auto-post an income entry on the next date and roll it forward by the
+              chosen cadence.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Source"><Input placeholder="e.g. Employer Ltd." value={recSource} onChange={(e) => setRecSource(e.target.value)} /></Field>
-              <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={recAmount} onChange={(e) => setRecAmount(e.target.value)} /></Field>
+              <Field label="Source">
+                <Input
+                  placeholder="e.g. Employer Ltd."
+                  value={recSource}
+                  onChange={(e) => setRecSource(e.target.value)}
+                />
+              </Field>
+              <Field label="Amount (£)">
+                <Input
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={recAmount}
+                  onChange={(e) => setRecAmount(e.target.value)}
+                />
+              </Field>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Category">
                 <Select value={recCategory} onValueChange={setRecCategory}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {categories.length === 0 ? (
                       <div className="px-2 py-1.5 text-xs text-muted-foreground">
                         No categories yet — add one in Settings.
                       </div>
                     ) : (
-                      sortLabels(categories).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)
+                      sortLabels(categories).map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
               </Field>
               <Field label="Cadence">
                 <Select value={recCadence} onValueChange={(v) => setRecCadence(v as IncomeCadence)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="weekly">Weekly</SelectItem>
                     <SelectItem value="fortnightly">Fortnightly (every 2 weeks)</SelectItem>
@@ -605,9 +771,15 @@ function IncomePage() {
               </Field>
             </div>
             <Field label={recEditing ? "Next post date" : "First post date"}>
-              <Input type="date" value={recNextDate} onChange={(e) => setRecNextDate(e.target.value)} />
+              <Input
+                type="date"
+                value={recNextDate}
+                onChange={(e) => setRecNextDate(e.target.value)}
+              />
             </Field>
-            <Field label="Notes (optional)"><Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} /></Field>
+            <Field label="Notes (optional)">
+              <Textarea rows={2} value={recNotes} onChange={(e) => setRecNotes(e.target.value)} />
+            </Field>
 
             <Separator />
             <RecurringAllocationsEditor
@@ -620,18 +792,21 @@ function IncomePage() {
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Active</p>
-                <p className="text-xs text-muted-foreground">Pause to stop auto-posting without deleting.</p>
+                <p className="text-xs text-muted-foreground">
+                  Pause to stop auto-posting without deleting.
+                </p>
               </div>
               <Switch checked={recActive} onCheckedChange={setRecActive} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRecOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setRecOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={saveRecurring}>{recEditing ? "Save changes" : "Add recurring"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
@@ -646,7 +821,9 @@ function IncomePage() {
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {format(cycle.start, "MMM d")} – {format(cycle.end, "MMM d, yyyy")}
                   {cycle.isOverridden && <span className="ml-1 text-amber-600">· override</span>}
-                  <span className="ml-1">· {cycle.type === "monthly" ? "monthly" : "4-weekly"}</span>
+                  <span className="ml-1">
+                    · {cycle.type === "monthly" ? "monthly" : "4-weekly"}
+                  </span>
                 </p>
               </div>
             </div>
@@ -667,10 +844,14 @@ function IncomePage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Income history</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Income history</CardTitle>
+        </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No income recorded yet.</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              No income recorded yet.
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {items.map((i) => {
@@ -678,46 +859,77 @@ function IncomePage() {
                 const routedSum = routing.reduce((s, r) => s + r.amount, 0);
                 const mainRemainder = +(i.amount - routedSum).toFixed(2);
                 return (
-                <li key={i.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium truncate">{i.source}</p>
-                      <Badge variant="secondary" className="font-normal">{i.category}</Badge>
-                      {isCarryoverIncome(i) && (
-                        <Badge variant="outline" className={i.amount < 0 ? "border-red-400 text-red-600" : "border-emerald-400 text-emerald-700"}>
-                          {i.amount < 0 ? "Carryover · overspend" : "Carryover"}
+                  <li key={i.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium truncate">{i.source}</p>
+                        <Badge variant="secondary" className="font-normal">
+                          {i.category}
                         </Badge>
+                        {isCarryoverIncome(i) && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              i.amount < 0
+                                ? "border-red-400 text-red-600"
+                                : "border-emerald-400 text-emerald-700"
+                            }
+                          >
+                            {i.amount < 0 ? "Carryover · overspend" : "Carryover"}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(parseISO(i.date), "MMM d, yyyy")}
+                        {i.notes ? ` · ${i.notes}` : ""}
+                      </p>
+                      {routing.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap">
+                          <span className="uppercase tracking-wider text-[10px]">Routed to</span>
+                          {routing.map((r, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1">
+                              <span
+                                className="h-2 w-2 rounded-sm"
+                                style={{ backgroundColor: colorForKey(r.account) }}
+                              />
+                              <span>{r.account}</span>
+                              <span className="tabular-nums font-medium text-foreground">
+                                {fmt(r.amount)}
+                              </span>
+                            </span>
+                          ))}
+                          {mainRemainder > 0.005 && (
+                            <span className="inline-flex items-center gap-1">
+                              <span>· Main</span>
+                              <span className="tabular-nums font-medium text-foreground">
+                                {fmt(mainRemainder)}
+                              </span>
+                            </span>
+                          )}
+                        </p>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {format(parseISO(i.date), "MMM d, yyyy")}{i.notes ? ` · ${i.notes}` : ""}
-                    </p>
-                    {routing.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap">
-                        <span className="uppercase tracking-wider text-[10px]">Routed to</span>
-                        {routing.map((r, idx) => (
-                          <span key={idx} className="inline-flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: colorForKey(r.account) }} />
-                            <span>{r.account}</span>
-                            <span className="tabular-nums font-medium text-foreground">{fmt(r.amount)}</span>
-                          </span>
-                        ))}
-                        {mainRemainder > 0.005 && (
-                          <span className="inline-flex items-center gap-1">
-                            <span>· Main</span>
-                            <span className="tabular-nums font-medium text-foreground">{fmt(mainRemainder)}</span>
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={"text-sm font-semibold tabular-nums " + (i.amount < 0 ? "text-red-600" : "text-primary")}>{fmt(i.amount)}</span>
-                    <Button variant="ghost" size="icon" onClick={() => { remove(i.id); toast.success("Removed"); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={
+                          "text-sm font-semibold tabular-nums " +
+                          (i.amount < 0 ? "text-red-600" : "text-primary")
+                        }
+                      >
+                        {fmt(i.amount)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          remove(i.id);
+                          toast.success("Removed");
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
                 );
               })}
             </ul>
@@ -766,7 +978,13 @@ function RecurringAllocationsEditor({
     const left = Math.max(0, +(amount - usedFixed).toFixed(2));
     onChange([
       ...allocations,
-      { id: crypto.randomUUID(), pocket: "", kind: "fixed", amount: left, order: allocations.length },
+      {
+        id: crypto.randomUUID(),
+        pocket: "",
+        kind: "fixed",
+        amount: left,
+        order: allocations.length,
+      },
     ]);
   };
 
@@ -780,7 +998,10 @@ function RecurringAllocationsEditor({
       previewParts.push(`${a.pocket} (auto)`);
       continue;
     }
-    if (remaining <= 0.0001) { clipped = true; break; }
+    if (remaining <= 0.0001) {
+      clipped = true;
+      break;
+    }
     const give = Math.min(a.amount, remaining);
     if (give < a.amount - 0.0001) clipped = true;
     if (give > 0) previewParts.push(`${fmt(give)} → ${a.pocket}`);
@@ -797,7 +1018,8 @@ function RecurringAllocationsEditor({
             <p className="text-sm font-medium">Auto-allocate to pockets</p>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Deposits happen automatically each time this template posts. Any remainder stays in main.
+            Deposits happen automatically each time this template posts. Any remainder stays in
+            main.
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={add}>
@@ -822,7 +1044,7 @@ function RecurringAllocationsEditor({
                     inputMode="decimal"
                     placeholder={isCover ? "auto" : "0.00"}
                     disabled={isCover}
-                    value={isCover ? "" : (a.amount ? String(a.amount) : "")}
+                    value={isCover ? "" : a.amount ? String(a.amount) : ""}
                     onChange={(e) => update(a.id, { amount: parseFloat(e.target.value) || 0 })}
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => remove(a.id)}>
@@ -834,7 +1056,9 @@ function RecurringAllocationsEditor({
                     type="checkbox"
                     className="h-3.5 w-3.5"
                     checked={isCover}
-                    onChange={(e) => update(a.id, { kind: e.target.checked ? "cover_commitments" : "fixed" })}
+                    onChange={(e) =>
+                      update(a.id, { kind: e.target.checked ? "cover_commitments" : "fixed" })
+                    }
                   />
                   Cover commitments due before next payday
                 </label>
@@ -842,16 +1066,20 @@ function RecurringAllocationsEditor({
             );
           })}
           <datalist id="ledgerly-pocket-list">
-            {pocketOptions.map((p) => <option key={p} value={p} />)}
+            {pocketOptions.map((p) => (
+              <option key={p} value={p} />
+            ))}
           </datalist>
           {amount > 0 && previewParts.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Preview: {previewParts.join(" · ")}{mainStr ? ` · ${mainStr}` : ""}
+              Preview: {previewParts.join(" · ")}
+              {mainStr ? ` · ${mainStr}` : ""}
             </p>
           )}
           {clipped && (
             <p className="text-xs text-amber-600">
-              Income amount won't cover all fixed allocations — later pockets will be partially funded or skipped.
+              Income amount won't cover all fixed allocations — later pockets will be partially
+              funded or skipped.
             </p>
           )}
         </div>
@@ -859,4 +1087,3 @@ function RecurringAllocationsEditor({
     </div>
   );
 }
-

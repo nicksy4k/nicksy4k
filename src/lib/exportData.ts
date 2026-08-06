@@ -32,9 +32,7 @@ function toCsv(rows: Row[]): string {
     }, new Set<string>()),
   );
   const header = cols.join(",");
-  const body = rows
-    .map((row) => cols.map((c) => csvEscape(row[c])).join(","))
-    .join("\n");
+  const body = rows.map((row) => cols.map((c) => csvEscape(row[c])).join(",")).join("\n");
   return `${header}\n${body}\n`;
 }
 
@@ -73,11 +71,7 @@ export async function exportUserData(onProgress?: ExportProgress): Promise<void>
 
   zip.file(
     "ledgerly-export.json",
-    JSON.stringify(
-      { exportedAt: new Date().toISOString(), tables: all },
-      null,
-      2,
-    ),
+    JSON.stringify({ exportedAt: new Date().toISOString(), tables: all }, null, 2),
   );
 
   // Collect receipt paths from transactions + savings (savings.notes may reference receipts).
@@ -88,7 +82,9 @@ export async function exportUserData(onProgress?: ExportProgress): Promise<void>
   }
 
   if (receiptPaths.size > 0) {
-    onProgress?.(`Downloading ${receiptPaths.size} receipt file${receiptPaths.size === 1 ? "" : "s"}…`);
+    onProgress?.(
+      `Downloading ${receiptPaths.size} receipt file${receiptPaths.size === 1 ? "" : "s"}…`,
+    );
     let ok = 0;
     let fail = 0;
     for (const path of receiptPaths) {
@@ -104,7 +100,9 @@ export async function exportUserData(onProgress?: ExportProgress): Promise<void>
         zip.file(`receipts/${cleanPath}`, data);
         ok++;
       } catch (err) {
-        manifest.push(`[warn] receipt "${path}": ${err instanceof Error ? err.message : "download failed"}`);
+        manifest.push(
+          `[warn] receipt "${path}": ${err instanceof Error ? err.message : "download failed"}`,
+        );
         fail++;
       }
     }

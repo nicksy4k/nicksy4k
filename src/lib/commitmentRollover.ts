@@ -57,10 +57,7 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
 
   // Pull EVERY commitment for the user — no status / due-date filter so we
   // don't accidentally update only a subset of items.
-  const { data, error } = await supabase
-    .from("commitments")
-    .select("*")
-    .eq("user_id", u.user.id);
+  const { data, error } = await supabase.from("commitments").select("*").eq("user_id", u.user.id);
   if (error) throw error;
 
   const rows = (data ?? []) as unknown as Commitment[];
@@ -70,11 +67,7 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
       const patch: Partial<Commitment> = {};
 
       if (c.next_due_date && c.next_due_date < cycle.startISO) {
-        patch.next_due_date = rollDueDateForward(
-          c.next_due_date,
-          cycle.startISO,
-          cycle,
-        );
+        patch.next_due_date = rollDueDateForward(c.next_due_date, cycle.startISO, cycle);
         patch.prev_due_date = c.next_due_date;
       }
 
@@ -84,9 +77,7 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
       // their paid flag so early payments aren't silently undone.
       const effectiveDue = patch.next_due_date ?? c.next_due_date;
       const dueInsideNewCycle =
-        !!effectiveDue &&
-        effectiveDue >= cycle.startISO &&
-        effectiveDue <= cycle.endISO;
+        !!effectiveDue && effectiveDue >= cycle.startISO && effectiveDue <= cycle.endISO;
       const rolledForward = !!patch.next_due_date;
 
       if (c.paid && (rolledForward || dueInsideNewCycle)) {
@@ -96,10 +87,7 @@ async function rolloverAllCommitments(cycle: ActiveCycle) {
 
       if (Object.keys(patch).length === 0) return;
 
-      const { error: upErr } = await supabase
-        .from("commitments")
-        .update(patch)
-        .eq("id", c.id);
+      const { error: upErr } = await supabase.from("commitments").update(patch).eq("id", c.id);
       if (upErr) console.error("Rollover update failed for", c.id, upErr);
     }),
   );

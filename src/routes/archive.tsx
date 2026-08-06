@@ -2,20 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Archive, FileText, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 
 import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
-import {
-  useCycleSettings,
-  listRecentCycles,
-  isInCycle,
-  type ActiveCycle,
-} from "@/lib/cycle";
+import { useCycleSettings, listRecentCycles, isInCycle, type ActiveCycle } from "@/lib/cycle";
 import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,16 +17,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/archive")({
   head: () => ({
     meta: [
       { title: "Past Cycles — Ledgerly" },
-      { name: "description", content: "Review previous cycle performance and historical spending." },
+      {
+        name: "description",
+        content: "Review previous cycle performance and historical spending.",
+      },
       { property: "og:title", content: "Past Cycles — Ledgerly" },
-      { property: "og:description", content: "Review previous cycle performance and historical spending." },
+      {
+        property: "og:description",
+        content: "Review previous cycle performance and historical spending.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -50,8 +53,8 @@ function ArchivePage() {
   const cycles = useMemo(() => listRecentCycles(settings, count), [settings, count]);
 
   // Default to the cycle BEFORE the active one, if it exists.
-  const [selectedISO, setSelectedISO] = useState<string>(() =>
-    (cycles[1] ?? cycles[0])?.startISO ?? "",
+  const [selectedISO, setSelectedISO] = useState<string>(
+    () => (cycles[1] ?? cycles[0])?.startISO ?? "",
   );
   const selected = useMemo(
     () => cycles.find((c) => c.startISO === selectedISO) ?? cycles[0],
@@ -77,26 +80,28 @@ function ArchivePage() {
               Cycle
             </label>
             <Select value={selectedISO} onValueChange={setSelectedISO}>
-              <SelectTrigger><SelectValue placeholder="Pick a cycle" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Pick a cycle" />
+              </SelectTrigger>
               <SelectContent>
                 {cycles.map((c, i) => (
                   <SelectItem key={c.startISO} value={c.startISO}>
-                    {labelFor(c)}{i === 0 ? " · current" : ""}
+                    {labelFor(c)}
+                    {i === 0 ? " · current" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setCount((n) => n + PAGE)}
-          >
+          <Button variant="outline" onClick={() => setCount((n) => n + PAGE)}>
             Load older
           </Button>
         </CardContent>
       </Card>
 
-      {selected ? <CycleSnapshot cycle={selected} /> : (
+      {selected ? (
+        <CycleSnapshot cycle={selected} />
+      ) : (
         <p className="text-sm text-muted-foreground">No cycles to show.</p>
       )}
     </div>
@@ -115,10 +120,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
   const { items: savings } = useSavings();
   const { items: commitments } = useCommitments();
 
-  const cycleTxns = useMemo(
-    () => txns.filter((t) => isInCycle(t.date, cycle)),
-    [txns, cycle],
-  );
+  const cycleTxns = useMemo(() => txns.filter((t) => isInCycle(t.date, cycle)), [txns, cycle]);
   const cycleIncomes = useMemo(
     () => incomes.filter((i) => isInCycle(i.date, cycle)),
     [incomes, cycle],
@@ -147,9 +149,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
     cycleTxns.forEach((t) =>
-      t.items.forEach((it) =>
-        map.set(it.category, (map.get(it.category) ?? 0) + it.price),
-      ),
+      t.items.forEach((it) => map.set(it.category, (map.get(it.category) ?? 0) + it.price)),
     );
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
@@ -173,10 +173,22 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
       </p>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-5 mb-6">
-        <Stat label="Spent" value={fmt(stats.totalExpenses)} icon={<TrendingDown className="h-4 w-4" />} />
-        <Stat label="Income" value={fmt(stats.totalIncome)} icon={<TrendingUp className="h-4 w-4" />} />
+        <Stat
+          label="Spent"
+          value={fmt(stats.totalExpenses)}
+          icon={<TrendingDown className="h-4 w-4" />}
+        />
+        <Stat
+          label="Income"
+          value={fmt(stats.totalIncome)}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
         <Stat label="Saved (net)" value={fmt(stats.savingsBalance)} />
-        <Stat label="Items" value={String(stats.itemCount)} icon={<Receipt className="h-4 w-4" />} />
+        <Stat
+          label="Items"
+          value={String(stats.itemCount)}
+          icon={<Receipt className="h-4 w-4" />}
+        />
         <Stat
           label="Left to spend"
           value={fmt(stats.leftToSpend)}
@@ -187,16 +199,27 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
 
       <div className="grid gap-6 lg:grid-cols-3 mb-6">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Spending by category</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Spending by category</CardTitle>
+          </CardHeader>
           <CardContent>
             {byCategory.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">No transactions in this cycle.</p>
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                No transactions in this cycle.
+              </p>
             ) : (
               <div className="grid md:grid-cols-2 gap-4 items-center">
                 <div className="h-[240px]">
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={byCategory} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} strokeWidth={0}>
+                      <Pie
+                        data={byCategory}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={60}
+                        outerRadius={95}
+                        strokeWidth={0}
+                      >
                         {byCategory.map((c) => (
                           <Cell key={c.name} fill={colorForKey(c.name)} />
                         ))}
@@ -218,7 +241,10 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
                   {byCategory.map((c) => (
                     <li key={c.name} className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: colorForKey(c.name) }} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ backgroundColor: colorForKey(c.name) }}
+                        />
                         {c.name}
                       </span>
                       <span className="text-muted-foreground tabular-nums">{fmt(c.value)}</span>
@@ -231,7 +257,9 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Top retailers</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Top retailers</CardTitle>
+          </CardHeader>
           <CardContent>
             {byRetailer.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">—</p>
@@ -253,7 +281,9 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Transactions</CardTitle>
-            <Link to="/history" className="text-xs text-primary hover:underline">Edit in History</Link>
+            <Link to="/history" className="text-xs text-primary hover:underline">
+              Edit in History
+            </Link>
           </CardHeader>
           <CardContent>
             {cycleTxns.length === 0 ? (
@@ -265,11 +295,14 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{t.retailer}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(parseISO(t.date), "d MMM")} · {t.items.length} item{t.items.length !== 1 ? "s" : ""}
+                        {format(parseISO(t.date), "d MMM")} · {t.items.length} item
+                        {t.items.length !== 1 ? "s" : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-medium tabular-nums">{fmt(t.total_amount)}</span>
+                      <span className="text-sm font-medium tabular-nums">
+                        {fmt(t.total_amount)}
+                      </span>
                       {t.receipt_attached && isStoragePath(t.receipt_location) && (
                         <ReceiptButton path={t.receipt_location} />
                       )}
@@ -282,10 +315,14 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Commitments due</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Commitments due</CardTitle>
+          </CardHeader>
           <CardContent>
             {cycleCommitments.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">None due in this cycle.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                None due in this cycle.
+              </p>
             ) : (
               <ul className="divide-y divide-border">
                 {cycleCommitments.map((c) => (
@@ -315,27 +352,26 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
 
 function ReceiptButton({ path }: { path: string }) {
   async function open() {
-    const { data, error } = await supabase.storage
-      .from("receipts")
-      .createSignedUrl(path, 3600);
-    if (error || !data) { toast.error("Could not open receipt"); return; }
+    const { data, error } = await supabase.storage.from("receipts").createSignedUrl(path, 3600);
+    if (error || !data) {
+      toast.error("Could not open receipt");
+      return;
+    }
     window.open(data.signedUrl, "_blank", "noopener");
   }
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-7 w-7"
-      title="Open receipt"
-      onClick={open}
-    >
+    <Button variant="ghost" size="icon" className="h-7 w-7" title="Open receipt" onClick={open}>
       <FileText className="h-3.5 w-3.5" />
     </Button>
   );
 }
 
 function Stat({
-  label, value, icon, accent, tone,
+  label,
+  value,
+  icon,
+  accent,
+  tone,
 }: {
   label: string;
   value: string;
@@ -352,7 +388,11 @@ function Stat({
           <span className="text-xs uppercase tracking-wider">{label}</span>
           {icon && <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>}
         </div>
-        <p className={`text-2xl font-semibold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}>{value}</p>
+        <p
+          className={`text-2xl font-semibold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}
+        >
+          {value}
+        </p>
       </CardContent>
     </Card>
   );

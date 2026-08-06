@@ -5,7 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Upload, FileText, X, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const ALLOWED = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 const MAX_BYTES = 10 * 1024 * 1024;
 
 interface Props {
@@ -90,11 +97,19 @@ export function ReceiptUpload({ value, onChange }: Props) {
       {hasFile ? (
         <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 p-2">
           <FileText className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-sm truncate flex-1" title={filename}>{filename}</span>
+          <span className="text-sm truncate flex-1" title={filename}>
+            {filename}
+          </span>
           <Button type="button" variant="ghost" size="sm" onClick={openFile}>
             <ExternalLink className="h-3.5 w-3.5" /> View
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+          >
             Replace
           </Button>
           <Button type="button" variant="ghost" size="icon" onClick={remove} disabled={uploading}>
@@ -109,7 +124,11 @@ export function ReceiptUpload({ value, onChange }: Props) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           {uploading ? "Uploading…" : "Upload receipt (PDF or image)"}
         </Button>
       )}

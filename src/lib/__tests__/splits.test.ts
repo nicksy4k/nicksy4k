@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  computeBnplInstallments,
-  deriveSplitRows,
-  buildPocketWithdrawalRows,
-} from "../splits";
+import { computeBnplInstallments, deriveSplitRows, buildPocketWithdrawalRows } from "../splits";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

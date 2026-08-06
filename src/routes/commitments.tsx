@@ -14,12 +14,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Pencil,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Check,
+} from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
@@ -32,7 +48,10 @@ export const Route = createFileRoute("/commitments")({
       { title: "Commitments — Ledgerly" },
       { name: "description", content: "Track recurring bills, due dates, and payment status." },
       { property: "og:title", content: "Commitments — Ledgerly" },
-      { property: "og:description", content: "Track recurring bills, due dates, and payment status." },
+      {
+        property: "og:description",
+        content: "Track recurring bills, due dates, and payment status.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -65,10 +84,7 @@ function CommitmentsPage() {
       .reduce((sum, s) => sum + (s.kind === "deposit" ? s.amount : -s.amount), 0);
   }, [savings]);
 
-  const totalCommitments = useMemo(
-    () => items.reduce((s, i) => s + i.amount, 0),
-    [items],
-  );
+  const totalCommitments = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
 
   const leftToPay = useMemo(() => {
     return items
@@ -103,7 +119,6 @@ function CommitmentsPage() {
   // mounted globally in <AppLayout/>. It advances next_due_date AND resets
   // paid → false across ALL commitment rows whenever the cycle advances.
 
-
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
   const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -121,10 +136,14 @@ function CommitmentsPage() {
     <div className="p-6 md:p-10 max-w-5xl mx-auto">
       <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Recurring bills</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            Recurring bills
+          </p>
           <h1 className="text-3xl md:text-4xl font-semibold">Commitments</h1>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4" /> Add Commitment</Button>
+        <Button onClick={openNew}>
+          <Plus className="h-4 w-4" /> Add Commitment
+        </Button>
       </header>
 
       <Card className="mb-6">
@@ -132,15 +151,20 @@ function CommitmentsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <CalendarClock className="h-5 w-5 text-primary shrink-0" />
             <div className="flex-1 min-w-[200px]">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Active cycle</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Active cycle
+              </Label>
               <p className="text-sm mt-0.5">
                 <span className="font-medium tabular-nums">
                   {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
                 </span>
-                {cycle.isOverridden && <span className="ml-2 text-xs text-amber-600">· override</span>}
+                {cycle.isOverridden && (
+                  <span className="ml-2 text-xs text-amber-600">· override</span>
+                )}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Bills due on or before {format(cycle.end, "d MMM")} count toward this cycle's shortfall.
+                Bills due on or before {format(cycle.end, "d MMM")} count toward this cycle's
+                shortfall.
               </p>
             </div>
             <Button asChild variant="outline" size="sm">
@@ -153,19 +177,25 @@ function CommitmentsPage() {
       <div className="grid gap-4 sm:grid-cols-2 mb-4">
         <Card>
           <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Total commitments</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Total commitments
+            </p>
             <p className="text-2xl font-semibold tabular-nums">{fmt(totalCommitments)}</p>
           </CardContent>
         </Card>
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Left to pay before reset</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Left to pay before reset
+            </p>
             <p className="text-2xl font-semibold tabular-nums">{fmt(leftToPay)}</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className={`mb-6 ${shortfall > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5"}`}>
+      <Card
+        className={`mb-6 ${shortfall > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5"}`}
+      >
         <CardContent className="p-5 flex items-start gap-3">
           {shortfall > 0.001 ? (
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -182,7 +212,9 @@ function CommitmentsPage() {
             ) : (
               <p>
                 <span className="font-semibold">Bill Money pocket is fully funded.</span>{" "}
-                <span className="text-muted-foreground">Balance: {fmt(billPocketBalance)} · Needed: {fmt(leftToPay)}</span>
+                <span className="text-muted-foreground">
+                  Balance: {fmt(billPocketBalance)} · Needed: {fmt(leftToPay)}
+                </span>
               </p>
             )}
           </div>
@@ -213,7 +245,9 @@ function CommitmentsPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>All commitments</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>All commitments</CardTitle>
+        </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No commitments yet.</p>
@@ -221,9 +255,13 @@ function CommitmentsPage() {
             <TooltipProvider delayDuration={150}>
               <ul className="space-y-2">
                 {items.map((c) => {
-                  const dueLabel = c.next_due_date ? format(parseISO(c.next_due_date), "d MMM yyyy") : "no date";
+                  const dueLabel = c.next_due_date
+                    ? format(parseISO(c.next_due_date), "d MMM yyyy")
+                    : "no date";
                   const resetLabel = format(parseISO(resetDate), "d MMM yyyy");
-                  const paidLabel = c.last_paid_date ? format(parseISO(c.last_paid_date), "d MMM yyyy") : "date unknown";
+                  const paidLabel = c.last_paid_date
+                    ? format(parseISO(c.last_paid_date), "d MMM yyyy")
+                    : "date unknown";
                   let statusTitle = "";
                   let statusBody = "";
                   if (c.paid) {
@@ -249,12 +287,16 @@ function CommitmentsPage() {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">{c.item_name}</p>
                           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{c.category || "—"}</span>
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
+                              {c.category || "—"}
+                            </span>
                             <span>{c.next_due_date ? `Due ${dueLabel}` : "No due date"}</span>
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
+                          <span className="text-sm font-semibold tabular-nums">
+                            {fmt(c.amount)}
+                          </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span
@@ -264,8 +306,8 @@ function CommitmentsPage() {
                                   c.paid
                                     ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
                                     : c.next_due_date && c.next_due_date >= resetDate
-                                    ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
-                                    : `inline-flex h-2.5 w-2.5 rounded-full ${fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"}`
+                                      ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
+                                      : `inline-flex h-2.5 w-2.5 rounded-full ${fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"}`
                                 }
                               >
                                 {c.paid || (c.next_due_date && c.next_due_date >= resetDate) ? (
@@ -285,7 +327,6 @@ function CommitmentsPage() {
                 })}
               </ul>
             </TooltipProvider>
-
           )}
         </CardContent>
       </Card>
@@ -340,12 +381,14 @@ function CommitmentsPage() {
               receipt_location: "",
               notes: `Auto-logged from commitment: ${c.item_name}`,
               commitment_id: c.id,
-              items: [{
-                id: crypto.randomUUID(),
-                item_name: c.item_name,
-                price: c.amount,
-                category: c.category || "Subscriptions",
-              }],
+              items: [
+                {
+                  id: crypto.randomUUID(),
+                  item_name: c.item_name,
+                  price: c.amount,
+                  category: c.category || "Subscriptions",
+                },
+              ],
             });
             // Auto-deduct from Bill Money pocket
             await addSaving({
@@ -415,7 +458,13 @@ function CommitmentsPage() {
 }
 
 function DetailsDialog({
-  item, cycle, onClose, onEdit, onDelete, onConfirmReset, onUnmarkPaid,
+  item,
+  cycle,
+  onClose,
+  onEdit,
+  onDelete,
+  onConfirmReset,
+  onUnmarkPaid,
 }: {
   item: Commitment | null;
   cycle: ReturnType<typeof useActiveCycle>;
@@ -452,7 +501,12 @@ function DetailsDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-md">
         {item && mode === "details" && (
           <>
@@ -460,13 +514,31 @@ function DetailsDialog({
               <DialogTitle>{item.item_name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
-              <Row label="Amount" value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>} />
+              <Row
+                label="Amount"
+                value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>}
+              />
               <Row label="Category" value={item.category || "—"} />
               <Row label="Store / provider" value={item.store || "—"} />
               <Row label="Payment method" value={item.payment_method || "—"} />
-              <Row label="Next due" value={item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"} />
-              <Row label="Last paid" value={item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"} />
-              {item.notes && <Row label="Notes" value={<span className="italic text-muted-foreground">{item.notes}</span>} />}
+              <Row
+                label="Next due"
+                value={
+                  item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"
+                }
+              />
+              <Row
+                label="Last paid"
+                value={
+                  item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"
+                }
+              />
+              {item.notes && (
+                <Row
+                  label="Notes"
+                  value={<span className="italic text-muted-foreground">{item.notes}</span>}
+                />
+              )}
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <Label htmlFor="paid-toggle">Paid</Label>
                 <Switch id="paid-toggle" checked={item.paid} onCheckedChange={handlePaidToggle} />
@@ -479,7 +551,9 @@ function DetailsDialog({
               <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
                 <Pencil className="h-4 w-4" /> Edit
               </Button>
-              <Button size="sm" onClick={onClose}>Close</Button>
+              <Button size="sm" onClick={onClose}>
+                Close
+              </Button>
             </DialogFooter>
           </>
         )}
@@ -491,8 +565,8 @@ function DetailsDialog({
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground">
-                Marking <span className="font-medium text-foreground">{item.item_name}</span> as paid will advance its next due date.
-                Choose how to roll it forward:
+                Marking <span className="font-medium text-foreground">{item.item_name}</span> as
+                paid will advance its next due date. Choose how to roll it forward:
               </p>
               <div className="grid gap-2">
                 {/* Frequency-aware manual advance — choose the cadence that matches this specific bill. */}
@@ -507,7 +581,10 @@ function DetailsDialog({
                   >
                     <span className="text-sm">Advance +1 month</span>
                     <span className="text-xs text-muted-foreground">
-                      {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "monthly")), "d MMM yyyy")}
+                      {format(
+                        parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "monthly")),
+                        "d MMM yyyy",
+                      )}
                     </span>
                   </Button>
                   <Button
@@ -520,25 +597,43 @@ function DetailsDialog({
                   >
                     <span className="text-sm">Advance +4 weeks</span>
                     <span className="text-xs text-muted-foreground">
-                      {format(parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly")), "d MMM yyyy")}
+                      {format(
+                        parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly")),
+                        "d MMM yyyy",
+                      )}
                     </span>
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
-                  Global cycle: {cycle.type === "four-weekly" ? "4-weekly" : "monthly"} — pick the cadence that matches this bill.
+                  Global cycle: {cycle.type === "four-weekly" ? "4-weekly" : "monthly"} — pick the
+                  cadence that matches this bill.
                 </p>
 
                 <div className="rounded-md border border-border p-3 space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Or pick a date</Label>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Or pick a date
+                  </Label>
                   <div className="flex gap-2">
-                    <Input type="date" value={pickerDate} onChange={(e) => setPickerDate(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={pickerDate}
+                      onChange={(e) => setPickerDate(e.target.value)}
+                    />
                     <Button onClick={() => pickerDate && confirmWith(pickerDate)}>Set</Button>
                   </div>
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => { setMode("details"); onClose(); }}>Cancel</Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setMode("details");
+                  onClose();
+                }}
+              >
+                Cancel
+              </Button>
             </DialogFooter>
           </>
         )}
@@ -557,7 +652,11 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function CommitmentDialog({
-  open, onOpenChange, editing, categories, onSave,
+  open,
+  onOpenChange,
+  editing,
+  categories,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -581,7 +680,12 @@ function CommitmentDialog({
     setStore(editing?.store ?? "");
     setPayment(editing?.payment_method ?? "");
     setAmount(editing ? String(editing.amount) : "");
-    setCategory(editing?.category ?? (categories.includes("Subscriptions") ? "Subscriptions" : categories[0] ?? "Subscriptions"));
+    setCategory(
+      editing?.category ??
+        (categories.includes("Subscriptions")
+          ? "Subscriptions"
+          : (categories[0] ?? "Subscriptions")),
+    );
     setLastPaid(editing?.last_paid_date ?? "");
     setNextDue(editing?.next_due_date ?? "");
     setNotes(editing?.notes ?? "");
@@ -615,13 +719,27 @@ function CommitmentDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Item name"><Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Netflix" /></Field>
-            <Field label="Store / provider"><Input value={store} onChange={(e) => setStore(e.target.value)} placeholder="Netflix Inc." /></Field>
+            <Field label="Item name">
+              <Input
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder="Netflix"
+              />
+            </Field>
+            <Field label="Store / provider">
+              <Input
+                value={store}
+                onChange={(e) => setStore(e.target.value)}
+                placeholder="Netflix Inc."
+              />
+            </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Category">
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick a category" />
+                </SelectTrigger>
                 <SelectContent>
                   {categories.length === 0 ? (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -629,20 +747,39 @@ function CommitmentDialog({
                     </div>
                   ) : (
                     sortLabels(categories).map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Payment method"><Input value={payment} onChange={(e) => setPayment(e.target.value)} placeholder="Direct Debit" /></Field>
+            <Field label="Payment method">
+              <Input
+                value={payment}
+                onChange={(e) => setPayment(e.target.value)}
+                placeholder="Direct Debit"
+              />
+            </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Amount (£)"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></Field>
-            <Field label="Last paid date"><Input type="date" value={lastPaid} onChange={(e) => setLastPaid(e.target.value)} /></Field>
+            <Field label="Amount (£)">
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+              />
+            </Field>
+            <Field label="Last paid date">
+              <Input type="date" value={lastPaid} onChange={(e) => setLastPaid(e.target.value)} />
+            </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Next due date"><Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} /></Field>
+            <Field label="Next due date">
+              <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
+            </Field>
             <div className="flex items-end pb-1">
               <div className="flex items-center gap-2">
                 <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
@@ -650,10 +787,14 @@ function CommitmentDialog({
               </div>
             </div>
           </div>
-          <Field label="Notes"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <Field label="Notes">
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </Field>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={submit}>{editing ? "Save" : "Add"}</Button>
         </DialogFooter>
       </DialogContent>

@@ -83,10 +83,7 @@ export interface DerivedSplits {
  * implicit main-balance remainder. `main` = total − pockets − bnpl − other,
  * plus any explicit `source: "main"` splits.
  */
-export function deriveSplitRows(
-  total: number,
-  splits: PaymentSplit[],
-): DerivedSplits {
+export function deriveSplitRows(total: number, splits: PaymentSplit[]): DerivedSplits {
   const pockets: DerivedSplits["pockets"] = [];
   const bnpl: DerivedSplits["bnpl"] = [];
   const other: DerivedSplits["other"] = [];
@@ -117,7 +114,6 @@ export function deriveSplitRows(
     other,
   };
 }
-
 
 export interface PocketWithdrawalRow {
   user_id: string;

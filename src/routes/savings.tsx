@@ -13,7 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   Command,
@@ -23,12 +27,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ArrowDownCircle, ArrowUpCircle, Check, ChevronsUpDown, PiggyBank, Plus, Trash2 } from "lucide-react";
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Check,
+  ChevronsUpDown,
+  PiggyBank,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
@@ -38,7 +46,10 @@ export const Route = createFileRoute("/savings")({
       { title: "Savings & Pockets — Ledgerly" },
       { name: "description", content: "Track savings goals, pocket balances, and withdrawals." },
       { property: "og:title", content: "Savings & Pockets — Ledgerly" },
-      { property: "og:description", content: "Track savings goals, pocket balances, and withdrawals." },
+      {
+        property: "og:description",
+        content: "Track savings goals, pocket balances, and withdrawals.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -63,11 +74,13 @@ function SavingsPage() {
   }, [items]);
 
   const { balance, deposits, withdrawals, byAccount } = useMemo(() => {
-    let d = 0, w = 0;
+    let d = 0,
+      w = 0;
     const acc = new Map<string, number>();
     items.forEach((s) => {
       const delta = s.kind === "deposit" ? s.amount : -s.amount;
-      if (s.kind === "deposit") d += s.amount; else w += s.amount;
+      if (s.kind === "deposit") d += s.amount;
+      else w += s.amount;
       acc.set(s.account, (acc.get(s.account) ?? 0) + delta);
     });
     return {
@@ -91,14 +104,17 @@ function SavingsPage() {
       account: account.trim(),
       notes: notes.trim() || undefined,
     });
-    setAmount(""); setNotes("");
+    setAmount("");
+    setNotes("");
     toast.success(kind === "deposit" ? "Deposit recorded" : "Withdrawal recorded");
   }
 
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Track your reserves & pockets</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+          Track your reserves & pockets
+        </p>
         <h1 className="text-3xl md:text-4xl font-semibold">Savings & Pockets</h1>
       </header>
 
@@ -109,7 +125,11 @@ function SavingsPage() {
               <span className="text-xs uppercase tracking-wider">Current balance</span>
               <PiggyBank className="h-4 w-4 text-primary" />
             </div>
-            <p className={`text-2xl font-semibold tabular-nums ${balance < 0 ? "text-destructive" : ""}`}>{fmt(balance)}</p>
+            <p
+              className={`text-2xl font-semibold tabular-nums ${balance < 0 ? "text-destructive" : ""}`}
+            >
+              {fmt(balance)}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -134,16 +154,23 @@ function SavingsPage() {
 
       {byAccount.length > 0 && (
         <Card className="mb-6">
-          <CardHeader><CardTitle>By account</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>By account</CardTitle>
+          </CardHeader>
           <CardContent>
             <ul className="divide-y divide-border">
               {byAccount.map(([name, bal]) => (
                 <li key={name} className="flex items-center justify-between py-2.5">
                   <span className="flex items-center gap-2.5 min-w-0">
-                    <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(name) }} />
+                    <span
+                      className="h-2.5 w-2.5 rounded-sm shrink-0"
+                      style={{ backgroundColor: colorForKey(name) }}
+                    />
                     <span className="text-sm font-medium truncate">{name}</span>
                   </span>
-                  <span className={`text-sm tabular-nums ${bal < 0 ? "text-destructive" : ""}`}>{fmt(bal)}</span>
+                  <span className={`text-sm tabular-nums ${bal < 0 ? "text-destructive" : ""}`}>
+                    {fmt(bal)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -152,13 +179,19 @@ function SavingsPage() {
       )}
 
       <Card className="mb-6">
-        <CardHeader><CardTitle>Record a deposit or withdrawal</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Record a deposit or withdrawal</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label="Date">
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
             <Field label="Type">
               <Select value={kind} onValueChange={(v) => setKind(v as SavingsKind)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="deposit">Deposit</SelectItem>
                   <SelectItem value="withdrawal">Withdrawal</SelectItem>
@@ -167,7 +200,14 @@ function SavingsPage() {
             </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Amount (£)"><Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+            <Field label="Amount (£)">
+              <Input
+                inputMode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </Field>
             <Field label="Account">
               <div className="relative">
                 <Input
@@ -187,10 +227,7 @@ function SavingsPage() {
                         <ChevronsUpDown className="h-4 w-4 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      className="p-0 w-[280px]"
-                      align="end"
-                    >
+                    <PopoverContent className="p-0 w-[280px]" align="end">
                       <Command>
                         <CommandInput placeholder="Search pockets..." />
                         <CommandList>
@@ -210,7 +247,7 @@ function SavingsPage() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    account === name ? "opacity-100" : "opacity-0"
+                                    account === name ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                                 {name}
@@ -225,37 +262,64 @@ function SavingsPage() {
               </div>
             </Field>
           </div>
-          <Field label="Notes (optional)"><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <Field label="Notes (optional)">
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </Field>
           <div className="flex justify-end">
-            <Button onClick={save}><Plus className="h-4 w-4" /> Record</Button>
+            <Button onClick={save}>
+              <Plus className="h-4 w-4" /> Record
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>History</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>History</CardTitle>
+        </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No savings activity yet.</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              No savings activity yet.
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {items.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: colorForKey(s.account) }} />
+                      <span
+                        className="h-2.5 w-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: colorForKey(s.account) }}
+                      />
                       <p className="font-medium truncate">{s.account}</p>
-                      <Badge variant={s.kind === "deposit" ? "default" : "secondary"} className="font-normal capitalize">{s.kind}</Badge>
+                      <Badge
+                        variant={s.kind === "deposit" ? "default" : "secondary"}
+                        className="font-normal capitalize"
+                      >
+                        {s.kind}
+                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {format(parseISO(s.date), "MMM d, yyyy")}{s.notes ? ` · ${s.notes}` : ""}
+                      {format(parseISO(s.date), "MMM d, yyyy")}
+                      {s.notes ? ` · ${s.notes}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold tabular-nums ${s.kind === "deposit" ? "text-primary" : "text-destructive"}`}>
-                      {s.kind === "deposit" ? "+" : "−"}{fmt(s.amount)}
+                    <span
+                      className={`text-sm font-semibold tabular-nums ${s.kind === "deposit" ? "text-primary" : "text-destructive"}`}
+                    >
+                      {s.kind === "deposit" ? "+" : "−"}
+                      {fmt(s.amount)}
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => { remove(s.id); toast.success("Removed"); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        remove(s.id);
+                        toast.success("Removed");
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

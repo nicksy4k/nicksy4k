@@ -36,7 +36,6 @@ function id() {
   return crypto.randomUUID();
 }
 
-
 /** Tables the demo account owns, cleared before every demo session. */
 const OWNED_TABLES = [
   "transactions",
@@ -71,7 +70,6 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       cycle_override_start: null,
       cycle_override_end: null,
 
-
       carryover_enabled: true,
       last_carryover_cycle_key: null,
       onboarding_completed: true,
@@ -85,7 +83,6 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
     { onConflict: "user_id" },
   );
   if (settingsError) console.error("[demo-seed] user_settings", settingsError);
-
 
   await admin
     .from("profiles")
@@ -115,16 +112,24 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       account: p.account,
       notes: "Opening balance",
     })),
-
   );
 
   // 4. Categories
-  const expenseCats = ["Groceries", "Subscriptions", "Eating out", "Entertainment", "Household", "Transport"];
+  const expenseCats = [
+    "Groceries",
+    "Subscriptions",
+    "Eating out",
+    "Entertainment",
+    "Household",
+    "Transport",
+  ];
   const incomeCats = ["Salary", "Freelance"];
-  await admin.from("categories").insert([
-    ...expenseCats.map((name) => ({ id: id(), user_id: userId, kind: "expense", name })),
-    ...incomeCats.map((name) => ({ id: id(), user_id: userId, kind: "income", name })),
-  ]);
+  await admin
+    .from("categories")
+    .insert([
+      ...expenseCats.map((name) => ({ id: id(), user_id: userId, kind: "expense", name })),
+      ...incomeCats.map((name) => ({ id: id(), user_id: userId, kind: "income", name })),
+    ]);
 
   // 5. Income — £1,500 salary routed into the pockets, remainder to main balance
   await admin.from("incomes").insert({
@@ -151,14 +156,26 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       notes: "Weekly big shop",
       is_pending: false,
       items: [
-        { id: id(), item_name: "Chicken breast 1kg", price: 7.5, quantity: 1, category: "Groceries" },
+        {
+          id: id(),
+          item_name: "Chicken breast 1kg",
+          price: 7.5,
+          quantity: 1,
+          category: "Groceries",
+        },
         { id: id(), item_name: "Milk 4pt", price: 1.65, quantity: 2, category: "Groceries" },
         { id: id(), item_name: "Pasta 500g", price: 1.1, quantity: 3, category: "Groceries" },
         { id: id(), item_name: "Washing powder", price: 8.0, quantity: 1, category: "Household" },
         { id: id(), item_name: "Mixed veg box", price: 12.0, quantity: 1, category: "Groceries" },
         { id: id(), item_name: "Coffee beans", price: 6.75, quantity: 1, category: "Groceries" },
         { id: id(), item_name: "Cheddar block", price: 4.2, quantity: 1, category: "Groceries" },
-        { id: id(), item_name: "Household sundries", price: 20.47, quantity: 1, category: "Household" },
+        {
+          id: id(),
+          item_name: "Household sundries",
+          price: 20.47,
+          quantity: 1,
+          category: "Household",
+        },
       ],
       payment_splits: [],
       refunds: [],
@@ -173,7 +190,15 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       receipt_type: "None",
       receipt_location: "",
       is_pending: false,
-      items: [{ id: id(), item_name: "Standard plan", price: 10.99, quantity: 1, category: "Subscriptions" }],
+      items: [
+        {
+          id: id(),
+          item_name: "Standard plan",
+          price: 10.99,
+          quantity: 1,
+          category: "Subscriptions",
+        },
+      ],
       payment_splits: [],
       refunds: [],
     },
@@ -187,7 +212,15 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       receipt_type: "Digital",
       receipt_location: "",
       is_pending: false,
-      items: [{ id: id(), item_name: "Indie game bundle", price: 24.99, quantity: 1, category: "Entertainment" }],
+      items: [
+        {
+          id: id(),
+          item_name: "Indie game bundle",
+          price: 24.99,
+          quantity: 1,
+          category: "Entertainment",
+        },
+      ],
       payment_splits: [],
       refunds: [],
     },
@@ -203,7 +236,13 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       is_pending: false,
       items: [
         { id: id(), item_name: "Flat white", price: 3.5, quantity: 2, category: "Eating out" },
-        { id: id(), item_name: "Almond croissant", price: 1.6, quantity: 1, category: "Eating out" },
+        {
+          id: id(),
+          item_name: "Almond croissant",
+          price: 1.6,
+          quantity: 1,
+          category: "Eating out",
+        },
       ],
       payment_splits: [],
       refunds: [],
@@ -219,7 +258,15 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       receipt_location: "",
       notes: "Return window open",
       is_pending: false,
-      items: [{ id: id(), item_name: "Wireless headphones", price: 149.0, quantity: 1, category: "Entertainment" }],
+      items: [
+        {
+          id: id(),
+          item_name: "Wireless headphones",
+          price: 149.0,
+          quantity: 1,
+          category: "Entertainment",
+        },
+      ],
       protection_type: "Return Window",
       protection_duration: "30 days",
       expiration_date: iso(9),

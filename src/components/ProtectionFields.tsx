@@ -3,7 +3,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   PROTECTION_TYPES,
@@ -72,9 +76,15 @@ export function ProtectionFields({ transactionDate, value, onChange }: Props) {
                 value={value.type}
                 onValueChange={(v) => onChange({ ...value, type: v as ProtectionType })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {PROTECTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {PROTECTION_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
@@ -83,9 +93,15 @@ export function ProtectionFields({ transactionDate, value, onChange }: Props) {
                 value={value.duration}
                 onValueChange={(v) => onChange({ ...value, duration: v as ProtectionDuration })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {PROTECTION_DURATIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                  {PROTECTION_DURATIONS.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>

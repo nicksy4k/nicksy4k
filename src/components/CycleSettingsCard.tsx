@@ -5,15 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { CalendarClock } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
-import {
-  type CycleSettings, type CycleType,
-  getActiveCycle, useCycleSettings,
-} from "@/lib/cycle";
+import { type CycleSettings, type CycleType, getActiveCycle, useCycleSettings } from "@/lib/cycle";
 
 export function CycleSettingsCard() {
   const { settings, update } = useCycleSettings();
@@ -88,7 +89,9 @@ export function CycleSettingsCard() {
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Cycle type">
             <Select value={type} onValueChange={(v) => setType(v as CycleType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="monthly">Monthly (calendar)</SelectItem>
                 <SelectItem value="four-weekly">4-Weekly (rolling 28 days)</SelectItem>
@@ -103,7 +106,9 @@ export function CycleSettingsCard() {
         <div className="rounded-lg border border-border p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="cycle-override" className="text-sm">Override current cycle</Label>
+              <Label htmlFor="cycle-override" className="text-sm">
+                Override current cycle
+              </Label>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Manually pick the active window — bypasses auto-calculation.
               </p>
@@ -125,9 +130,12 @@ export function CycleSettingsCard() {
         <div className="rounded-lg border border-border p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <Label htmlFor="cycle-carryover" className="text-sm">Carry unspent balance into next cycle</Label>
+              <Label htmlFor="cycle-carryover" className="text-sm">
+                Carry unspent balance into next cycle
+              </Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                When a new cycle starts, your remaining "Left to spend" is added as a Carryover income entry. Overspends carry as a negative entry.
+                When a new cycle starts, your remaining "Left to spend" is added as a Carryover
+                income entry. Overspends carry as a negative entry.
               </p>
             </div>
             <Switch id="cycle-carryover" checked={carryover} onCheckedChange={setCarryover} />
@@ -137,11 +145,10 @@ export function CycleSettingsCard() {
         <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-sm">
           <span className="text-muted-foreground">Active window: </span>
           <span className="font-medium tabular-nums">
-            {format(parseISO(preview.startISO), "d MMM yyyy")} – {format(parseISO(preview.endISO), "d MMM yyyy")}
+            {format(parseISO(preview.startISO), "d MMM yyyy")} –{" "}
+            {format(parseISO(preview.endISO), "d MMM yyyy")}
           </span>
-          {preview.isOverridden && (
-            <span className="ml-2 text-xs text-amber-600">· override</span>
-          )}
+          {preview.isOverridden && <span className="ml-2 text-xs text-amber-600">· override</span>}
         </div>
 
         <div className="flex justify-end">

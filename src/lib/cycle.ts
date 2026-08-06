@@ -118,7 +118,9 @@ async function fetchRemote(): Promise<RemoteFetch> {
   if (!uid) return { status: "unavailable" };
   const { data, error } = await supabase
     .from("user_settings")
-    .select("cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled, last_carryover_cycle_key")
+    .select(
+      "cycle_type, cycle_anchor, cycle_override_start, cycle_override_end, carryover_enabled, last_carryover_cycle_key",
+    )
     .eq("user_id", uid)
     .maybeSingle();
   // An error is NOT "no settings" — never overwrite the server row on a
@@ -127,7 +129,6 @@ async function fetchRemote(): Promise<RemoteFetch> {
   if (!data) return { status: "missing" };
   return { status: "ok", settings: rowToSettings(data as Row) };
 }
-
 
 async function upsertRemote(s: CycleSettings): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
@@ -162,10 +163,7 @@ function fmt(d: Date) {
   return format(d, "yyyy-MM-dd");
 }
 
-export function getActiveCycle(
-  settings: CycleSettings,
-  today: Date = new Date(),
-): ActiveCycle {
+export function getActiveCycle(settings: CycleSettings, today: Date = new Date()): ActiveCycle {
   const t = startOfDay(today);
 
   if (settings.override) {
@@ -202,8 +200,7 @@ export function getActiveCycle(
 
   const anchorDom = anchor.getDate();
   const thisMonth = new Date(t.getFullYear(), t.getMonth(), 1);
-  const clamp = (base: Date) =>
-    setDate(base, Math.min(anchorDom, getDaysInMonth(base)));
+  const clamp = (base: Date) => setDate(base, Math.min(anchorDom, getDaysInMonth(base)));
   let start = clamp(thisMonth);
   if (t < start) {
     start = clamp(addMonths(thisMonth, -1));
@@ -224,10 +221,7 @@ export function isInCycle(dateISO: string, cycle: ActiveCycle): boolean {
   return dateISO >= cycle.startISO && dateISO <= cycle.endISO;
 }
 
-export function getCycleAt(
-  settings: CycleSettings,
-  dateISO: string,
-): ActiveCycle {
+export function getCycleAt(settings: CycleSettings, dateISO: string): ActiveCycle {
   return getActiveCycle(settings, parseISO(dateISO));
 }
 
@@ -256,12 +250,8 @@ export function listRecentCycles(
   return out;
 }
 
-export function advanceDueDate(
-  dueISO: string,
-  cycleOrType: ActiveCycle | CycleType,
-): string {
-  const type: CycleType =
-    typeof cycleOrType === "string" ? cycleOrType : cycleOrType.type;
+export function advanceDueDate(dueISO: string, cycleOrType: ActiveCycle | CycleType): string {
+  const type: CycleType = typeof cycleOrType === "string" ? cycleOrType : cycleOrType.type;
   const base = parseISO(dueISO);
   const next = type === "four-weekly" ? addDays(base, 28) : addMonths(base, 1);
   return fmt(next);
@@ -280,11 +270,7 @@ export function advanceByCadence(
   return fmt(next);
 }
 
-export function rollDueDateForward(
-  dueISO: string,
-  targetISO: string,
-  cycle: ActiveCycle,
-): string {
+export function rollDueDateForward(dueISO: string, targetISO: string, cycle: ActiveCycle): string {
   let cur = dueISO;
   let guard = 0;
   while (cur < targetISO && guard < 240) {
@@ -322,7 +308,6 @@ export function useCycleSettings() {
         const cached = readCache();
         await upsertRemote(cached);
       }
-
     }
 
     refresh();

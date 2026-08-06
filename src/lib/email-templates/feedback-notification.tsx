@@ -94,9 +94,7 @@ const FeedbackNotification = ({
             <Text style={mono}>Version: {appVersion || "—"}</Text>
             <Text style={mono}>Page: {route || "—"}</Text>
             <Text style={mono}>Submitted: {submittedAt}</Text>
-            {attachmentPath && (
-              <Text style={mono}>Attachment: {attachmentPath}</Text>
-            )}
+            {attachmentPath && <Text style={mono}>Attachment: {attachmentPath}</Text>}
           </Section>
 
           {userAgent && (
@@ -107,9 +105,7 @@ const FeedbackNotification = ({
           )}
 
           <Hr style={hr} />
-          <Text style={footer}>
-            Sent automatically from the Ledgerly in-app feedback form.
-          </Text>
+          <Text style={footer}>Sent automatically from the Ledgerly in-app feedback form.</Text>
         </Container>
       </Body>
     </Html>
@@ -131,8 +127,7 @@ export const template = {
     email: "tester@example.com",
     appVersion: "v2.0.0-beta",
     route: "/commitments",
-    userAgent:
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15",
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15",
     submittedAt: new Date().toISOString(),
   },
 } satisfies TemplateEntry;
@@ -140,8 +135,7 @@ export const template = {
 // Midnight Indigo palette — matches Ledgerly's brand
 const main = {
   backgroundColor: "#ffffff",
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   color: "#0f172a",
 };
 const container = {
@@ -204,8 +198,7 @@ const messageStyle = {
 };
 const mono = {
   fontSize: "12px",
-  fontFamily:
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   color: "#334155",
   margin: "2px 0",
   wordBreak: "break-all" as const,

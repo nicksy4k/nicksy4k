@@ -76,8 +76,6 @@ export async function applyAllocationsOnce(
   });
 }
 
-
-
 /** Back-compat: also returns just the count via .then when destructured. */
 export async function generateDueRecurringIncomes(today: string): Promise<GenerateResult> {
   const { data: u } = await supabase.auth.getUser();
@@ -169,7 +167,6 @@ export async function generateDueRecurringIncomes(today: string): Promise<Genera
   return { created, warnings };
 }
 
-
 interface ApplyArgs {
   userId: string;
   template: RecurringIncome;
@@ -217,7 +214,14 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
     }
     let want = 0;
     if (a.kind === "cover_commitments") {
-      want = computeCoverAmount(a.pocket, postDate, nextDate, commitments, pocketBalances, inFlight);
+      want = computeCoverAmount(
+        a.pocket,
+        postDate,
+        nextDate,
+        commitments,
+        pocketBalances,
+        inFlight,
+      );
     } else {
       want = a.amount;
     }
@@ -246,7 +250,9 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
 
   const warnings: string[] = [];
   if (clipped) {
-    warnings.push(`${template.source}: income wasn't enough to fully fund every pocket allocation.`);
+    warnings.push(
+      `${template.source}: income wasn't enough to fully fund every pocket allocation.`,
+    );
   }
   return warnings;
 }
@@ -279,10 +285,7 @@ async function loadRunCaches(userId: string) {
       .select("amount,next_due_date,paid")
       .eq("user_id", userId)
       .eq("paid", false),
-    supabase
-      .from("savings")
-      .select("kind,amount,account")
-      .eq("user_id", userId),
+    supabase.from("savings").select("kind,amount,account").eq("user_id", userId),
   ]);
   const commitments = (commits ?? []).map((c) => ({
     amount: Number(c.amount ?? 0),

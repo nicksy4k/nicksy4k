@@ -46,8 +46,7 @@ export type ReportDetailMode = "itemized" | "summary";
 export function buildItemRows(payload: ReportPayload) {
   const rows: Array<Record<string, string | number>> = [];
   for (const t of payload.transactions) {
-    const itemsSum =
-      t.items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0) || 1;
+    const itemsSum = t.items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0) || 1;
     const main = mainExpensePortion(t);
     const method = paymentMethodLabel(t);
     for (const item of t.items) {
@@ -97,10 +96,7 @@ export function buildIncomeRows(payload: ReportPayload) {
 
 export function computeTotals(payload: ReportPayload) {
   const income = payload.incomes.reduce((s, i) => s + i.amount, 0);
-  const spent = payload.transactions.reduce(
-    (s, t) => s + payload.matchedAmount(t),
-    0,
-  );
+  const spent = payload.transactions.reduce((s, t) => s + payload.matchedAmount(t), 0);
   return { income, spent, left: income - spent };
 }
 
@@ -187,11 +183,7 @@ export function downloadWorkbook(
   XLSX.writeFile(wb, filename, { bookType: "xlsx" });
 }
 
-function applyCurrencyColumn(
-  ws: XLSX.WorkSheet,
-  rowCount: number,
-  colLetter: string,
-) {
+function applyCurrencyColumn(ws: XLSX.WorkSheet, rowCount: number, colLetter: string) {
   for (let i = 2; i <= rowCount + 1; i++) {
     const addr = `${colLetter}${i}`;
     const cell = ws[addr];

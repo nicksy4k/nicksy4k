@@ -72,14 +72,13 @@ async function computePrevLeftover(uid: string, prev: ActiveCycle): Promise<numb
     0,
   );
   const income = incs.reduce((s, i) => s + i.amount, 0);
-  const savingsDelta = savs.reduce(
-    (s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount),
-    0,
-  );
+  const savingsDelta = savs.reduce((s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount), 0);
   return +(income - expenses - savingsDelta).toFixed(2);
 }
 
-async function runCarryover(settings: CycleSettings): Promise<{ inserted: boolean; amount: number } | null> {
+async function runCarryover(
+  settings: CycleSettings,
+): Promise<{ inserted: boolean; amount: number } | null> {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return null;
   const uid = u.user.id;
@@ -126,7 +125,6 @@ async function runCarryover(settings: CycleSettings): Promise<{ inserted: boolea
   if (Math.abs(leftover) < 0.005) {
     return { inserted: false, amount: 0 };
   }
-
 
   // Post to the first day of the CURRENT cycle so it counts toward the new window.
   // Compute current cycle start via the same helper by importing lazily.

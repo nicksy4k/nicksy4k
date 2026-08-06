@@ -35,31 +35,56 @@ export const THEMES: ThemeDef[] = [
     id: "midnight",
     name: "Midnight Indigo",
     blurb: "The signature look — softened for longer sessions.",
-    swatches: ["oklch(0.20 0.02 270)", "oklch(0.62 0.15 272)", "oklch(0.62 0.13 220)", "oklch(0.74 0.11 170)"],
+    swatches: [
+      "oklch(0.20 0.02 270)",
+      "oklch(0.62 0.15 272)",
+      "oklch(0.62 0.13 220)",
+      "oklch(0.74 0.11 170)",
+    ],
   },
   {
     id: "blush",
     name: "Soft Blush",
     blurb: "Warm plum surfaces with a gentle rose accent.",
-    swatches: ["oklch(0.21 0.02 350)", "oklch(0.70 0.13 350)", "oklch(0.74 0.11 25)", "oklch(0.72 0.10 320)"],
+    swatches: [
+      "oklch(0.21 0.02 350)",
+      "oklch(0.70 0.13 350)",
+      "oklch(0.74 0.11 25)",
+      "oklch(0.72 0.10 320)",
+    ],
   },
   {
     id: "bubblegum",
     name: "Bubblegum Pink",
     blurb: "Bright candy pink — light, warm and unapologetic.",
-    swatches: ["oklch(0.98 0.015 345)", "oklch(0.62 0.24 350)", "oklch(0.62 0.19 15)", "oklch(0.60 0.18 320)"],
+    swatches: [
+      "oklch(0.98 0.015 345)",
+      "oklch(0.62 0.24 350)",
+      "oklch(0.62 0.19 15)",
+      "oklch(0.60 0.18 320)",
+    ],
   },
   {
     id: "slate",
     name: "Muted Slate",
     blurb: "Low-contrast greys. The calmest of the dark themes.",
-    swatches: ["oklch(0.22 0.01 250)", "oklch(0.66 0.08 240)", "oklch(0.70 0.07 200)", "oklch(0.74 0.07 160)"],
+    swatches: [
+      "oklch(0.22 0.01 250)",
+      "oklch(0.66 0.08 240)",
+      "oklch(0.70 0.07 200)",
+      "oklch(0.74 0.07 160)",
+    ],
   },
   {
     id: "daylight",
     name: "Daylight",
     blurb: "A light, airy theme for bright rooms.",
-    swatches: ["oklch(0.98 0.005 270)", "oklch(0.55 0.14 272)", "oklch(0.58 0.12 230)", "oklch(0.60 0.11 170)"],
+    swatches: [
+      "oklch(0.98 0.005 270)",
+      "oklch(0.55 0.14 272)",
+      "oklch(0.58 0.12 230)",
+      "oklch(0.60 0.11 170)",
+    ],
   },
 ];
 
@@ -240,7 +265,8 @@ async function persist(patch: Partial<Prefs>) {
   } = {};
   if (patch.joyCategories !== undefined) settingsPatch.joy_categories = patch.joyCategories;
   if (patch.blurAmounts !== undefined) settingsPatch.blur_amounts = patch.blurAmounts;
-  if (patch.hideCategoryChart !== undefined) settingsPatch.hide_category_chart = patch.hideCategoryChart;
+  if (patch.hideCategoryChart !== undefined)
+    settingsPatch.hide_category_chart = patch.hideCategoryChart;
 
   await Promise.all([
     Object.keys(profilePatch).length

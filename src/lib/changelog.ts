@@ -1,5 +1,17 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, Download, Zap, Rocket, Wallet, MessageSquare, UserPlus, Heart, Palette, ScanLine, Compass } from "lucide-react";
+import {
+  Sparkles,
+  Download,
+  Zap,
+  Rocket,
+  Wallet,
+  MessageSquare,
+  UserPlus,
+  Heart,
+  Palette,
+  ScanLine,
+  Compass,
+} from "lucide-react";
 
 export interface ChangelogEntry {
   version: string;
@@ -27,7 +39,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.11.1",
     title: "Demo dashboard lights up",
     date: "2026-08-05",
@@ -39,20 +50,18 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.11.0",
     title: "Demo mode",
     date: "2026-08-06",
     icon: Compass,
     highlights: [
-      "New \"View Demo Account\" button on the sign-in page — explore Ledgerly instantly with realistic sample data.",
+      'New "View Demo Account" button on the sign-in page — explore Ledgerly instantly with realistic sample data.',
       "The demo sandbox is re-seeded on every visit with pockets, income, transactions and commitments.",
-      "A clear \"Demo sandbox\" banner appears while you're in the demo, and app settings stay locked.",
+      'A clear "Demo sandbox" banner appears while you\'re in the demo, and app settings stay locked.',
       "Admins get a new Admin tab with a kill switch for AI scanner access in the demo (off by default).",
     ],
   },
   {
-
     version: "v2.10.0",
     title: "AI receipt scanner (early preview)",
     date: "2026-08-05",
@@ -60,13 +69,12 @@ export const changelog: ChangelogEntry[] = [
     highlights: [
       "Upload a photo or PDF of a receipt and have the retailer, date, total and every line item filled in for you.",
       "Review sheet lets you tick, rename, re-price or drop any detected line before it touches your ledger.",
-      "Automatic \"items vs receipt total\" check flags anything the scan missed or double-counted.",
+      'Automatic "items vs receipt total" check flags anything the scan missed or double-counted.',
       "The uploaded receipt is attached to the transaction automatically — no second upload.",
       "Limited preview: currently enabled on admin accounts only while we test accuracy and running costs.",
     ],
   },
   {
-
     version: "v2.9.3",
     title: "Safer, faster transaction entry",
     date: "2026-08-04",
@@ -75,7 +83,6 @@ export const changelog: ChangelogEntry[] = [
       "Undo when you remove an item row — one tap in the toast restores it in place, on both New transaction and the History edit/settle dialog.",
       "Inline validation highlights the exact field to fix (item name, price, retailer, estimate, dates) instead of a generic error.",
       "New keyboard shortcuts help — press ? or use the Shortcuts button on the transaction form and History dialogs.",
-
     ],
   },
 
@@ -116,7 +123,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.8.3",
     title: "Donation links updated",
     date: "2026-07-31",
@@ -131,13 +137,12 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-07-31",
     icon: Heart,
     highlights: [
-      "New \"The Story Behind Ledgerly\" section on the landing page explaining why the app exists and how it's built.",
+      'New "The Story Behind Ledgerly" section on the landing page explaining why the app exists and how it\'s built.',
       "Condensed version of the story added to Settings › About.",
-      "New \"Buy the Dev a Monster\" support card with Buy Me a Coffee and Ko-fi links, for anyone who wants to chip in towards hosting costs.",
+      'New "Buy the Dev a Monster" support card with Buy Me a Coffee and Ko-fi links, for anyone who wants to chip in towards hosting costs.',
     ],
   },
   {
-
     version: "v2.8.1",
     title: "Keyboard-first transaction entry",
     date: "2026-07-30",
@@ -339,9 +344,7 @@ export function changelogToCsv(): string {
   const rows: string[] = [header];
   for (const e of changelog) {
     for (const h of e.highlights) {
-      rows.push(
-        [e.version, e.date, e.title, h].map(csvEscape).join(","),
-      );
+      rows.push([e.version, e.date, e.title, h].map(csvEscape).join(","));
     }
   }
   return rows.join("\n");
