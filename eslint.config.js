@@ -46,5 +46,21 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    files: [
+      "src/components/ui/**/*",
+      "src/lib/email-templates/*",
+      "src/components/ChangelogDialog.tsx",
+      "src/components/FieldError.tsx",
+      "src/components/PaymentSplitEditor.tsx",
+      "src/components/ProtectionFields.tsx",
+      "src/components/ReceiptUpload.tsx",
+      "src/components/tutorial/TutorialProvider.tsx",
+      "src/lib/demoMode.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
   eslintPluginPrettier,
 );
