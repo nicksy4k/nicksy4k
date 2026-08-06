@@ -31,7 +31,7 @@ export function useTransactions() {
     },
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["transactions"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["transactions"] }), [qc]);
 
   const add = useCallback(
     async (t: Omit<Transaction, "id" | "created_at">) => {
@@ -121,7 +121,7 @@ export function useIncomes() {
       return (data ?? []) as unknown as IncomeEntry[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["incomes"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["incomes"] }), [qc]);
 
   const add = useCallback(
     async (i: Omit<IncomeEntry, "id" | "created_at">) => {
@@ -160,7 +160,7 @@ export function useRecurringIncomes() {
       return (data ?? []) as unknown as RecurringIncome[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["recurring_incomes"] }), [qc]);
 
   const add = useCallback(
     async (r: Omit<RecurringIncome, "id" | "created_at" | "updated_at">) => {
@@ -228,7 +228,7 @@ export function useSavings() {
       return (data ?? []) as unknown as SavingsEntry[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["savings"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["savings"] }), [qc]);
 
   const add = useCallback(
     async (s: Omit<SavingsEntry, "id" | "created_at">) => {
@@ -284,7 +284,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey }), [qc]);
 
   const add = useCallback(
     async (name: string) => {
@@ -348,7 +348,7 @@ export function useCommitments() {
       return (data ?? []) as unknown as Commitment[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["commitments"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["commitments"] }), [qc]);
 
   const add = useCallback(
     async (c: Omit<Commitment, "id" | "created_at">) => {
@@ -395,7 +395,7 @@ export function useLoans() {
       return (data ?? []) as unknown as Loan[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["loans"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["loans"] }), [qc]);
 
   const add = useCallback(
     async (l: Omit<Loan, "id" | "created_at">) => {
@@ -466,7 +466,7 @@ export function useDebts() {
       return (data ?? []) as unknown as Debt[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["debts"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["debts"] }), [qc]);
 
   const add = useCallback(
     async (d: Omit<Debt, "id" | "created_at">): Promise<string> => {
@@ -550,7 +550,7 @@ export function useDebtItems() {
       return (data ?? []) as unknown as DebtItem[];
     },
   });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["debt_items"] });
+  const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["debt_items"] }), [qc]);
 
   const addMany = useCallback(
     async (debt_id: string, rows: Array<Omit<DebtItem, "id" | "created_at" | "debt_id">>) => {
