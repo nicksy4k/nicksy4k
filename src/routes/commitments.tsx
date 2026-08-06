@@ -68,11 +68,15 @@ function todayISO() {
 }
 
 function CommitmentsPage() {
-  const { items, add, update, remove } = useCommitments();
+  const { items: allItems, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const qc = useQueryClient();
+
+  // Subscriptions live on their own page but share the same Bill Money pocket.
+  const items = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
+  const subscriptions = useMemo(() => allItems.filter((c) => c.is_subscription), [allItems]);
 
   const cycle = useActiveCycle();
   // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
@@ -86,7 +90,16 @@ function CommitmentsPage() {
 
   const totalCommitments = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
 
+  const subsDueThisCycle = useMemo(
+    () =>
+      subscriptions
+        .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
+        .reduce((s, i) => s + i.amount, 0),
+    [subscriptions, resetDate],
+  );
+
   const leftToPay = useMemo(() => {
+
     return items
       .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
       .reduce((s, i) => s + i.amount, 0);
