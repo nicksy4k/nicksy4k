@@ -81,7 +81,6 @@ export function ShortcutsHelp({
     [onOpenChange],
   );
 
-
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
