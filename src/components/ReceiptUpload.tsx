@@ -57,8 +57,9 @@ export function ReceiptUpload({ value, onChange }: Props) {
       }
       onChange(path);
       toast.success("Receipt uploaded");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Upload failed");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Upload failed";
+      toast.error(message);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

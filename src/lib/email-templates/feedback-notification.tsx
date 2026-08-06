@@ -114,7 +114,7 @@ const FeedbackNotification = ({
 
 export const template = {
   component: FeedbackNotification,
-  subject: (data: Record<string, any>) =>
+  subject: (data: Record<string, unknown>) =>
     `[Ledgerly ${data?.type ?? "feedback"}] ${data?.subject ?? "New feedback"}`,
   displayName: "Beta feedback notification",
   to: "admin@itemizedkeeper.co.uk",
