@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
 import type {
   Commitment,
   Debt,
@@ -258,7 +259,8 @@ export function useSavings() {
 // ===== Categories =====
 function useCategoryList(kind: "expense" | "income", defaults: string[]) {
   const qc = useQueryClient();
-  const queryKey = ["categories", kind];
+  const queryKey = useMemo(() => ["categories", kind], [kind]);
+
 
   const { data } = useQuery({
     queryKey,
@@ -520,7 +522,8 @@ export function useDebts() {
       await invalidate();
       qc.invalidateQueries({ queryKey: ["commitments"] });
     },
-    [invalidate],
+    [invalidate, qc],
+
   );
 
   const addPayment = useCallback(
