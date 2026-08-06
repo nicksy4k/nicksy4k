@@ -16,6 +16,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.11.2",
+    title: "Pocket-funded loans balance properly",
+    date: "2026-08-06",
+    icon: Wallet,
+    highlights: [
+      "Fixed: funding a loan, top-up or debt payment from a pocket only logged the pocket withdrawal, leaving the main balance overstated and nothing in your transactions list.",
+      "These now record the outgoing transaction too, tagged with the pocket it came from, so the main balance nets out correctly.",
+      "Loan repayments paid into a pocket now record the incoming money as well, so the main balance no longer dips.",
+    ],
+  },
+  {
+
     version: "v2.11.1",
     title: "Demo dashboard lights up",
     date: "2026-08-05",

@@ -36,6 +36,8 @@ import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
+import { planCredit, planDebit } from "@/lib/ledgerSync";
+
 
 
 export const Route = createFileRoute("/credit")({
@@ -179,64 +181,57 @@ function useLedgerSync() {
   const { add: addIncome } = useIncomes();
   const { add: addSaving } = useSavings();
 
-  /** Money leaves the user's funds. */
+  /**
+   * Money leaves the user's funds.
+   *
+   * Pocket-funded outflows write BOTH rows (see `planDebit`): the pocket
+   * withdrawal credits the main balance back, and the transaction (tagged
+   * with a `pocket:` split) debits it again, so main nets out and the spend
+   * still shows in history.
+   */
   async function debit(
     source: SourceChoice,
     args: { amount: number; date: string; label: string; category?: string; notes?: string },
   ) {
-    if (source.kind === "other") return;
-    if (source.kind === "pocket") {
-      await addSaving({
-        date: args.date,
-        kind: "withdrawal",
-        amount: args.amount,
-        account: source.name,
-        notes: args.notes ?? args.label,
+    const plan = planDebit(source, args);
+    if (plan.saving) await addSaving(plan.saving);
+    if (plan.transaction) {
+      const t = plan.transaction;
+      await addTransaction({
+        date: t.date,
+        retailer: t.retailer,
+        total_amount: t.total_amount,
+        receipt_attached: false,
+        receipt_type: "None",
+        receipt_location: "",
+        notes: t.notes,
+        items: [{
+          id: crypto.randomUUID(),
+          item_name: t.retailer,
+          price: t.total_amount,
+          quantity: 1,
+          category: t.category,
+        }],
+        payment_splits: t.payment_splits,
       });
-      return;
     }
-    await addTransaction({
-      date: args.date,
-      retailer: args.label,
-      total_amount: args.amount,
-      receipt_attached: false,
-      receipt_type: "None",
-      receipt_location: "",
-      notes: args.notes,
-      items: [{
-        id: crypto.randomUUID(),
-        item_name: args.label,
-        price: args.amount,
-        quantity: 1,
-        category: args.category ?? "Debt",
-      }],
-    });
   }
 
-  /** Money arrives in the user's funds. */
+  /**
+   * Money arrives in the user's funds. Into a pocket we write BOTH the pocket
+   * deposit and the income row, so the deposit's drag on the main balance is
+   * offset and main stays flat.
+   */
   async function credit(
     source: SourceChoice,
     args: { amount: number; date: string; label: string; category?: string; notes?: string },
   ) {
-    if (source.kind === "other") return;
-    if (source.kind === "pocket") {
-      await addSaving({
-        date: args.date,
-        kind: "deposit",
-        amount: args.amount,
-        account: source.name,
-        notes: args.notes ?? args.label,
-      });
-      return;
-    }
-    await addIncome({
-      date: args.date,
-      source: args.label,
-      amount: args.amount,
-      category: args.category ?? "Loan repayment",
-      notes: args.notes,
-    });
+    const plan = planCredit(source, args);
+    if (plan.saving) await addSaving(plan.saving);
+    if (plan.income) await addIncome(plan.income);
   }
+
+
 
   return { debit, credit };
 }
