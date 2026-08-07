@@ -30,6 +30,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.3",
+    title: "Full recurring outgoings",
+    date: "2026-08-07",
+    icon: Wallet,
+    highlights: [
+      "New 'Every cycle (all tracked)' figure on Commitments and Subscriptions — every bill and subscription you track, whether or not it's due in the current window.",
+      "Annual subscriptions are spread over 12 so one big renewal doesn't distort the typical cycle.",
+      "The Dashboard outgoings card now shows your typical per-cycle spend alongside what's due and unpaid.",
+    ],
+  },
+  {
     version: "v2.12.2",
     title: "Total outgoings per cycle",
     date: "2026-08-07",
