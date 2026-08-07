@@ -198,13 +198,14 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-3 mb-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Total commitments
+              Commitments this cycle
             </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(totalCommitments)}</p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(commitmentsDueThisCycle)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{items.length} bills tracked</p>
           </CardContent>
         </Card>
         <Card>
@@ -225,9 +226,22 @@ function CommitmentsPage() {
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Total outgoings this cycle
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(totalOutgoings)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              bills {fmt(commitmentsDueThisCycle)} + subs {fmt(subsDueThisCycle)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Left to pay before reset
             </p>
             <p className="text-2xl font-semibold tabular-nums">{fmt(leftToPay)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">Unpaid only</p>
           </CardContent>
         </Card>
       </div>
