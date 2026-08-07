@@ -33,7 +33,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { isStoragePath } from "@/components/ReceiptUpload";
@@ -219,6 +219,16 @@ function DashboardPage() {
 
   const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
+  // Outgoings due inside the current cycle (bills + subscriptions share the pocket).
+  const outgoings = useMemo(() => {
+    const resetDate = format(addDays(cycle.end, 1), "yyyy-MM-dd");
+    const due = commitments.filter((c) => c.next_due_date && c.next_due_date < resetDate);
+    const total = due.reduce((s, c) => s + c.amount, 0);
+    const unpaid = due.filter((c) => !c.paid).reduce((s, c) => s + c.amount, 0);
+    const subs = due.filter((c) => c.is_subscription).reduce((s, c) => s + c.amount, 0);
+    return { total, unpaid, subs, bills: total - subs };
+  }, [commitments, cycle]);
+
   const recent = items.slice(0, 5);
 
   return (
@@ -377,6 +387,23 @@ function DashboardPage() {
         </Card>
 
         <Card data-tour="warranty-alerts">
+          <div className="border-b border-border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Outgoings this cycle
+                </p>
+                <p className="text-2xl font-semibold tabular-nums mt-1">{fmt(outgoings.total)}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  bills {fmt(outgoings.bills)} + subs {fmt(outgoings.subs)} ·{" "}
+                  {fmt(outgoings.unpaid)} still to pay
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/commitments">View</Link>
+              </Button>
+            </div>
+          </div>
           {subsPromoAlerts.length > 0 && (
             <div className="border-b border-border p-4 space-y-2">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
