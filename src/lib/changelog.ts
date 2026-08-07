@@ -30,6 +30,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.1",
+    title: "Move existing bills into Subscriptions",
+    date: "2026-08-07",
+    icon: Repeat,
+    highlights: [
+      "Commitments that look like subscriptions now get a prompt at the top of the Commitments page — tick the ones you want and move them across in one go.",
+      "Any commitment can be moved to Subscriptions (and back again) from its details panel.",
+      "Moving a row keeps its amount, due date and paid state, so your cycle totals and Bill Money shortfall don't change.",
+    ],
+  },
+  {
     version: "v2.12.0",
     title: "Subscriptions tracker",
     date: "2026-08-06",

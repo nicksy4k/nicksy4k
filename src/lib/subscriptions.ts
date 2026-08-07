@@ -66,3 +66,60 @@ export function acceptFullPricePatch(c: Commitment): Partial<Commitment> {
       : {}),
   };
 }
+
+/** Store/provider names that are almost certainly subscriptions. */
+export const SUBSCRIPTION_PROVIDERS = [
+  "netflix",
+  "spotify",
+  "disney",
+  "nowtv",
+  "now tv",
+  "amazon prime",
+  "prime video",
+  "paramount",
+  "apple",
+  "itunes",
+  "google",
+  "youtube",
+  "xbox",
+  "playstation",
+  "nintendo",
+  "audible",
+  "sky",
+  "hulu",
+  "hbo",
+  "max",
+  "deezer",
+  "tidal",
+  "dropbox",
+  "adobe",
+  "microsoft",
+  "office 365",
+  "canva",
+  "patreon",
+  "twitch",
+  "britbox",
+  "discovery",
+  "crunchyroll",
+  "peloton",
+  "strava",
+  "duolingo",
+];
+
+/**
+ * Heuristic for legacy rows created before the Subscriptions page existed:
+ * anything filed under the "Subscriptions" category, or from a well-known
+ * subscription provider. BNPL-linked rows are never suggested.
+ */
+export function looksLikeSubscription(c: Commitment): boolean {
+  if (c.is_subscription) return false;
+  if (c.debt_id) return false;
+  if ((c.category ?? "").trim().toLowerCase() === "subscriptions") return true;
+  const haystack = `${c.store ?? ""} ${c.item_name ?? ""}`.toLowerCase();
+  return SUBSCRIPTION_PROVIDERS.some((p) => haystack.includes(p));
+}
+
+/** Commitments that should probably live on the Subscriptions page. */
+export function unmigratedSubscriptions(items: Commitment[]): Commitment[] {
+  return items.filter(looksLikeSubscription);
+}

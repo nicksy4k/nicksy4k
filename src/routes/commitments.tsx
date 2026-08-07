@@ -41,6 +41,8 @@ import { toast } from "sonner";
 import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
 import { Link } from "@tanstack/react-router";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
+import { Repeat } from "lucide-react";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({
@@ -272,6 +274,8 @@ function CommitmentsPage() {
         </div>
       </div>
 
+      <MoveToSubscriptionsCard items={items} update={update} />
+
       <Card>
         <CardHeader>
           <CardTitle>All commitments</CardTitle>
@@ -380,6 +384,19 @@ function CommitmentsPage() {
         item={detailsItem}
         cycle={cycle}
         onClose={() => setDetailsId(null)}
+        onMoveToSubscriptions={async (c) => {
+          setDetailsId(null);
+          await update(c.id, {
+            is_subscription: true,
+            cadence: c.cadence === "annual" ? "annual" : "monthly",
+          });
+          toast.success("Moved to Subscriptions", {
+            action: {
+              label: "Undo",
+              onClick: () => void update(c.id, { is_subscription: false }),
+            },
+          });
+        }}
         onEdit={(c) => {
           setDetailsId(null);
           setEditing(c);
@@ -493,6 +510,7 @@ function DetailsDialog({
   onDelete,
   onConfirmReset,
   onUnmarkPaid,
+  onMoveToSubscriptions,
 }: {
   item: Commitment | null;
   cycle: ReturnType<typeof useActiveCycle>;
@@ -501,6 +519,7 @@ function DetailsDialog({
   onDelete: (id: string) => void;
   onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
   onUnmarkPaid: (c: Commitment) => void | Promise<void>;
+  onMoveToSubscriptions: (c: Commitment) => void;
 }) {
   const [mode, setMode] = useState<"details" | "confirm">("details");
   const [pickerDate, setPickerDate] = useState("");
@@ -576,6 +595,11 @@ function DetailsDialog({
               <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}>
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>
+              {!item.debt_id && (
+                <Button variant="outline" size="sm" onClick={() => onMoveToSubscriptions(item)}>
+                  <Repeat className="h-4 w-4" /> Move to Subscriptions
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
                 <Pencil className="h-4 w-4" /> Edit
               </Button>

@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BellRing, Pencil, Plus, Repeat, Trash2, Tag } from "lucide-react";
+import { BellRing, Pencil, Plus, Repeat, Trash2, Tag, Undo2 } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle, advanceForCommitment } from "@/lib/cycle";
@@ -456,6 +456,23 @@ function SubscriptionsPage() {
                   }}
                 >
                   <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const id = detailsItem.id;
+                    setDetailsId(null);
+                    await update(id, { is_subscription: false });
+                    toast.success("Moved back to Commitments", {
+                      action: {
+                        label: "Undo",
+                        onClick: () => void update(id, { is_subscription: true }),
+                      },
+                    });
+                  }}
+                >
+                  <Undo2 className="h-4 w-4" /> Move to Commitments
                 </Button>
                 <Button
                   variant="outline"
