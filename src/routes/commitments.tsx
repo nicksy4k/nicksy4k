@@ -384,6 +384,19 @@ function CommitmentsPage() {
         item={detailsItem}
         cycle={cycle}
         onClose={() => setDetailsId(null)}
+        onMoveToSubscriptions={async (c) => {
+          setDetailsId(null);
+          await update(c.id, {
+            is_subscription: true,
+            cadence: c.cadence === "annual" ? "annual" : "monthly",
+          });
+          toast.success("Moved to Subscriptions", {
+            action: {
+              label: "Undo",
+              onClick: () => void update(c.id, { is_subscription: false }),
+            },
+          });
+        }}
         onEdit={(c) => {
           setDetailsId(null);
           setEditing(c);
