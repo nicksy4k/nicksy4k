@@ -580,6 +580,11 @@ function DetailsDialog({
               <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}>
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>
+              {!item.debt_id && (
+                <Button variant="outline" size="sm" onClick={() => onMoveToSubscriptions(item)}>
+                  <Repeat className="h-4 w-4" /> Move to Subscriptions
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
                 <Pencil className="h-4 w-4" /> Edit
               </Button>
