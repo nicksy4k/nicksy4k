@@ -33,7 +33,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { isStoragePath } from "@/components/ReceiptUpload";
