@@ -90,9 +90,7 @@ export function MoveToSubscriptionsCard({
                   <Checkbox
                     id={`mv-${c.id}`}
                     checked={!!selected[c.id]}
-                    onCheckedChange={(v) =>
-                      setSelected((s) => ({ ...s, [c.id]: v === true }))
-                    }
+                    onCheckedChange={(v) => setSelected((s) => ({ ...s, [c.id]: v === true }))}
                   />
                   <label htmlFor={`mv-${c.id}`} className="flex-1 min-w-0 truncate cursor-pointer">
                     {c.item_name}
