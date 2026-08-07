@@ -242,6 +242,19 @@ function CommitmentsPage() {
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Every cycle (all tracked)
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(everyCycle.total)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {everyCycle.count} bills + subs · annual plans spread over 12
+            </p>
+          </CardContent>
+        </Card>
+
+
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Left to pay before reset
             </p>
             <p className="text-2xl font-semibold tabular-nums">{fmt(leftToPay)}</p>
