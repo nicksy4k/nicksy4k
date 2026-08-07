@@ -497,6 +497,7 @@ function DetailsDialog({
   onDelete,
   onConfirmReset,
   onUnmarkPaid,
+  onMoveToSubscriptions,
 }: {
   item: Commitment | null;
   cycle: ReturnType<typeof useActiveCycle>;
@@ -505,6 +506,7 @@ function DetailsDialog({
   onDelete: (id: string) => void;
   onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
   onUnmarkPaid: (c: Commitment) => void | Promise<void>;
+  onMoveToSubscriptions: (c: Commitment) => void;
 }) {
   const [mode, setMode] = useState<"details" | "confirm">("details");
   const [pickerDate, setPickerDate] = useState("");
