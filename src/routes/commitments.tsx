@@ -274,6 +274,8 @@ function CommitmentsPage() {
         </div>
       </div>
 
+      <MoveToSubscriptionsCard items={items} update={update} />
+
       <Card>
         <CardHeader>
           <CardTitle>All commitments</CardTitle>
