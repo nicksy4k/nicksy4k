@@ -460,6 +460,23 @@ function SubscriptionsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={async () => {
+                    const id = detailsItem.id;
+                    setDetailsId(null);
+                    await update(id, { is_subscription: false });
+                    toast.success("Moved back to Commitments", {
+                      action: {
+                        label: "Undo",
+                        onClick: () => void update(id, { is_subscription: true }),
+                      },
+                    });
+                  }}
+                >
+                  <Undo2 className="h-4 w-4" /> Move to Commitments
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setDetailsId(null);
                     setEditing(detailsItem);
