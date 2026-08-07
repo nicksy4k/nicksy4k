@@ -43,6 +43,7 @@ import { Link } from "@tanstack/react-router";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
 import { Repeat } from "lucide-react";
+import { perCycleTotal } from "@/lib/outgoings";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({
@@ -108,6 +109,9 @@ function CommitmentsPage() {
   );
 
   const totalOutgoings = commitmentsDueThisCycle + subsDueThisCycle;
+
+  // Every tracked row, regardless of cycle window or paid state.
+  const everyCycle = useMemo(() => perCycleTotal(allItems), [allItems]);
 
   // Funding math covers commitments AND subscriptions — they share the pocket.
   const leftToPay = useMemo(() => {
@@ -198,7 +202,7 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
@@ -234,6 +238,19 @@ function CommitmentsPage() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Every cycle (all tracked)
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(everyCycle.total)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {everyCycle.count} bills + subs · annual plans spread over 12
+            </p>
+          </CardContent>
+        </Card>
+
 
         <Card>
           <CardContent className="p-5">
