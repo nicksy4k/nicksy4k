@@ -87,10 +87,21 @@ function SubscriptionsPage() {
   const dueThisCycle = useMemo(
     () =>
       items
-        .filter((c) => !c.paid && c.next_due_date && c.next_due_date < resetDate)
+        .filter((c) => c.next_due_date && c.next_due_date < resetDate)
         .reduce((s, c) => s + c.amount, 0),
     [items, resetDate],
   );
+
+  const billsDueThisCycle = useMemo(
+    () =>
+      allCommitments
+        .filter((c) => !c.is_subscription && c.next_due_date && c.next_due_date < resetDate)
+        .reduce((s, c) => s + c.amount, 0),
+    [allCommitments, resetDate],
+  );
+
+  const totalOutgoings = dueThisCycle + billsDueThisCycle;
+
 
   const alerts = useMemo(() => promoAlerts(items), [items]);
 
