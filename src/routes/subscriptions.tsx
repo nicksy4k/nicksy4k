@@ -266,7 +266,7 @@ function SubscriptionsPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3 mb-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
@@ -284,7 +284,7 @@ function SubscriptionsPage() {
             <p className="text-[11px] text-muted-foreground mt-1">Annual plans spread over 12.</p>
           </CardContent>
         </Card>
-        <Card className="border-primary/30 bg-primary/5">
+        <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Due this cycle
@@ -295,7 +295,19 @@ function SubscriptionsPage() {
             </p>
           </CardContent>
         </Card>
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Total outgoings this cycle
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(totalOutgoings)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              bills {fmt(billsDueThisCycle)} + subs {fmt(dueThisCycle)}
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
 
       <Card>
         <CardHeader>
