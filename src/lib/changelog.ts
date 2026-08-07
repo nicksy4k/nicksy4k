@@ -30,6 +30,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.2",
+    title: "Total outgoings per cycle",
+    date: "2026-08-07",
+    icon: Wallet,
+    highlights: [
+      "Commitments now shows a single Total outgoings this cycle figure — bills plus subscriptions — alongside what's left to pay.",
+      "The same total is mirrored on the Subscriptions page and summarised on the Dashboard.",
+      "Cycle figures are now all scoped to the active cycle window, so the numbers add up.",
+    ],
+  },
+  {
     version: "v2.12.1",
     title: "Move existing bills into Subscriptions",
     date: "2026-08-07",
