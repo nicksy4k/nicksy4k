@@ -109,6 +109,9 @@ function CommitmentsPage() {
 
   const totalOutgoings = commitmentsDueThisCycle + subsDueThisCycle;
 
+  // Every tracked row, regardless of cycle window or paid state.
+  const everyCycle = useMemo(() => perCycleTotal(allItems), [allItems]);
+
   // Funding math covers commitments AND subscriptions — they share the pocket.
   const leftToPay = useMemo(() => {
     return allItems
