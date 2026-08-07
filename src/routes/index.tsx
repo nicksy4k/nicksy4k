@@ -387,6 +387,23 @@ function DashboardPage() {
         </Card>
 
         <Card data-tour="warranty-alerts">
+          <div className="border-b border-border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Outgoings this cycle
+                </p>
+                <p className="text-2xl font-semibold tabular-nums mt-1">{fmt(outgoings.total)}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  bills {fmt(outgoings.bills)} + subs {fmt(outgoings.subs)} ·{" "}
+                  {fmt(outgoings.unpaid)} still to pay
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/commitments">View</Link>
+              </Button>
+            </div>
+          </div>
           {subsPromoAlerts.length > 0 && (
             <div className="border-b border-border p-4 space-y-2">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
