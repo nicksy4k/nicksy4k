@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BellRing, Pencil, Plus, Repeat, Trash2, Tag } from "lucide-react";
+import { BellRing, Pencil, Plus, Repeat, Trash2, Tag, Undo2 } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle, advanceForCommitment } from "@/lib/cycle";
