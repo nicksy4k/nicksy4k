@@ -219,6 +219,16 @@ function DashboardPage() {
 
   const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
+  // Outgoings due inside the current cycle (bills + subscriptions share the pocket).
+  const outgoings = useMemo(() => {
+    const resetDate = format(addDays(cycle.end, 1), "yyyy-MM-dd");
+    const due = commitments.filter((c) => c.next_due_date && c.next_due_date < resetDate);
+    const total = due.reduce((s, c) => s + c.amount, 0);
+    const unpaid = due.filter((c) => !c.paid).reduce((s, c) => s + c.amount, 0);
+    const subs = due.filter((c) => c.is_subscription).reduce((s, c) => s + c.amount, 0);
+    return { total, unpaid, subs, bills: total - subs };
+  }, [commitments, cycle]);
+
   const recent = items.slice(0, 5);
 
   return (
