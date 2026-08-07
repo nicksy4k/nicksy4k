@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
+import { perCycleTotal } from "@/lib/outgoings";
 import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
 
 export const Route = createFileRoute("/")({
@@ -226,7 +227,8 @@ function DashboardPage() {
     const total = due.reduce((s, c) => s + c.amount, 0);
     const unpaid = due.filter((c) => !c.paid).reduce((s, c) => s + c.amount, 0);
     const subs = due.filter((c) => c.is_subscription).reduce((s, c) => s + c.amount, 0);
-    return { total, unpaid, subs, bills: total - subs };
+    const everyCycle = perCycleTotal(commitments);
+    return { total, unpaid, subs, bills: total - subs, everyCycle: everyCycle.total };
   }, [commitments, cycle]);
 
   const recent = items.slice(0, 5);
@@ -397,6 +399,9 @@ function DashboardPage() {
                 <p className="text-[11px] text-muted-foreground mt-1">
                   bills {fmt(outgoings.bills)} + subs {fmt(outgoings.subs)} ·{" "}
                   {fmt(outgoings.unpaid)} still to pay
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {fmt(outgoings.everyCycle)} typical per cycle across all tracked
                 </p>
               </div>
               <Button asChild size="sm" variant="outline">

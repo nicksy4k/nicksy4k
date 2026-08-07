@@ -103,6 +103,8 @@ function SubscriptionsPage() {
 
   const totalOutgoings = dueThisCycle + billsDueThisCycle;
 
+  const everyCycle = useMemo(() => perCycleTotal(allCommitments), [allCommitments]);
+
 
   const alerts = useMemo(() => promoAlerts(items), [items]);
 
@@ -267,7 +269,7 @@ function SubscriptionsPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
@@ -304,6 +306,17 @@ function SubscriptionsPage() {
             <p className="text-2xl font-semibold tabular-nums">{fmt(totalOutgoings)}</p>
             <p className="text-[11px] text-muted-foreground mt-1">
               bills {fmt(billsDueThisCycle)} + subs {fmt(dueThisCycle)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Every cycle (all tracked)
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">{fmt(everyCycle.total)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {everyCycle.count} bills + subs · annual plans spread over 12
             </p>
           </CardContent>
         </Card>
