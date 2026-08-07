@@ -43,6 +43,7 @@ import { Link } from "@tanstack/react-router";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
 import { Repeat } from "lucide-react";
+import { perCycleTotal } from "@/lib/outgoings";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({
