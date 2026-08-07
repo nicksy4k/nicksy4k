@@ -90,15 +90,24 @@ function CommitmentsPage() {
       .reduce((sum, s) => sum + (s.kind === "deposit" ? s.amount : -s.amount), 0);
   }, [savings]);
 
-  const totalCommitments = useMemo(() => items.reduce((s, i) => s + i.amount, 0), [items]);
+  // Cycle-scoped totals: everything due inside the current cycle, paid or not.
+  const commitmentsDueThisCycle = useMemo(
+    () =>
+      items
+        .filter((i) => i.next_due_date && i.next_due_date < resetDate)
+        .reduce((s, i) => s + i.amount, 0),
+    [items, resetDate],
+  );
 
   const subsDueThisCycle = useMemo(
     () =>
       subscriptions
-        .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
+        .filter((i) => i.next_due_date && i.next_due_date < resetDate)
         .reduce((s, i) => s + i.amount, 0),
     [subscriptions, resetDate],
   );
+
+  const totalOutgoings = commitmentsDueThisCycle + subsDueThisCycle;
 
   // Funding math covers commitments AND subscriptions — they share the pocket.
   const leftToPay = useMemo(() => {
