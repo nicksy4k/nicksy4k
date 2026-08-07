@@ -41,6 +41,8 @@ import { toast } from "sonner";
 import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
 import { Link } from "@tanstack/react-router";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
+import { Repeat } from "lucide-react";
 
 export const Route = createFileRoute("/commitments")({
   head: () => ({
