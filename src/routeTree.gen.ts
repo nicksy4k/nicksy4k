@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BetaDisclaimerRouteImport } from './routes/beta-disclaimer'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CreditRouteImport } from './routes/credit'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IncomeRouteImport } from './routes/income'
@@ -66,6 +67,11 @@ const ChangelogRoute = ChangelogRouteImport.update({
 const CommitmentsRoute = CommitmentsRouteImport.update({
   id: '/commitments',
   path: '/commitments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreditRoute = CreditRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
+  '/cookies': typeof CookiesRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
+  '/cookies': typeof CookiesRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/beta-disclaimer': typeof BetaDisclaimerRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
+  '/cookies': typeof CookiesRoute
   '/credit': typeof CreditRoute
   '/history': typeof HistoryRoute
   '/income': typeof IncomeRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
+    | '/cookies'
     | '/credit'
     | '/history'
     | '/income'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
+    | '/cookies'
     | '/credit'
     | '/history'
     | '/income'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/beta-disclaimer'
     | '/changelog'
     | '/commitments'
+    | '/cookies'
     | '/credit'
     | '/history'
     | '/income'
@@ -376,6 +388,7 @@ export interface RootRouteChildren {
   BetaDisclaimerRoute: typeof BetaDisclaimerRoute
   ChangelogRoute: typeof ChangelogRoute
   CommitmentsRoute: typeof CommitmentsRoute
+  CookiesRoute: typeof CookiesRoute
   CreditRoute: typeof CreditRoute
   HistoryRoute: typeof HistoryRoute
   IncomeRoute: typeof IncomeRoute
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       path: '/commitments'
       fullPath: '/commitments'
       preLoaderRoute: typeof CommitmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/credit': {
@@ -608,6 +628,7 @@ const rootRouteChildren: RootRouteChildren = {
   BetaDisclaimerRoute: BetaDisclaimerRoute,
   ChangelogRoute: ChangelogRoute,
   CommitmentsRoute: CommitmentsRoute,
+  CookiesRoute: CookiesRoute,
   CreditRoute: CreditRoute,
   HistoryRoute: HistoryRoute,
   IncomeRoute: IncomeRoute,
