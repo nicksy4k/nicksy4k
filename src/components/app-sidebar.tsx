@@ -182,7 +182,30 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
+        {!collapsed && (
+          <div className="mb-3 text-[11px] leading-relaxed text-sidebar-foreground/60">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <Link to="/privacy" className="hover:underline hover:text-sidebar-foreground">
+                Privacy
+              </Link>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <Link to="/beta-disclaimer" className="hover:underline hover:text-sidebar-foreground">
+                Beta
+              </Link>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <Link to="/cookies" className="hover:underline hover:text-sidebar-foreground">
+                Cookies
+              </Link>
+            </div>
+            <p className="mt-1">© {new Date().getFullYear()} Ledgerly</p>
+          </div>
+        )}
         <div className={cn("flex items-center gap-2.5", collapsed && "flex-col")}>
+
           <div className="h-8 w-8 shrink-0 rounded-lg bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-xs font-semibold text-primary">
             {initial}
           </div>

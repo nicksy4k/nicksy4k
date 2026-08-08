@@ -212,9 +212,14 @@ function PrivacyPage() {
             <p>
               Ledgerly stores your login session and a few interface preferences (theme, currency,
               tutorial progress) in your browser. There are no advertising or cross-site tracking
-              cookies.
+              cookies. Full detail is in the{" "}
+              <Link to="/cookies" className="text-primary hover:underline">
+                Cookie &amp; Analytics Notice
+              </Link>
+              .
             </p>
           </Section>
+
 
           <Section title="9. Children">
             <p>
@@ -254,10 +259,15 @@ function PrivacyPage() {
             </p>
           </CardContent>
         </Card>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Ledgerly · Built by Nicksy4K. All rights reserved.
+        </p>
       </main>
     </div>
   );
 }
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

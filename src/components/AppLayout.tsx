@@ -14,6 +14,8 @@ import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import { DemoModeProvider } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { useIsDemoUser } from "@/lib/demoAccount";
+import { LegalFooter } from "@/components/LegalFooter";
+
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -71,6 +73,8 @@ export function AppLayout() {
               <main className="flex-1 min-w-0 p-4 md:p-6">
                 <Outlet />
               </main>
+              <LegalFooter />
+
             </SidebarInset>
             <Toaster richColors position="top-right" />
           </div>
