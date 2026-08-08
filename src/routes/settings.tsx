@@ -856,7 +856,7 @@ function AboutTab({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap gap-2">
           <PrivacyDetailsDialog
             trigger={
               <Button size="sm" variant="outline">
@@ -864,7 +864,14 @@ function AboutTab({
               </Button>
             }
           />
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/privacy">Privacy Policy</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link to="/beta-disclaimer">Beta Disclaimer</Link>
+          </Button>
         </CardContent>
+
       </Card>
 
       {/* Help & feedback */}
