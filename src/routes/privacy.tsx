@@ -259,10 +259,15 @@ function PrivacyPage() {
             </p>
           </CardContent>
         </Card>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Ledgerly · Built by Nicksy4K. All rights reserved.
+        </p>
       </main>
     </div>
   );
 }
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
