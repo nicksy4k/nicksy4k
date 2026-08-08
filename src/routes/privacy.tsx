@@ -212,9 +212,14 @@ function PrivacyPage() {
             <p>
               Ledgerly stores your login session and a few interface preferences (theme, currency,
               tutorial progress) in your browser. There are no advertising or cross-site tracking
-              cookies.
+              cookies. Full detail is in the{" "}
+              <Link to="/cookies" className="text-primary hover:underline">
+                Cookie &amp; Analytics Notice
+              </Link>
+              .
             </p>
           </Section>
+
 
           <Section title="9. Children">
             <p>
