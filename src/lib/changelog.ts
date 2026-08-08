@@ -32,6 +32,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.5",
+    title: "Cookie notice & legal access",
+    date: "2026-08-08",
+    icon: ShieldCheck,
+    highlights: [
+      "New Cookie & Analytics Notice page explaining exactly what's kept in your browser, and how to clear it.",
+      "Privacy Policy, Beta Disclaimer and Cookie Notice are now linked from the app footer and the sidebar, not just Settings.",
+      "Copyright notices added across the app, sign-in page and legal pages.",
+    ],
+  },
+  {
+
     version: "v2.12.4",
     title: "Proper legal pages",
     date: "2026-08-08",

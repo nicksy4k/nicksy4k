@@ -498,9 +498,18 @@ export function AuthPage() {
                               className="text-primary hover:underline"
                             >
                               Privacy Policy
+                            </Link>{" "}
+                            and{" "}
+                            <Link
+                              to="/cookies"
+                              target="_blank"
+                              className="text-primary hover:underline"
+                            >
+                              Cookie Notice
                             </Link>
                             .
                           </span>
+
                         </label>
                         <label className="flex items-start gap-2 text-sm">
                           <Checkbox
