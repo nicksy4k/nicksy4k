@@ -71,6 +71,8 @@ export function AppLayout() {
               <main className="flex-1 min-w-0 p-4 md:p-6">
                 <Outlet />
               </main>
+              <LegalFooter />
+
             </SidebarInset>
             <Toaster richColors position="top-right" />
           </div>
