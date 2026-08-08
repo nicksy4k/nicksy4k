@@ -12,6 +12,8 @@ import {
   ScanLine,
   Compass,
   Repeat,
+  ShieldCheck,
+
 
 } from "lucide-react";
 
