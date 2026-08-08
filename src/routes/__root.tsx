@@ -17,6 +17,11 @@ import { resetPreferences } from "@/lib/preferences";
 
 import { AuthPage } from "./auth";
 
+/** Routes readable without an account (legal pages). */
+const PUBLIC_ROUTES: string[] = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog"];
+
+
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
