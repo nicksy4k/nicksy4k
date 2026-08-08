@@ -17,6 +17,8 @@ import { resetPreferences } from "@/lib/preferences";
 
 import { AuthPage } from "./auth";
 
+
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -224,8 +226,14 @@ function AuthGate() {
     return <div className="min-h-screen bg-background" />;
   }
   if (status === "out") {
+    // Legal pages are public — render them instead of the auth screen.
+    const publicRoutes = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog"];
+    if (publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
+      return <Outlet />;
+    }
     return <AuthPage />;
   }
+
   if (pathname === "/auth") {
     return null;
   }
