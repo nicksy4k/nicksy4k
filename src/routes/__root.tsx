@@ -17,9 +17,6 @@ import { resetPreferences } from "@/lib/preferences";
 
 import { AuthPage } from "./auth";
 
-/** Routes readable without an account (legal pages). */
-const PUBLIC_ROUTES: string[] = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog"];
-
 
 
 function NotFoundComponent() {
@@ -230,7 +227,8 @@ function AuthGate() {
   }
   if (status === "out") {
     // Legal pages are public — render them instead of the auth screen.
-    if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    const publicRoutes = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog"];
+    if (publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
       return <Outlet />;
     }
     return <AuthPage />;
