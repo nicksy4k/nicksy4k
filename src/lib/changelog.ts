@@ -12,6 +12,8 @@ import {
   ScanLine,
   Compass,
   Repeat,
+  ShieldCheck,
+
 
 } from "lucide-react";
 
@@ -30,6 +32,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.4",
+    title: "Proper legal pages",
+    date: "2026-08-08",
+    icon: ShieldCheck,
+    highlights: [
+      "The Privacy Policy is now a full document — what's collected, where it lives, who can reach it, how long it's kept, and how to export or delete it.",
+      "The Beta Disclaimer spells out accuracy limits, what may change during beta, backup advice and liability.",
+      "Both pages are linked from Settings and cross-link to each other, with the 'placeholder' labels removed.",
+    ],
+  },
+  {
+
     version: "v2.12.3",
     title: "Full recurring outgoings",
     date: "2026-08-07",
