@@ -224,8 +224,13 @@ function AuthGate() {
     return <div className="min-h-screen bg-background" />;
   }
   if (status === "out") {
+    // Legal pages are public — render them instead of the auth screen.
+    if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      return <Outlet />;
+    }
     return <AuthPage />;
   }
+
   if (pathname === "/auth") {
     return null;
   }
