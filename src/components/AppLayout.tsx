@@ -14,6 +14,8 @@ import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import { DemoModeProvider } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { useIsDemoUser } from "@/lib/demoAccount";
+import { LegalFooter } from "@/components/LegalFooter";
+
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
