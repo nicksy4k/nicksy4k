@@ -32,6 +32,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.6",
+    title: "Legal links work when signed out",
+    date: "2026-08-08",
+    icon: ShieldCheck,
+    highlights: [
+      "Privacy Policy, Beta Disclaimer, Cookie Notice and Changelog now open properly from the sign-in page instead of bouncing back to the login screen.",
+    ],
+  },
+  {
+
     version: "v2.12.5",
     title: "Cookie notice & legal access",
     date: "2026-08-08",
