@@ -75,8 +75,7 @@ export function AdminAnnouncementCard() {
               Show the banner
             </Label>
             <p className="text-xs text-muted-foreground max-w-md">
-              When off, nobody sees it. Editing the text makes the banner reappear for people who
-              dismissed the previous version.
+              When off, nobody sees it. Dismissing the banner hides it for the current session.
             </p>
           </div>
           <Switch
