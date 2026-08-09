@@ -13,6 +13,7 @@ import {
   Compass,
   Repeat,
   ShieldCheck,
+  Megaphone,
 
 
 } from "lucide-react";
