@@ -23,6 +23,7 @@ import {
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
 import { SupportDevCard } from "@/components/SupportDevCard";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import {
