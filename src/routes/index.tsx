@@ -44,6 +44,7 @@ import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
 import { perCycleTotal } from "@/lib/outgoings";
 import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
