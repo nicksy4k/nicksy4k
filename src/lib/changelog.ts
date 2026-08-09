@@ -39,7 +39,7 @@ export const changelog: ChangelogEntry[] = [
     icon: Megaphone,
     highlights: [
       "Admins can now post a site-wide notice from Settings › Admin — switch it on or off, edit the text and pick an Info, Warning or Critical style.",
-      "The notice appears at the top of the dashboard and on the sign-in page, and can be dismissed until the message changes.",
+      "The notice appears at the top of the dashboard and on the sign-in page, and can be dismissed for the rest of the session.",
     ],
   },
   {

@@ -3,7 +3,7 @@ import { AlertTriangle, Info, Megaphone, X } from "lucide-react";
 import { useAnnouncement, type Announcement } from "@/lib/announcement";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "ledgerly:announcement-dismissed";
+const SESSION_KEY = "ledgerly:announcement-dismissed";
 
 const VARIANTS: Record<string, { wrap: string; icon: typeof Info }> = {
   info: { wrap: "border-primary/30 bg-primary/10 text-foreground", icon: Info },
@@ -42,7 +42,7 @@ export function AnnouncementBody({
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss announcement"
+          aria-label="Dismiss announcement for this session"
           className="shrink-0 rounded-md p-1 opacity-60 hover:opacity-100"
         >
           <X className="h-3.5 w-3.5" />
@@ -53,8 +53,9 @@ export function AnnouncementBody({
 }
 
 /**
- * Site-wide notice controlled by admins. Dismissal is keyed to `updated_at`
- * so an edited message reappears for everyone.
+ * Site-wide notice controlled by admins. Dismissal is stored in sessionStorage
+ * so it only lasts for the current browser session. If the admin updates the
+ * message during the session, it will reappear.
  */
 export function AnnouncementBanner({ className }: { className?: string }) {
   const { data } = useAnnouncement();
@@ -62,7 +63,7 @@ export function AnnouncementBanner({ className }: { className?: string }) {
 
   useEffect(() => {
     try {
-      setDismissed(localStorage.getItem(STORAGE_KEY));
+      setDismissed(sessionStorage.getItem(SESSION_KEY));
     } catch {
       /* ignore */
     }
@@ -77,7 +78,7 @@ export function AnnouncementBanner({ className }: { className?: string }) {
       className={className}
       onDismiss={() => {
         try {
-          localStorage.setItem(STORAGE_KEY, data.updated_at);
+          sessionStorage.setItem(SESSION_KEY, data.updated_at);
         } catch {
           /* ignore */
         }
@@ -86,3 +87,4 @@ export function AnnouncementBanner({ className }: { className?: string }) {
     />
   );
 }
+
