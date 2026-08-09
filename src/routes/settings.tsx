@@ -217,6 +217,7 @@ function SettingsPage() {
 
         {isAdmin && (
           <TabsContent value="admin" className="mt-0 space-y-6">
+            <AdminAnnouncementCard />
             <AdminDemoCard />
           </TabsContent>
         )}
