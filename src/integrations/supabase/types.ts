@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_announcements: {
+        Row: {
+          enabled: boolean
+          id: number
+          message: string
+          title: string
+          updated_at: string
+          variant: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: number
+          message?: string
+          title?: string
+          updated_at?: string
+          variant?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: number
+          message?: string
+          title?: string
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       app_flags: {
         Row: {
           enabled: boolean
