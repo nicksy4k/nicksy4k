@@ -23,6 +23,7 @@ import {
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
 import { SupportDevCard } from "@/components/SupportDevCard";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import {
@@ -268,6 +269,9 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen w-full bg-background">
+      <div className="mx-auto max-w-7xl px-4 pt-4 md:px-6 empty:hidden">
+        <AnnouncementBanner />
+      </div>
       <div className="w-full border-b border-primary/20 bg-primary/5">
         <div className="mx-auto max-w-7xl px-4 py-3 md:px-6">
           <div className="flex items-start gap-3">

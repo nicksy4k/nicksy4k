@@ -13,6 +13,7 @@ import {
   Compass,
   Repeat,
   ShieldCheck,
+  Megaphone,
 
 
 } from "lucide-react";
@@ -31,6 +32,16 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v2.12.7",
+    title: "Announcement banner",
+    date: "2026-08-09",
+    icon: Megaphone,
+    highlights: [
+      "Admins can now post a site-wide notice from Settings › Admin — switch it on or off, edit the text and pick an Info, Warning or Critical style.",
+      "The notice appears at the top of the dashboard and on the sign-in page, and can be dismissed until the message changes.",
+    ],
+  },
   {
     version: "v2.12.6",
     title: "Legal links work when signed out",

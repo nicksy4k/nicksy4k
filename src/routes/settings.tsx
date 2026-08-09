@@ -78,6 +78,7 @@ import { UserCircle2, FileDown, Printer, BookOpen } from "lucide-react";
 import { useIsDemoUser } from "@/lib/demoAccount";
 import { useUserRoles } from "@/lib/features";
 import { AdminDemoCard } from "@/components/AdminDemoCard";
+import { AdminAnnouncementCard } from "@/components/AdminAnnouncementCard";
 import { WhatsNewCard } from "@/components/WhatsNewCard";
 import { ChangelogDialogTrigger } from "@/components/ChangelogDialog";
 import {
@@ -217,6 +218,7 @@ function SettingsPage() {
 
         {isAdmin && (
           <TabsContent value="admin" className="mt-0 space-y-6">
+            <AdminAnnouncementCard />
             <AdminDemoCard />
           </TabsContent>
         )}
