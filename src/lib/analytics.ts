@@ -56,7 +56,13 @@ export function setConsent(choice: Exclude<ConsentChoice, "unset">) {
   } catch {
     /* ignore */
   }
-  if (choice === "granted") loadGtag();
+  if (choice === "granted") {
+    loadGtag();
+  } else if (typeof window !== "undefined" && MEASUREMENT_ID) {
+    // If the script was already injected earlier in this session, GA's own
+    // opt-out flag stops any further collection.
+    (window as unknown as Record<string, boolean>)[`ga-disable-${MEASUREMENT_ID}`] = true;
+  }
   emit();
 }
 
