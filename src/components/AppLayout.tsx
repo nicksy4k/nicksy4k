@@ -15,6 +15,7 @@ import { DemoModeProvider } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { useIsDemoUser } from "@/lib/demoAccount";
 import { LegalFooter } from "@/components/LegalFooter";
+import { setDemoSession } from "@/lib/analytics";
 
 
 export function AppLayout() {
@@ -27,6 +28,10 @@ export function AppLayout() {
   const { prefs } = usePreferences();
   const isDemo = useIsDemoUser();
   const moneyKey = `${prefs.currency}:${prefs.customSymbol}:${prefs.symbolPosition}`;
+
+  useEffect(() => {
+    setDemoSession(isDemo);
+  }, [isDemo]);
 
   const { completed } = useOnboardingStatus();
   const navigate = useNavigate();

@@ -14,6 +14,7 @@ import {
   Repeat,
   ShieldCheck,
   Megaphone,
+  BarChart3,
 
 
 } from "lucide-react";
@@ -32,6 +33,18 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v2.12.8",
+    title: "Opt-in usage analytics",
+    date: "2026-08-10",
+    icon: BarChart3,
+    highlights: [
+      "Google Analytics is now available, but strictly opt-in — nothing loads unless you accept the new consent prompt.",
+      "Turn it on or off any time from Settings › Personalise.",
+      "Only page views and a few product events are recorded — never amounts, item names or anything you've typed.",
+      "Privacy Policy and Cookie Notice updated to describe exactly what analytics does.",
+    ],
+  },
   {
     version: "v2.12.7",
     title: "Announcement banner",
