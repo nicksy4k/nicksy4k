@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsDemoUser } from "@/lib/demoAccount";
 import { scanReceipt } from "@/lib/api/receipt-scan.functions";
+import { trackEvent } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,7 @@ export function ReceiptScanDialog({
         if (parsed.length === 0) {
           toast.warning("No line items found — I filled in what I could read.");
         } else {
+          trackEvent("receipt_scan");
           toast.success(`Found ${parsed.length} item${parsed.length === 1 ? "" : "s"}.`);
         }
       } finally {

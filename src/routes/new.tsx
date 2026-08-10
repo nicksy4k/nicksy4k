@@ -48,6 +48,7 @@ import {
 } from "@/components/PaymentSplitEditor";
 import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
 import {
+import { trackEvent } from "@/lib/analytics";
   buildPriceHistory,
   buildCategoryHistory,
   suggestPrice as lookupPrice,
@@ -413,6 +414,7 @@ function NewTransactionPage() {
           payment_splits: [],
           is_pending: true,
         } as never);
+        trackEvent("transaction_added", { pending: true });
         toast.success("Pending hold logged");
         navigate({ to: "/history" });
       } catch (err) {
@@ -652,6 +654,7 @@ function NewTransactionPage() {
         expiration_date: protection.enabled ? protection.expiration : null,
         payment_splits: finalSplits,
       });
+      trackEvent("transaction_added");
       toast.success("Transaction saved");
       navigate({ to: "/history" });
     } catch (err) {

@@ -44,6 +44,7 @@ import {
   Palette,
 } from "lucide-react";
 import { CurrencySettingsCard, ThemePickerCard, ComfortCard } from "@/components/PreferencesCards";
+import { AnalyticsCard } from "@/components/AnalyticsCard";
 
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
@@ -227,6 +228,7 @@ function SettingsPage() {
           <CurrencySettingsCard />
           <ThemePickerCard />
           <ComfortCard categories={itemCats.list} />
+          <AnalyticsCard />
         </TabsContent>
 
         <TabsContent value="account" className="mt-0 space-y-6">

@@ -38,6 +38,7 @@ import {
   useSavings,
 } from "@/lib/store";
 import { useOnboardingStatus } from "@/lib/onboarding";
+import { trackEvent } from "@/lib/analytics";
 import { markTutorialPending, useTutorialStatus } from "@/lib/tutorial";
 import { todayLocalISO } from "@/lib/format";
 import type { IncomeCadence } from "@/lib/types";
@@ -204,6 +205,7 @@ export function SetupWizard() {
       }
 
       await markComplete();
+      trackEvent("setup_completed");
       // Force the guided tour to run on the dashboard even if this user has
       // completed it before (re-runs of the wizard should offer it again).
       await resetTutorial();

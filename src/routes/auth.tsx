@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { startDemoSession } from "@/lib/api/demo.functions";
+import { trackEvent } from "@/lib/analytics";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { z } from "zod";
@@ -207,6 +208,7 @@ export function AuthPage() {
           },
         });
         if (error) throw error;
+        trackEvent("sign_up", { method: "email" });
         toast.success("Account created. Welcome to Ledgerly.");
       } else {
         if (!email || password.length < 6) {
@@ -215,6 +217,7 @@ export function AuthPage() {
         }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        trackEvent("login", { method: "email" });
         toast.success("Welcome back.");
       }
     } catch (err) {
@@ -232,6 +235,7 @@ export function AuthPage() {
         redirect_uri: `${window.location.origin}${returnPath}`,
       });
       if (result.error) throw result.error;
+      trackEvent("login", { method: "google" });
       toast.success("Signed in with Google.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
@@ -257,6 +261,7 @@ export function AuthPage() {
         /* storage unavailable */
       }
       queryClient.clear();
+      trackEvent("login", { method: "demo" });
       toast.success("Demo sandbox ready — sample data loaded.");
       window.location.assign("/");
     } catch (err) {

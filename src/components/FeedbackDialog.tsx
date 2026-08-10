@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION, FEEDBACK_EMAIL } from "@/lib/support";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 const MAX_ATTACHMENT_MB = 5;
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"];
@@ -143,6 +144,7 @@ export function FeedbackDialog({ children, defaultType = "general", anonymous = 
         throw new Error(body || `Server responded ${res.status}`);
       }
 
+      trackEvent("feedback_sent");
       toast.success("Feedback sent — thank you! 🙏");
       reset();
       setOpen(false);
