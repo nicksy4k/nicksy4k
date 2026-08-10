@@ -48,12 +48,12 @@ import {
 } from "@/components/PaymentSplitEditor";
 import { AddCategoryDialog, ADD_CATEGORY_SENTINEL } from "@/components/AddCategoryDialog";
 import {
-import { trackEvent } from "@/lib/analytics";
   buildPriceHistory,
   buildCategoryHistory,
   suggestPrice as lookupPrice,
   suggestCategory as lookupCategory,
 } from "@/lib/suggestions";
+import { trackEvent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/new")({
   head: () => ({
