@@ -73,10 +73,11 @@ function CookiesPage() {
         <div className="space-y-4">
           <Section title="1. The short version">
             <p>
-              Ledgerly sets no advertising cookies, runs no third-party analytics scripts, and does
-              no cross-site tracking. The only things kept in your browser are the sign-in session
-              and a handful of preferences that make the app usable. Because none of it is used for
-              advertising or profiling, there is no consent banner — this page is the notice.
+              Ledgerly sets no advertising cookies and does no cross-site tracking. The things kept
+              in your browser are the sign-in session, a handful of preferences that make the app
+              usable, and — only if you say yes — Google Analytics for anonymous usage measurement.
+              Analytics is off until you accept the prompt, and you can turn it back off any time in
+              Settings › Personalise.
             </p>
           </Section>
 
@@ -104,6 +105,15 @@ function CookiesPage() {
               <li>
                 <strong>Dismissed notices</strong> — flags for banners and tips you've closed.
               </li>
+              <li>
+                <strong>Analytics choice</strong> — whether you accepted or declined analytics, so
+                you aren't asked again.
+              </li>
+              <li>
+                <strong>Google Analytics cookies</strong> — only present if you accepted analytics.
+                They distinguish visits and expire on Google's own schedule (typically up to two
+                years).
+              </li>
             </ul>
             <p>
               These are stored on your device, not shared with anyone, and cleared when you clear
@@ -121,11 +131,25 @@ function CookiesPage() {
 
           <Section title="4. Analytics and error reporting">
             <p>
-              There is no Google Analytics, no advertising pixel, and no behavioural tracking. The
-              app does capture unexpected errors (message, page and browser details) so crashes can
-              be diagnosed and fixed, and the same technical context is attached when you submit
-              feedback. None of it contains advertising identifiers, and it is never sold or shared
-              for marketing.
+              <strong>Google Analytics — opt-in only.</strong> The first time you visit you'll be
+              asked whether to allow anonymous usage analytics. If you decline, the Google Analytics
+              script is never loaded at all and no cookies are set by it. If you accept, it records
+              which pages you open and a handful of product events (account created, signed in,
+              transaction added, receipt scanned, feedback sent, setup finished) so it's possible to
+              see what's actually used. It never receives your amounts, item names, retailers, or
+              anything else you've typed into Ledgerly.
+            </p>
+            <p>
+              When enabled, Google Analytics sets its own cookies on this site to distinguish
+              visits; IP anonymisation is on and advertising/personalisation signals are switched
+              off. You can withdraw consent any time in Settings › Personalise — collection stops
+              immediately, and clearing site data removes the cookies.
+            </p>
+            <p>
+              There is no advertising pixel and no cross-site tracking. Separately, the app captures
+              unexpected errors (message, page and browser details) so crashes can be diagnosed, and
+              the same technical context is attached when you submit feedback. None of it contains
+              advertising identifiers, and it is never sold or shared for marketing.
             </p>
           </Section>
 
@@ -144,6 +168,10 @@ function CookiesPage() {
                 data held in your account.
               </li>
               <li>
+                <strong>Turn analytics off</strong> — Settings › Personalise has an "Anonymous usage
+                analytics" switch; turning it off stops collection immediately.
+              </li>
+              <li>
                 <strong>Block storage</strong> — you can block site storage in your browser
                 entirely, but the app then cannot keep you signed in.
               </li>
@@ -155,6 +183,10 @@ function CookiesPage() {
               <li>
                 <strong>The authentication provider</strong> (Lovable Cloud / Supabase) — issues and
                 refreshes the session token described above.
+              </li>
+              <li>
+                <strong>Google Analytics</strong> — only after you accept analytics; governed by
+                Google's privacy policy.
               </li>
               <li>
                 <strong>Google Sign-In</strong> — only if you choose "Continue with Google", Google

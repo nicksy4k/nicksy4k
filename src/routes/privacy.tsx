@@ -172,7 +172,26 @@ function PrivacyPage() {
                 and is not used to train models.
               </li>
             </ul>
-            <p>No third-party analytics, advertising or tracking scripts are embedded in the app.</p>
+            <p>
+              The only analytics used is Google Analytics, and it is strictly opt-in — nothing is
+              loaded or measured unless you accept the analytics prompt, and you can change your
+              mind at any time in Settings › Personalise. When it is on, it records which pages and
+              features are used; it never receives your amounts, item names, or anything else you
+              have typed into the app. Google's handling of that data is covered by{" "}
+              <a
+                className="text-primary hover:underline"
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Google's privacy policy
+              </a>
+              . No advertising or cross-site tracking scripts are embedded. See the{" "}
+              <Link to="/cookies" className="text-primary hover:underline">
+                Cookie &amp; Analytics Notice
+              </Link>{" "}
+              for the detail.
+            </p>
           </Section>
 
           <Section title="6. How long we keep it">
