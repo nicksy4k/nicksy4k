@@ -95,12 +95,12 @@ let scriptLoaded = false;
  * array is ignored, which silently drops every config/event. Hence the
  * old-school `function` + `arguments` shim rather than rest params.
  */
-function gtag(...._args: unknown[]) {
+const gtag = function () {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer ?? [];
   // eslint-disable-next-line prefer-rest-params
   window.dataLayer.push(arguments);
-}
+} as (...args: unknown[]) => void;
 
 function loadGtag() {
   if (scriptLoaded || typeof window === "undefined" || !MEASUREMENT_ID) return;
