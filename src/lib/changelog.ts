@@ -34,6 +34,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.10",
+    title: "Changelog PDF fix & tidier sign-in page",
+    date: "2026-08-11",
+    icon: Sparkles,
+    highlights: [
+      "Print / PDF export of the changelog no longer produces a blank page — it now renders a proper formatted document from anywhere in the app.",
+      "Legal and copyright notices moved to the very bottom of the sign-in page.",
+    ],
+  },
+  {
     version: "v2.12.9",
     title: "Analytics tracking fix",
     date: "2026-08-11",
@@ -480,6 +490,79 @@ export function downloadChangelogCsv() {
   URL.revokeObjectURL(url);
 }
 
+function escapeHtml(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Renders the changelog into a hidden iframe and prints that document.
+ * Self-contained so it works from anywhere (dialog, settings, /changelog).
+ */
 export function printChangelog() {
-  if (typeof window !== "undefined") window.print();
+  if (typeof window === "undefined") return;
+
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime())
+      ? iso
+      : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const body = changelog
+    .map(
+      (e) => `<section>
+        <h2>${escapeHtml(e.version)} — ${escapeHtml(e.title)} <span class="muted">(${fmt(e.date)})</span></h2>
+        <ul>${e.highlights.map((h) => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+      </section>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8" />
+    <title>Ledgerly changelog ${escapeHtml(currentVersion)}</title>
+    <style>
+      @page { size: A4; margin: 14mm; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color:#111; font-size:11pt; }
+      h1 { font-size: 18pt; margin: 0 0 2px; }
+      h2 { font-size: 12pt; margin: 14px 0 4px; page-break-after: avoid; }
+      .muted { font-weight: 400; color: #666; }
+      header { border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 10px; }
+      header p { margin: 2px 0; color: #444; font-size: 10pt; }
+      ul { margin: 0 0 0 18px; padding: 0; }
+      li { margin: 2px 0; }
+      section { page-break-inside: avoid; }
+    </style></head>
+    <body>
+      <header>
+        <h1>Ledgerly changelog</h1>
+        <p>${escapeHtml(currentVersion)} · Updated ${fmt(currentVersionDate)}</p>
+        <p class="muted">Generated ${new Date().toLocaleString("en-GB")}</p>
+      </header>
+      ${body}
+    </body></html>`;
+
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;";
+  document.body.appendChild(frame);
+
+  const doc = frame.contentDocument;
+  if (!doc) {
+    document.body.removeChild(frame);
+    return;
+  }
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  const run = () => {
+    frame.contentWindow?.focus();
+    frame.contentWindow?.print();
+    window.setTimeout(() => frame.remove(), 1000);
+  };
+  if (frame.contentWindow?.document.readyState === "complete") run();
+  else frame.onload = run;
 }
