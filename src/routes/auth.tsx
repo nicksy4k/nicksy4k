@@ -616,34 +616,6 @@ export function AuthPage() {
                 }
               />
             </div>
-
-            <footer className="text-xs text-muted-foreground text-center text-balance leading-relaxed">
-              <p>
-                Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and
-                should not be relied upon for absolute accuracy or as a professional financial
-                manager. All data and calculations rely entirely on manual user input.
-              </p>
-              <p className="mt-2">
-                Privacy & Security: Your financial records are secured with Row Level Security (RLS)
-                and encrypted storage, so they are only accessible to you. See our{" "}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>
-                ,{" "}
-                <Link to="/beta-disclaimer" className="text-primary hover:underline">
-                  Beta Disclaimer
-                </Link>{" "}
-                and{" "}
-                <Link to="/cookies" className="text-primary hover:underline">
-                  Cookie Notice
-                </Link>
-                .
-              </p>
-              <p className="mt-2">
-                © {new Date().getFullYear()} Ledgerly · Built by Nicksy4K. All rights reserved.
-              </p>
-            </footer>
-
           </div>
         </div>
 
@@ -651,6 +623,34 @@ export function AuthPage() {
           <AboutStory className="lg:col-span-3" />
           <SupportDevCard className="lg:col-span-2" />
         </section>
+
+        <footer className="mt-12 border-t border-border/60 pt-6 text-xs text-muted-foreground text-center text-balance leading-relaxed max-w-3xl mx-auto">
+          <p>
+            Ledgerly is currently in Beta. Disclaimer: This app is a personal tracking tool and
+            should not be relied upon for absolute accuracy or as a professional financial manager.
+            All data and calculations rely entirely on manual user input.
+          </p>
+          <p className="mt-2">
+            Privacy & Security: Your financial records are secured with Row Level Security (RLS) and
+            encrypted storage, so they are only accessible to you. See our{" "}
+            <Link to="/privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </Link>
+            ,{" "}
+            <Link to="/beta-disclaimer" className="text-primary hover:underline">
+              Beta Disclaimer
+            </Link>{" "}
+            and{" "}
+            <Link to="/cookies" className="text-primary hover:underline">
+              Cookie Notice
+            </Link>
+            .
+          </p>
+          <p className="mt-2">
+            © {new Date().getFullYear()} Ledgerly · Built by Nicksy4K. All rights reserved.
+          </p>
+        </footer>
+
       </main>
     </div>
   );
