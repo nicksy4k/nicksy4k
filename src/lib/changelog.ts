@@ -34,6 +34,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.10",
+    title: "Changelog PDF fix & tidier sign-in page",
+    date: "2026-08-11",
+    icon: Sparkles,
+    highlights: [
+      "Print / PDF export of the changelog no longer produces a blank page — it now renders a proper formatted document from anywhere in the app.",
+      "Legal and copyright notices moved to the very bottom of the sign-in page.",
+    ],
+  },
+  {
     version: "v2.12.9",
     title: "Analytics tracking fix",
     date: "2026-08-11",
