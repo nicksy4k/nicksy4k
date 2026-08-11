@@ -84,25 +84,30 @@ export function useAnalyticsConsent() {
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
 let scriptLoaded = false;
 
-function gtag(...args: unknown[]) {
+/**
+ * gtag.js only understands `arguments` objects pushed onto dataLayer — a plain
+ * array is ignored, which silently drops every config/event. Hence the
+ * old-school `function` + `arguments` shim rather than rest params.
+ */
+function gtag(...._args: unknown[]) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push(args);
+  // eslint-disable-next-line prefer-rest-params
+  window.dataLayer.push(arguments);
 }
 
 function loadGtag() {
   if (scriptLoaded || typeof window === "undefined" || !MEASUREMENT_ID) return;
   scriptLoaded = true;
 
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
-  document.head.appendChild(script);
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = gtag;
 
   gtag("js", new Date());
   gtag("config", MEASUREMENT_ID, {
@@ -112,6 +117,11 @@ function loadGtag() {
     // Route changes are tracked manually — the app is client-routed.
     send_page_view: false,
   });
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+  document.head.appendChild(script);
 }
 
 function enabled() {
