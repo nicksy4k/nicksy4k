@@ -34,6 +34,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.12.9",
+    title: "Analytics tracking fix",
+    date: "2026-08-11",
+    icon: BarChart3,
+    highlights: [
+      "Fixed a bug that stopped opt-in analytics from recording anything: page views now register properly.",
+    ],
+  },
+  {
     version: "v2.12.8",
     title: "Opt-in usage analytics",
     date: "2026-08-10",
