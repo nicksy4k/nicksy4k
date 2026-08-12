@@ -656,6 +656,13 @@ function NewTransactionPage() {
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         payment_splits: finalSplits,
+        delivery_status: expectingDelivery
+          ? courier.trim() || trackingNumber.trim()
+            ? "in_transit"
+            : "awaiting_dispatch"
+          : null,
+        courier: expectingDelivery ? courier.trim() || null : null,
+        tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
       trackEvent("transaction_added");
       toast.success("Transaction saved");
