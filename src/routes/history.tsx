@@ -1014,6 +1014,9 @@ function EditTransactionDialog({
       setRows(transaction.items.map(toDraft));
     }
     setIsPending(transaction.is_pending ?? false);
+    setDeliveryStatus(transaction.delivery_status ?? "");
+    setCourier(transaction.courier ?? "");
+    setTrackingNumber(transaction.tracking_number ?? "");
     setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
     // Restore existing splits if any, else start with a single "main" split
     // sized to the current total (or empty for pending holds — user fills in
