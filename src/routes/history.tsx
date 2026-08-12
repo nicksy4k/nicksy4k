@@ -1684,6 +1684,45 @@ function EditTransactionDialog({
                 onChange={setProtection}
               />
 
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Delivery</p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <Field label="Status">
+                    <Select
+                      value={deliveryStatus || "none"}
+                      onValueChange={(v) => setDeliveryStatus(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not a delivery</SelectItem>
+                        {DELIVERY_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {deliveryMeta(s)!.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Courier (optional)">
+                    <Input
+                      placeholder="e.g. DPD"
+                      value={courier}
+                      onChange={(e) => setCourier(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Tracking number (optional)">
+                    <Input
+                      placeholder="e.g. JD00021234"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
