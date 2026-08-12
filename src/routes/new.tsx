@@ -118,6 +118,9 @@ function NewTransactionPage() {
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [expectingDelivery, setExpectingDelivery] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
