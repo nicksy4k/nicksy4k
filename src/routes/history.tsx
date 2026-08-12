@@ -384,6 +384,15 @@ function HistoryPage() {
                               Pending
                             </Badge>
                           )}
+                          {deliveryMeta(t.delivery_status) && (
+                            <Badge
+                              variant="outline"
+                              className={`font-normal gap-1 ${deliveryMeta(t.delivery_status)!.className}`}
+                            >
+                              <span aria-hidden>{deliveryMeta(t.delivery_status)!.emoji}</span>
+                              {deliveryMeta(t.delivery_status)!.label}
+                            </Badge>
+                          )}
                           <Badge variant="secondary" className="font-normal">
                             {t.items.length} item{t.items.length !== 1 ? "s" : ""}
                           </Badge>
