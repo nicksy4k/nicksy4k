@@ -55,6 +55,9 @@ export function useTransactions() {
         dismissed_at: t.dismissed_at ?? null,
         payment_splits: (t.payment_splits ?? []) as never,
         is_pending: t.is_pending ?? false,
+        delivery_status: t.delivery_status ?? null,
+        courier: t.courier ?? null,
+        tracking_number: t.tracking_number ?? null,
       } as never);
       if (error) throw error;
       await invalidate();

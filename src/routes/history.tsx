@@ -20,6 +20,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DELIVERY_STATUSES, deliveryMeta, isAwaitingDelivery } from "@/lib/delivery";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -53,6 +54,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Check,
   ChevronDown,
   FileText,
   MapPin,
@@ -119,7 +121,7 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
 }
 
 function HistoryPage() {
-  const { items, remove } = useTransactions();
+  const { items, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
@@ -381,6 +383,15 @@ function HistoryPage() {
                           {t.is_pending && (
                             <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
                               Pending
+                            </Badge>
+                          )}
+                          {deliveryMeta(t.delivery_status) && (
+                            <Badge
+                              variant="outline"
+                              className={`font-normal gap-1 ${deliveryMeta(t.delivery_status)!.className}`}
+                            >
+                              <span aria-hidden>{deliveryMeta(t.delivery_status)!.emoji}</span>
+                              {deliveryMeta(t.delivery_status)!.label}
                             </Badge>
                           )}
                           <Badge variant="secondary" className="font-normal">
@@ -783,6 +794,22 @@ function HistoryPage() {
                             <RotateCcw className="h-4 w-4" /> Refund
                           </Button>
                         )}
+                        {isAwaitingDelivery(t) && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await updateTransaction(t.id, { delivery_status: "delivered" });
+                                toast.success("Marked as delivered");
+                              } catch (e) {
+                                toast.error(e instanceof Error ? e.message : "Failed to update");
+                              }
+                            }}
+                          >
+                            <Check className="h-4 w-4" /> Mark delivered
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" /> Edit
                         </Button>
@@ -936,6 +963,9 @@ function EditTransactionDialog({
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState("");
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
@@ -1010,6 +1040,9 @@ function EditTransactionDialog({
       setRows(transaction.items.map(toDraft));
     }
     setIsPending(transaction.is_pending ?? false);
+    setDeliveryStatus(transaction.delivery_status ?? "");
+    setCourier(transaction.courier ?? "");
+    setTrackingNumber(transaction.tracking_number ?? "");
     setPendingHoldAmount(transaction.is_pending ? transaction.total_amount : null);
     // Restore existing splits if any, else start with a single "main" split
     // sized to the current total (or empty for pending holds — user fills in
@@ -1329,6 +1362,9 @@ function EditTransactionDialog({
         dismissed_at: protection.enabled ? null : (transaction.dismissed_at ?? null),
         is_pending: isPending,
         payment_splits: finalPaymentSplits,
+        delivery_status: (deliveryStatus || null) as Transaction["delivery_status"],
+        courier: deliveryStatus ? courier.trim() || null : null,
+        tracking_number: deliveryStatus ? trackingNumber.trim() || null : null,
       });
       toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
@@ -1683,6 +1719,45 @@ function EditTransactionDialog({
                 value={protection}
                 onChange={setProtection}
               />
+
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Delivery</p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <Field label="Status">
+                    <Select
+                      value={deliveryStatus || "none"}
+                      onValueChange={(v) => setDeliveryStatus(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not a delivery</SelectItem>
+                        {DELIVERY_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {deliveryMeta(s)!.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Courier (optional)">
+                    <Input
+                      placeholder="e.g. DPD"
+                      value={courier}
+                      onChange={(e) => setCourier(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Tracking number (optional)">
+                    <Input
+                      placeholder="e.g. JD00021234"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              </div>
+
 
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />

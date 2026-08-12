@@ -618,8 +618,10 @@ export type Database = {
       transactions: {
         Row: {
           commitment_id: string | null
+          courier: string | null
           created_at: string
           date: string
+          delivery_status: string | null
           dismissed_at: string | null
           expiration_date: string | null
           id: string
@@ -635,12 +637,15 @@ export type Database = {
           refunds: Json
           retailer: string
           total_amount: number
+          tracking_number: string | null
           user_id: string
         }
         Insert: {
           commitment_id?: string | null
+          courier?: string | null
           created_at?: string
           date: string
+          delivery_status?: string | null
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
@@ -656,12 +661,15 @@ export type Database = {
           refunds?: Json
           retailer: string
           total_amount?: number
+          tracking_number?: string | null
           user_id: string
         }
         Update: {
           commitment_id?: string | null
+          courier?: string | null
           created_at?: string
           date?: string
+          delivery_status?: string | null
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
@@ -677,6 +685,7 @@ export type Database = {
           refunds?: Json
           retailer?: string
           total_amount?: number
+          tracking_number?: string | null
           user_id?: string
         }
         Relationships: [

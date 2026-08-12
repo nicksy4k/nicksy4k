@@ -36,6 +36,7 @@ import {
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
+import { countAwaitingDelivery } from "@/lib/delivery";
 import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -219,6 +220,8 @@ function DashboardPage() {
       );
   }, [items]);
 
+  const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
+
   const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
   // Outgoings due inside the current cycle (bills + subscriptions share the pocket).
@@ -389,6 +392,27 @@ function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {awaitingDeliveryCount > 0 && (
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Out for delivery
+                </p>
+                <p className="text-2xl font-semibold tabular-nums mt-1">
+                  {awaitingDeliveryCount}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/history">Track</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card data-tour="warranty-alerts">
           <div className="border-b border-border p-4">

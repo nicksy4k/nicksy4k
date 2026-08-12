@@ -79,6 +79,10 @@ export interface Transaction {
   is_pending?: boolean;
   /** Log of refunds against this transaction — does not mutate items/total. */
   refunds?: Refund[];
+  /** Online-order tracking: "awaiting_dispatch" | "in_transit" | "delivered" */
+  delivery_status?: "awaiting_dispatch" | "in_transit" | "delivered" | null;
+  courier?: string | null;
+  tracking_number?: string | null;
   created_at: string;
 }
 

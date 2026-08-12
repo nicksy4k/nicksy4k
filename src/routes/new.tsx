@@ -118,6 +118,9 @@ function NewTransactionPage() {
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [expectingDelivery, setExpectingDelivery] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -653,6 +656,13 @@ function NewTransactionPage() {
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         payment_splits: finalSplits,
+        delivery_status: expectingDelivery
+          ? courier.trim() || trackingNumber.trim()
+            ? "in_transit"
+            : "awaiting_dispatch"
+          : null,
+        courier: expectingDelivery ? courier.trim() || null : null,
+        tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
       trackEvent("transaction_added");
       toast.success("Transaction saved");
@@ -875,6 +885,37 @@ function NewTransactionPage() {
                     </div>
                   )}
                 </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm">Expecting delivery</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Track this order until it lands on your doorstep.
+                      </p>
+                    </div>
+                    <Switch checked={expectingDelivery} onCheckedChange={setExpectingDelivery} />
+                  </div>
+                  {expectingDelivery && (
+                    <div className="grid sm:grid-cols-2 gap-4 mt-3">
+                      <Field label="Courier (optional)">
+                        <Input
+                          placeholder="e.g. Royal Mail, DPD"
+                          value={courier}
+                          onChange={(e) => setCourier(e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Tracking number (optional)">
+                        <Input
+                          placeholder="e.g. JD0002123456789"
+                          value={trackingNumber}
+                          onChange={(e) => setTrackingNumber(e.target.value)}
+                        />
+                      </Field>
+                    </div>
+                  )}
+                </div>
+
 
                 <div>
                   <ProtectionFields
