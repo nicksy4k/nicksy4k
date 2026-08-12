@@ -936,6 +936,9 @@ function EditTransactionDialog({
   const [rows, setRows] = useState<DraftRow[]>([]);
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
   const [isPending, setIsPending] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState("");
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [pendingHoldAmount, setPendingHoldAmount] = useState<number | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [initialized, setInitialized] = useState<string | null>(null);
