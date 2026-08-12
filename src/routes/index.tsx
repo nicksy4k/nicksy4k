@@ -36,6 +36,7 @@ import {
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
+import { countAwaitingDelivery } from "@/lib/delivery";
 import { isStoragePath } from "@/components/ReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
