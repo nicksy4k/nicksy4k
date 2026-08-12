@@ -34,6 +34,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.13.0",
+    title: "Delivery & order tracking",
+    date: "2026-08-12",
+    icon: Truck,
+    highlights: [
+      "New \u201CExpecting delivery\u201D switch when logging a transaction, with optional courier and tracking number.",
+      "History shows colour-coded delivery badges (Awaiting Dispatch, In Transit, Delivered) and a one-tap \u201CMark delivered\u201D button.",
+      "Courier and tracking details can be added or corrected later from the Edit transaction dialog.",
+      "Dashboard shows a compact \u201COut for delivery\u201D counter — and hides itself entirely when nothing is on the way.",
+    ],
+  },
+  {
     version: "v2.12.10",
     title: "Changelog PDF fix & tidier sign-in page",
     date: "2026-08-11",
