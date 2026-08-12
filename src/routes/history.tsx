@@ -120,7 +120,7 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
 }
 
 function HistoryPage() {
-  const { items, remove } = useTransactions();
+  const { items, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
