@@ -393,6 +393,27 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
+        {awaitingDeliveryCount > 0 && (
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Out for delivery
+                </p>
+                <p className="text-2xl font-semibold tabular-nums mt-1">
+                  {awaitingDeliveryCount}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/history">Track</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card data-tour="warranty-alerts">
           <div className="border-b border-border p-4">
             <div className="flex items-start justify-between gap-3">
