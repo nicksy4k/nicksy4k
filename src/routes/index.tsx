@@ -219,6 +219,8 @@ function DashboardPage() {
       );
   }, [items]);
 
+  const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
+
   const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
   // Outgoings due inside the current cycle (bills + subscriptions share the pocket).
