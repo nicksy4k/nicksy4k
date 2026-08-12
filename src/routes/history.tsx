@@ -1336,6 +1336,9 @@ function EditTransactionDialog({
         dismissed_at: protection.enabled ? null : (transaction.dismissed_at ?? null),
         is_pending: isPending,
         payment_splits: finalPaymentSplits,
+        delivery_status: (deliveryStatus || null) as Transaction["delivery_status"],
+        courier: deliveryStatus ? courier.trim() || null : null,
+        tracking_number: deliveryStatus ? trackingNumber.trim() || null : null,
       });
       toast.success(isPending ? "Pending hold updated" : "Transaction settled");
       onClose();
