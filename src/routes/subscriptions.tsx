@@ -28,7 +28,7 @@ import {
 import { BellRing, Pencil, Plus, Repeat, Trash2, Tag, Undo2 } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
-import { useActiveCycle, advanceForCommitment } from "@/lib/cycle";
+import { useActiveCycle, advanceForCommitment, advanceDueDate } from "@/lib/cycle";
 import {
   PROMO_WARNING_DAYS,
   cadenceLabel,
@@ -116,6 +116,17 @@ function SubscriptionsPage() {
     [items, detailsId],
   );
   const [offerFor, setOfferFor] = useState<Commitment | null>(null);
+  const [payMode, setPayMode] = useState<"details" | "confirm">("details");
+  const [pickerDate, setPickerDate] = useState("");
+
+  useEffect(() => {
+    if (detailsItem) {
+      setPayMode("details");
+      setPickerDate(detailsItem.next_due_date ?? todayISO());
+    }
+    // Only re-seed when a different subscription is opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsId]);
 
   async function markPaid(c: Commitment, newDue: string) {
     const paidDate = todayISO();
@@ -158,6 +169,7 @@ function SubscriptionsPage() {
       toast.error("Marked paid, but auto-logging failed.");
     }
     setDetailsId(null);
+    setPayMode("details");
   }
 
   async function unmarkPaid(c: Commitment) {
@@ -578,7 +590,14 @@ function SubscriptionsPage() {
                   <Switch
                     id="sub-paid-toggle"
                     checked={detailsItem.paid}
-                    onCheckedChange={(v) => (v ? markPaid(detailsItem) : unmarkPaid(detailsItem))}
+                    onCheckedChange={(v) => {
+                      if (v) {
+                        setPickerDate(detailsItem.next_due_date ?? todayISO());
+                        setPayMode("confirm");
+                      } else {
+                        void unmarkPaid(detailsItem);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -637,8 +656,10 @@ function SubscriptionsPage() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="text-sm text-right">{value}</span>
+      <span className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
+        {label}
+      </span>
+      <span className="text-sm text-right break-words min-w-0">{value}</span>
     </div>
   );
 }
