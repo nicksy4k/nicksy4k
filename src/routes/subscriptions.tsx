@@ -28,7 +28,7 @@ import {
 import { BellRing, Pencil, Plus, Repeat, Trash2, Tag, Undo2 } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
-import { useActiveCycle, advanceForCommitment } from "@/lib/cycle";
+import { useActiveCycle, advanceForCommitment, advanceDueDate } from "@/lib/cycle";
 import {
   PROMO_WARNING_DAYS,
   cadenceLabel,
@@ -116,16 +116,27 @@ function SubscriptionsPage() {
     [items, detailsId],
   );
   const [offerFor, setOfferFor] = useState<Commitment | null>(null);
+  const [payMode, setPayMode] = useState<"details" | "confirm">("details");
+  const [pickerDate, setPickerDate] = useState("");
 
-  async function markPaid(c: Commitment) {
+  useEffect(() => {
+    if (detailsItem) {
+      setPayMode("details");
+      setPickerDate(detailsItem.next_due_date ?? todayISO());
+    }
+    // Only re-seed when a different subscription is opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsId]);
+
+  async function markPaid(c: Commitment, newDue: string) {
     const paidDate = todayISO();
-    const newDue = advanceForCommitment(c.next_due_date ?? paidDate, c.cadence, cycle);
     await update(c.id, {
       paid: true,
       last_paid_date: paidDate,
       prev_due_date: c.next_due_date ?? null,
       next_due_date: newDue,
     });
+
     try {
       await addTransaction({
         date: paidDate,
@@ -158,6 +169,7 @@ function SubscriptionsPage() {
       toast.error("Marked paid, but auto-logging failed.");
     }
     setDetailsId(null);
+    setPayMode("details");
   }
 
   async function unmarkPaid(c: Commitment) {
@@ -220,7 +232,7 @@ function SubscriptionsPage() {
               <Card key={c.id} className="border-warning/40 bg-warning/5">
                 <CardContent className="p-5 flex flex-wrap items-start gap-3">
                   <BellRing className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-[220px] text-sm">
+                  <div className="flex-1 min-w-[220px] text-sm break-words">
                     <p className="font-semibold">
                       {c.item_name} —{" "}
                       {days > 0
@@ -349,7 +361,7 @@ function SubscriptionsPage() {
                         className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{c.item_name}</p>
+                          <p className="font-medium break-words">{c.item_name}</p>
                           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                             <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
                               {c.category || "—"}
@@ -424,15 +436,115 @@ function SubscriptionsPage() {
       <Dialog
         open={!!detailsItem}
         onOpenChange={(v) => {
-          if (!v) setDetailsId(null);
+          if (!v) {
+            setDetailsId(null);
+            setPayMode("details");
+          }
         }}
       >
         <DialogContent className="max-w-md">
-          {detailsItem && (
+          {detailsItem && payMode === "confirm" && (
             <>
               <DialogHeader>
-                <DialogTitle>{detailsItem.item_name}</DialogTitle>
+                <DialogTitle className="break-words">Confirm payment reset?</DialogTitle>
               </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <p className="text-muted-foreground break-words">
+                  Marking{" "}
+                  <span className="font-medium text-foreground">{detailsItem.item_name}</span> as
+                  paid will advance its next renewal date. Choose how to roll it forward:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceDueDate(base, "monthly"));
+                    }}
+                  >
+                    <span className="text-sm">+1 month</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(advanceDueDate(detailsItem.next_due_date ?? todayISO(), "monthly")),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceDueDate(base, "four-weekly"));
+                    }}
+                  >
+                    <span className="text-sm">+4 weeks</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(
+                          advanceDueDate(detailsItem.next_due_date ?? todayISO(), "four-weekly"),
+                        ),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                </div>
+                {detailsItem.cadence === "annual" && (
+                  <Button
+                    variant="outline"
+                    className="w-full flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceForCommitment(base, "annual", cycle));
+                    }}
+                  >
+                    <span className="text-sm">+1 year (annual plan)</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(
+                          advanceForCommitment(
+                            detailsItem.next_due_date ?? todayISO(),
+                            "annual",
+                            cycle,
+                          ),
+                        ),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                )}
+                <div className="rounded-md border border-border p-3 space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Or pick a date
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={pickerDate}
+                      onChange={(e) => setPickerDate(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => pickerDate && void markPaid(detailsItem, pickerDate)}
+                    >
+                      Set
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setPayMode("details")}>
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+          {detailsItem && payMode === "details" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="break-words pr-6">{detailsItem.item_name}</DialogTitle>
+              </DialogHeader>
+
               <div className="space-y-3 text-sm">
                 <Row
                   label="Price"
@@ -478,7 +590,14 @@ function SubscriptionsPage() {
                   <Switch
                     id="sub-paid-toggle"
                     checked={detailsItem.paid}
-                    onCheckedChange={(v) => (v ? markPaid(detailsItem) : unmarkPaid(detailsItem))}
+                    onCheckedChange={(v) => {
+                      if (v) {
+                        setPickerDate(detailsItem.next_due_date ?? todayISO());
+                        setPayMode("confirm");
+                      } else {
+                        void unmarkPaid(detailsItem);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -537,8 +656,10 @@ function SubscriptionsPage() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="text-sm text-right">{value}</span>
+      <span className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
+        {label}
+      </span>
+      <span className="text-sm text-right break-words min-w-0">{value}</span>
     </div>
   );
 }
