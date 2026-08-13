@@ -424,15 +424,115 @@ function SubscriptionsPage() {
       <Dialog
         open={!!detailsItem}
         onOpenChange={(v) => {
-          if (!v) setDetailsId(null);
+          if (!v) {
+            setDetailsId(null);
+            setPayMode("details");
+          }
         }}
       >
         <DialogContent className="max-w-md">
-          {detailsItem && (
+          {detailsItem && payMode === "confirm" && (
             <>
               <DialogHeader>
-                <DialogTitle>{detailsItem.item_name}</DialogTitle>
+                <DialogTitle className="break-words">Confirm payment reset?</DialogTitle>
               </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <p className="text-muted-foreground break-words">
+                  Marking{" "}
+                  <span className="font-medium text-foreground">{detailsItem.item_name}</span> as
+                  paid will advance its next renewal date. Choose how to roll it forward:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceDueDate(base, "monthly"));
+                    }}
+                  >
+                    <span className="text-sm">+1 month</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(advanceDueDate(detailsItem.next_due_date ?? todayISO(), "monthly")),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceDueDate(base, "four-weekly"));
+                    }}
+                  >
+                    <span className="text-sm">+4 weeks</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(
+                          advanceDueDate(detailsItem.next_due_date ?? todayISO(), "four-weekly"),
+                        ),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                </div>
+                {detailsItem.cadence === "annual" && (
+                  <Button
+                    variant="outline"
+                    className="w-full flex-col h-auto py-2"
+                    onClick={() => {
+                      const base = detailsItem.next_due_date ?? todayISO();
+                      void markPaid(detailsItem, advanceForCommitment(base, "annual", cycle));
+                    }}
+                  >
+                    <span className="text-sm">+1 year (annual plan)</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(
+                        parseISO(
+                          advanceForCommitment(
+                            detailsItem.next_due_date ?? todayISO(),
+                            "annual",
+                            cycle,
+                          ),
+                        ),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  </Button>
+                )}
+                <div className="rounded-md border border-border p-3 space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Or pick a date
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={pickerDate}
+                      onChange={(e) => setPickerDate(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => pickerDate && void markPaid(detailsItem, pickerDate)}
+                    >
+                      Set
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setPayMode("details")}>
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+          {detailsItem && payMode === "details" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="break-words pr-6">{detailsItem.item_name}</DialogTitle>
+              </DialogHeader>
+
               <div className="space-y-3 text-sm">
                 <Row
                   label="Price"
