@@ -117,15 +117,15 @@ function SubscriptionsPage() {
   );
   const [offerFor, setOfferFor] = useState<Commitment | null>(null);
 
-  async function markPaid(c: Commitment) {
+  async function markPaid(c: Commitment, newDue: string) {
     const paidDate = todayISO();
-    const newDue = advanceForCommitment(c.next_due_date ?? paidDate, c.cadence, cycle);
     await update(c.id, {
       paid: true,
       last_paid_date: paidDate,
       prev_due_date: c.next_due_date ?? null,
       next_due_date: newDue,
     });
+
     try {
       await addTransaction({
         date: paidDate,
