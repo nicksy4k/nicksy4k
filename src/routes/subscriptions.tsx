@@ -232,7 +232,7 @@ function SubscriptionsPage() {
               <Card key={c.id} className="border-warning/40 bg-warning/5">
                 <CardContent className="p-5 flex flex-wrap items-start gap-3">
                   <BellRing className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-[220px] text-sm">
+                  <div className="flex-1 min-w-[220px] text-sm break-words">
                     <p className="font-semibold">
                       {c.item_name} —{" "}
                       {days > 0
@@ -361,7 +361,7 @@ function SubscriptionsPage() {
                         className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{c.item_name}</p>
+                          <p className="font-medium break-words">{c.item_name}</p>
                           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                             <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
                               {c.category || "—"}
