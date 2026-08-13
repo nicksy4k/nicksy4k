@@ -35,6 +35,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.13.1",
+    title: "Subscription payment safety net",
+    date: "2026-08-13",
+    icon: Repeat,
+    highlights: [
+      "Marking a subscription as paid now opens the same \u201CConfirm payment reset?\u201D step used on Commitments \u2014 no more silent +28 day jumps.",
+      "Choose +1 month, +4 weeks, +1 year for annual plans, or pick an exact renewal date; nothing moves unless you confirm.",
+      "Fixed long subscription names, notes and offer badges spilling outside their cards and dialogs.",
+    ],
+  },
+  {
     version: "v2.13.0",
     title: "Delivery & order tracking",
     date: "2026-08-12",
