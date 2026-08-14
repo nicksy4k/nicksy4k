@@ -92,26 +92,35 @@ function CommitmentsPage() {
   }, [savings]);
 
   // Cycle-scoped totals: everything due inside the current cycle, paid or not.
+  // Paying a bill rolls `next_due_date` into the next cycle, so for paid rows we
+  // fall back to `prev_due_date` — the date it was actually due in THIS cycle.
+  const cycleDate = (i: Commitment) =>
+    (i.paid ? (i.prev_due_date ?? i.next_due_date) : i.next_due_date) ?? null;
+  const inCycle = (i: Commitment) => {
+    const d = cycleDate(i);
+    return !!d && d < resetDate;
+  };
+
   const commitmentsDueThisCycle = useMemo(
-    () =>
-      items
-        .filter((i) => i.next_due_date && i.next_due_date < resetDate)
-        .reduce((s, i) => s + i.amount, 0),
+    () => items.filter(inCycle).reduce((s, i) => s + i.amount, 0),
     [items, resetDate],
   );
 
   const subsDueThisCycle = useMemo(
-    () =>
-      subscriptions
-        .filter((i) => i.next_due_date && i.next_due_date < resetDate)
-        .reduce((s, i) => s + i.amount, 0),
+    () => subscriptions.filter(inCycle).reduce((s, i) => s + i.amount, 0),
     [subscriptions, resetDate],
   );
 
   const totalOutgoings = commitmentsDueThisCycle + subsDueThisCycle;
 
+  const paidThisCycle = useMemo(
+    () => allItems.filter((i) => i.paid && inCycle(i)).reduce((s, i) => s + i.amount, 0),
+    [allItems, resetDate],
+  );
+
   // Every tracked row, regardless of cycle window or paid state.
   const everyCycle = useMemo(() => perCycleTotal(allItems), [allItems]);
+
 
   // Funding math covers commitments AND subscriptions — they share the pocket.
   const leftToPay = useMemo(() => {
