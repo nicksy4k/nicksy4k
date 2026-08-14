@@ -211,13 +211,15 @@ function CommitmentsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Commitments this cycle
             </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(commitmentsDueThisCycle)}</p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {fmt(commitmentsDueThisCycle)}
+            </p>
             <p className="text-[11px] text-muted-foreground mt-1">{items.length} bills tracked</p>
           </CardContent>
         </Card>
@@ -226,7 +228,9 @@ function CommitmentsPage() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Subscriptions this cycle
             </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(subsDueThisCycle)}</p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {fmt(subsDueThisCycle)}
+            </p>
             <Link
               to="/subscriptions"
               className="text-xs text-muted-foreground underline underline-offset-2 mt-1 inline-block"
@@ -241,36 +245,52 @@ function CommitmentsPage() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Total outgoings this cycle
             </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(totalOutgoings)}</p>
+            <p className="text-2xl font-semibold tabular-nums text-primary">
+              {fmt(totalOutgoings)}
+            </p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              bills {fmt(commitmentsDueThisCycle)} + subs {fmt(subsDueThisCycle)}
+              paid {fmt(paidThisCycle)} · remaining {fmt(leftToPay)}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Every cycle (all tracked)
-            </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(everyCycle.total)}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {everyCycle.count} bills + subs · annual plans spread over 12
-            </p>
-          </CardContent>
-        </Card>
-
-
-        <Card>
+        <Card
+          className={
+            leftToPay > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30"
+          }
+        >
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Left to pay before reset
             </p>
-            <p className="text-2xl font-semibold tabular-nums">{fmt(leftToPay)}</p>
+            <p
+              className={`text-3xl font-semibold tabular-nums ${
+                leftToPay > 0.001 ? "text-destructive" : "text-primary"
+              }`}
+            >
+              {fmt(leftToPay)}
+            </p>
             <p className="text-[11px] text-muted-foreground mt-1">Unpaid only</p>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mb-4 bg-muted/40">
+        <CardContent className="p-5 flex items-baseline justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+              Every cycle (all tracked)
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {everyCycle.count} bills + subs · annual plans spread over 12
+            </p>
+          </div>
+          <p className="text-xl font-semibold tabular-nums text-muted-foreground">
+            {fmt(everyCycle.total)}
+          </p>
+        </CardContent>
+      </Card>
+
 
       <Card
         className={`mb-6 ${shortfall > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5"}`}
