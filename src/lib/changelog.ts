@@ -35,6 +35,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.13.2",
+    title: "Clearer commitment totals",
+    date: "2026-08-13",
+    icon: Wallet,
+    highlights: [
+      "Cycle totals now include bills you\u2019ve already paid, so the three cycle cards show your full budget footprint instead of dropping paid rows.",
+      "\u201CTotal outgoings\u201D gains a paid vs remaining breakdown.",
+      "\u201CEvery cycle (all tracked)\u201D moved out of the active-cycle row so it reads Commitments + Subscriptions = Total \u2192 Left to pay.",
+      "Colour coding: the amount left to pay turns red while money is outstanding and green once you\u2019re covered.",
+    ],
+  },
+  {
     version: "v2.13.1",
     title: "Subscription payment safety net",
     date: "2026-08-13",
