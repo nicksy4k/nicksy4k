@@ -35,6 +35,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.13.3",
+    title: "Early BNPL payments land in the right cycle",
+    date: "2026-08-15",
+    icon: Wallet,
+    highlights: [
+      "Paying a BNPL installment now defaults to today\u2019s date instead of the scheduled installment date, so early payments reduce your Main Balance straight away.",
+      "The scheduled date is still shown, with one tap to use it if you\u2019re back-filling.",
+      "A warning appears if you pick a future date, explaining it won\u2019t affect your balance until that cycle.",
+    ],
+  },
+
+  {
     version: "v2.13.2",
     title: "Clearer commitment totals",
     date: "2026-08-13",
