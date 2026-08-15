@@ -1044,7 +1044,8 @@ function DebtsTab() {
                       disabled={settled}
                       label={`Pay installment — ${d.name}`}
                       defaultAmount={defaultAmount}
-                      defaultDate={nextDate}
+                      scheduledDate={nextDate}
+
                       max={remaining}
                       buttonIcon={<ChevronRight className="h-4 w-4" />}
                       buttonLabel="Pay Next Installment"
