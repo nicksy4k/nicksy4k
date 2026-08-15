@@ -1271,6 +1271,7 @@ function DebtPaymentLauncher({
   label,
   defaultAmount,
   defaultDate,
+  scheduledDate,
   max,
   onSubmit,
   buttonIcon,
@@ -1280,6 +1281,7 @@ function DebtPaymentLauncher({
   label: string;
   defaultAmount?: number;
   defaultDate?: string;
+  scheduledDate?: string | null;
   max: number;
   onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
   buttonIcon?: React.ReactNode;
@@ -1297,6 +1299,7 @@ function DebtPaymentLauncher({
         title={label}
         defaultAmount={defaultAmount}
         defaultDate={defaultDate}
+        scheduledDate={scheduledDate}
         max={max}
         onSave={(v) => {
           setOpen(false);
@@ -1306,6 +1309,7 @@ function DebtPaymentLauncher({
     </>
   );
 }
+
 
 function DebtDialog({
   open,
