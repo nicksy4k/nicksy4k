@@ -1,37 +1,33 @@
-# BNPL repayments and the Main Balance
+# One "Outgoings" page with a filter toggle
 
-## What I checked in your live data
+Commitments and Subscriptions become a single page. The two lists are already the same data (subscriptions are commitments with a flag), so the split mostly duplicates cards and maths.
 
-- The £125.40 ClearPay row (13 Aug, 7 "repayment x of 4" items) is tagged **Main balance**, not BNPL, and is not pending. The anti-double-dip helper only ignores amounts tagged `bnpl:` — it does **not** zero this row. So the helper you suspected is not what's swallowing this £125.40.
-- The Amazon 10 Aug purchase (£46.50) is the only row with a `bnpl:` tag this cycle, and £34.87 of it is correctly held back from Main Balance.
-- Six payments were logged in Credit & Debt on 13 Aug ("paid in full 13/08/2026", £93.15 across Amazon BNPL, Amazon Toothbrush and George Clothing). **None of them produced a transaction row in the ledger.** Logging a debt payment from "Main" is supposed to write an outgoing transaction; for those six, nothing was written.
+## What you get
 
-So the diagnosis is not confirmed yet, and I don't want to "fix" the wrong helper. There are two live candidates and step 1 is to settle which one you hit:
+**One page: Outgoings** (`/commitments`, sidebar entry renamed "Outgoings"). At the top of the list, a segmented control:
 
-1. Payments logged in Credit & Debt silently failed to write their transaction rows (the write is fired after the debt update and errors are swallowed into a generic toast).
-2. They were written with the **future installment date** (24 Aug / 4 Sep / 21 Sep / 9 Oct), which pushes them out of the current cycle so Main Balance never sees them — and the rows were later deleted from History when they looked like duplicates.
+- **All** — every tracked outgoing
+- **Subscriptions** — the flagged ones
+- **Bills** — everything that isn't a subscription
 
-Either way the symptom matches yours exactly: money left your bank, nothing debited Main Balance.
+The filter only changes the list; the summary cards always describe the whole cycle so the numbers never move around under you. Rows show a small "Sub" badge in All view so you can still tell them apart, plus the existing status dot/tick.
 
-## The fix
+**Half as many cards.** Today there are six blocks above the list. Replaced with:
 
-1. **Verify first.** Add explicit error surfacing to the debt/loan payment flow so a failed ledger write shows a real error instead of a success toast, and reproduce one payment end to end to see which candidate is real.
-2. **Date repayments on the day you pay them.** A repayment transaction should be dated the payment date (today), not the scheduled installment date, so it lands in the cycle where the money actually left. The scheduled date stays on the debt/commitment for forecasting.
-3. **Make the transaction/pocket write atomic with the debt update.** If the ledger write fails, the payment is not recorded as paid, and you get a clear error — no more silent gaps.
-4. **Keep purchase vs repayment separate in the math.** Confirm and lock in with tests:
-   - a new BNPL purchase holds back the `bnpl:` portion from Main Balance (current behaviour, correct),
-   - a BNPL **repayment/settlement** always deducts in full from Main Balance or the chosen pocket, and never carries a `bnpl:` tag,
-   - a pocket-funded repayment writes both the pocket withdrawal and the transaction so it nets against the pocket, not main.
-5. **Label repayments clearly** in History (e.g. "BNPL repayment · <plan>") so they are visually distinct from BNPL purchases.
+- One summary card, four figures in a row: **Bills this cycle · Subscriptions this cycle · Total outgoings · Left to pay** (left to pay keeps the red/green emphasis).
+- Cycle dates, "every cycle (all tracked)" total and the Bill Money shortfall line all fold into one compact strip beneath it, with "Change cycle" still one tap away.
+- The status legend moves behind a small "What do the icons mean?" toggle instead of always occupying a row.
 
-## About your £125.40
+**Nothing else changes.** Offer/promo alerts, the promo badges, the "Confirm payment reset?" step, undo, the move-to-subscriptions tooling, BNPL sync and Bill Money auto-deduction all carry over exactly as they behave now. Adding is one button whose dialog has the subscription toggle (and cadence/offer fields appear when it's on), so there's one add flow instead of two.
 
-Because the manual ClearPay row is tagged Main balance and dated inside the current cycle, it *should* already be reducing Main Balance. Once the code fix is in I'll re-run the dashboard math against your actual rows for this cycle and tell you exactly which figure is off and why — if it turns out something else is inflating the balance (for example a routed-income deposit on 13 Aug), I'll report that rather than paper over it.
+**Old links keep working.** `/subscriptions` stays as a route that redirects to the combined page with the Subscriptions filter pre-selected, so bookmarks and the dashboard link don't break.
 
 ## Technical notes
 
-- `mainExpensePortion` in `src/lib/format.ts` stays as-is; it is already repayment-safe. Tests get extra cases for repayment rows.
-- Changes land in `src/routes/credit.tsx` (payment dialog / `useLedgerSync` call sites): payment date for the ledger row, error propagation, and rollback of the debt payment when the ledger write fails.
-- `src/lib/ledgerSync.ts` gains a repayment label/category convention; no schema change.
-- New tests in `src/lib/__tests__/ledgerSync.test.ts` and `format.test.ts`.
-- Changelog entry prepended to `src/lib/changelog.ts`.
+- New `src/components/outgoings/` pieces extracted from the two routes so neither file stays ~950 lines: `OutgoingsSummary.tsx` (cards + cycle strip), `OutgoingsList.tsx` (rows + status tooltips), `OutgoingRow.tsx`, `OutgoingDialog.tsx` (add/edit, merges the commitment and subscription forms behind the `is_subscription` switch), `OutgoingDetailsDialog.tsx` (details + confirm-payment-reset + promo actions).
+- `src/routes/commitments.tsx` becomes the container: shared data hooks, cycle maths (`cycleDate`/`inCycle` and the funding waterfall as they are today), filter state in a `?view=all|subs|bills` search param.
+- `src/routes/subscriptions.tsx` reduced to `beforeLoad` redirect → `/commitments?view=subs`.
+- `src/components/app-sidebar.tsx`: single "Outgoings" entry, Subscriptions entry removed.
+- `src/routes/index.tsx`: dashboard promo alerts and links point at the new route/param.
+- No database or business-logic changes; `src/lib/subscriptions.ts`, `src/lib/outgoings.ts`, `src/lib/cycle.ts` untouched.
+- New dated entry in `src/lib/changelog.ts`.
