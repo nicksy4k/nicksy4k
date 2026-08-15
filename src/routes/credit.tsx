@@ -1694,6 +1694,7 @@ function PaymentDialog({
   title,
   defaultAmount,
   defaultDate,
+  scheduledDate,
   max,
   hideRemaining,
   onSave,
@@ -1703,6 +1704,9 @@ function PaymentDialog({
   title: string;
   defaultAmount?: number;
   defaultDate?: string;
+  /** Scheduled installment date, shown as a hint. The form still defaults to
+   *  today so paying early lands in the cycle the money actually left. */
+  scheduledDate?: string | null;
   max: number;
   hideRemaining?: boolean;
   onSave: (data: { amount: number; date: string; notes?: string }) => void | Promise<void>;
@@ -1718,6 +1722,8 @@ function PaymentDialog({
       setNotes("");
     }
   }, [open, defaultAmount, defaultDate]);
+
+  const future = date > todayISO();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1741,9 +1747,30 @@ function PaymentDialog({
             )}
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date</Label>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Date paid
+            </Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            {scheduledDate && scheduledDate !== date && (
+              <p className="text-[11px] text-muted-foreground break-words">
+                Scheduled for {scheduledDate}.{" "}
+                <button
+                  type="button"
+                  className="underline hover:text-foreground"
+                  onClick={() => setDate(scheduledDate)}
+                >
+                  Use that date instead
+                </button>
+              </p>
+            )}
+            {future && (
+              <p className="text-[11px] text-amber-500 break-words">
+                This date is in the future — the payment won&apos;t reduce your Main Balance until
+                that cycle. Use today&apos;s date if the money has already left your account.
+              </p>
+            )}
           </div>
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
