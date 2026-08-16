@@ -32,4 +32,3 @@ export function encodeSource(c: SourceChoice): string {
   if (c.kind === "other") return "other";
   return `pocket:${c.name}`;
 }
-
