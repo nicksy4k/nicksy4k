@@ -78,7 +78,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             parser: parseEmailWebhookPayload,
           });
           payload = verified.payload;
-          run_id = payload.run_id;
+          run_id = payload.run_id ?? "";
         } catch (error) {
           if (error instanceof WebhookError) {
             switch (error.code) {
