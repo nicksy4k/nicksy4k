@@ -1,6 +1,21 @@
 import type { Transaction } from "./types";
 
 /**
+ * Suggestions only need recent history. Bounding the input keeps the lookup
+ * maps small as the ledger grows.
+ */
+export const SUGGESTION_WINDOW = 300;
+
+export function recentForSuggestions(
+  transactions: Transaction[],
+  limit: number = SUGGESTION_WINDOW,
+): Transaction[] {
+  if (transactions.length <= limit) return transactions;
+  const sorted = [...transactions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return sorted.slice(0, limit);
+}
+
+/**
  * Historical price lookup: item name → newest-first list of prior prices
  * per retailer. Skips pending holds and non-positive prices.
  */
@@ -8,7 +23,7 @@ export function buildPriceHistory(
   pastTransactions: Transaction[],
 ): Map<string, { retailer: string; price: number; date: string }[]> {
   const map = new Map<string, { retailer: string; price: number; date: string }[]>();
-  for (const t of pastTransactions) {
+  for (const t of recentForSuggestions(pastTransactions)) {
     if (t.is_pending) continue;
     const r = (t.retailer ?? "").trim().toLowerCase();
     for (const it of t.items ?? []) {
@@ -51,7 +66,7 @@ export function buildCategoryHistory(
   pastTransactions: Transaction[],
 ): Map<string, { category: string; date: string }[]> {
   const map = new Map<string, { category: string; date: string }[]>();
-  for (const t of pastTransactions) {
+  for (const t of recentForSuggestions(pastTransactions)) {
     if (t.is_pending) continue;
     for (const it of t.items ?? []) {
       const name = (it.item_name ?? "").trim().toLowerCase();
