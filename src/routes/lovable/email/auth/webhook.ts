@@ -33,7 +33,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 interface AuthEmailPayload {
   version: string;
-  run_id: string;
+  run_id?: string;
   data: {
     action_type: string;
     email: string;
