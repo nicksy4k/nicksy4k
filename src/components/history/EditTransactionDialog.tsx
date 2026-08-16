@@ -1,4 +1,3 @@
-
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
