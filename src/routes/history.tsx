@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
@@ -80,7 +80,7 @@ import {
 } from "@/components/ProtectionFields";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
-import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
+import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 
 export const Route = createFileRoute("/history")({
   head: () => ({
@@ -120,6 +120,8 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
   return <>{parts}</>;
 }
 
+const PAGE_SIZE = 50;
+
 function HistoryPage() {
   const { items, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
@@ -130,6 +132,7 @@ function HistoryPage() {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [refunding, setRefunding] = useState<Transaction | null>(null);
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const hasFilters = q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
   const needle = q.trim().toLowerCase();
@@ -150,6 +153,12 @@ function HistoryPage() {
       );
     });
   }, [items, needle, selectedCats, fromDate, toDate]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [needle, selectedCats, fromDate, toDate]);
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const matchedSummary = useMemo(() => {
     if (!needle) return null;
@@ -342,7 +351,7 @@ function HistoryPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((t) => {
+          {visible.map((t) => {
             const matchingItems = needle
               ? t.items.filter((i) => i.item_name.toLowerCase().includes(needle))
               : [];
@@ -852,6 +861,16 @@ function HistoryPage() {
               </Collapsible>
             );
           })}
+          {filtered.length > visible.length && (
+            <div className="pt-4 flex flex-col items-center gap-2">
+              <p className="text-xs text-muted-foreground tabular-nums">
+                Showing {visible.length} of {filtered.length}
+              </p>
+              <Button variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                Load more
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
