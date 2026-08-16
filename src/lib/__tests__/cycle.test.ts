@@ -45,9 +45,15 @@ describe("getActiveCycle — monthly", () => {
 
   it("clamps a 31st anchor to short months", () => {
     const s = settings({ anchor: "2026-01-31" });
+    // Mid-February still belongs to the cycle that opened on 31 Jan; the
+    // next one opens on the clamped 28 Feb.
     const feb = getActiveCycle(s, d("2026-02-15"));
-    expect(feb.startISO).toBe("2026-02-28");
-    expect(feb.endISO).toBe("2026-03-30");
+    expect(feb.startISO).toBe("2026-01-31");
+    expect(feb.endISO).toBe("2026-02-27");
+
+    const late = getActiveCycle(s, d("2026-02-28"));
+    expect(late.startISO).toBe("2026-02-28");
+    expect(late.endISO).toBe("2026-03-30");
   });
 });
 
