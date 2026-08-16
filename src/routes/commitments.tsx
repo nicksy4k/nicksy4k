@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
@@ -432,10 +432,6 @@ function OutgoingsPage() {
           });
         }}
       />
-
-      <p className="sr-only">
-        <Link to="/settings">Settings</Link>
-      </p>
     </div>
   );
 }

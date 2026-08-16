@@ -452,7 +452,7 @@ function DashboardPage() {
                         </span>
                       </span>
                       <Button asChild size="sm" variant="outline">
-                        <Link to="/subscriptions">Review</Link>
+                        <Link to="/commitments" search={{ view: "subs" }}>Review</Link>
                       </Button>
                     </li>
                   );
