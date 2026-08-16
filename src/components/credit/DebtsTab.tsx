@@ -65,13 +65,10 @@ import {
   debtRemaining,
   sourceLabel,
   encodeSource,
-  usePockets,
-  FundingSourceDialog,
-  useLedgerSync,
-  HistoryList,
-  PaymentDialog,
   type SourceChoice,
-} from "@/components/credit/shared";
+} from "@/lib/credit";
+import { usePockets, useLedgerSync } from "@/lib/creditHooks";
+import { FundingSourceDialog, HistoryList, PaymentDialog } from "@/components/credit/shared";
 
 function DebtItemsSection({ debtId }: { debtId: string }) {
   const { items, add, remove } = useDebtItems();

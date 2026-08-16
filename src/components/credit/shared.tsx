@@ -58,50 +58,18 @@ import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
 import { planCredit, planDebit } from "@/lib/ledgerSync";
-export function todayISO() {
-  return format(new Date(), "yyyy-MM-dd");
-}
-
-export function loanPaid(l: Loan) {
-  return (l.payments ?? []).filter((p) => p.type !== "topup").reduce((s, p) => s + p.amount, 0);
-}
-export function loanRemaining(l: Loan) {
-  return Math.max(0, l.total_amount - loanPaid(l));
-}
-export function debtPaid(d: Debt) {
-  return (d.payments ?? []).reduce((s, p) => s + p.amount, 0);
-}
-export function debtRemaining(d: Debt) {
-  return Math.max(0, d.total_amount - debtPaid(d));
-}
-
+import {
+  todayISO,
+  loanPaid,
+  loanRemaining,
+  debtPaid,
+  debtRemaining,
+  sourceLabel,
+  encodeSource,
+  type SourceChoice,
+} from "@/lib/credit";
+import { usePockets, useLedgerSync } from "@/lib/creditHooks";
 // ============ Funding-source helper ============
-
-export type SourceChoice = { kind: "main" } | { kind: "pocket"; name: string } | { kind: "other" };
-
-export function sourceLabel(source?: string): string {
-  if (!source || source === "main") return "Main balance";
-  if (source === "other") return "Other (not deducted)";
-  if (source.startsWith("pocket:")) return `Pocket · ${source.slice(7)}`;
-  return source;
-}
-export function encodeSource(c: SourceChoice): string {
-  if (c.kind === "main") return "main";
-  if (c.kind === "other") return "other";
-  return `pocket:${c.name}`;
-}
-
-export function usePockets(): string[] {
-  const { items } = useSavings();
-  return useMemo(() => {
-    const map = new Map<string, number>();
-    items.forEach((s) => {
-      const d = s.kind === "deposit" ? s.amount : -s.amount;
-      map.set(s.account, (map.get(s.account) ?? 0) + d);
-    });
-    return Array.from(map.keys()).sort((a, b) => a.localeCompare(b));
-  }, [items]);
-}
 
 export function FundingSourceDialog({
   open,
@@ -186,67 +154,6 @@ export function FundingSourceDialog({
   );
 }
 
-// ============ Ledger sync helpers ============
-
-export function useLedgerSync() {
-  const { add: addTransaction } = useTransactions();
-  const { add: addIncome } = useIncomes();
-  const { add: addSaving } = useSavings();
-
-  /**
-   * Money leaves the user's funds.
-   *
-   * Pocket-funded outflows write BOTH rows (see `planDebit`): the pocket
-   * withdrawal credits the main balance back, and the transaction (tagged
-   * with a `pocket:` split) debits it again, so main nets out and the spend
-   * still shows in history.
-   */
-  async function debit(
-    source: SourceChoice,
-    args: { amount: number; date: string; label: string; category?: string; notes?: string },
-  ) {
-    const plan = planDebit(source, args);
-    if (plan.saving) await addSaving(plan.saving);
-    if (plan.transaction) {
-      const t = plan.transaction;
-      await addTransaction({
-        date: t.date,
-        retailer: t.retailer,
-        total_amount: t.total_amount,
-        receipt_attached: false,
-        receipt_type: "None",
-        receipt_location: "",
-        notes: t.notes,
-        items: [
-          {
-            id: crypto.randomUUID(),
-            item_name: t.retailer,
-            price: t.total_amount,
-            quantity: 1,
-            category: t.category,
-          },
-        ],
-        payment_splits: t.payment_splits,
-      });
-    }
-  }
-
-  /**
-   * Money arrives in the user's funds. Into a pocket we write BOTH the pocket
-   * deposit and the income row, so the deposit's drag on the main balance is
-   * offset and main stays flat.
-   */
-  async function credit(
-    source: SourceChoice,
-    args: { amount: number; date: string; label: string; category?: string; notes?: string },
-  ) {
-    const plan = planCredit(source, args);
-    if (plan.saving) await addSaving(plan.saving);
-    if (plan.income) await addIncome(plan.income);
-  }
-
-  return { debit, credit };
-}
 // ============ History list (shared) ============
 
 export function HistoryList({ payments }: { payments: LedgerPayment[] }) {

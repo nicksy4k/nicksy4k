@@ -65,13 +65,10 @@ import {
   debtRemaining,
   sourceLabel,
   encodeSource,
-  usePockets,
-  FundingSourceDialog,
-  useLedgerSync,
-  HistoryList,
-  PaymentDialog,
   type SourceChoice,
-} from "@/components/credit/shared";
+} from "@/lib/credit";
+import { usePockets, useLedgerSync } from "@/lib/creditHooks";
+import { FundingSourceDialog, HistoryList, PaymentDialog } from "@/components/credit/shared";
 
 export function OwedToMeTab() {
   const { items, add, update, remove } = useLoans();

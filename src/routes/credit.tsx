@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { OwedToMeTab } from "@/components/credit/OwedToMeTab";
 import { DebtsTab } from "@/components/credit/DebtsTab";
-import { loanRemaining, debtRemaining } from "@/components/credit/shared";
+import { loanRemaining, debtRemaining } from "@/lib/credit";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
