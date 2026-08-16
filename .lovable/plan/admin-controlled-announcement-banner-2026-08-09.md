@@ -5,6 +5,7 @@ A message you can switch on/off and edit yourself from the Admin tab in Settings
 ## What you get
 
 **Admin tab › Announcement banner card**
+
 - On/off switch
 - Title field (optional, e.g. "Email issues")
 - Message field (multi-line)
@@ -13,6 +14,7 @@ A message you can switch on/off and edit yourself from the Admin tab in Settings
 - Shows when it was last updated
 
 **What users see**
+
 - A dismissible banner at the top of the dashboard (front page), above the page content.
 - Same banner on the signed-out login/landing page, so visitors who can't sign in still see it.
 - Dismissing hides it for that person until you change the message again (dismissal is keyed to the message's updated time), so an edited notice reappears.

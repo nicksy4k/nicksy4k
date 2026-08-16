@@ -21,18 +21,22 @@ I ran the full test suite, the linter, a backend security scan, and a dependency
 ## Proposed work, in order
 
 **Pass 1 — clean baseline (low risk)**
+
 - Run the formatter, confirm the linter is clean, re-run tests.
 - Add a proper `head()` to the subscriptions route.
 
 **Pass 2 — correctness (small, targeted)**
+
 - Make `perCycleTotal` cycle-aware: pass the user's cycle type in and use 13 cycles a year for 4-weekly (annual ÷ 13, and monthly bills scaled to the cycle length) instead of assuming 12.
 - Add tests covering: cycle window boundaries, per-cycle totals for both cycle types, annual amortisation, and promo-vs-standard subscription pricing.
 
 **Pass 3 — scale and maintainability (larger, optional)**
+
 - Paginate History (page size around 50, with "load more") and bound the transaction query used for suggestions to a recent window.
 - Split `history.tsx` and `credit.tsx` into a route shell plus focused components, the way the Outgoings page was already refactored.
 
 **Housekeeping**
+
 - Dismiss the database-function warning as reviewed and safe, and record why in the security notes.
 - Add a changelog entry for whatever ships.
 

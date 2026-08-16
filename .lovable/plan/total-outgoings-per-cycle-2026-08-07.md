@@ -17,7 +17,7 @@ Commitments this cycle   Subscriptions this cycle   TOTAL OUTGOINGS   Left to pa
 
 **Dashboard** — a compact "Outgoings this cycle" line added to the existing commitments/bills area showing total due and how much is still unpaid, linking to Commitments.
 
-Note on the current "Commitments" card: it sums *all* commitment rows regardless of due date, which can read higher than the cycle. It will be changed to cycle-scoped so all four figures add up consistently.
+Note on the current "Commitments" card: it sums _all_ commitment rows regardless of due date, which can read higher than the cycle. It will be changed to cycle-scoped so all four figures add up consistently.
 
 ## Answer: how Subscriptions affects Recurring Income / Bill Money
 
@@ -26,6 +26,7 @@ Short version: it already works, nothing is being missed.
 Subscriptions are not a separate table — they are commitment rows with an `is_subscription` flag, and they share the same "Bill Money" pocket. The recurring-income "cover commitments" allocation loads **all unpaid rows from `commitments`** with no subscription filter, then funds the gap between what's due in the window and the pocket's current balance. So every subscription you moved across is already counted when your income auto-deposits into Bill Money.
 
 Two behaviours worth knowing:
+
 - Annual subscriptions only count in the cycle their renewal date falls in — they don't inflate every month's deposit.
 - Promo pricing: the deposit uses the current `amount`, and the rollover engine swaps in the standard price on the promo end date, so the following deposit automatically covers the higher charge.
 

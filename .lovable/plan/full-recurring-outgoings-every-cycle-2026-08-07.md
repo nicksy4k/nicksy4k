@@ -13,6 +13,7 @@ Total outgoings this cycle        Every cycle (all tracked)
 ```
 
 Rules used for the "every cycle" figure:
+
 - Every commitment and subscription row counts once, whether or not it falls due in the current window and whether or not it's paid.
 - Annual subscriptions are spread (amount ÷ 12) so one big renewal doesn't distort the typical cycle. The tooltip/subline says so.
 - Promo pricing uses the current amount, matching how funding works today.

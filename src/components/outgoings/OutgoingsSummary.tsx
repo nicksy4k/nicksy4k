@@ -54,12 +54,7 @@ export function OutgoingsSummary({
               hint={`${subsCount} tracked`}
               muted
             />
-            <Figure
-              label="Total outgoings"
-              value={fmt(total)}
-              hint={`paid ${fmt(paid)}`}
-              accent
-            />
+            <Figure label="Total outgoings" value={fmt(total)} hint={`paid ${fmt(paid)}`} accent />
             <Figure
               label="Left to pay"
               value={fmt(leftToPay)}

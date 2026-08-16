@@ -1045,7 +1045,6 @@ function DebtsTab() {
                       label={`Pay installment — ${d.name}`}
                       defaultAmount={defaultAmount}
                       scheduledDate={nextDate}
-
                       max={remaining}
                       buttonIcon={<ChevronRight className="h-4 w-4" />}
                       buttonLabel="Pay Next Installment"
@@ -1310,7 +1309,6 @@ function DebtPaymentLauncher({
     </>
   );
 }
-
 
 function DebtDialog({
   open,

@@ -17,7 +17,6 @@ import { useIsDemoUser } from "@/lib/demoAccount";
 import { LegalFooter } from "@/components/LegalFooter";
 import { setDemoSession } from "@/lib/analytics";
 
-
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
   // fires the moment a new cycle starts, regardless of which route is open.
@@ -79,7 +78,6 @@ export function AppLayout() {
                 <Outlet />
               </main>
               <LegalFooter />
-
             </SidebarInset>
             <Toaster richColors position="top-right" />
           </div>

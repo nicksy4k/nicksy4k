@@ -2,11 +2,7 @@ import type { Transaction } from "./types";
 
 export type DeliveryStatus = "awaiting_dispatch" | "in_transit" | "delivered";
 
-export const DELIVERY_STATUSES: DeliveryStatus[] = [
-  "awaiting_dispatch",
-  "in_transit",
-  "delivered",
-];
+export const DELIVERY_STATUSES: DeliveryStatus[] = ["awaiting_dispatch", "in_transit", "delivered"];
 
 export interface DeliveryMeta {
   label: string;

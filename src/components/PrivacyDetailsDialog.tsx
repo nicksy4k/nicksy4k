@@ -104,7 +104,9 @@ export function PrivacyDetailsDialog({ trigger }: { trigger: ReactNode }) {
             </Row>
             <Row icon={<Database className="h-4 w-4" />} title="What is necessarily processed">
               Your auth email, sign-in timestamps, and diagnostic error logs are processed to keep
-              the service running. Optional, opt-in Google Analytics measures page and feature usage only if you accept it — never your amounts or entries. No advertising trackers are embedded.
+              the service running. Optional, opt-in Google Analytics measures page and feature usage
+              only if you accept it — never your amounts or entries. No advertising trackers are
+              embedded.
             </Row>
             <Row icon={<History className="h-4 w-4" />} title="You own the export">
               Use "Download my data" in Settings to pull a complete ZIP of every row plus your

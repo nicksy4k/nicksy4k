@@ -400,9 +400,7 @@ function DashboardPage() {
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Out for delivery
                 </p>
-                <p className="text-2xl font-semibold tabular-nums mt-1">
-                  {awaitingDeliveryCount}
-                </p>
+                <p className="text-2xl font-semibold tabular-nums mt-1">{awaitingDeliveryCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
                 </p>
@@ -452,7 +450,9 @@ function DashboardPage() {
                         </span>
                       </span>
                       <Button asChild size="sm" variant="outline">
-                        <Link to="/commitments" search={{ view: "subs" }}>Review</Link>
+                        <Link to="/commitments" search={{ view: "subs" }}>
+                          Review
+                        </Link>
                       </Button>
                     </li>
                   );

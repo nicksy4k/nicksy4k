@@ -79,7 +79,9 @@ export function OutgoingDetailsDialog({
               <Row label="Payment method" value={item.payment_method || "—"} />
               <Row
                 label={isSub ? "Next renewal" : "Next due"}
-                value={item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"}
+                value={
+                  item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"
+                }
               />
               <Row
                 label="Last paid"

@@ -16,8 +16,6 @@ import {
   Megaphone,
   BarChart3,
   Truck,
-
-
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -144,7 +142,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.5",
     title: "Cookie notice & legal access",
     date: "2026-08-08",
@@ -156,7 +153,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.4",
     title: "Proper legal pages",
     date: "2026-08-08",
@@ -168,7 +164,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.3",
     title: "Full recurring outgoings",
     date: "2026-08-07",
@@ -214,7 +209,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.11.2",
     title: "Pocket-funded loans balance properly",
     date: "2026-08-06",

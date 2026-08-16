@@ -168,7 +168,6 @@ export interface Commitment {
   created_at: string;
 }
 
-
 export interface LedgerPayment {
   id: string;
   date: string;
