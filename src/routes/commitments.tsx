@@ -1,99 +1,85 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
-import { sortLabels } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  CalendarClock,
-  CheckCircle2,
-  Pencil,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Check,
-} from "lucide-react";
+import { BellRing, Plus } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
-import { useActiveCycle, advanceDueDate } from "@/lib/cycle";
-import { Link } from "@tanstack/react-router";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useActiveCycle } from "@/lib/cycle";
 import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
-import { Repeat } from "lucide-react";
 import { perCycleTotal } from "@/lib/outgoings";
+import {
+  acceptFullPricePatch,
+  daysUntilPromoEnd,
+  promoAlerts,
+  snoozeUntilNextLogin,
+} from "@/lib/subscriptions";
+import { OutgoingsSummary } from "@/components/outgoings/OutgoingsSummary";
+import { OutgoingsList, OutgoingsLegend } from "@/components/outgoings/OutgoingsList";
+import { OutgoingDialog } from "@/components/outgoings/OutgoingDialog";
+import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
+import { PromoOfferDialog } from "@/components/outgoings/PromoOfferDialog";
+import { BILL_POCKET, todayISO } from "@/components/outgoings/shared";
+
+type View = "all" | "subs" | "bills";
 
 export const Route = createFileRoute("/commitments")({
+  validateSearch: (search: Record<string, unknown>): { view?: View } => {
+    const v = search.view;
+    return v === "subs" || v === "bills" || v === "all" ? { view: v } : {};
+  },
   head: () => ({
     meta: [
-      { title: "Commitments — Ledgerly" },
-      { name: "description", content: "Track recurring bills, due dates, and payment status." },
-      { property: "og:title", content: "Commitments — Ledgerly" },
+      { title: "Outgoings — Ledgerly" },
+      {
+        name: "description",
+        content: "One place for recurring bills and subscriptions, due dates and payment status.",
+      },
+      { property: "og:title", content: "Outgoings — Ledgerly" },
       {
         property: "og:description",
-        content: "Track recurring bills, due dates, and payment status.",
+        content: "One place for recurring bills and subscriptions, due dates and payment status.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: CommitmentsPage,
+  component: OutgoingsPage,
   errorComponent: RouteError,
 });
 
-const BILL_POCKET = "Bill Money";
+function OutgoingsPage() {
+  const { view = "all" } = Route.useSearch();
+  const navigate = useNavigate({ from: "/commitments" });
 
-function todayISO() {
-  // FIXED: Using date-fns format to prevent UTC timezone shift
-  return format(new Date(), "yyyy-MM-dd");
-}
-
-function CommitmentsPage() {
   const { items: allItems, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const qc = useQueryClient();
 
-  // Subscriptions live on their own page but share the same Bill Money pocket.
-  const items = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
+  const bills = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
   const subscriptions = useMemo(() => allItems.filter((c) => c.is_subscription), [allItems]);
 
   const cycle = useActiveCycle();
-  // Reset date = day AFTER cycle end (exclusive). Bills due strictly before this count.
   const resetDate = format(addDays(cycle.end, 1), "yyyy-MM-dd");
 
-  const billPocketBalance = useMemo(() => {
-    return savings
-      .filter((s) => s.account.trim().toLowerCase() === BILL_POCKET.toLowerCase())
-      .reduce((sum, s) => sum + (s.kind === "deposit" ? s.amount : -s.amount), 0);
-  }, [savings]);
+  const billPocketBalance = useMemo(
+    () =>
+      savings
+        .filter((s) => s.account.trim().toLowerCase() === BILL_POCKET.toLowerCase())
+        .reduce((sum, s) => sum + (s.kind === "deposit" ? s.amount : -s.amount), 0),
+    [savings],
+  );
 
-  // Cycle-scoped totals: everything due inside the current cycle, paid or not.
-  // Paying a bill rolls `next_due_date` into the next cycle, so for paid rows we
-  // fall back to `prev_due_date` — the date it was actually due in THIS cycle.
+  // Paying a row rolls next_due_date forward, so paid rows fall back to
+  // prev_due_date — the date they were actually due in THIS cycle.
   const cycleDate = (i: Commitment) =>
     (i.paid ? (i.prev_due_date ?? i.next_due_date) : i.next_due_date) ?? null;
   const inCycle = (i: Commitment) => {
@@ -101,38 +87,29 @@ function CommitmentsPage() {
     return !!d && d < resetDate;
   };
 
-  const commitmentsDueThisCycle = useMemo(
-    () => items.filter(inCycle).reduce((s, i) => s + i.amount, 0),
-    [items, resetDate],
+  const billsDue = useMemo(
+    () => bills.filter(inCycle).reduce((s, i) => s + i.amount, 0),
+    [bills, resetDate],
   );
-
-  const subsDueThisCycle = useMemo(
+  const subsDue = useMemo(
     () => subscriptions.filter(inCycle).reduce((s, i) => s + i.amount, 0),
     [subscriptions, resetDate],
   );
-
-  const totalOutgoings = commitmentsDueThisCycle + subsDueThisCycle;
-
   const paidThisCycle = useMemo(
     () => allItems.filter((i) => i.paid && inCycle(i)).reduce((s, i) => s + i.amount, 0),
     [allItems, resetDate],
   );
-
-  // Every tracked row, regardless of cycle window or paid state.
   const everyCycle = useMemo(() => perCycleTotal(allItems), [allItems]);
 
+  const leftToPay = useMemo(
+    () =>
+      allItems
+        .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
+        .reduce((s, i) => s + i.amount, 0),
+    [allItems, resetDate],
+  );
 
-  // Funding math covers commitments AND subscriptions — they share the pocket.
-  const leftToPay = useMemo(() => {
-    return allItems
-      .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
-      .reduce((s, i) => s + i.amount, 0);
-  }, [allItems, resetDate]);
-
-  const shortfall = leftToPay - billPocketBalance;
-
-  // Waterfall: order unpaid THIS-CYCLE bills by due date, allocate Bill Money down the list.
-  // Bills falling in a future cycle are not part of the funding race — they're "covered" for now.
+  // Waterfall: allocate Bill Money down the unpaid, due-this-cycle rows by date.
   const fundedMap = useMemo(() => {
     const unpaidSorted = allItems
       .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
@@ -151,783 +128,314 @@ function CommitmentsPage() {
     return map;
   }, [allItems, billPocketBalance, resetDate]);
 
-  // NOTE: Page-level rollover logic intentionally removed.
-  // The single master rollover engine lives in `useCommitmentRollover`,
-  // mounted globally in <AppLayout/>. It advances next_due_date AND resets
-  // paid → false across ALL commitment rows whenever the cycle advances.
+  const alerts = useMemo(() => promoAlerts(subscriptions), [subscriptions]);
+
+  const visible = view === "subs" ? subscriptions : view === "bills" ? bills : allItems;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Commitment | null>(null);
   const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [offerFor, setOfferFor] = useState<Commitment | null>(null);
   const detailsItem = useMemo(
-    () => items.find((i) => i.id === detailsId) ?? null,
-    [items, detailsId],
+    () => allItems.find((i) => i.id === detailsId) ?? null,
+    [allItems, detailsId],
   );
 
-  function openNew() {
-    setEditing(null);
-    setFormOpen(true);
+  async function markPaid(c: Commitment, newDue: string) {
+    const paidDate = todayISO();
+    await update(c.id, {
+      paid: true,
+      last_paid_date: paidDate,
+      prev_due_date: c.next_due_date ?? null,
+      next_due_date: newDue,
+    });
+    try {
+      await addTransaction({
+        date: paidDate,
+        retailer: c.item_name,
+        total_amount: c.amount,
+        receipt_attached: false,
+        receipt_type: "None",
+        receipt_location: "",
+        notes: `Auto-logged from ${c.is_subscription ? "subscription" : "commitment"}: ${c.item_name}`,
+        commitment_id: c.id,
+        items: [
+          {
+            id: crypto.randomUUID(),
+            item_name: c.item_name,
+            price: c.amount,
+            category: c.category || "Subscriptions",
+          },
+        ],
+      });
+      await addSaving({
+        date: paidDate,
+        kind: "withdrawal",
+        amount: c.amount,
+        account: BILL_POCKET,
+        notes: `Auto-deducted for ${c.item_name}`,
+      });
+    } catch (err) {
+      console.error("Failed to auto-log paid outgoing", err);
+      toast.error("Marked paid, but auto-logging failed.");
+    }
+    if (c.debt_id) {
+      try {
+        await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
+        qc.invalidateQueries({ queryKey: ["debts"] });
+      } catch (err) {
+        console.error("Debt sync failed", err);
+      }
+    }
+    toast.success("Paid · logged & deducted from Bill Money");
+    setDetailsId(null);
   }
+
+  async function unmarkPaid(c: Commitment) {
+    try {
+      const linked = transactions.filter((t) => t.commitment_id === c.id);
+      for (const t of linked) await removeTransaction(t.id);
+      const refundAmount = linked.reduce((s, t) => s + t.total_amount, 0) || c.amount;
+      await addSaving({
+        date: todayISO(),
+        kind: "deposit",
+        amount: refundAmount,
+        account: BILL_POCKET,
+        notes: `Refund — unmarked ${c.item_name}`,
+      });
+      await update(c.id, {
+        paid: false,
+        last_paid_date: null,
+        next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
+        prev_due_date: null,
+      });
+      if (c.debt_id) {
+        try {
+          await undoDebtPaymentForCommitment(c);
+          qc.invalidateQueries({ queryKey: ["debts"] });
+        } catch (err) {
+          console.error("Debt undo failed", err);
+        }
+      }
+      toast.success("Reversed · transaction removed & Bill Money refunded");
+    } catch (err) {
+      console.error("Failed to undo paid outgoing", err);
+      toast.error("Could not fully undo. Check transactions & pocket.");
+    }
+    setDetailsId(null);
+  }
+
+  const filters: { key: View; label: string; count: number }[] = [
+    { key: "all", label: "All outgoings", count: allItems.length },
+    { key: "subs", label: "Subscriptions", count: subscriptions.length },
+    { key: "bills", label: "Bills", count: bills.length },
+  ];
 
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+      <header className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
-            Recurring bills
+            Recurring money out
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">Commitments</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold">Outgoings</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Bills and subscriptions, all paid from your{" "}
+            <span className="font-medium">Bill Money</span> pocket.
+          </p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4" /> Add Commitment
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4" /> Add {view === "subs" ? "subscription" : "outgoing"}
         </Button>
       </header>
 
-      <Card className="mb-6">
-        <CardContent className="p-5">
-          <div className="flex items-center gap-3 flex-wrap">
-            <CalendarClock className="h-5 w-5 text-primary shrink-0" />
-            <div className="flex-1 min-w-[200px]">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                Active cycle
-              </Label>
-              <p className="text-sm mt-0.5">
-                <span className="font-medium tabular-nums">
-                  {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
-                </span>
-                {cycle.isOverridden && (
-                  <span className="ml-2 text-xs text-amber-600">· override</span>
-                )}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Bills due on or before {format(cycle.end, "d MMM")} count toward this cycle's
-                shortfall.
-              </p>
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/settings">Change cycle</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <OutgoingsSummary
+        cycleStart={cycle.start}
+        cycleEnd={cycle.end}
+        cycleOverridden={cycle.isOverridden}
+        bills={billsDue}
+        subs={subsDue}
+        billsCount={bills.length}
+        subsCount={subscriptions.length}
+        paid={paidThisCycle}
+        leftToPay={leftToPay}
+        everyCycleTotal={everyCycle.total}
+        everyCycleCount={everyCycle.count}
+        billPocketBalance={billPocketBalance}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Commitments this cycle
-            </p>
-            <p className="text-2xl font-semibold tabular-nums text-foreground">
-              {fmt(commitmentsDueThisCycle)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">{items.length} bills tracked</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Subscriptions this cycle
-            </p>
-            <p className="text-2xl font-semibold tabular-nums text-foreground">
-              {fmt(subsDueThisCycle)}
-            </p>
-            <Link
-              to="/subscriptions"
-              className="text-xs text-muted-foreground underline underline-offset-2 mt-1 inline-block"
-            >
-              {subscriptions.length} tracked · manage
-            </Link>
-          </CardContent>
-        </Card>
+      {alerts.length > 0 && view !== "bills" && (
+        <div className="space-y-3 mb-6">
+          {alerts.map((c) => {
+            const days = daysUntilPromoEnd(c) ?? 0;
+            return (
+              <Card key={c.id} className="border-warning/40 bg-warning/5">
+                <CardContent className="p-5 flex flex-wrap items-start gap-3">
+                  <BellRing className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-[220px] text-sm break-words">
+                    <p className="font-semibold">
+                      {c.item_name} —{" "}
+                      {days > 0
+                        ? `offer ends in ${days} day${days === 1 ? "" : "s"}`
+                        : "offer ends today"}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5">
+                      {fmt(c.amount)} now
+                      {typeof c.standard_price === "number"
+                        ? ` · rises to ${fmt(c.standard_price)} on ${format(parseISO(c.promo_ends_on!), "d MMM")}`
+                        : ""}
+                      . Shop around, log a new offer, or let it renew.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => setOfferFor(c)}>
+                      Log new offer
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        await update(c.id, { promo_alert_snoozed_until: snoozeUntilNextLogin() });
+                        toast.success("Snoozed until your next visit");
+                      }}
+                    >
+                      Snooze
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await update(c.id, acceptFullPricePatch(c));
+                        toast.success("Will continue at the full price");
+                      }}
+                    >
+                      Let it renew
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Total outgoings this cycle
-            </p>
-            <p className="text-2xl font-semibold tabular-nums text-primary">
-              {fmt(totalOutgoings)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              paid {fmt(paidThisCycle)} · remaining {fmt(leftToPay)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={
-            leftToPay > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30"
-          }
-        >
-          <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Left to pay before reset
-            </p>
-            <p
-              className={`text-3xl font-semibold tabular-nums ${
-                leftToPay > 0.001 ? "text-destructive" : "text-primary"
-              }`}
-            >
-              {fmt(leftToPay)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">Unpaid only</p>
-          </CardContent>
-        </Card>
+      <div className="mb-4 inline-flex rounded-lg border border-border bg-card p-1">
+        {filters.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => navigate({ search: f.key === "all" ? {} : { view: f.key } })}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              view === f.key
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f.label}
+            <span className="ml-1.5 text-xs opacity-70 tabular-nums">{f.count}</span>
+          </button>
+        ))}
       </div>
 
-      <Card className="mb-4 bg-muted/40">
-        <CardContent className="p-5 flex items-baseline justify-between gap-3 flex-wrap">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-              Every cycle (all tracked)
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {everyCycle.count} bills + subs · annual plans spread over 12
-            </p>
-          </div>
-          <p className="text-xl font-semibold tabular-nums text-muted-foreground">
-            {fmt(everyCycle.total)}
-          </p>
-        </CardContent>
-      </Card>
+      <OutgoingsLegend />
 
-
-      <Card
-        className={`mb-6 ${shortfall > 0.001 ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5"}`}
-      >
-        <CardContent className="p-5 flex items-start gap-3">
-          {shortfall > 0.001 ? (
-            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-          ) : (
-            <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          )}
-          <div className="text-sm">
-            {shortfall > 0.001 ? (
-              <p>
-                <span className="font-semibold">Shortfall:</span> Transfer{" "}
-                <span className="font-semibold tabular-nums">{fmt(shortfall)}</span> into your{" "}
-                <span className="font-semibold">Bill Money</span> pocket to cover upcoming bills.
-              </p>
-            ) : (
-              <p>
-                <span className="font-semibold">Bill Money pocket is fully funded.</span>{" "}
-                <span className="text-muted-foreground">
-                  Balance: {fmt(billPocketBalance)} · Needed: {fmt(leftToPay)}
-                </span>
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
-            <Check className="h-4 w-4" />
-          </span>
-          <span>Paid this cycle</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25">
-            <Check className="h-4 w-4" />
-          </span>
-          <span>Covered — not due this cycle</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-yellow-400" />
-          <span>Due this cycle · funded</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
-          <span>Due this cycle · shortfall</span>
-        </div>
-      </div>
-
-      <MoveToSubscriptionsCard items={items} update={update} />
+      {view !== "subs" && <MoveToSubscriptionsCard items={bills} update={update} />}
 
       <Card>
         <CardHeader>
-          <CardTitle>All commitments</CardTitle>
+          <CardTitle>
+            {view === "subs" ? "Subscriptions" : view === "bills" ? "Bills" : "All outgoings"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No commitments yet.</p>
-          ) : (
-            <TooltipProvider delayDuration={150}>
-              <ul className="space-y-2">
-                {items.map((c) => {
-                  const dueLabel = c.next_due_date
-                    ? format(parseISO(c.next_due_date), "d MMM yyyy")
-                    : "no date";
-                  const resetLabel = format(parseISO(resetDate), "d MMM yyyy");
-                  const paidLabel = c.last_paid_date
-                    ? format(parseISO(c.last_paid_date), "d MMM yyyy")
-                    : "date unknown";
-                  let statusTitle = "";
-                  let statusBody = "";
-                  if (c.paid) {
-                    statusTitle = "Paid this cycle";
-                    statusBody = `Marked paid on ${paidLabel}. Next due ${dueLabel}.`;
-                  } else if (c.next_due_date && c.next_due_date >= resetDate) {
-                    statusTitle = "Covered — not due this cycle";
-                    statusBody = `Next due ${dueLabel}, which falls after the current cycle ends on ${resetLabel}. No action needed until then.`;
-                  } else if (fundedMap[c.id]) {
-                    statusTitle = "Funded by Bill Money";
-                    statusBody = `Due ${dueLabel} (this cycle). Enough Bill Money is currently allocated via the waterfall to cover it — mark paid when the charge lands.`;
-                  } else {
-                    statusTitle = "Shortfall";
-                    statusBody = `Due ${dueLabel} (this cycle). Bill Money has already been exhausted by earlier bills in the waterfall — top up or reprioritise.`;
-                  }
-                  return (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        onClick={() => setDetailsId(c.id)}
-                        className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{c.item_name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
-                              {c.category || "—"}
-                            </span>
-                            <span>{c.next_due_date ? `Due ${dueLabel}` : "No due date"}</span>
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-sm font-semibold tabular-nums">
-                            {fmt(c.amount)}
-                          </span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label={statusTitle}
-                                className={
-                                  c.paid
-                                    ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
-                                    : c.next_due_date && c.next_due_date >= resetDate
-                                      ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/5 text-primary/70 ring-1 ring-primary/25"
-                                      : `inline-flex h-2.5 w-2.5 rounded-full ${fundedMap[c.id] ? "bg-yellow-400" : "bg-destructive"}`
-                                }
-                              >
-                                {c.paid || (c.next_due_date && c.next_due_date >= resetDate) ? (
-                                  <Check className="h-4 w-4" />
-                                ) : null}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-xs">
-                              <p className="font-medium">{statusTitle}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{statusBody}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </TooltipProvider>
-          )}
+          <OutgoingsList
+            items={visible}
+            resetDate={resetDate}
+            fundedMap={fundedMap}
+            onSelect={setDetailsId}
+            emptyLabel={
+              view === "subs"
+                ? "No subscriptions yet — add Netflix, Spotify, your gym…"
+                : view === "bills"
+                  ? "No bills yet."
+                  : "Nothing tracked yet."
+            }
+          />
         </CardContent>
       </Card>
 
-      <CommitmentDialog
+      <OutgoingDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         editing={editing}
         categories={categories}
-        onSave={(data) => {
+        defaultSubscription={view === "subs"}
+        onSave={async (data) => {
           if (editing) {
-            update(editing.id, data);
+            await update(editing.id, data);
             toast.success("Updated");
           } else {
-            add(data);
+            await add(data);
             toast.success("Added");
           }
           setFormOpen(false);
         }}
       />
 
-      <DetailsDialog
+      <PromoOfferDialog
+        item={offerFor}
+        onClose={() => setOfferFor(null)}
+        onSave={async (item, patch) => {
+          await update(item.id, patch);
+          setOfferFor(null);
+          toast.success("New offer saved");
+        }}
+      />
+
+      <OutgoingDetailsDialog
         item={detailsItem}
         cycle={cycle}
         onClose={() => setDetailsId(null)}
-        onMoveToSubscriptions={async (c) => {
-          setDetailsId(null);
-          await update(c.id, {
-            is_subscription: true,
-            cadence: c.cadence === "annual" ? "annual" : "monthly",
-          });
-          toast.success("Moved to Subscriptions", {
-            action: {
-              label: "Undo",
-              onClick: () => void update(c.id, { is_subscription: false }),
-            },
-          });
-        }}
         onEdit={(c) => {
           setDetailsId(null);
           setEditing(c);
           setFormOpen(true);
         }}
-        onDelete={(id) => {
-          remove(id);
+        onDelete={async (id) => {
+          await remove(id);
           setDetailsId(null);
           toast.success("Removed");
         }}
-        onConfirmReset={async (c, newDue) => {
-          const paidDate = todayISO();
-          await update(c.id, {
-            paid: true,
-            last_paid_date: paidDate,
-            prev_due_date: c.next_due_date ?? null,
-            next_due_date: newDue,
-          });
-          // Auto-log expense transaction in the main ledger
-          try {
-            await addTransaction({
-              date: paidDate,
-              retailer: c.item_name,
-              total_amount: c.amount,
-              receipt_attached: false,
-              receipt_type: "None",
-              receipt_location: "",
-              notes: `Auto-logged from commitment: ${c.item_name}`,
-              commitment_id: c.id,
-              items: [
-                {
-                  id: crypto.randomUUID(),
-                  item_name: c.item_name,
-                  price: c.amount,
-                  category: c.category || "Subscriptions",
-                },
-              ],
-            });
-            // Auto-deduct from Bill Money pocket
-            await addSaving({
-              date: paidDate,
-              kind: "withdrawal",
-              amount: c.amount,
-              account: BILL_POCKET,
-              notes: `Auto-deducted for ${c.item_name}`,
-            });
-          } catch (err) {
-            console.error("Failed to auto-log paid commitment", err);
-            toast.error("Marked paid, but auto-logging failed.");
-          }
-          // Sync BNPL debt balance when this commitment is linked to one.
-          if (c.debt_id) {
-            try {
-              await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
-              qc.invalidateQueries({ queryKey: ["debts"] });
-            } catch (err) {
-              console.error("Debt sync failed", err);
-            }
-          }
-          toast.success("Paid · logged & deducted from Bill Money");
+        onConfirmReset={markPaid}
+        onUnmarkPaid={unmarkPaid}
+        onLogOffer={(c) => {
           setDetailsId(null);
+          setOfferFor(c);
         }}
-        onUnmarkPaid={async (c) => {
-          try {
-            // Delete the auto-logged expense transaction(s) linked to this commitment
-            const linked = transactions.filter((t) => t.commitment_id === c.id);
-            for (const t of linked) {
-              await removeTransaction(t.id);
-            }
-            // Refund the Bill Money pocket
-            const refundAmount = linked.reduce((s, t) => s + t.total_amount, 0) || c.amount;
-            await addSaving({
-              date: todayISO(),
-              kind: "deposit",
-              amount: refundAmount,
-              account: BILL_POCKET,
-              notes: `Refund — unmarked ${c.item_name}`,
-            });
-            await update(c.id, {
-              paid: false,
-              last_paid_date: null,
-              next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
-              prev_due_date: null,
-            });
-            // Reverse the auto-logged BNPL payment if any.
-            if (c.debt_id) {
-              try {
-                await undoDebtPaymentForCommitment(c);
-                qc.invalidateQueries({ queryKey: ["debts"] });
-              } catch (err) {
-                console.error("Debt undo failed", err);
-              }
-            }
-            toast.success("Reversed · transaction removed & Bill Money refunded");
-          } catch (err) {
-            console.error("Failed to undo paid commitment", err);
-            toast.error("Could not fully undo. Check transactions & pocket.");
-          }
+        onToggleType={async (c) => {
           setDetailsId(null);
+          const next = !c.is_subscription;
+          await update(c.id, {
+            is_subscription: next,
+            ...(next ? { cadence: c.cadence === "annual" ? "annual" : "monthly" } : {}),
+          });
+          toast.success(next ? "Now a subscription" : "Moved back to bills", {
+            action: {
+              label: "Undo",
+              onClick: () => void update(c.id, { is_subscription: !next }),
+            },
+          });
         }}
       />
-    </div>
-  );
-}
 
-function DetailsDialog({
-  item,
-  cycle,
-  onClose,
-  onEdit,
-  onDelete,
-  onConfirmReset,
-  onUnmarkPaid,
-  onMoveToSubscriptions,
-}: {
-  item: Commitment | null;
-  cycle: ReturnType<typeof useActiveCycle>;
-  onClose: () => void;
-  onEdit: (c: Commitment) => void;
-  onDelete: (id: string) => void;
-  onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
-  onUnmarkPaid: (c: Commitment) => void | Promise<void>;
-  onMoveToSubscriptions: (c: Commitment) => void;
-}) {
-  const [mode, setMode] = useState<"details" | "confirm">("details");
-  const [pickerDate, setPickerDate] = useState("");
-
-  useEffect(() => {
-    if (item) {
-      setMode("details");
-      setPickerDate(item.next_due_date ?? todayISO());
-    }
-  }, [item]);
-
-  const open = !!item;
-
-  function handlePaidToggle(checked: boolean) {
-    if (!item) return;
-    if (checked) {
-      setMode("confirm");
-    } else {
-      onUnmarkPaid(item);
-    }
-  }
-
-  function confirmWith(newDue: string) {
-    if (!item) return;
-    onConfirmReset(item, newDue);
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
-    >
-      <DialogContent className="max-w-md">
-        {item && mode === "details" && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{item.item_name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <Row
-                label="Amount"
-                value={<span className="font-semibold tabular-nums">{fmt(item.amount)}</span>}
-              />
-              <Row label="Category" value={item.category || "—"} />
-              <Row label="Store / provider" value={item.store || "—"} />
-              <Row label="Payment method" value={item.payment_method || "—"} />
-              <Row
-                label="Next due"
-                value={
-                  item.next_due_date ? format(parseISO(item.next_due_date), "d MMM yyyy") : "—"
-                }
-              />
-              <Row
-                label="Last paid"
-                value={
-                  item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"
-                }
-              />
-              {item.notes && (
-                <Row
-                  label="Notes"
-                  value={<span className="italic text-muted-foreground">{item.notes}</span>}
-                />
-              )}
-              <div className="flex items-center justify-between border-t border-border pt-3">
-                <Label htmlFor="paid-toggle">Paid</Label>
-                <Switch id="paid-toggle" checked={item.paid} onCheckedChange={handlePaidToggle} />
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)}>
-                <Trash2 className="h-4 w-4" /> Delete
-              </Button>
-              {!item.debt_id && (
-                <Button variant="outline" size="sm" onClick={() => onMoveToSubscriptions(item)}>
-                  <Repeat className="h-4 w-4" /> Move to Subscriptions
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
-                <Pencil className="h-4 w-4" /> Edit
-              </Button>
-              <Button size="sm" onClick={onClose}>
-                Close
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-
-        {item && mode === "confirm" && (
-          <>
-            <DialogHeader>
-              <DialogTitle>Confirm payment reset?</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <p className="text-muted-foreground">
-                Marking <span className="font-medium text-foreground">{item.item_name}</span> as
-                paid will advance its next due date. Choose how to roll it forward:
-              </p>
-              <div className="grid gap-2">
-                {/* Frequency-aware manual advance — choose the cadence that matches this specific bill. */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-col h-auto py-2"
-                    onClick={() => {
-                      const base = item.next_due_date ?? todayISO();
-                      confirmWith(advanceDueDate(base, "monthly"));
-                    }}
-                  >
-                    <span className="text-sm">Advance +1 month</span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(
-                        parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "monthly")),
-                        "d MMM yyyy",
-                      )}
-                    </span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-col h-auto py-2"
-                    onClick={() => {
-                      const base = item.next_due_date ?? todayISO();
-                      confirmWith(advanceDueDate(base, "four-weekly"));
-                    }}
-                  >
-                    <span className="text-sm">Advance +4 weeks</span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(
-                        parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly")),
-                        "d MMM yyyy",
-                      )}
-                    </span>
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Global cycle: {cycle.type === "four-weekly" ? "4-weekly" : "monthly"} — pick the
-                  cadence that matches this bill.
-                </p>
-
-                <div className="rounded-md border border-border p-3 space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Or pick a date
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={pickerDate}
-                      onChange={(e) => setPickerDate(e.target.value)}
-                    />
-                    <Button onClick={() => pickerDate && confirmWith(pickerDate)}>Set</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setMode("details");
-                  onClose();
-                }}
-              >
-                Cancel
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="text-sm text-right">{value}</span>
-    </div>
-  );
-}
-
-function CommitmentDialog({
-  open,
-  onOpenChange,
-  editing,
-  categories,
-  onSave,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  editing: Commitment | null;
-  categories: string[];
-  onSave: (data: Omit<Commitment, "id" | "created_at">) => void;
-}) {
-  const [itemName, setItemName] = useState("");
-  const [store, setStore] = useState("");
-  const [payment, setPayment] = useState("");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("Subscriptions");
-  const [lastPaid, setLastPaid] = useState("");
-  const [nextDue, setNextDue] = useState("");
-  const [notes, setNotes] = useState("");
-  const [paid, setPaid] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setItemName(editing?.item_name ?? "");
-    setStore(editing?.store ?? "");
-    setPayment(editing?.payment_method ?? "");
-    setAmount(editing ? String(editing.amount) : "");
-    setCategory(
-      editing?.category ??
-        (categories.includes("Subscriptions")
-          ? "Subscriptions"
-          : (categories[0] ?? "Subscriptions")),
-    );
-    setLastPaid(editing?.last_paid_date ?? "");
-    setNextDue(editing?.next_due_date ?? "");
-    setNotes(editing?.notes ?? "");
-    setPaid(editing?.paid ?? false);
-  }, [open, editing, categories]);
-
-  function submit() {
-    const amt = parseFloat(amount);
-    if (!itemName.trim() || !(amt >= 0)) {
-      toast.error("Item name and a valid amount are required.");
-      return;
-    }
-    onSave({
-      item_name: itemName.trim(),
-      store: store.trim(),
-      payment_method: payment.trim(),
-      amount: amt,
-      category: category || "Subscriptions",
-      last_paid_date: lastPaid || null,
-      next_due_date: nextDue || null,
-      notes: notes.trim() || undefined,
-      paid,
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{editing ? "Edit commitment" : "Add commitment"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Item name">
-              <Input
-                value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
-                placeholder="Netflix"
-              />
-            </Field>
-            <Field label="Store / provider">
-              <Input
-                value={store}
-                onChange={(e) => setStore(e.target.value)}
-                placeholder="Netflix Inc."
-              />
-            </Field>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Category">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pick a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                      No categories yet — add one in Settings.
-                    </div>
-                  ) : (
-                    sortLabels(categories).map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Payment method">
-              <Input
-                value={payment}
-                onChange={(e) => setPayment(e.target.value)}
-                placeholder="Direct Debit"
-              />
-            </Field>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Amount (£)">
-              <Input
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-              />
-            </Field>
-            <Field label="Last paid date">
-              <Input type="date" value={lastPaid} onChange={(e) => setLastPaid(e.target.value)} />
-            </Field>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Next due date">
-              <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
-            </Field>
-            <div className="flex items-end pb-1">
-              <div className="flex items-center gap-2">
-                <Switch checked={paid} onCheckedChange={setPaid} id="paid" />
-                <Label htmlFor="paid">Marked as paid</Label>
-              </div>
-            </div>
-          </div>
-          <Field label="Notes">
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </Field>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={submit}>{editing ? "Save" : "Add"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
-      {children}
+      <p className="sr-only">
+        <Link to="/settings">Settings</Link>
+      </p>
     </div>
   );
 }
