@@ -33,6 +33,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.14.2",
+    title: "Faster history, tidier internals",
+    date: "2026-08-16",
+    icon: Zap,
+    highlights: [
+      "History now loads 50 transactions at a time with a \u201CLoad more\u201D button, so long ledgers stay quick to open and scroll.",
+      "Item price and category suggestions now look at your most recent transactions only, keeping the new-transaction form snappy as your history grows.",
+      "The History and Credit pages were split into smaller pieces behind the scenes \u2014 no visible change, but future fixes are safer.",
+      "Added tests covering the new suggestion window.",
+    ],
+  },
+  {
     version: "v2.14.1",
     title: "Accurate 4-weekly outgoing totals",
     date: "2026-08-16",

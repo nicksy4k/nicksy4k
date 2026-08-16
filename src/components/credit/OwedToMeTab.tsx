@@ -1,0 +1,449 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { colorForKey } from "@/lib/colors";
+import {
+  Plus,
+  Trash2,
+  HandCoins,
+  CreditCard as CreditIcon,
+  Wallet,
+  ChevronRight,
+  ArrowUpRight,
+  History,
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+import {
+  useCommitments,
+  useDebts,
+  useDebtItems,
+  useIncomes,
+  useLoans,
+  useSavings,
+  useTransactions,
+} from "@/lib/store";
+import type { Debt, LedgerPayment, Loan } from "@/lib/types";
+import { fmt } from "@/lib/format";
+import { addMonths } from "date-fns";
+import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
+import {
+  todayISO,
+  loanPaid,
+  loanRemaining,
+  debtPaid,
+  debtRemaining,
+  sourceLabel,
+  encodeSource,
+  type SourceChoice,
+} from "@/lib/credit";
+import { usePockets, useLedgerSync } from "@/lib/creditHooks";
+import { FundingSourceDialog, HistoryList, PaymentDialog } from "@/components/credit/shared";
+
+export function OwedToMeTab() {
+  const { items, add, update, remove } = useLoans();
+  const ledger = useLedgerSync();
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Loan | null>(null);
+
+  // Pending action awaiting a funding-source choice.
+  const [pending, setPending] = useState<
+    | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
+    | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
+    | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string }
+    | null
+  >(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4" /> New loan
+        </Button>
+      </div>
+
+      {items.length === 0 ? (
+        <Card>
+          <CardContent className="p-10 text-center text-sm text-muted-foreground">
+            No loans tracked yet. Log money you've lent out to keep tabs on repayments.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map((l) => {
+            const remaining = loanRemaining(l);
+            const paid = loanPaid(l);
+            const pct = l.total_amount > 0 ? Math.min(100, (paid / l.total_amount) * 100) : 0;
+            const settled = remaining <= 0.001;
+            return (
+              <Card key={l.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{l.person_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Loan: <span className="tabular-nums">{fmt(l.total_amount)}</span>
+                        {l.start_date && <> · {format(new Date(l.start_date), "d MMM yyyy")}</>}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditing(l);
+                        setOpen(true);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Remaining
+                      </span>
+                      <span className="text-xl font-semibold tabular-nums">{fmt(remaining)}</span>
+                    </div>
+                    <Progress value={pct} className="mt-2" />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      {fmt(paid)} of {fmt(l.total_amount)} repaid
+                    </p>
+                  </div>
+
+                  <RepaymentLauncher
+                    disabled={settled}
+                    label={`Log repayment from ${l.person_name}`}
+                    max={remaining}
+                    onSubmit={({ amount, date, notes }) =>
+                      setPending({ kind: "repay", loan: l, amount, date, notes })
+                    }
+                  />
+
+                  <TopUpLauncher
+                    label={`Top up ${l.person_name}'s loan`}
+                    onSubmit={({ amount, date, notes }) =>
+                      setPending({ kind: "topup", loan: l, amount, date, notes })
+                    }
+                  />
+
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="hist" className="border-none">
+                      <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                        <span className="flex items-center gap-1.5">
+                          <History className="h-3.5 w-3.5" /> View history (
+                          {(l.payments ?? []).length})
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <HistoryList payments={l.payments ?? []} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`Delete loan to ${l.person_name}?`)) {
+                          remove(l.id);
+                          toast.success("Loan removed");
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <LoanDialog
+        open={open}
+        onOpenChange={setOpen}
+        editing={editing}
+        onSave={async (draft) => {
+          if (editing) {
+            await update(editing.id, draft);
+            toast.success("Loan updated");
+            setOpen(false);
+          } else {
+            // New loan = money going OUT — ask for funding source.
+            setOpen(false);
+            setPending({ kind: "create", draft });
+          }
+        }}
+      />
+
+      <FundingSourceDialog
+        open={!!pending}
+        onOpenChange={(v) => {
+          if (!v) setPending(null);
+        }}
+        title={
+          pending?.kind === "create"
+            ? "Loan funded from"
+            : pending?.kind === "topup"
+              ? "Top-up funded from"
+              : pending?.kind === "repay"
+                ? "Repayment goes to"
+                : ""
+        }
+        direction={pending?.kind === "repay" ? "in" : "out"}
+        onConfirm={async (choice) => {
+          if (!pending) return;
+          try {
+            if (pending.kind === "create") {
+              const date = pending.draft.start_date ?? todayISO();
+              await add({ ...pending.draft, payments: [] });
+              await ledger.debit(choice, {
+                amount: pending.draft.total_amount,
+                date,
+                label: `Loan to ${pending.draft.person_name}`,
+                category: "Loans",
+              });
+              toast.success("Loan added");
+            } else if (pending.kind === "topup") {
+              const next: LedgerPayment[] = [
+                ...(pending.loan.payments ?? []),
+                {
+                  id: crypto.randomUUID(),
+                  date: pending.date,
+                  amount: pending.amount,
+                  notes: pending.notes,
+                  type: "topup",
+                  source: encodeSource(choice),
+                },
+              ];
+              await update(pending.loan.id, {
+                total_amount: pending.loan.total_amount + pending.amount,
+                payments: next,
+              });
+              await ledger.debit(choice, {
+                amount: pending.amount,
+                date: pending.date,
+                label: `Top-up loan · ${pending.loan.person_name}`,
+                category: "Loans",
+                notes: pending.notes,
+              });
+              toast.success("Top-up logged");
+            } else if (pending.kind === "repay") {
+              const next: LedgerPayment[] = [
+                ...(pending.loan.payments ?? []),
+                {
+                  id: crypto.randomUUID(),
+                  date: pending.date,
+                  amount: pending.amount,
+                  notes: pending.notes,
+                  type: "payment",
+                  source: encodeSource(choice),
+                },
+              ];
+              await update(pending.loan.id, { payments: next });
+              await ledger.credit(choice, {
+                amount: pending.amount,
+                date: pending.date,
+                label: `Repayment · ${pending.loan.person_name}`,
+                category: "Loan repayment",
+                notes: pending.notes,
+              });
+              toast.success("Repayment logged");
+            }
+          } catch (e) {
+            console.error(e);
+            toast.error("Something went wrong");
+          } finally {
+            setPending(null);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function RepaymentLauncher({
+  disabled,
+  label,
+  max,
+  onSubmit,
+}: {
+  disabled: boolean;
+  label: string;
+  max: number;
+  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" className="w-full" disabled={disabled} onClick={() => setOpen(true)}>
+        <Wallet className="h-4 w-4" /> Log Repayment
+      </Button>
+      <PaymentDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={label}
+        max={max}
+        onSave={(v) => {
+          setOpen(false);
+          onSubmit(v);
+        }}
+      />
+    </>
+  );
+}
+
+function TopUpLauncher({
+  label,
+  onSubmit,
+}: {
+  label: string;
+  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen(true)}>
+        <ArrowUpRight className="h-4 w-4" /> Top Up Loan
+      </Button>
+      <PaymentDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={label}
+        max={Number.POSITIVE_INFINITY}
+        hideRemaining
+        onSave={(v) => {
+          setOpen(false);
+          onSubmit(v);
+        }}
+      />
+    </>
+  );
+}
+
+function LoanDialog({
+  open,
+  onOpenChange,
+  editing,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  editing: Loan | null;
+  onSave: (data: Omit<Loan, "id" | "created_at" | "payments">) => void | Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [startDate, setStartDate] = useState(todayISO());
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setName(editing?.person_name ?? "");
+      setAmount(editing ? String(editing.total_amount) : "");
+      setStartDate(editing?.start_date ?? todayISO());
+      setNotes(editing?.notes ?? "");
+    }
+  }, [open, editing]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edit loan" : "New loan"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Person</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                {editing ? "Total (£)" : "Starting amount (£)"}
+              </Label>
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Loan date
+              </Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              const amt = parseFloat(amount);
+              if (!name.trim() || !(amt >= 0)) {
+                toast.error("Name and a valid amount are required.");
+                return;
+              }
+              onSave({
+                person_name: name.trim(),
+                total_amount: amt,
+                start_date: startDate || null,
+                notes: notes.trim() || undefined,
+              });
+            }}
+          >
+            {editing ? "Save" : "Next"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ DEBTS & BNPL ============
