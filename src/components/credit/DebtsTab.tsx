@@ -1,5 +1,3 @@
-
-
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -58,7 +56,8 @@ import {
 import type { Debt, LedgerPayment, Loan } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
-import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";import {
+import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
+import {
   todayISO,
   loanPaid,
   loanRemaining,
