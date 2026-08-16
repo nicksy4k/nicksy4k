@@ -35,6 +35,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v2.14.0",
+    title: "One Outgoings page",
+    date: "2026-08-15",
+    icon: Repeat,
+    highlights: [
+      "Commitments and Subscriptions are now a single \u201COutgoings\u201D page with an All / Subscriptions / Bills toggle.",
+      "Summary cards condensed into one row \u2014 bills, subscriptions, total and left to pay \u2014 with the cycle dates and \u201Cevery cycle\u201D figure tucked into a compact strip.",
+      "One add/edit form for both types, with a switch to turn any row into a subscription (and back).",
+      "The old /subscriptions link still works \u2014 it opens the Subscriptions view.",
+    ],
+  },
+  {
     version: "v2.13.3",
     title: "Early BNPL payments land in the right cycle",
     date: "2026-08-15",

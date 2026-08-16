@@ -8,7 +8,6 @@ import {
   TrendingUp,
   PiggyBank,
   CalendarClock,
-  Repeat,
   LogOut,
   CreditCard,
   Archive,
