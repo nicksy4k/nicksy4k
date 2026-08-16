@@ -21,6 +21,7 @@ const EMAIL_SUBJECTS: Record<string, string> = {
 };
 
 // Template mapping
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- template props differ per email type
 const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   signup: SignupEmail,
   invite: InviteEmail,
@@ -29,6 +30,19 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   email_change: EmailChangeEmail,
   reauthentication: ReauthenticationEmail,
 };
+
+interface AuthEmailPayload {
+  version: string;
+  run_id: string;
+  data: {
+    action_type: string;
+    email: string;
+    url?: string;
+    token?: string;
+    old_email?: string;
+    new_email?: string;
+  };
+}
 
 // Configuration
 const SITE_NAME = "Ledgerly";
@@ -55,7 +69,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         // Verify signature + timestamp, then parse payload.
-        let payload: any;
+        let payload: AuthEmailPayload;
         let run_id = "";
         try {
           const verified = await verifyWebhookRequest({
