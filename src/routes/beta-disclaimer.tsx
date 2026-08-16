@@ -181,7 +181,6 @@ function BetaPage() {
   );
 }
 
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card className="border-border/60">

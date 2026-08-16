@@ -87,4 +87,3 @@ export function AnnouncementBanner({ className }: { className?: string }) {
     />
   );
 }
-

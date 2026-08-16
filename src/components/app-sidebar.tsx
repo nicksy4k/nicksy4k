@@ -202,7 +202,6 @@ export function AppSidebar() {
           </div>
         )}
         <div className={cn("flex items-center gap-2.5", collapsed && "flex-col")}>
-
           <div className="h-8 w-8 shrink-0 rounded-lg bg-primary/15 ring-1 ring-primary/30 grid place-items-center text-xs font-semibold text-primary">
             {initial}
           </div>

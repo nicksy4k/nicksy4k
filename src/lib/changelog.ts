@@ -16,8 +16,6 @@ import {
   Megaphone,
   BarChart3,
   Truck,
-
-
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -34,6 +32,18 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v2.14.1",
+    title: "Accurate 4-weekly outgoing totals",
+    date: "2026-08-16",
+    icon: ShieldCheck,
+    highlights: [
+      "The 'every cycle' outgoings figure is now cycle-aware: on a 4-weekly cycle there are 13 cycles a year, so monthly bills and annual renewals are spread properly instead of being overstated.",
+      "Weekly and fortnightly outgoings are now converted to a per-cycle cost too.",
+      "Added test coverage for cycle windows, month-end anchors, due-date rollovers and per-cycle totals.",
+      "Codebase-wide formatting and lint clean-up — the project now passes lint with zero errors.",
+    ],
+  },
   {
     version: "v2.14.0",
     title: "One Outgoings page",
@@ -144,7 +154,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.5",
     title: "Cookie notice & legal access",
     date: "2026-08-08",
@@ -156,7 +165,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.4",
     title: "Proper legal pages",
     date: "2026-08-08",
@@ -168,7 +176,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.12.3",
     title: "Full recurring outgoings",
     date: "2026-08-07",
@@ -214,7 +221,6 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
-
     version: "v2.11.2",
     title: "Pocket-funded loans balance properly",
     date: "2026-08-06",

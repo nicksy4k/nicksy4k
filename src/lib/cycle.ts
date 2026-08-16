@@ -298,7 +298,6 @@ export function rollDueDateForward(
   return cur;
 }
 
-
 // ---------- React hooks ----------
 
 /**

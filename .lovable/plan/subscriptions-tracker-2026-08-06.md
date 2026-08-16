@@ -11,12 +11,14 @@ Subscriptions become a first-class type of commitment, so everything still comes
 **Monthly and annual renewals.** Each row carries its own cadence. Annual subscriptions only appear as due in the cycle they actually renew in; they no longer get rolled forward month by month.
 
 **Offer / promo pricing.** Each subscription can record:
+
 - Current (discounted) price and the date the offer ends
 - The standard price it reverts to
 
 While the offer is live, the row shows the discounted price plus a badge like "Offer ends 14 Sep — then £17.99".
 
 **Promo-ending reminders.** A few days before an offer ends (configurable, default 3), a card appears at the top of the Subscriptions page — and a matching alert on the dashboard next to the existing warranty/return alerts. Each alert has three actions:
+
 - **Log a new offer** — enter a new discounted price and end date; the row keeps the promo state
 - **Snooze** — hides it until your next sign-in
 - **Let it renew at full price** — dismisses the alert; on the offer end date the price automatically becomes the standard price

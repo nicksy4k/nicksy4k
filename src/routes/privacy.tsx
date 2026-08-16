@@ -72,9 +72,9 @@ function PrivacyPage() {
         </div>
 
         <p className="text-sm text-muted-foreground mb-6">
-          Ledgerly is a personal finance tracker built and run by one developer. This policy explains
-          exactly what is collected, where it lives, who can reach it, and how to get it back or have
-          it deleted.
+          Ledgerly is a personal finance tracker built and run by one developer. This policy
+          explains exactly what is collected, where it lives, who can reach it, and how to get it
+          back or have it deleted.
         </p>
 
         <div className="space-y-4">
@@ -102,8 +102,9 @@ function PrivacyPage() {
                 debts, categories, and your app preferences.
               </li>
               <li>
-                <strong>Feedback context</strong> — when you send feedback, the app version, the page
-                you were on, and your browser user agent are attached so bugs can be reproduced.
+                <strong>Feedback context</strong> — when you send feedback, the app version, the
+                page you were on, and your browser user agent are attached so bugs can be
+                reproduced.
               </li>
               <li>
                 <strong>Operational records</strong> — sign-in timestamps and diagnostic error logs
@@ -124,8 +125,8 @@ function PrivacyPage() {
               </li>
               <li>
                 Every table carries your user ID and is protected by Row Level Security, so a query
-                for anyone else's rows returns nothing — enforced by the database itself, not just by
-                app code.
+                for anyone else's rows returns nothing — enforced by the database itself, not just
+                by app code.
               </li>
               <li>
                 Receipts and feedback attachments live in private storage buckets. They are not
@@ -196,9 +197,9 @@ function PrivacyPage() {
 
           <Section title="6. How long we keep it">
             <p>
-              Your records are kept for as long as your account exists. If you ask for deletion, your
-              account and its associated rows and files are removed. Because Ledgerly is in beta,
-              data may occasionally need to be migrated or reset — see the{" "}
+              Your records are kept for as long as your account exists. If you ask for deletion,
+              your account and its associated rows and files are removed. Because Ledgerly is in
+              beta, data may occasionally need to be migrated or reset — see the{" "}
               <Link to="/beta-disclaimer" className="text-primary hover:underline">
                 Beta Disclaimer
               </Link>
@@ -238,7 +239,6 @@ function PrivacyPage() {
               .
             </p>
           </Section>
-
 
           <Section title="9. Children">
             <p>
@@ -286,7 +286,6 @@ function PrivacyPage() {
     </div>
   );
 }
-
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

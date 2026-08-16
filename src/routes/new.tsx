@@ -916,7 +916,6 @@ function NewTransactionPage() {
                   )}
                 </div>
 
-
                 <div>
                   <ProtectionFields
                     transactionDate={date}

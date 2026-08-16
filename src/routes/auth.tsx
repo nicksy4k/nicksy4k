@@ -518,7 +518,6 @@ export function AuthPage() {
                             </Link>
                             .
                           </span>
-
                         </label>
                         <label className="flex items-start gap-2 text-sm">
                           <Checkbox
@@ -650,7 +649,6 @@ export function AuthPage() {
             © {new Date().getFullYear()} Ledgerly · Built by Nicksy4K. All rights reserved.
           </p>
         </footer>
-
       </main>
     </div>
   );

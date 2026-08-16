@@ -20,8 +20,6 @@ import { AuthPage } from "./auth";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { hydrateConsent, trackPageView } from "@/lib/analytics";
 
-
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

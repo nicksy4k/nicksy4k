@@ -150,7 +150,10 @@ export type AnalyticsEvent =
  * Fire a product event. Never pass amounts, names, emails or any other
  * personal detail — only the fact that the thing happened.
  */
-export function trackEvent(name: AnalyticsEvent, params?: Record<string, string | number | boolean>) {
+export function trackEvent(
+  name: AnalyticsEvent,
+  params?: Record<string, string | number | boolean>,
+) {
   if (!enabled()) return;
   gtag("event", name, params ?? {});
 }

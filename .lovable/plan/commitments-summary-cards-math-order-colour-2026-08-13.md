@@ -4,7 +4,7 @@
 
 The filters themselves don't check `paid` — the three cycle cards already sum paid and unpaid rows. The real cause is the date: when you confirm a payment, the row's `next_due_date` is advanced into the next cycle (the old date is stored in `prev_due_date`). So a paid bill stops matching `next_due_date < resetDate` and silently drops out of every cycle total.
 
-Fix: judge cycle membership by the date the item was *due in this cycle*, not the rolled-forward one.
+Fix: judge cycle membership by the date the item was _due in this cycle_, not the rolled-forward one.
 
 ```text
 cycleDate(item) = item.paid ? (item.prev_due_date ?? item.next_due_date) : item.next_due_date

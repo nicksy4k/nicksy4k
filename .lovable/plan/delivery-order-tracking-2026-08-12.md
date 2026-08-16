@@ -5,6 +5,7 @@ Track online orders from purchase to doorstep, using the existing transaction re
 ## 1. Database
 
 Add three optional fields to transactions:
+
 - `delivery_status` — one of `awaiting_dispatch`, `in_transit`, `delivered` (empty for normal purchases)
 - `courier`
 - `tracking_number`

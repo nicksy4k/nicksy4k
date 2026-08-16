@@ -1758,7 +1758,6 @@ function EditTransactionDialog({
                 </div>
               </div>
 
-
               <Field label="Notes (optional)">
                 <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>

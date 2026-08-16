@@ -877,9 +877,7 @@ function AboutTab({
           <Button asChild size="sm" variant="ghost">
             <Link to="/cookies">Cookie Notice</Link>
           </Button>
-
         </CardContent>
-
       </Card>
 
       {/* Help & feedback */}
