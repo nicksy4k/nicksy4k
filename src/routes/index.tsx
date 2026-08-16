@@ -231,7 +231,7 @@ function DashboardPage() {
     const total = due.reduce((s, c) => s + c.amount, 0);
     const unpaid = due.filter((c) => !c.paid).reduce((s, c) => s + c.amount, 0);
     const subs = due.filter((c) => c.is_subscription).reduce((s, c) => s + c.amount, 0);
-    const everyCycle = perCycleTotal(commitments);
+    const everyCycle = perCycleTotal(commitments, cycle.type);
     return { total, unpaid, subs, bills: total - subs, everyCycle: everyCycle.total };
   }, [commitments, cycle]);
 

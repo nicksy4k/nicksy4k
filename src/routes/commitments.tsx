@@ -99,7 +99,7 @@ function OutgoingsPage() {
     () => allItems.filter((i) => i.paid && inCycle(i)).reduce((s, i) => s + i.amount, 0),
     [allItems, resetDate],
   );
-  const everyCycle = useMemo(() => perCycleTotal(allItems), [allItems]);
+  const everyCycle = useMemo(() => perCycleTotal(allItems, cycle.type), [allItems, cycle.type]);
 
   const leftToPay = useMemo(
     () =>
