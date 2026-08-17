@@ -12,7 +12,7 @@ const KOFI_URL = "https://ko-fi.com/itemizedkeeper";
 export function SupportDevCard({ className }: { className?: string }) {
   return (
     <Card className={`border-primary/25 bg-primary/5 ${className ?? ""}`}>
-      <CardContent className="p-5 md:p-6">
+      <CardContent className="p-4 md:p-5 md:p-6">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 shrink-0 rounded-lg bg-primary/15 p-2 text-primary">
             <Heart className="h-5 w-5" />

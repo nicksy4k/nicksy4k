@@ -690,7 +690,7 @@ function NewTransactionPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             {isPending ? "Quick pending hold" : `Step ${step} of 2`}
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">
             {isPending
               ? "Reserve a pending amount"
               : step === 1
@@ -757,7 +757,7 @@ function NewTransactionPage() {
 
       {step === 1 && (
         <Card>
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="p-4 md:p-6 space-y-5">
             {canScan && (
               <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
                 <div>

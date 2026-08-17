@@ -246,7 +246,7 @@ function DashboardPage() {
             Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
             {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Dashboard</h1>
           {encouragement && <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>}
         </div>
       </header>
@@ -256,7 +256,7 @@ function DashboardPage() {
           data-tour="left-to-spend"
           className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5"
         >
-          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
                 Left to spend
@@ -288,7 +288,7 @@ function DashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
               <PiggyBank className="h-4 w-4" />
@@ -694,7 +694,7 @@ function StatCard({
     tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
     <Card className={accent ? "border-primary/30 bg-primary/5" : "bg-card/70"}>
-      <CardContent className="p-5">
+      <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between text-muted-foreground mb-2">
           <span className="text-xs uppercase tracking-wider">{label}</span>
           <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>

@@ -238,7 +238,7 @@ function OutgoingsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Recurring money out
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">Outgoings</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Outgoings</h1>
           <p className="text-sm text-muted-foreground mt-2">
             Bills and subscriptions, all paid from your{" "}
             <span className="font-medium">Bill Money</span> pocket.
@@ -275,7 +275,7 @@ function OutgoingsPage() {
             const days = daysUntilPromoEnd(c) ?? 0;
             return (
               <Card key={c.id} className="border-warning/40 bg-warning/5">
-                <CardContent className="p-5 flex flex-wrap items-start gap-3">
+                <CardContent className="p-4 md:p-5 flex flex-wrap items-start gap-3">
                   <BellRing className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-[220px] text-sm break-words">
                     <p className="font-semibold">

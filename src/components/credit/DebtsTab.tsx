@@ -237,7 +237,7 @@ export function DebtsTab() {
               const settled = remaining <= 0.001;
               return (
                 <Card key={d.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
-                  <CardContent className="p-5 space-y-3">
+                  <CardContent className="p-4 md:p-5 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{d.name}</p>
@@ -334,7 +334,7 @@ export function DebtsTab() {
               const nextDate = dates[paidCount] ?? todayISO();
               return (
                 <Card key={d.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
-                  <CardContent className="p-5 space-y-4">
+                  <CardContent className="p-4 md:p-5 space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{d.name}</p>

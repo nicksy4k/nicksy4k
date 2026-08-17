@@ -271,7 +271,7 @@ function ReportsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Analytics
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">Reports</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Reports</h1>
           <p className="text-sm text-muted-foreground mt-2">
             Query your spending across any date range — independent of the active 28-day cycle.
           </p>
@@ -325,7 +325,7 @@ function ReportsPage() {
       </header>
 
       <Card className="mb-6">
-        <CardContent className="p-5 flex flex-col sm:flex-row gap-4">
+        <CardContent className="p-4 md:p-5 flex flex-col sm:flex-row gap-4">
           <DateField label="Start date" value={startDate} onChange={setStartDate} />
           <DateField label="End date" value={endDate} onChange={setEndDate} />
           <CategoryMultiSelect

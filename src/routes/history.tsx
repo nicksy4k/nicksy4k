@@ -224,7 +224,7 @@ function HistoryPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             All transactions
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">History</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">History</h1>
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
           {hasFilters ? `${filtered.length} of ${items.length}` : `${items.length} total`}

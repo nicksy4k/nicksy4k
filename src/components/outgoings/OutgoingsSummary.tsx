@@ -40,7 +40,7 @@ export function OutgoingsSummary({
   return (
     <div className="space-y-4 mb-6">
       <Card>
-        <CardContent className="p-5">
+        <CardContent className="p-4 md:p-5">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <Figure
               label="Bills this cycle"

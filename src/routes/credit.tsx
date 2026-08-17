@@ -93,12 +93,12 @@ function CreditPage() {
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           Loans &amp; liabilities
         </p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Credit &amp; Debt</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Credit &amp; Debt</h1>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-5 flex items-center gap-4">
+          <CardContent className="p-4 md:p-5 flex items-center gap-4">
             <div className="h-11 w-11 rounded-xl bg-primary/15 grid place-items-center">
               <HandCoins className="h-5 w-5 text-primary" />
             </div>
@@ -109,7 +109,7 @@ function CreditPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5 flex items-center gap-4">
+          <CardContent className="p-4 md:p-5 flex items-center gap-4">
             <div className="h-11 w-11 rounded-xl bg-destructive/15 grid place-items-center">
               <CreditIcon className="h-5 w-5 text-destructive" />
             </div>

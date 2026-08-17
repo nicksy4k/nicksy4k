@@ -30,7 +30,7 @@ export function AboutStory({
 
   return (
     <Card className={`border-border/60 bg-card/40 backdrop-blur-sm ${className ?? ""}`}>
-      <CardContent className="p-5 md:p-7">
+      <CardContent className="p-4 md:p-5 md:p-7">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-2 text-primary">
             <Coffee className="h-5 w-5" />

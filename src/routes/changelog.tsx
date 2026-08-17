@@ -55,7 +55,7 @@ function ChangelogPage() {
             Release notes
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl md:text-4xl font-semibold">Changelog</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Changelog</h1>
             <Badge variant="secondary" className="font-mono text-xs">
               {currentVersion}
             </Badge>

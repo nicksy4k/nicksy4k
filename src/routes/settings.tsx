@@ -172,7 +172,7 @@ function SettingsPage() {
           Preferences
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl md:text-4xl font-semibold">Settings</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Settings</h1>
           <button
             type="button"
             onClick={() => selectTab("about")}
@@ -781,7 +781,7 @@ function AboutTab({
     <div className="space-y-6">
       {/* Identity */}
       <Card className="overflow-hidden">
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-transparent grid place-items-center">
               <Sparkles className="h-7 w-7 text-primary" />

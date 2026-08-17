@@ -31,7 +31,7 @@ export function WhatsNewCard() {
 
   return (
     <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-background">
-      <CardContent className="p-5">
+      <CardContent className="p-4 md:p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center">
