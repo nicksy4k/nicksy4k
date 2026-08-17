@@ -397,7 +397,7 @@ function DashboardPage() {
         {awaitingDeliveryCount > 0 && (
           <Card>
             <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Out for delivery
                 </p>
@@ -406,7 +406,7 @@ function DashboardPage() {
                   order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
                 </p>
               </div>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="shrink-0">
                 <Link to="/history">Track</Link>
               </Button>
             </CardContent>
@@ -416,7 +416,7 @@ function DashboardPage() {
         <Card data-tour="warranty-alerts">
           <div className="border-b border-border p-4">
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Outgoings this cycle
                 </p>
@@ -429,7 +429,7 @@ function DashboardPage() {
                   {fmt(outgoings.everyCycle)} typical per cycle across all tracked
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline">
+              <Button asChild size="sm" variant="outline" className="shrink-0">
                 <Link to="/commitments">View</Link>
               </Button>
             </div>
