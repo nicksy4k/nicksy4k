@@ -44,6 +44,7 @@ export const changelog: ChangelogEntry[] = [
       "Quick add: tap the centre button to log a spend in seconds (amount, shop, category, source) and itemise it later from History.",
       "Pocket-funded quick adds still record the pocket withdrawal automatically, so balances stay correct.",
       "A one-time hint shows how to install, with the right steps for iPhone and Android.",
+      "New Install app button in Settings › Personalise and the mobile More sheet — it triggers the browser install prompt on Android and desktop, and shows the exact Share → Add to Home Screen steps on iPhone.",
     ],
   },
   {
