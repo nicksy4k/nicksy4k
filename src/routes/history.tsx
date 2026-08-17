@@ -462,7 +462,7 @@ function HistoryPage() {
                           </p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p
                           className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}
                         >
