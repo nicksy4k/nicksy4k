@@ -425,11 +425,15 @@ function RepaymentLauncher({
   disabled,
   label,
   max,
+  defaultAmount,
+  scheduledDate,
   onSubmit,
 }: {
   disabled: boolean;
   label: string;
   max: number;
+  defaultAmount?: number;
+  scheduledDate?: string | null;
   onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -443,6 +447,8 @@ function RepaymentLauncher({
         onOpenChange={setOpen}
         title={label}
         max={max}
+        defaultAmount={defaultAmount}
+        scheduledDate={scheduledDate}
         onSave={(v) => {
           setOpen(false);
           onSubmit(v);
@@ -451,6 +457,131 @@ function RepaymentLauncher({
     </>
   );
 }
+
+/** Create or adjust a repayment plan for a loan. */
+function PlanDialog({
+  loan,
+  onOpenChange,
+  onSave,
+}: {
+  loan: Loan | null;
+  onOpenChange: (v: boolean) => void;
+  onSave: (patch: Partial<Loan>) => void | Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [cadence, setCadence] = useState<LoanCadence>("monthly");
+  const [firstDue, setFirstDue] = useState(todayISO());
+
+  useEffect(() => {
+    if (!loan) return;
+    setAmount(loan.plan_amount ? String(loan.plan_amount) : "");
+    setCadence((loan.plan_cadence as LoanCadence) ?? "monthly");
+    setFirstDue(loan.plan_next_due ?? loan.plan_start_date ?? todayISO());
+  }, [loan]);
+
+  const remaining = loan ? loanRemaining(loan) : 0;
+  const per = parseFloat(amount);
+  const count = per > 0 ? Math.max(1, Math.ceil((remaining - 0.005) / per)) : 0;
+  const clearDate = count > 0 ? stepDate(firstDue, cadence, count - 1) : null;
+
+  return (
+    <Dialog open={!!loan} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {loan && hasPlan(loan) ? "Adjust payment plan" : "Set up payment plan"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Payment amount (£)
+              </Label>
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                How often
+              </Label>
+              <Select value={cadence} onValueChange={(v) => setCadence(v as LoanCadence)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(CADENCE_LABELS) as LoanCadence[]).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CADENCE_LABELS[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              First payment due
+            </Label>
+            <Input type="date" value={firstDue} onChange={(e) => setFirstDue(e.target.value)} />
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
+            {count > 0 && clearDate ? (
+              <>
+                {count} payment{count === 1 ? "" : "s"} of {fmt(per)} clears the{" "}
+                {fmt(remaining)} outstanding by{" "}
+                <span className="font-medium text-foreground">
+                  {format(new Date(clearDate), "d MMM yyyy")}
+                </span>
+                .
+              </>
+            ) : (
+              "Enter a payment amount to see how long repayment will take."
+            )}
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          {loan && hasPlan(loan) && (
+            <Button
+              variant="ghost"
+              className="mr-auto text-destructive"
+              onClick={() =>
+                onSave({ plan_amount: null, plan_cadence: null, plan_start_date: null, plan_next_due: null })
+              }
+            >
+              Remove plan
+            </Button>
+          )}
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              if (!(per > 0)) {
+                toast.error("Enter a payment amount.");
+                return;
+              }
+              onSave({
+                plan_amount: per,
+                plan_cadence: cadence,
+                plan_start_date: firstDue,
+                plan_next_due: firstDue,
+              });
+            }}
+          >
+            Save plan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function TopUpLauncher({
   label,
