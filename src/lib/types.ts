@@ -182,6 +182,8 @@ export interface LedgerPayment {
   commitment_id?: string | null;
 }
 
+export type LoanPlanCadence = "weekly" | "fortnightly" | "four_weekly" | "monthly";
+
 export interface Loan {
   id: string;
   person_name: string;
@@ -190,6 +192,11 @@ export interface Loan {
   notes?: string;
   payments: LedgerPayment[];
   created_at: string;
+  /** Repayment plan (all null when the loan has no plan). */
+  plan_amount?: number | null;
+  plan_cadence?: LoanPlanCadence | string | null;
+  plan_start_date?: string | null;
+  plan_next_due?: string | null;
 }
 
 export type DebtKind = "standard" | "bnpl";
