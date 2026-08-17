@@ -66,11 +66,12 @@ export function OutgoingsSummary({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
         <Card className="bg-muted/40">
           <CardContent className="p-4 flex items-center gap-3 flex-wrap">
             <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
-            <div className="flex-1 min-w-[190px] text-xs text-muted-foreground">
+            <div className="flex-1 min-w-0 text-xs text-muted-foreground">
+
               <p className="text-foreground text-sm font-medium tabular-nums">
                 {format(cycleStart, "d MMM")} – {format(cycleEnd, "d MMM yyyy")}
                 {cycleOverridden && <span className="ml-2 text-amber-600">· override</span>}
