@@ -16,6 +16,7 @@ import {
   Megaphone,
   BarChart3,
   Truck,
+  Smartphone,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -32,6 +33,19 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.0.0",
+    title: "Ledgerly on your home screen",
+    date: "2026-08-17",
+    icon: Smartphone,
+    highlights: [
+      "Ledgerly is now installable — add it to your phone's home screen and it opens full-screen with its own app icon, no address bar and no typing the URL.",
+      "New bottom tab bar on phones: Home, Outgoings, quick add, History and a More sheet for everything else.",
+      "Quick add: tap the centre button to log a spend in seconds (amount, shop, category, source) and itemise it later from History.",
+      "Pocket-funded quick adds still record the pocket withdrawal automatically, so balances stay correct.",
+      "A one-time hint shows how to install, with the right steps for iPhone and Android.",
+    ],
+  },
   {
     version: "v2.14.2",
     title: "Faster history, tidier internals",

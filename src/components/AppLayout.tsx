@@ -16,6 +16,8 @@ import { usePreferences } from "@/lib/preferences";
 import { useIsDemoUser } from "@/lib/demoAccount";
 import { LegalFooter } from "@/components/LegalFooter";
 import { setDemoSession } from "@/lib/analytics";
+import { MobileNav } from "@/components/MobileNav";
+import { InstallHint } from "@/components/InstallHint";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -74,11 +76,14 @@ export function AppLayout() {
                   sample data. Changes here are temporary and reset on the next demo visit.
                 </div>
               )}
-              <main className="flex-1 min-w-0 p-4 md:p-6">
+              <main className="flex-1 min-w-0 p-4 pb-24 md:p-6 md:pb-6">
                 <Outlet />
               </main>
               <LegalFooter />
+              <div className="h-16 md:hidden" aria-hidden />
             </SidebarInset>
+            <MobileNav />
+            <InstallHint />
             <Toaster richColors position="top-right" />
           </div>
         </TutorialProvider>
