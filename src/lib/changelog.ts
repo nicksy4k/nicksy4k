@@ -35,6 +35,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.2",
+    title: "Mobile tidy-up: neater spacing and clearer figures",
+    date: "2026-08-17",
+    icon: Smartphone,
+    highlights: [
+      "Removed doubled-up page padding on phones so cards use the full width without feeling cramped.",
+      "Outgoings summary now shows a clean 2×2 grid of figures, and outgoing rows wrap long names instead of squashing the amount.",
+      "Dashboard tiles, credit cards and report filters resize and stack properly on small screens — nothing spills out of its container.",
+    ],
+  },
+
+  {
+
     version: "v3.1.1",
     title: "Loan plan fix: correct first payment amount",
     date: "2026-08-17",
