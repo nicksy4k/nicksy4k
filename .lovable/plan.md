@@ -1,49 +1,60 @@
-# Ledgerly deep-dive: audit findings and proposed fixes
+# Ledgerly 3.0 — "Know what's left, everywhere"
 
-I ran the full test suite, the linter, a backend security scan, and a dependency scan, then read through the data layer, cycle maths, and routes. Here is what I found and what I suggest doing about it.
+Three headline features, built in order so each one stands on its own if you want to stop early. The theme: Ledgerly stops being a record of what you spent and starts telling you what you can spend.
 
-## Health check results
+## 1. Budgets & forecasting (the flagship)
 
-- Tests: 39/39 passing across 5 files (ledger sync, splits, formatting, suggestion matching, recurring income).
-- Dependencies: no high or critical vulnerabilities.
-- Backend security scan: 3 warnings, no critical issues. Two are already documented as intentional (public announcement banner, debt item ownership). The third flags that signed-in users can run a database helper function — I checked, and the only such function is the role checker `has_role`, which is read-only and required for admin permission checks to work at all. That one is safe.
-- Linter: **894 errors** — the whole codebase has drifted out of formatting. This is the only failing check.
+**Per-category budgets, per cycle.** Set a target for any category (Groceries £250, Fun £80). Budgets live in a new table keyed to your cycle type, so they roll over automatically each cycle without re-entry.
 
-## Issues worth fixing
+**Safe-to-spend.** One big number on the dashboard, computed as:
 
-1. **Formatting baseline is broken.** 891 of the 894 errors are auto-fixable formatting. Right now the linter is useless as a signal because it always fails.
-2. **`/subscriptions` has no page metadata.** Every other page defines its own title and description; this redirect route does not.
-3. **Annual subscriptions are divided by 12 even on a 4-weekly cycle.** In `perCycleTotal`, an annual plan is always spread across 12 cycles. On a 4-weekly cycle there are 13 cycles a year, so annual costs are overstated by roughly 8% and monthly bills are overstated too (13 charges counted per year instead of 12). The "Every cycle (all tracked)" figure on Outgoings and the dashboard is therefore slightly wrong for 4-weekly users.
-4. **Every list loads its entire table.** Transactions, incomes, savings, and history all fetch every row with no limit or pagination. With 173 transactions today it is fine; it degrades steadily as the ledger grows, and History renders all of them at once.
-5. **Thin test coverage on the riskiest maths.** Cycle window calculation, carryover, commitment rollover, per-cycle outgoing totals, and subscription promo pricing have no tests, yet they are where past bugs came from.
-6. **Three route files are very large** — `history.tsx` (1,827 lines), `credit.tsx` (1,804), `new.tsx` (1,259). They mix data fetching, dialogs, and layout in one file, which makes each change riskier than it needs to be.
+```text
+main balance
+  - unpaid outgoings due before the cycle ends
+  - pocket money that is already spoken for
+  = safe to spend for the rest of this cycle
+```
 
-## Proposed work, in order
+Shown with days-remaining and a per-day figure, so "£184 left, 11 days, £16/day" reads at a glance.
 
-**Pass 1 — clean baseline (low risk)**
+**Budget page.** A new `/budgets` route: one row per budgeted category with spent / target / remaining, a progress bar that turns amber at 80% and red past 100%, and a "pace" marker showing whether you're ahead or behind for how far into the cycle you are. Unbudgeted categories are listed underneath with their spend so you can promote them into a budget in one click.
 
-- Run the formatter, confirm the linter is clean, re-run tests.
-- Add a proper `head()` to the subscriptions route.
+**Forecast.** End-of-cycle projection based on spend so far plus remaining known outgoings, plus a small trend strip showing the last six cycles' actual-vs-budget per category. Joy categories keep their existing blur/roll-up treatment.
 
-**Pass 2 — correctness (small, targeted)**
+**Dashboard changes.** Safe-to-spend becomes the hero card; the top three budgets closest to their limit appear as compact bars.
 
-- Make `perCycleTotal` cycle-aware: pass the user's cycle type in and use 13 cycles a year for 4-weekly (annual ÷ 13, and monthly bills scaled to the cycle length) instead of assuming 12.
-- Add tests covering: cycle window boundaries, per-cycle totals for both cycle types, annual amortisation, and promo-vs-standard subscription pricing.
+## 2. Mobile-first PWA
 
-**Pass 3 — scale and maintainability (larger, optional)**
+**Installable app.** App manifest, icons, theme colour and splash metadata so Ledgerly installs to the home screen and launches without browser chrome. This alone fixes most of the "it feels like a website on my phone" problem.
 
-- Paginate History (page size around 50, with "load more") and bound the transaction query used for suggestions to a recent window.
-- Split `history.tsx` and `credit.tsx` into a route shell plus focused components, the way the Outgoings page was already refactored.
+**Quick-add on mobile.** A persistent bottom action for new spend on small screens, opening a stripped-down single-screen capture (amount, retailer, category, source) that itemises later — three taps to log a shop.
 
-**Housekeeping**
+**Mobile layout pass.** Bottom tab bar on phones instead of the drawer sidebar, larger tap targets on lists, and sticky totals on Outgoings, History and Budgets so the number you care about never scrolls away.
 
-- Dismiss the database-function warning as reviewed and safe, and record why in the security notes.
-- Add a changelog entry for whatever ships.
+Offline capture is deliberately out of scope for 3.0 — it needs conflict handling and is worth its own release. If you want it, say so and I'll fold it in as a fourth phase.
+
+## 3. Bank / CSV import & reconciliation
+
+**Import wizard.** Upload a CSV from your bank, map columns (date / description / amount / balance) with the mapping remembered per bank, and preview rows before anything is written.
+
+**Smart matching.** Each imported row is matched against what Ledgerly already knows: existing transactions within a few days and pennies, and recurring outgoings by name. Rows come back in three buckets — matched (confirm), new (import as a transaction with a suggested category from your existing suggestion engine), and ignore (transfers, savings moves).
+
+**Reconciliation.** After import, a summary comparing the statement's closing balance to Ledgerly's main balance, with the difference itemised so you can find what's missing.
+
+**Duplicate safety.** Every imported row stores a fingerprint, so re-importing an overlapping statement never double-counts.
+
+## Suggested order
+
+1. Budgets & safe-to-spend (biggest daily payoff, no new external formats)
+2. PWA + mobile pass (makes daily logging painless)
+3. CSV import & reconciliation (largest surface area, best done last)
+
+Each phase ends with tests, a changelog entry and a version bump: 3.0.0 on phase 1, 3.1 and 3.2 after — or hold all three and ship 3.0 as one release. Tell me which you prefer.
 
 ## Technical notes
 
-- `perCycleTotal` in `src/lib/outgoings.ts` currently takes only `Commitment[]`; it would gain a cycle-type argument, with call sites in `src/routes/commitments.tsx` and `src/routes/index.tsx` reading the type from the existing cycle settings hook.
-- Pagination would use TanStack Query's infinite query against the existing `transactions` query in `src/lib/store.ts`, keeping the current ordering.
-- No database schema changes are needed for any of this.
-
-Tell me which passes you want. Pass 1 and 2 are the ones I would do straight away; pass 3 is a bigger refactor best done on its own.
+- New `budgets` table (user_id, category, amount, cycle_type, created_at) with RLS and grants; budgets are per category per cycle type, not per dated cycle, so they persist.
+- Budget maths goes in a new `src/lib/budgets.ts` with unit tests, reusing `getActiveCycle` / `isInCycle` from `src/lib/cycle.ts` and `perCycleTotal` from `src/lib/outgoings.ts`. Safe-to-spend reuses the existing main-balance calculation rather than a second implementation.
+- PWA is manifest-only (`public/manifest.webmanifest` + head tags in `src/routes/__root.tsx`) — no service worker, so nothing can serve stale builds.
+- CSV parsing happens client-side; matching logic lives in `src/lib/import.ts` with tests, reusing `suggestionSimilarity`. Imported rows get an `import_fingerprint` column on transactions with a unique index per user.
+- Mobile navigation is a new component alongside `app-sidebar.tsx`, switched on `useIsMobile`, so desktop is untouched.
