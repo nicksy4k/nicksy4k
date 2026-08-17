@@ -427,7 +427,8 @@ function HistoryPage() {
                           {format(parseISO(t.date), "MMM d, yyyy")}
                         </p>
                         {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-x-2 flex-wrap">
+                          <p className="hidden sm:flex text-xs text-muted-foreground mt-1 truncate items-center gap-x-2 flex-wrap">
+
                             <span className="uppercase tracking-wider text-[10px]">Paid with</span>
                             {t.payment_splits.map((sp, i) => {
                               const isPocket = sp.source.startsWith("pocket:");
