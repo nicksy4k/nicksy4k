@@ -252,7 +252,7 @@ export function DebtsTab() {
                           setEditing(d);
                           setOpen(true);
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
                       >
                         Edit
                       </button>
@@ -351,7 +351,7 @@ export function DebtsTab() {
                           setEditing(d);
                           setOpen(true);
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
                       >
                         Edit
                       </button>

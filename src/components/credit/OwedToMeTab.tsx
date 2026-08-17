@@ -154,7 +154,7 @@ export function OwedToMeTab() {
                         setEditing(l);
                         setOpen(true);
                       }}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
                     >
                       Edit
                     </button>
