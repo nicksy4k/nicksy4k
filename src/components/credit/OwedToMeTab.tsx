@@ -101,6 +101,8 @@ export function OwedToMeTab() {
   const [editing, setEditing] = useState<Loan | null>(null);
 
   // Pending action awaiting a funding-source choice.
+  const [planFor, setPlanFor] = useState<Loan | null>(null);
+
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
     | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
