@@ -1,60 +1,53 @@
-# Ledgerly 3.0 — "Know what's left, everywhere"
+# Ledgerly 3.0 — mobile app first, then budgets
 
-Three headline features, built in order so each one stands on its own if you want to stop early. The theme: Ledgerly stops being a record of what you spent and starts telling you what you can spend.
+Three headline features. Mobile-first PWA leads and ships as 3.0 on its own, so you stop typing the URL as soon as it lands.
 
-## 1. Budgets & forecasting (the flagship)
+## 1. Mobile-first PWA (the 3.0 release)
 
-**Per-category budgets, per cycle.** Set a target for any category (Groceries £250, Fun £80). Budgets live in a new table keyed to your cycle type, so they roll over automatically each cycle without re-entry.
+**Installable app.** App manifest, icons, theme colour and splash metadata so Ledgerly installs to your home screen from Safari or Chrome and launches full-screen with no browser chrome — an app icon, not a bookmark. No offline caching, so you never get served a stale build.
 
-**Safe-to-spend.** One big number on the dashboard, computed as:
+**Quick-add on mobile.** A persistent bottom action button for new spend on small screens, opening a stripped-down single-screen capture (amount, retailer, category, source) that you can itemise later — three taps to log a shop.
+
+**Mobile layout pass.** A bottom tab bar on phones instead of the drawer sidebar (Dashboard, Outgoings, Add, History, More), larger tap targets in lists, and sticky totals on Outgoings, History and Reports so the number you care about never scrolls away.
+
+**Install prompt.** A dismissible one-time hint in-app showing how to add to home screen, with the correct instructions for iOS versus Android.
+
+Offline capture is deliberately out of scope — it needs conflict handling and can serve stale builds. Worth its own release if you ever want it.
+
+## 2. Budgets & forecasting (3.1)
+
+**Per-category budgets, per cycle.** Set a target for any category (Groceries £250, Fun £80), stored against your cycle type so they roll over automatically.
+
+**Safe-to-spend.** One big number on the dashboard:
 
 ```text
 main balance
   - unpaid outgoings due before the cycle ends
-  - pocket money that is already spoken for
+  - pocket money already spoken for
   = safe to spend for the rest of this cycle
 ```
 
-Shown with days-remaining and a per-day figure, so "£184 left, 11 days, £16/day" reads at a glance.
+Shown with days remaining and a per-day figure: "£184 left, 11 days, £16/day".
 
-**Budget page.** A new `/budgets` route: one row per budgeted category with spent / target / remaining, a progress bar that turns amber at 80% and red past 100%, and a "pace" marker showing whether you're ahead or behind for how far into the cycle you are. Unbudgeted categories are listed underneath with their spend so you can promote them into a budget in one click.
+**Budgets page.** A new `/budgets` route with spent / target / remaining per category, progress bars that turn amber at 80% and red past 100%, and a pace marker for how far into the cycle you are. Unbudgeted categories listed underneath for one-click promotion.
 
-**Forecast.** End-of-cycle projection based on spend so far plus remaining known outgoings, plus a small trend strip showing the last six cycles' actual-vs-budget per category. Joy categories keep their existing blur/roll-up treatment.
+**Forecast.** End-of-cycle projection from spend so far plus remaining known outgoings, and a strip showing the last six cycles' actual-vs-budget. Joy categories keep their blur/roll-up treatment.
 
-**Dashboard changes.** Safe-to-spend becomes the hero card; the top three budgets closest to their limit appear as compact bars.
+## 3. Bank / CSV import & reconciliation (3.2)
 
-## 2. Mobile-first PWA
+**Import wizard.** Upload a bank CSV, map columns (date / description / amount / balance) with the mapping remembered per bank, preview before anything is written.
 
-**Installable app.** App manifest, icons, theme colour and splash metadata so Ledgerly installs to the home screen and launches without browser chrome. This alone fixes most of the "it feels like a website on my phone" problem.
+**Smart matching.** Rows are matched against existing transactions (within a few days and pennies) and recurring outgoings by name, then bucketed: matched (confirm), new (import with a suggested category), ignore (transfers, savings moves).
 
-**Quick-add on mobile.** A persistent bottom action for new spend on small screens, opening a stripped-down single-screen capture (amount, retailer, category, source) that itemises later — three taps to log a shop.
+**Reconciliation.** A closing-balance comparison against Ledgerly's main balance with the difference itemised.
 
-**Mobile layout pass.** Bottom tab bar on phones instead of the drawer sidebar, larger tap targets on lists, and sticky totals on Outgoings, History and Budgets so the number you care about never scrolls away.
-
-Offline capture is deliberately out of scope for 3.0 — it needs conflict handling and is worth its own release. If you want it, say so and I'll fold it in as a fourth phase.
-
-## 3. Bank / CSV import & reconciliation
-
-**Import wizard.** Upload a CSV from your bank, map columns (date / description / amount / balance) with the mapping remembered per bank, and preview rows before anything is written.
-
-**Smart matching.** Each imported row is matched against what Ledgerly already knows: existing transactions within a few days and pennies, and recurring outgoings by name. Rows come back in three buckets — matched (confirm), new (import as a transaction with a suggested category from your existing suggestion engine), and ignore (transfers, savings moves).
-
-**Reconciliation.** After import, a summary comparing the statement's closing balance to Ledgerly's main balance, with the difference itemised so you can find what's missing.
-
-**Duplicate safety.** Every imported row stores a fingerprint, so re-importing an overlapping statement never double-counts.
-
-## Suggested order
-
-1. Budgets & safe-to-spend (biggest daily payoff, no new external formats)
-2. PWA + mobile pass (makes daily logging painless)
-3. CSV import & reconciliation (largest surface area, best done last)
-
-Each phase ends with tests, a changelog entry and a version bump: 3.0.0 on phase 1, 3.1 and 3.2 after — or hold all three and ship 3.0 as one release. Tell me which you prefer.
+**Duplicate safety.** Each imported row stores a fingerprint so overlapping statements never double-count.
 
 ## Technical notes
 
-- New `budgets` table (user_id, category, amount, cycle_type, created_at) with RLS and grants; budgets are per category per cycle type, not per dated cycle, so they persist.
-- Budget maths goes in a new `src/lib/budgets.ts` with unit tests, reusing `getActiveCycle` / `isInCycle` from `src/lib/cycle.ts` and `perCycleTotal` from `src/lib/outgoings.ts`. Safe-to-spend reuses the existing main-balance calculation rather than a second implementation.
-- PWA is manifest-only (`public/manifest.webmanifest` + head tags in `src/routes/__root.tsx`) — no service worker, so nothing can serve stale builds.
-- CSV parsing happens client-side; matching logic lives in `src/lib/import.ts` with tests, reusing `suggestionSimilarity`. Imported rows get an `import_fingerprint` column on transactions with a unique index per user.
-- Mobile navigation is a new component alongside `app-sidebar.tsx`, switched on `useIsMobile`, so desktop is untouched.
+- PWA is manifest-only: `public/manifest.webmanifest`, generated icon set under `public/`, and head tags (manifest, theme-color, apple-touch-icon) in `src/routes/__root.tsx`. No service worker, no `vite-plugin-pwa`.
+- Mobile navigation is a new bottom-bar component alongside `app-sidebar.tsx`, switched on the existing `useIsMobile` hook, so desktop layout is untouched. Sidebar-only items move into a "More" sheet.
+- Quick-add reuses the existing new-transaction mutation path in `src/lib/store.ts` with the `is_pending` flow already built for placeholders.
+- Phase 2: new `budgets` table (user_id, category, amount, cycle_type) with RLS and grants; maths in a new `src/lib/budgets.ts` with tests, reusing `getActiveCycle`/`isInCycle` and `perCycleTotal`.
+- Phase 3: client-side CSV parsing, matching in `src/lib/import.ts` reusing `suggestionSimilarity`, plus an `import_fingerprint` column on transactions with a per-user unique index.
+- Each phase ends with tests, a changelog entry and a version bump.
