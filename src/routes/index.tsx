@@ -257,7 +257,8 @@ function DashboardPage() {
           className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5"
         >
           <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
+            <div className="min-w-0">
+
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
                 Left to spend
               </p>
