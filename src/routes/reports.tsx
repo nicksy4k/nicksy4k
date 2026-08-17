@@ -267,7 +267,7 @@ function ReportsPage() {
   return (
     <div className="p-0 md:p-4 max-w-6xl mx-auto">
       <header className="mb-5 md:mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Analytics
           </p>
@@ -276,8 +276,8 @@ function ReportsPage() {
             Query your spending across any date range — independent of the active 28-day cycle.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 items-end">
-          <div>
+        <div className="flex w-full flex-wrap gap-2 items-end sm:w-auto">
+          <div className="min-w-0">
             <Label className="text-xs text-muted-foreground mb-1.5 block">Detail</Label>
             <div className="inline-flex rounded-md border bg-background p-0.5">
               <button
@@ -306,10 +306,16 @@ function ReportsPage() {
               </button>
             </div>
           </div>
-          <Button variant="outline" onClick={printReport} disabled={filtered.length === 0}>
+          <Button
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            onClick={printReport}
+            disabled={filtered.length === 0}
+          >
             <Printer className="h-4 w-4 mr-2" /> Print / PDF
           </Button>
           <Button
+            className="flex-1 sm:flex-none"
             onClick={() =>
               downloadWorkbook(
                 exportPayload,
