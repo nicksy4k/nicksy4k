@@ -111,6 +111,7 @@ export function OwedToMeTab() {
             const paid = loanPaid(l);
             const pct = l.total_amount > 0 ? Math.min(100, (paid / l.total_amount) * 100) : 0;
             const settled = remaining <= 0.001;
+            const plan = buildLoanPlan(l);
             return (
               <Card key={l.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
                 <CardContent className="p-5 space-y-3">
