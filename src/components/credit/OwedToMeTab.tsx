@@ -13,8 +13,31 @@ import {
   Wallet,
   ChevronRight,
   ArrowUpRight,
+  CalendarClock,
   History,
 } from "lucide-react";
+import { differenceInCalendarDays } from "date-fns";
+import {
+  CADENCE_LABELS,
+  buildLoanPlan,
+  hasPlan,
+  stepDate,
+  type LoanCadence,
+} from "@/lib/loanPlan";
+
+/** Whole days until a yyyy-MM-dd date (negative once overdue). */
+function dueInDays(iso: string): number {
+  return differenceInCalendarDays(new Date(iso), new Date(todayISO()));
+}
+
+function dueLabel(iso: string): string {
+  const d = dueInDays(iso);
+  if (d < 0) return `${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} overdue`;
+  if (d === 0) return "Due today";
+  if (d === 1) return "Due tomorrow";
+  return `In ${d} days`;
+}
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
