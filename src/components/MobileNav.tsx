@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsDemoUser } from "@/lib/demoAccount";
 import { QuickAddSheet } from "@/components/QuickAddSheet";
+import { InstallAppButton } from "@/components/InstallAppButton";
 
 type Path =
   | "/"
