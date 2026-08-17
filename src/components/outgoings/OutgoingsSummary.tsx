@@ -38,10 +38,11 @@ export function OutgoingsSummary({
   const shortfall = leftToPay - billPocketBalance;
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-3 md:space-y-4 mb-5 md:mb-6">
       <Card>
         <CardContent className="p-4 md:p-5">
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5 lg:grid-cols-4">
+
             <Figure
               label="Bills this cycle"
               value={fmt(bills)}
