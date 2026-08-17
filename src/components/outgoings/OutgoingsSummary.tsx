@@ -138,11 +138,12 @@ function Figure({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 break-words">
+      <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground mb-1 break-words">
         {label}
       </p>
       <p
-        className={`text-2xl font-semibold tabular-nums ${
+        className={`text-xl md:text-2xl font-semibold tabular-nums ${
+
           destructive
             ? "text-destructive"
             : accent
