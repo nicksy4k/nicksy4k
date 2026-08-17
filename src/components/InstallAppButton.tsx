@@ -57,7 +57,12 @@ export function InstallAppButton({
 
   return (
     <>
-      <Button variant={variant} size={size} className={cn("gap-2", className)} onClick={handleClick}>
+      <Button
+        variant={variant}
+        size={size}
+        className={cn("gap-2", className)}
+        onClick={handleClick}
+      >
         <Download className="h-4 w-4 shrink-0" />
         {label}
       </Button>
@@ -108,7 +113,8 @@ export function InstallAppButton({
                   1
                 </span>
                 <span className="min-w-0">
-                  Open your browser menu ({platform === "android" ? "the ⋮ button" : "⋮ or the icon in the address bar"}).
+                  Open your browser menu (
+                  {platform === "android" ? "the ⋮ button" : "⋮ or the icon in the address bar"}).
                 </span>
               </li>
               <li className="flex gap-3">
