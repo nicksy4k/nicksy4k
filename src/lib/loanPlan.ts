@@ -68,19 +68,28 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const perPayment = Number(loan.plan_amount);
   const paid = loanPaid(loan);
   const remaining = loanRemaining(loan);
-  const total = loan.total_amount;
 
   const firstDue = loan.plan_next_due ?? loan.plan_start_date ?? loan.start_date ?? today;
+  const planStart = loan.plan_start_date ?? loan.start_date ?? firstDue;
 
-  // Instalments needed to cover the whole loan.
-  const count = Math.max(1, Math.ceil((total - EPS) / perPayment));
+  // Payments made before the plan began are already reflected in the opening
+  // balance — only payments from the plan start date count against instalments.
+  const priorPaid = (loan.payments ?? [])
+    .filter((p) => p.type !== "topup" && p.date < planStart)
+    .reduce((s, p) => s + p.amount, 0);
+  const planPaid = Math.max(0, paid - priorPaid);
+  const baseline = Math.max(0, loan.total_amount - priorPaid);
+
+  // Instalments needed to cover the balance outstanding when the plan started.
+  const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
 
   const schedule: ScheduleEntry[] = [];
-  let coveredPool = paid;
+  let coveredPool = planPaid;
   let date = firstDue;
 
   for (let i = 0; i < count; i++) {
-    const amount = i === count - 1 ? Math.max(0, total - perPayment * (count - 1)) : perPayment;
+    const amount = i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment;
+
     const covered = Math.min(amount, Math.max(0, coveredPool));
     coveredPool -= covered;
 
