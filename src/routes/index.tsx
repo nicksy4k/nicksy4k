@@ -279,7 +279,7 @@ function DashboardPage() {
                 </p>
               )}
             </div>
-            <Button asChild size="lg" className="shrink-0">
+            <Button asChild size="lg" className="shrink-0 w-full sm:w-auto">
               <Link to="/new">
                 <Plus className="h-4 w-4" />
                 Log transaction
