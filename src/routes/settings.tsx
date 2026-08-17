@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { CurrencySettingsCard, ThemePickerCard, ComfortCard } from "@/components/PreferencesCards";
 import { AnalyticsCard } from "@/components/AnalyticsCard";
+import { InstallAppCard } from "@/components/InstallAppCard";
 
 import { PrivacyDetailsDialog } from "@/components/PrivacyDetailsDialog";
 import { AboutStory } from "@/components/AboutStory";
