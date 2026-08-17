@@ -377,7 +377,7 @@ function HistoryPage() {
               <Collapsible key={t.id} asChild>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger className="w-full text-left group">
-                    <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-2.5 md:gap-4 p-3.5 md:p-5 hover:bg-muted/30 transition-colors">
                       <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {format(parseISO(t.date), "MMM")}
