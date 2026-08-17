@@ -225,6 +225,7 @@ function SettingsPage() {
         )}
 
         <TabsContent value="personalise" className="mt-0 space-y-6">
+          <InstallAppCard />
           <CurrencySettingsCard />
           <ThemePickerCard />
           <ComfortCard categories={itemCats.list} />
