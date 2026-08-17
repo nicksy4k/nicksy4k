@@ -17,6 +17,7 @@ import {
   BarChart3,
   Truck,
   Smartphone,
+  HandCoins,
 } from "lucide-react";
 
 export interface ChangelogEntry {
