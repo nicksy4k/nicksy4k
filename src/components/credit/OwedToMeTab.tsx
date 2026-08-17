@@ -343,7 +343,21 @@ export function OwedToMeTab() {
         </div>
       )}
 
+      <PlanDialog
+        loan={planFor}
+        onOpenChange={(v) => {
+          if (!v) setPlanFor(null);
+        }}
+        onSave={async (patch) => {
+          if (!planFor) return;
+          await update(planFor.id, patch);
+          setPlanFor(null);
+          toast.success(patch.plan_amount ? "Payment plan saved" : "Payment plan removed");
+        }}
+      />
+
       <LoanDialog
+
         open={open}
         onOpenChange={setOpen}
         editing={editing}
