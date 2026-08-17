@@ -108,7 +108,10 @@ export function MobileNav() {
           <SheetHeader className="text-left">
             <SheetTitle>More</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4">
+            <InstallAppButton className="w-full" variant="secondary" label="Install app" />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {links.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
