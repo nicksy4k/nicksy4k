@@ -218,13 +218,13 @@ function HistoryPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto">
-      <header className="mb-8 flex items-end justify-between flex-wrap gap-2">
+    <div className="p-0 md:p-4 max-w-6xl mx-auto">
+      <header className="mb-5 md:mb-8 flex items-end justify-between flex-wrap gap-2">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             All transactions
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">History</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">History</h1>
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
           {hasFilters ? `${filtered.length} of ${items.length}` : `${items.length} total`}
@@ -377,7 +377,7 @@ function HistoryPage() {
               <Collapsible key={t.id} asChild>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger className="w-full text-left group">
-                    <div className="flex items-center gap-4 p-4 md:p-5 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-2.5 md:gap-4 p-3.5 md:p-5 hover:bg-muted/30 transition-colors">
                       <div className="hidden sm:flex flex-col items-center justify-center w-14 shrink-0 rounded-md bg-muted/40 py-2">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {format(parseISO(t.date), "MMM")}
@@ -387,7 +387,7 @@ function HistoryPage() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                           <p className="font-medium truncate">{t.retailer}</p>
                           {t.is_pending && (
                             <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
@@ -427,7 +427,8 @@ function HistoryPage() {
                           {format(parseISO(t.date), "MMM d, yyyy")}
                         </p>
                         {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate flex items-center gap-x-2 flex-wrap">
+                          <p className="hidden sm:flex text-xs text-muted-foreground mt-1 truncate items-center gap-x-2 flex-wrap">
+
                             <span className="uppercase tracking-wider text-[10px]">Paid with</span>
                             {t.payment_splits.map((sp, i) => {
                               const isPocket = sp.source.startsWith("pocket:");
@@ -461,7 +462,7 @@ function HistoryPage() {
                           </p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p
                           className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}
                         >

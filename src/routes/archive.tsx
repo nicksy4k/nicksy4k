@@ -62,19 +62,19 @@ function ArchivePage() {
   );
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
-      <header className="mb-8">
+    <div className="p-0 md:p-4 max-w-7xl mx-auto">
+      <header className="mb-5 md:mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5 flex items-center gap-2">
           <Archive className="h-3.5 w-3.5" /> Historical lookup
         </p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Past Cycles</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Past Cycles</h1>
         <p className="text-sm text-muted-foreground mt-2">
           Read-only snapshot of a previous cycle. Use History to make edits.
         </p>
       </header>
 
       <Card className="mb-6">
-        <CardContent className="p-5 flex flex-wrap items-end gap-3">
+        <CardContent className="p-4 md:p-5 flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[240px]">
             <label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">
               Cycle
@@ -197,7 +197,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Spending by category</CardTitle>
@@ -277,7 +277,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2 mb-6">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Transactions</CardTitle>
@@ -383,7 +383,7 @@ function Stat({
     tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
     <Card className={accent ? "border-primary/30 bg-primary/5" : ""}>
-      <CardContent className="p-5">
+      <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between text-muted-foreground mb-2">
           <span className="text-xs uppercase tracking-wider">{label}</span>
           {icon && <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>}

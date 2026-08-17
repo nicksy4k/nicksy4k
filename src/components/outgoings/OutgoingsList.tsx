@@ -60,11 +60,11 @@ export function OutgoingsList({
               <button
                 type="button"
                 onClick={() => onSelect(c.id)}
-                className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-4 py-3 flex items-center gap-3"
+                className="w-full text-left rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors px-3.5 py-3 md:px-4 flex items-center gap-2.5 md:gap-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">{c.item_name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                  <p className="font-medium break-words leading-snug">{c.item_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 md:gap-2 flex-wrap">
                     <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
                       {c.category || "—"}
                     </span>
@@ -91,7 +91,10 @@ export function OutgoingsList({
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-semibold tabular-nums">{fmt(c.amount)}</span>
+                  <span className="text-base md:text-sm font-semibold tabular-nums">
+                    {fmt(c.amount)}
+                  </span>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span

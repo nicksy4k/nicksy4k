@@ -61,7 +61,7 @@ function BetaPage() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold tracking-tight">
               Beta Disclaimer
             </h1>
             <span className="mt-2 block text-xs text-muted-foreground">

@@ -110,17 +110,17 @@ function SavingsPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      <header className="mb-8">
+    <div className="p-0 md:p-4 max-w-5xl mx-auto">
+      <header className="mb-5 md:mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           Track your reserves & pockets
         </p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Savings & Pockets</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Savings & Pockets</h1>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Current balance</span>
               <PiggyBank className="h-4 w-4 text-primary" />
@@ -133,7 +133,7 @@ function SavingsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Total deposits</span>
               <ArrowUpCircle className="h-4 w-4 text-primary" />
@@ -142,7 +142,7 @@ function SavingsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Total withdrawals</span>
               <ArrowDownCircle className="h-4 w-4 text-destructive" />

@@ -363,10 +363,10 @@ function IncomePage() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      <header className="mb-8">
+    <div className="p-0 md:p-4 max-w-5xl mx-auto">
+      <header className="mb-5 md:mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Earnings</p>
-        <h1 className="text-3xl md:text-4xl font-semibold">Income</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Income</h1>
       </header>
 
       {/* Add income — at the very top for quick mobile entry */}
@@ -811,7 +811,7 @@ function IncomePage() {
       {/* Cycle + all-time summary */}
       <div className="grid gap-4 sm:grid-cols-2 mb-6">
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -834,7 +834,7 @@ function IncomePage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">All time</span>
             </div>

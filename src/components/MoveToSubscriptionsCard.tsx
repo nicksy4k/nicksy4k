@@ -72,7 +72,7 @@ export function MoveToSubscriptionsCard({
 
   return (
     <Card className="mb-6 border-primary/30 bg-primary/5">
-      <CardContent className="p-5">
+      <CardContent className="p-4 md:p-5">
         <div className="flex items-start gap-3">
           <Repeat className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">

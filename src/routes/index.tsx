@@ -238,15 +238,15 @@ function DashboardPage() {
   const recent = items.slice(0, 5);
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="p-0 md:p-4 max-w-7xl mx-auto">
       <AnnouncementBanner className="mb-6" />
-      <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 mb-5 md:mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
             {cycle.isOverridden && <span className="ml-1 text-amber-500">· override</span>}
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Dashboard</h1>
           {encouragement && <p className="mt-2 text-sm text-muted-foreground">{encouragement}</p>}
         </div>
       </header>
@@ -256,8 +256,9 @@ function DashboardPage() {
           data-tour="left-to-spend"
           className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5"
         >
-          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
+          <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="min-w-0">
+
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
                 Left to spend
               </p>
@@ -278,7 +279,7 @@ function DashboardPage() {
                 </p>
               )}
             </div>
-            <Button asChild size="lg" className="shrink-0">
+            <Button asChild size="lg" className="shrink-0 w-full sm:w-auto">
               <Link to="/new">
                 <Plus className="h-4 w-4" />
                 Log transaction
@@ -288,7 +289,7 @@ function DashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
               <PiggyBank className="h-4 w-4" />
@@ -340,7 +341,7 @@ function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Where your money went</CardTitle>
@@ -396,7 +397,7 @@ function DashboardPage() {
         {awaitingDeliveryCount > 0 && (
           <Card>
             <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Out for delivery
                 </p>
@@ -405,7 +406,7 @@ function DashboardPage() {
                   order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
                 </p>
               </div>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="shrink-0">
                 <Link to="/history">Track</Link>
               </Button>
             </CardContent>
@@ -415,7 +416,7 @@ function DashboardPage() {
         <Card data-tour="warranty-alerts">
           <div className="border-b border-border p-4">
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Outgoings this cycle
                 </p>
@@ -428,7 +429,7 @@ function DashboardPage() {
                   {fmt(outgoings.everyCycle)} typical per cycle across all tracked
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline">
+              <Button asChild size="sm" variant="outline" className="shrink-0">
                 <Link to="/commitments">View</Link>
               </Button>
             </div>
@@ -489,7 +490,7 @@ function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Top retailers</CardTitle>
@@ -694,16 +695,19 @@ function StatCard({
     tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "";
   return (
     <Card className={accent ? "border-primary/30 bg-primary/5" : "bg-card/70"}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between text-muted-foreground mb-2">
-          <span className="text-xs uppercase tracking-wider">{label}</span>
-          <span className={accent ? toneClass || "text-primary" : ""}>{icon}</span>
+      <CardContent className="p-3.5 md:p-5">
+        <div className="flex items-center justify-between gap-2 text-muted-foreground mb-1.5">
+          <span className="text-[10px] md:text-xs uppercase tracking-wider min-w-0 truncate">
+            {label}
+          </span>
+          <span className={`shrink-0 ${accent ? toneClass || "text-primary" : ""}`}>{icon}</span>
         </div>
         <p
-          className={`text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}
+          className={`text-xl md:text-2xl font-bold tabular-nums ${tone === "negative" ? "text-destructive" : ""}`}
         >
           {value}
         </p>
+
       </CardContent>
     </Card>
   );
