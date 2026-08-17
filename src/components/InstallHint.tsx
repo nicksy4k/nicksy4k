@@ -2,20 +2,19 @@ import { useEffect, useState } from "react";
 import { Share, X, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useInstallPrompt } from "@/lib/pwaInstall";
 
 const DISMISS_KEY = "ledgerly.installHint.dismissed";
 
-type Platform = "ios" | "android" | "other";
-
 /**
  * One-time nudge telling the visitor how to install Ledgerly to their home
- * screen. Uses the native install prompt on Chrome/Android when it fires,
- * and falls back to Share-sheet instructions on iOS.
+ * screen. Dismissing it is not the end of the road — Settings › Personalise and
+ * the mobile More sheet both keep a permanent Install button.
  */
 export function InstallHint() {
-  const [visible, setVisible] = useState(false);
-  const [platform, setPlatform] = useState<Platform>("other");
-  const [deferred, setDeferred] = useState<Event | null>(null);
+  const { canPrompt, isStandalone, platform, promptInstall } = useInstallPrompt();
+  const [allowed, setAllowed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let dismissed = false;
@@ -25,37 +24,15 @@ export function InstallHint() {
       /* ignore */
     }
     if (dismissed) return;
-
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    if (standalone) return;
-
     // Only nudge on phones — desktop users already have the tab open.
     if (window.innerWidth >= 768) return;
-
-    const ua = window.navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(ua);
-    setPlatform(isIOS ? "ios" : /Android/.test(ua) ? "android" : "other");
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e);
-      setVisible(true);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-
-    // iOS never fires beforeinstallprompt — show the manual hint instead.
-    const timer = window.setTimeout(() => setVisible(true), isIOS ? 2500 : 6000);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.clearTimeout(timer);
-    };
-  }, []);
+    setAllowed(true);
+    const timer = window.setTimeout(() => setReady(true), platform === "ios" ? 2500 : 6000);
+    return () => window.clearTimeout(timer);
+  }, [platform]);
 
   const dismiss = () => {
-    setVisible(false);
+    setAllowed(false);
     try {
       localStorage.setItem(DISMISS_KEY, "1");
     } catch {
@@ -64,12 +41,12 @@ export function InstallHint() {
   };
 
   const install = async () => {
-    const p = deferred as unknown as { prompt?: () => Promise<void> } | null;
-    if (p?.prompt) await p.prompt();
+    await promptInstall();
     dismiss();
   };
 
-  if (!visible) return null;
+  if (!allowed || isStandalone) return null;
+  if (!ready && !canPrompt) return null;
 
   return (
     <div className="fixed inset-x-3 bottom-20 z-50 rounded-2xl border border-border/60 bg-card/95 p-4 shadow-xl backdrop-blur-xl md:hidden">
@@ -82,7 +59,7 @@ export function InstallHint() {
                 Tap the <Share className="inline h-3 w-3 align-[-2px]" /> Share button in Safari,
                 then choose <span className="font-medium">Add to Home Screen</span>.
               </>
-            ) : deferred ? (
+            ) : canPrompt ? (
               "Install it once and open it straight from your app icon — no typing the address."
             ) : (
               "Open your browser menu and choose Install app / Add to Home screen."
@@ -98,12 +75,15 @@ export function InstallHint() {
           <X className="h-4 w-4" />
         </button>
       </div>
-      {deferred && (
+      {canPrompt && (
         <Button size="sm" className="mt-3 w-full gap-1.5" onClick={install}>
           <Download className="h-3.5 w-3.5" />
           Install Ledgerly
         </Button>
       )}
+      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+        You can also install later from Settings › Personalise.
+      </p>
     </div>
   );
 }
