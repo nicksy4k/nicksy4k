@@ -146,10 +146,83 @@ export function OwedToMeTab() {
                     </p>
                   </div>
 
+                  {plan ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                      {plan.nextDue ? (
+                        <>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                              Next payment
+                            </span>
+                            <span className="font-semibold tabular-nums">
+                              {fmt(plan.nextDue.amount - plan.nextDue.covered)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className="text-muted-foreground">
+                              {format(new Date(plan.nextDue.dueDate), "d MMM yyyy")}
+                            </span>
+                            <span
+                              className={
+                                plan.overdueBy > 0
+                                  ? "rounded px-1.5 py-0.5 bg-destructive/15 text-destructive"
+                                  : dueInDays(plan.nextDue.dueDate) <= 3
+                                    ? "rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                    : "rounded px-1.5 py-0.5 bg-muted text-muted-foreground"
+                              }
+                            >
+                              {dueLabel(plan.nextDue.dueDate)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {plan.paidCount} of {plan.totalCount} paid ·{" "}
+                              {CADENCE_LABELS[l.plan_cadence as LoanCadence]}
+                            </span>
+                          </div>
+                          {plan.projectedClearDate && (
+                            <p className="text-[11px] text-muted-foreground">
+                              On track to be repaid by{" "}
+                              <span className="font-medium text-foreground">
+                                {format(new Date(plan.projectedClearDate), "d MMM yyyy")}
+                              </span>
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Plan complete — nothing left to pay.
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPlanFor(l)}
+                        className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                      >
+                        Adjust plan
+                      </button>
+                    </div>
+                  ) : (
+                    !settled && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setPlanFor(l)}
+                      >
+                        <CalendarClock className="h-4 w-4" /> Add payment plan
+                      </Button>
+                    )
+                  )}
+
                   <RepaymentLauncher
                     disabled={settled}
                     label={`Log repayment from ${l.person_name}`}
                     max={remaining}
+                    defaultAmount={
+                      plan?.nextDue
+                        ? Math.min(remaining, plan.nextDue.amount - plan.nextDue.covered)
+                        : undefined
+                    }
+                    scheduledDate={plan?.nextDue?.dueDate ?? null}
                     onSubmit={({ amount, date, notes }) =>
                       setPending({ kind: "repay", loan: l, amount, date, notes })
                     }
@@ -163,6 +236,52 @@ export function OwedToMeTab() {
                   />
 
                   <Accordion type="single" collapsible>
+                    {plan && (
+                      <AccordionItem value="plan" className="border-none">
+                        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                          <span className="flex items-center gap-1.5">
+                            <CalendarClock className="h-3.5 w-3.5" /> Payment schedule (
+                            {plan.totalCount})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <ul className="divide-y divide-border/60">
+                            {plan.schedule.map((s) => (
+                              <li
+                                key={s.index}
+                                className="flex items-center justify-between gap-3 py-1.5 text-xs"
+                              >
+                                <span className="text-muted-foreground">
+                                  #{s.index} · {format(new Date(s.dueDate), "d MMM yyyy")}
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  <span className="tabular-nums">{fmt(s.amount)}</span>
+                                  <span
+                                    className={
+                                      s.status === "paid"
+                                        ? "rounded px-1.5 py-0.5 bg-primary/15 text-primary"
+                                        : s.status === "part"
+                                          ? "rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                          : s.status === "due"
+                                            ? "rounded px-1.5 py-0.5 bg-destructive/15 text-destructive"
+                                            : "rounded px-1.5 py-0.5 bg-muted text-muted-foreground"
+                                    }
+                                  >
+                                    {s.status === "part"
+                                      ? `Part · ${fmt(s.covered)}`
+                                      : s.status === "paid"
+                                        ? "Paid"
+                                        : s.status === "due"
+                                          ? "Due"
+                                          : "Upcoming"}
+                                  </span>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
                     <AccordionItem value="hist" className="border-none">
                       <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
                         <span className="flex items-center gap-1.5">
@@ -175,6 +294,7 @@ export function OwedToMeTab() {
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
+
 
                   <div className="flex justify-end">
                     <Button
