@@ -13,8 +13,31 @@ import {
   Wallet,
   ChevronRight,
   ArrowUpRight,
+  CalendarClock,
   History,
 } from "lucide-react";
+import { differenceInCalendarDays } from "date-fns";
+import {
+  CADENCE_LABELS,
+  buildLoanPlan,
+  hasPlan,
+  stepDate,
+  type LoanCadence,
+} from "@/lib/loanPlan";
+
+/** Whole days until a yyyy-MM-dd date (negative once overdue). */
+function dueInDays(iso: string): number {
+  return differenceInCalendarDays(new Date(iso), new Date(todayISO()));
+}
+
+function dueLabel(iso: string): string {
+  const d = dueInDays(iso);
+  if (d < 0) return `${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} overdue`;
+  if (d === 0) return "Due today";
+  if (d === 1) return "Due tomorrow";
+  return `In ${d} days`;
+}
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +101,8 @@ export function OwedToMeTab() {
   const [editing, setEditing] = useState<Loan | null>(null);
 
   // Pending action awaiting a funding-source choice.
+  const [planFor, setPlanFor] = useState<Loan | null>(null);
+
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
     | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
@@ -111,6 +136,7 @@ export function OwedToMeTab() {
             const paid = loanPaid(l);
             const pct = l.total_amount > 0 ? Math.min(100, (paid / l.total_amount) * 100) : 0;
             const settled = remaining <= 0.001;
+            const plan = buildLoanPlan(l);
             return (
               <Card key={l.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
                 <CardContent className="p-5 space-y-3">
@@ -146,10 +172,83 @@ export function OwedToMeTab() {
                     </p>
                   </div>
 
+                  {plan ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                      {plan.nextDue ? (
+                        <>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                              Next payment
+                            </span>
+                            <span className="font-semibold tabular-nums">
+                              {fmt(plan.nextDue.amount - plan.nextDue.covered)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className="text-muted-foreground">
+                              {format(new Date(plan.nextDue.dueDate), "d MMM yyyy")}
+                            </span>
+                            <span
+                              className={
+                                plan.overdueBy > 0
+                                  ? "rounded px-1.5 py-0.5 bg-destructive/15 text-destructive"
+                                  : dueInDays(plan.nextDue.dueDate) <= 3
+                                    ? "rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                    : "rounded px-1.5 py-0.5 bg-muted text-muted-foreground"
+                              }
+                            >
+                              {dueLabel(plan.nextDue.dueDate)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {plan.paidCount} of {plan.totalCount} paid ·{" "}
+                              {CADENCE_LABELS[l.plan_cadence as LoanCadence]}
+                            </span>
+                          </div>
+                          {plan.projectedClearDate && (
+                            <p className="text-[11px] text-muted-foreground">
+                              On track to be repaid by{" "}
+                              <span className="font-medium text-foreground">
+                                {format(new Date(plan.projectedClearDate), "d MMM yyyy")}
+                              </span>
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Plan complete — nothing left to pay.
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPlanFor(l)}
+                        className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                      >
+                        Adjust plan
+                      </button>
+                    </div>
+                  ) : (
+                    !settled && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setPlanFor(l)}
+                      >
+                        <CalendarClock className="h-4 w-4" /> Add payment plan
+                      </Button>
+                    )
+                  )}
+
                   <RepaymentLauncher
                     disabled={settled}
                     label={`Log repayment from ${l.person_name}`}
                     max={remaining}
+                    defaultAmount={
+                      plan?.nextDue
+                        ? Math.min(remaining, plan.nextDue.amount - plan.nextDue.covered)
+                        : undefined
+                    }
+                    scheduledDate={plan?.nextDue?.dueDate ?? null}
                     onSubmit={({ amount, date, notes }) =>
                       setPending({ kind: "repay", loan: l, amount, date, notes })
                     }
@@ -163,6 +262,52 @@ export function OwedToMeTab() {
                   />
 
                   <Accordion type="single" collapsible>
+                    {plan && (
+                      <AccordionItem value="plan" className="border-none">
+                        <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
+                          <span className="flex items-center gap-1.5">
+                            <CalendarClock className="h-3.5 w-3.5" /> Payment schedule (
+                            {plan.totalCount})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <ul className="divide-y divide-border/60">
+                            {plan.schedule.map((s) => (
+                              <li
+                                key={s.index}
+                                className="flex items-center justify-between gap-3 py-1.5 text-xs"
+                              >
+                                <span className="text-muted-foreground">
+                                  #{s.index} · {format(new Date(s.dueDate), "d MMM yyyy")}
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  <span className="tabular-nums">{fmt(s.amount)}</span>
+                                  <span
+                                    className={
+                                      s.status === "paid"
+                                        ? "rounded px-1.5 py-0.5 bg-primary/15 text-primary"
+                                        : s.status === "part"
+                                          ? "rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                          : s.status === "due"
+                                            ? "rounded px-1.5 py-0.5 bg-destructive/15 text-destructive"
+                                            : "rounded px-1.5 py-0.5 bg-muted text-muted-foreground"
+                                    }
+                                  >
+                                    {s.status === "part"
+                                      ? `Part · ${fmt(s.covered)}`
+                                      : s.status === "paid"
+                                        ? "Paid"
+                                        : s.status === "due"
+                                          ? "Due"
+                                          : "Upcoming"}
+                                  </span>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
                     <AccordionItem value="hist" className="border-none">
                       <AccordionTrigger className="text-xs py-1.5 hover:no-underline">
                         <span className="flex items-center gap-1.5">
@@ -175,6 +320,7 @@ export function OwedToMeTab() {
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
+
 
                   <div className="flex justify-end">
                     <Button
@@ -197,7 +343,21 @@ export function OwedToMeTab() {
         </div>
       )}
 
+      <PlanDialog
+        loan={planFor}
+        onOpenChange={(v) => {
+          if (!v) setPlanFor(null);
+        }}
+        onSave={async (patch) => {
+          if (!planFor) return;
+          await update(planFor.id, patch);
+          setPlanFor(null);
+          toast.success(patch.plan_amount ? "Payment plan saved" : "Payment plan removed");
+        }}
+      />
+
       <LoanDialog
+
         open={open}
         onOpenChange={setOpen}
         editing={editing}
@@ -278,7 +438,25 @@ export function OwedToMeTab() {
                   source: encodeSource(choice),
                 },
               ];
-              await update(pending.loan.id, { payments: next });
+              // Advance the plan's next due date by however many instalments
+              // this payment completed, so early/extra payments pull it forward.
+              const before = buildLoanPlan(pending.loan);
+              const after = buildLoanPlan({ ...pending.loan, payments: next });
+              const patch: Partial<Loan> = { payments: next };
+              if (before?.nextDue && after) {
+                const advanced = after.paidCount - before.paidCount;
+                if (advanced > 0) {
+                  patch.plan_next_due = after.nextDue
+                    ? stepDate(
+                        before.nextDue.dueDate,
+                        pending.loan.plan_cadence as LoanCadence,
+                        advanced,
+                      )
+                    : null;
+                }
+              }
+              await update(pending.loan.id, patch);
+
               await ledger.credit(choice, {
                 amount: pending.amount,
                 date: pending.date,
@@ -304,11 +482,15 @@ function RepaymentLauncher({
   disabled,
   label,
   max,
+  defaultAmount,
+  scheduledDate,
   onSubmit,
 }: {
   disabled: boolean;
   label: string;
   max: number;
+  defaultAmount?: number;
+  scheduledDate?: string | null;
   onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -322,6 +504,8 @@ function RepaymentLauncher({
         onOpenChange={setOpen}
         title={label}
         max={max}
+        defaultAmount={defaultAmount}
+        scheduledDate={scheduledDate}
         onSave={(v) => {
           setOpen(false);
           onSubmit(v);
@@ -330,6 +514,131 @@ function RepaymentLauncher({
     </>
   );
 }
+
+/** Create or adjust a repayment plan for a loan. */
+function PlanDialog({
+  loan,
+  onOpenChange,
+  onSave,
+}: {
+  loan: Loan | null;
+  onOpenChange: (v: boolean) => void;
+  onSave: (patch: Partial<Loan>) => void | Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [cadence, setCadence] = useState<LoanCadence>("monthly");
+  const [firstDue, setFirstDue] = useState(todayISO());
+
+  useEffect(() => {
+    if (!loan) return;
+    setAmount(loan.plan_amount ? String(loan.plan_amount) : "");
+    setCadence((loan.plan_cadence as LoanCadence) ?? "monthly");
+    setFirstDue(loan.plan_next_due ?? loan.plan_start_date ?? todayISO());
+  }, [loan]);
+
+  const remaining = loan ? loanRemaining(loan) : 0;
+  const per = parseFloat(amount);
+  const count = per > 0 ? Math.max(1, Math.ceil((remaining - 0.005) / per)) : 0;
+  const clearDate = count > 0 ? stepDate(firstDue, cadence, count - 1) : null;
+
+  return (
+    <Dialog open={!!loan} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {loan && hasPlan(loan) ? "Adjust payment plan" : "Set up payment plan"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Payment amount (£)
+              </Label>
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                How often
+              </Label>
+              <Select value={cadence} onValueChange={(v) => setCadence(v as LoanCadence)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(CADENCE_LABELS) as LoanCadence[]).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CADENCE_LABELS[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              First payment due
+            </Label>
+            <Input type="date" value={firstDue} onChange={(e) => setFirstDue(e.target.value)} />
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
+            {count > 0 && clearDate ? (
+              <>
+                {count} payment{count === 1 ? "" : "s"} of {fmt(per)} clears the{" "}
+                {fmt(remaining)} outstanding by{" "}
+                <span className="font-medium text-foreground">
+                  {format(new Date(clearDate), "d MMM yyyy")}
+                </span>
+                .
+              </>
+            ) : (
+              "Enter a payment amount to see how long repayment will take."
+            )}
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          {loan && hasPlan(loan) && (
+            <Button
+              variant="ghost"
+              className="mr-auto text-destructive"
+              onClick={() =>
+                onSave({ plan_amount: null, plan_cadence: null, plan_start_date: null, plan_next_due: null })
+              }
+            >
+              Remove plan
+            </Button>
+          )}
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              if (!(per > 0)) {
+                toast.error("Enter a payment amount.");
+                return;
+              }
+              onSave({
+                plan_amount: per,
+                plan_cadence: cadence,
+                plan_start_date: firstDue,
+                plan_next_due: firstDue,
+              });
+            }}
+          >
+            Save plan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function TopUpLauncher({
   label,

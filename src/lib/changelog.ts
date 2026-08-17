@@ -17,6 +17,7 @@ import {
   BarChart3,
   Truck,
   Smartphone,
+  HandCoins,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -34,6 +35,20 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.0",
+    title: "Repayment plans for money you've lent",
+    date: "2026-08-18",
+    icon: HandCoins,
+    highlights: [
+      "Set a repayment plan on any loan: how much each payment is, how often (weekly, fortnightly, every 4 weeks or monthly) and when the first one is due.",
+      "Each loan card now shows the next payment, whether it's due, overdue or upcoming, how many payments are left and the date the loan should be fully repaid.",
+      "Expand Payment schedule to see every instalment with its date and status — paid, part-paid, due or upcoming.",
+      "Logging a repayment prefills the scheduled amount and date, and early or extra payments automatically pull the finish date forward.",
+      "Adjust or remove a plan at any time — nothing is locked in, and existing loans can have a plan added retrospectively.",
+    ],
+  },
+  {
+
     version: "v3.0.0",
     title: "Ledgerly on your home screen",
     date: "2026-08-17",
