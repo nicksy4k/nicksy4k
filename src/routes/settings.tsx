@@ -167,7 +167,7 @@ function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <header className="mb-8">
+      <header className="mb-5 md:mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           Preferences
         </p>

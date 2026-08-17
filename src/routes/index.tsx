@@ -240,7 +240,7 @@ function DashboardPage() {
   return (
     <div className="p-0 md:p-4 max-w-7xl mx-auto">
       <AnnouncementBanner className="mb-6" />
-      <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 mb-5 md:mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             Overview · {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM yyyy")}
@@ -340,7 +340,7 @@ function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Where your money went</CardTitle>
@@ -489,7 +489,7 @@ function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Top retailers</CardTitle>

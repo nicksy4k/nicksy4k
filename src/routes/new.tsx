@@ -685,7 +685,7 @@ function NewTransactionPage() {
         }
       }}
     >
-      <header className="mb-8 flex items-start justify-between gap-3">
+      <header className="mb-5 md:mb-8 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             {isPending ? "Quick pending hold" : `Step ${step} of 2`}

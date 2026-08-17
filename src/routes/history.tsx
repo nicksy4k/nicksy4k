@@ -219,7 +219,7 @@ function HistoryPage() {
 
   return (
     <div className="p-0 md:p-4 max-w-6xl mx-auto">
-      <header className="mb-8 flex items-end justify-between flex-wrap gap-2">
+      <header className="mb-5 md:mb-8 flex items-end justify-between flex-wrap gap-2">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             All transactions

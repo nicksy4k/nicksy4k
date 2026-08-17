@@ -63,7 +63,7 @@ function ArchivePage() {
 
   return (
     <div className="p-0 md:p-4 max-w-7xl mx-auto">
-      <header className="mb-8">
+      <header className="mb-5 md:mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5 flex items-center gap-2">
           <Archive className="h-3.5 w-3.5" /> Historical lookup
         </p>
@@ -197,7 +197,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Spending by category</CardTitle>
@@ -277,7 +277,7 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 mb-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2 mb-6">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Transactions</CardTitle>
