@@ -108,3 +108,27 @@ describe("amountForCount", () => {
     expect(amountForCount(100, 3)).toBe(33.33);
   });
 });
+
+describe("payments made before the plan started", () => {
+  it("does not shrink the first scheduled instalment", () => {
+    const p = buildLoanPlan(
+      loan({ payments: [pay(29, "2026-01-18")] }),
+      "2026-01-20",
+    )!;
+    expect(p.nextDue?.amount).toBe(100);
+    expect(p.nextDue?.covered).toBe(0);
+    expect(p.nextDue?.dueDate).toBe("2026-02-01");
+    // 571 outstanding at plan start => 6 instalments (5 x 100 + 71)
+    expect(p.totalCount).toBe(6);
+    expect(p.schedule[5]!.amount).toBe(71);
+  });
+
+  it("still counts payments made after the plan started", () => {
+    const p = buildLoanPlan(
+      loan({ payments: [pay(29, "2026-01-18"), pay(40, "2026-02-01")] }),
+      "2026-02-02",
+    )!;
+    expect(p.nextDue?.amount).toBe(100);
+    expect(p.nextDue?.covered).toBe(40);
+  });
+});

@@ -35,6 +35,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.1",
+    title: "Loan plan fix: correct first payment amount",
+    date: "2026-08-17",
+    icon: HandCoins,
+    highlights: [
+      "Repayments logged before a plan's start date no longer count against the first scheduled instalment, so a £50 monthly plan now shows £50 due, not a reduced amount.",
+      "The schedule is now built from the balance outstanding when the plan starts, so the number of payments and the projected clear date are accurate.",
+    ],
+  },
+
+  {
     version: "v3.1.0",
     title: "Repayment plans for money you've lent",
     date: "2026-08-18",
