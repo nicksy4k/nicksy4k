@@ -110,7 +110,7 @@ function SavingsPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
+    <div className="p-0 md:p-4 max-w-5xl mx-auto">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
           Track your reserves & pockets

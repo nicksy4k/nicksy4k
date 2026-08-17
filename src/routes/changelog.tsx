@@ -43,7 +43,7 @@ function ChangelogPage() {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto p-6 md:p-10">
+      <div className="max-w-3xl mx-auto px-1 py-3 md:p-10">
         <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
           <Link to="/settings">
             <ArrowLeft className="h-4 w-4" /> Back to settings

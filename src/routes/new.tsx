@@ -677,7 +677,7 @@ function NewTransactionPage() {
 
   return (
     <div
-      className="p-6 md:p-10 max-w-3xl mx-auto"
+      className="p-0 md:p-4 max-w-3xl mx-auto"
       onKeyDown={(e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
           e.preventDefault();
