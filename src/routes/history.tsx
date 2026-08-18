@@ -28,7 +28,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -93,13 +95,35 @@ const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
   dismissed: "Handled",
 };
 
+type DeliveryFilter = "on_the_way" | "awaiting_dispatch" | "in_transit" | "delivered";
+const DELIVERY_FILTERS: DeliveryFilter[] = [
+  "on_the_way",
+  "awaiting_dispatch",
+  "in_transit",
+  "delivered",
+];
+const DELIVERY_LABELS: Record<DeliveryFilter, string> = {
+  on_the_way: "On the way",
+  awaiting_dispatch: "Awaiting dispatch",
+  in_transit: "In transit",
+  delivered: "Delivered",
+};
+
+/** One dropdown drives two mutually exclusive URL params, so options are prefixed. */
+type FilterValue = "none" | `p:${ProtectionFilter}` | `d:${DeliveryFilter}`;
+
 export const Route = createFileRoute("/history")({
-  validateSearch: (search: Record<string, unknown>): { protection?: ProtectionFilter } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { protection?: ProtectionFilter; delivery?: DeliveryFilter } => {
     const p = search.protection;
-    return PROTECTION_FILTERS.includes(p as ProtectionFilter)
-      ? { protection: p as ProtectionFilter }
-      : {};
+    if (PROTECTION_FILTERS.includes(p as ProtectionFilter))
+      return { protection: p as ProtectionFilter };
+    const d = search.delivery;
+    if (DELIVERY_FILTERS.includes(d as DeliveryFilter)) return { delivery: d as DeliveryFilter };
+    return {};
   },
+
   head: () => ({
     meta: [
       { title: "Transaction history — Ledgerly" },
@@ -155,10 +179,21 @@ function HistoryPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const protection = search.protection;
+  const delivery = search.delivery;
 
-  function setProtection(next: ProtectionFilter | "none") {
+  const filterValue: FilterValue = protection
+    ? `p:${protection}`
+    : delivery
+      ? `d:${delivery}`
+      : "none";
+
+  function setFilterValue(next: FilterValue) {
     navigate({
-      search: next === "none" ? {} : { protection: next },
+      search: next.startsWith("p:")
+        ? { protection: next.slice(2) as ProtectionFilter }
+        : next.startsWith("d:")
+          ? { delivery: next.slice(2) as DeliveryFilter }
+          : {},
       replace: true,
     });
   }
@@ -168,7 +203,8 @@ function HistoryPage() {
     selectedCats.size > 0 ||
     fromDate !== "" ||
     toDate !== "" ||
-    protection !== undefined;
+    protection !== undefined ||
+    delivery !== undefined;
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
@@ -187,6 +223,11 @@ function HistoryPage() {
         if (protection === "soon" && status !== "warn") return false;
         if (protection === "active" && status === "expired") return false;
       }
+      if (delivery) {
+        if (delivery === "on_the_way") {
+          if (!isAwaitingDelivery(t)) return false;
+        } else if (t.delivery_status !== delivery) return false;
+      }
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
       const matchesCat =
@@ -200,11 +241,12 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, selectedCats, fromDate, toDate, protection]);
+  }, [items, needle, selectedCats, fromDate, toDate, protection, delivery]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [needle, selectedCats, fromDate, toDate, protection]);
+  }, [needle, selectedCats, fromDate, toDate, protection, delivery]);
+
 
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
@@ -264,7 +306,7 @@ function HistoryPage() {
     setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
-    setProtection("none");
+    setFilterValue("none");
   }
 
 
@@ -363,22 +405,31 @@ function HistoryPage() {
               className="flex-1"
             />
           </div>
-          <Select
-            value={protection ?? "none"}
-            onValueChange={(v) => setProtection(v as ProtectionFilter | "none")}
-          >
-            <SelectTrigger className="sm:w-[190px]">
+          <Select value={filterValue} onValueChange={(v) => setFilterValue(v as FilterValue)}>
+            <SelectTrigger className="sm:w-[210px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Everything</SelectItem>
-              {PROTECTION_FILTERS.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {PROTECTION_LABELS[f]}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Protections</SelectLabel>
+                {PROTECTION_FILTERS.map((f) => (
+                  <SelectItem key={f} value={`p:${f}`}>
+                    {PROTECTION_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>Deliveries</SelectLabel>
+                {DELIVERY_FILTERS.map((f) => (
+                  <SelectItem key={f} value={`d:${f}`}>
+                    {DELIVERY_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
+
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
