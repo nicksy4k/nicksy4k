@@ -18,6 +18,7 @@ import {
   Truck,
   Smartphone,
   HandCoins,
+  AlertTriangle,
 } from "lucide-react";
 
 export interface ChangelogEntry {
