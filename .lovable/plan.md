@@ -38,7 +38,6 @@ The "Outgoings this cycle" block becomes its own standalone card again, with the
 
 - New `src/components/dashboard/AttentionCard.tsx` holding the merged card and the existing `AlertRow` (moved out of `src/routes/index.tsx`).
 - Urgency selection reuses `protectionStatus()` from `src/lib/protection.ts` (warn threshold is already 7 days for returns, 30 for warranties); dashboard filter keeps rows where status is `warn` or `expired` and `dismissed_at` is null.
-- New route `src/routes/protections.tsx` with its own `head()` metadata; reads the existing transactions store, no schema or query changes.
+- History filter added in `src/routes/history.tsx` (URL search param so the dashboard can deep-link into it); no new route, no schema or query changes.
 - Un-dismiss reuses the existing transaction `update` in `src/lib/store.ts`, setting `dismissed_at` to null; no migration needed.
-- Nav entries added in `src/components/app-sidebar.tsx` (mobile nav unchanged unless there's room).
 - Add a dated entry to `src/lib/changelog.ts`.
