@@ -78,11 +78,28 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 
+type ProtectionFilter = "all" | "active" | "soon" | "expired" | "dismissed";
+const PROTECTION_FILTERS: ProtectionFilter[] = ["all", "active", "soon", "expired", "dismissed"];
+const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
+  all: "All protections",
+  active: "Active protections",
+  soon: "Expiring soon",
+  expired: "Expired",
+  dismissed: "Handled",
+};
+
 export const Route = createFileRoute("/history")({
+  validateSearch: (search: Record<string, unknown>): { protection?: ProtectionFilter } => {
+    const p = search.protection;
+    return PROTECTION_FILTERS.includes(p as ProtectionFilter)
+      ? { protection: p as ProtectionFilter }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Transaction history — Ledgerly" },
@@ -96,6 +113,7 @@ export const Route = createFileRoute("/history")({
   component: HistoryPage,
   errorComponent: RouteError,
 });
+
 
 function HighlightText({ text, needle }: { text: string; needle: string }) {
   if (!needle) return <>{text}</>;
@@ -125,6 +143,8 @@ const PAGE_SIZE = 50;
 function HistoryPage() {
   const { items, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [fromDate, setFromDate] = useState("");
@@ -134,11 +154,39 @@ function HistoryPage() {
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const hasFilters = q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
+  const protection = search.protection;
+
+  function setProtection(next: ProtectionFilter | "none") {
+    navigate({
+      search: next === "none" ? {} : { protection: next },
+      replace: true,
+    });
+  }
+
+  const hasFilters =
+    q.trim() !== "" ||
+    selectedCats.size > 0 ||
+    fromDate !== "" ||
+    toDate !== "" ||
+    protection !== undefined;
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
+    const now = new Date();
     return items.filter((t) => {
+      if (protection) {
+        if (!t.protection_type || !t.expiration_date) return false;
+        const { status } = protectionStatus(
+          (t.protection_type as ProtectionType) ?? "Return Window",
+          t.expiration_date,
+          now,
+        );
+        if (protection === "dismissed" && !t.dismissed_at) return false;
+        if (protection !== "dismissed" && protection !== "all" && t.dismissed_at) return false;
+        if (protection === "expired" && status !== "expired") return false;
+        if (protection === "soon" && status !== "warn") return false;
+        if (protection === "active" && status === "expired") return false;
+      }
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
       const matchesCat =
@@ -152,11 +200,12 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, selectedCats, fromDate, toDate]);
+  }, [items, needle, selectedCats, fromDate, toDate, protection]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [needle, selectedCats, fromDate, toDate]);
+  }, [needle, selectedCats, fromDate, toDate, protection]);
+
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
@@ -215,7 +264,9 @@ function HistoryPage() {
     setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
+    setProtection("none");
   }
+
 
   return (
     <div className="p-0 md:p-4 max-w-6xl mx-auto">
@@ -312,12 +363,29 @@ function HistoryPage() {
               className="flex-1"
             />
           </div>
+          <Select
+            value={protection ?? "none"}
+            onValueChange={(v) => setProtection(v as ProtectionFilter | "none")}
+          >
+            <SelectTrigger className="sm:w-[190px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Everything</SelectItem>
+              {PROTECTION_FILTERS.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {PROTECTION_LABELS[f]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
             </Button>
           )}
         </div>
+
       </div>
 
       {matchedSummary && matchedSummary.itemCount > 0 && (

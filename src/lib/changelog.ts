@@ -18,6 +18,7 @@ import {
   Truck,
   Smartphone,
   HandCoins,
+  AlertTriangle,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -35,6 +36,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.3",
+    title: "One 'Needs your attention' card",
+    date: "2026-08-18",
+    icon: AlertTriangle,
+    highlights: [
+      "Deliveries, closing return windows (7 days), expiring warranties (30 days) and ending subscription offers now share a single dashboard card — which stays hidden when there's nothing to act on.",
+      "Each alert can still be marked handled, and handled items stay out of the way.",
+      "History gained a protections filter (all, active, expiring soon, expired, handled) so you can review every warranty in one place.",
+    ],
+  },
+  {
+
     version: "v3.1.2",
     title: "Mobile tidy-up: neater spacing and clearer figures",
     date: "2026-08-17",

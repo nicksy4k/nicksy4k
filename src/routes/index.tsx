@@ -5,10 +5,8 @@ import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
-import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   PieChart,
@@ -23,28 +21,22 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  AlertTriangle,
   ArrowUpRight,
-  Check,
-  FileText,
   PiggyBank,
   Plus,
   Receipt,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
-import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { countAwaitingDelivery } from "@/lib/delivery";
-import { isStoragePath } from "@/components/ReceiptUpload";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
 import { perCycleTotal } from "@/lib/outgoings";
-import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
+import { promoAlerts } from "@/lib/subscriptions";
+import { AttentionCard, urgentProtections } from "@/components/dashboard/AttentionCard";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 export const Route = createFileRoute("/")({
@@ -206,19 +198,10 @@ function DashboardPage() {
       .slice(0, 6);
   }, [analyticsItems]);
 
-  const alerts = useMemo(() => {
-    const now = new Date();
-    return items
-      .filter((t) => {
-        if (!t.protection_type || !t.expiration_date) return false;
-        if (t.dismissed_at) return false;
-        const days = differenceInCalendarDays(parseISO(t.expiration_date), now);
-        return days >= -1; // keep visible 1 day past expiry
-      })
-      .sort(
-        (a, b) => parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
-      );
-  }, [items]);
+  // Only protections that actually need action soon (or just expired) surface
+  // in the unified "Needs your attention" card.
+  const alerts = useMemo(() => urgentProtections(items), [items]);
+
 
   const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
 
@@ -394,27 +377,8 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        {awaitingDeliveryCount > 0 && (
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Out for delivery
-                </p>
-                <p className="text-2xl font-semibold tabular-nums mt-1">{awaitingDeliveryCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
-                </p>
-              </div>
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link to="/history">Track</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card data-tour="warranty-alerts">
-          <div className="border-b border-border p-4">
+        <Card>
+          <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -433,61 +397,17 @@ function DashboardPage() {
                 <Link to="/commitments">View</Link>
               </Button>
             </div>
-          </div>
-          {subsPromoAlerts.length > 0 && (
-            <div className="border-b border-border p-4 space-y-2">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Subscription offers ending
-              </p>
-              <ul className="space-y-1.5">
-                {subsPromoAlerts.slice(0, 3).map((c) => {
-                  const days = daysUntilPromoEnd(c) ?? 0;
-                  return (
-                    <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate">
-                        {c.item_name}{" "}
-                        <span className="text-muted-foreground">
-                          · {days > 0 ? `in ${days}d` : "today"}
-                        </span>
-                      </span>
-                      <Button asChild size="sm" variant="outline">
-                        <Link to="/commitments" search={{ view: "subs" }}>
-                          Review
-                        </Link>
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <CardHeader className="flex-row items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-            <CardTitle>Return / warranty alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {alerts.length === 0 ? (
-              <div className="py-8 text-center space-y-2">
-                <p className="text-sm text-muted-foreground">No active protections.</p>
-                <p className="text-xs text-muted-foreground">
-                  Toggle "Add protection" when logging a transaction.
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {alerts.slice(0, 6).map((t) => (
-                  <AlertRow
-                    key={t.id}
-                    txn={t}
-                    onDismiss={() => dismiss(t.id)}
-                    highlighted={demo.openAlertId === t.id}
-                  />
-                ))}
-              </ul>
-            )}
           </CardContent>
         </Card>
+
+        <AttentionCard
+          protections={alerts}
+          promos={subsPromoAlerts}
+          deliveryCount={awaitingDeliveryCount}
+          onDismiss={dismiss}
+          highlightedId={demo.openAlertId}
+        />
+
       </div>
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
@@ -589,92 +509,6 @@ function DashboardPage() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function AlertRow({
-  txn,
-  onDismiss,
-  highlighted,
-}: {
-  txn: Transaction;
-  onDismiss: () => void;
-  highlighted?: boolean;
-}) {
-  const type = (txn.protection_type as ProtectionType) ?? "Return Window";
-  const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
-
-  const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
-
-  const chipClass =
-    status === "expired"
-      ? "bg-destructive/15 text-destructive border-destructive/30"
-      : status === "warn"
-        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-        : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
-
-  const chipLabel = status === "expired" ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`;
-
-  const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
-
-  async function openReceipt() {
-    const { data, error } = await supabase.storage
-      .from("receipts")
-      .createSignedUrl(txn.receipt_location, 3600);
-    if (error || !data) {
-      toast.error("Could not open receipt");
-      return;
-    }
-    window.open(data.signedUrl, "_blank", "noopener");
-  }
-
-  return (
-    <li
-      className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-sm font-medium truncate">{txn.retailer}</p>
-          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">
-            {type}
-          </Badge>
-          {status === "expired" && (
-            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">
-              Expired
-            </Badge>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
-          {itemSummary} · {fmt(txn.total_amount)} · expires{" "}
-          {format(parseISO(txn.expiration_date!), "MMM d")}
-        </p>
-      </div>
-      <span
-        className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
-      >
-        {chipLabel}
-      </span>
-      {canOpenReceipt && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          title="Open receipt"
-          onClick={openReceipt}
-        >
-          <FileText className="h-3.5 w-3.5" />
-        </Button>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-        title="Mark handled"
-        onClick={onDismiss}
-      >
-        <Check className="h-3.5 w-3.5" />
-      </Button>
-    </li>
   );
 }
 
