@@ -142,6 +142,8 @@ const PAGE_SIZE = 50;
 function HistoryPage() {
   const { items, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [fromDate, setFromDate] = useState("");
@@ -151,11 +153,39 @@ function HistoryPage() {
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const hasFilters = q.trim() !== "" || selectedCats.size > 0 || fromDate !== "" || toDate !== "";
+  const protection = search.protection;
+
+  function setProtection(next: ProtectionFilter | "none") {
+    navigate({
+      search: next === "none" ? {} : { protection: next },
+      replace: true,
+    });
+  }
+
+  const hasFilters =
+    q.trim() !== "" ||
+    selectedCats.size > 0 ||
+    fromDate !== "" ||
+    toDate !== "" ||
+    protection !== undefined;
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
+    const now = new Date();
     return items.filter((t) => {
+      if (protection) {
+        if (!t.protection_type || !t.expiration_date) return false;
+        const { status } = protectionStatus(
+          (t.protection_type as ProtectionType) ?? "Return Window",
+          t.expiration_date,
+          now,
+        );
+        if (protection === "dismissed" && !t.dismissed_at) return false;
+        if (protection !== "dismissed" && protection !== "all" && t.dismissed_at) return false;
+        if (protection === "expired" && status !== "expired") return false;
+        if (protection === "soon" && status !== "warn") return false;
+        if (protection === "active" && status === "expired") return false;
+      }
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
       const matchesCat =
@@ -169,11 +199,12 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, selectedCats, fromDate, toDate]);
+  }, [items, needle, selectedCats, fromDate, toDate, protection]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [needle, selectedCats, fromDate, toDate]);
+  }, [needle, selectedCats, fromDate, toDate, protection]);
+
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
