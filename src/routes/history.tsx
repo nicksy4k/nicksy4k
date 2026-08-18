@@ -78,6 +78,7 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
