@@ -263,7 +263,9 @@ function HistoryPage() {
     setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
+    setProtection("none");
   }
+
 
   return (
     <div className="p-0 md:p-4 max-w-6xl mx-auto">
