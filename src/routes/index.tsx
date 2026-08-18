@@ -394,27 +394,8 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        {awaitingDeliveryCount > 0 && (
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Out for delivery
-                </p>
-                <p className="text-2xl font-semibold tabular-nums mt-1">{awaitingDeliveryCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  order{awaitingDeliveryCount !== 1 ? "s" : ""} on the way
-                </p>
-              </div>
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link to="/history">Track</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card data-tour="warranty-alerts">
-          <div className="border-b border-border p-4">
+        <Card>
+          <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -433,61 +414,17 @@ function DashboardPage() {
                 <Link to="/commitments">View</Link>
               </Button>
             </div>
-          </div>
-          {subsPromoAlerts.length > 0 && (
-            <div className="border-b border-border p-4 space-y-2">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Subscription offers ending
-              </p>
-              <ul className="space-y-1.5">
-                {subsPromoAlerts.slice(0, 3).map((c) => {
-                  const days = daysUntilPromoEnd(c) ?? 0;
-                  return (
-                    <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate">
-                        {c.item_name}{" "}
-                        <span className="text-muted-foreground">
-                          · {days > 0 ? `in ${days}d` : "today"}
-                        </span>
-                      </span>
-                      <Button asChild size="sm" variant="outline">
-                        <Link to="/commitments" search={{ view: "subs" }}>
-                          Review
-                        </Link>
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <CardHeader className="flex-row items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-            <CardTitle>Return / warranty alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {alerts.length === 0 ? (
-              <div className="py-8 text-center space-y-2">
-                <p className="text-sm text-muted-foreground">No active protections.</p>
-                <p className="text-xs text-muted-foreground">
-                  Toggle "Add protection" when logging a transaction.
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {alerts.slice(0, 6).map((t) => (
-                  <AlertRow
-                    key={t.id}
-                    txn={t}
-                    onDismiss={() => dismiss(t.id)}
-                    highlighted={demo.openAlertId === t.id}
-                  />
-                ))}
-              </ul>
-            )}
           </CardContent>
         </Card>
+
+        <AttentionCard
+          protections={alerts}
+          promos={subsPromoAlerts}
+          deliveryCount={awaitingDeliveryCount}
+          onDismiss={dismiss}
+          highlightedId={demo.openAlertId}
+        />
+
       </div>
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
