@@ -206,19 +206,10 @@ function DashboardPage() {
       .slice(0, 6);
   }, [analyticsItems]);
 
-  const alerts = useMemo(() => {
-    const now = new Date();
-    return items
-      .filter((t) => {
-        if (!t.protection_type || !t.expiration_date) return false;
-        if (t.dismissed_at) return false;
-        const days = differenceInCalendarDays(parseISO(t.expiration_date), now);
-        return days >= -1; // keep visible 1 day past expiry
-      })
-      .sort(
-        (a, b) => parseISO(a.expiration_date!).getTime() - parseISO(b.expiration_date!).getTime(),
-      );
-  }, [items]);
+  // Only protections that actually need action soon (or just expired) surface
+  // in the unified "Needs your attention" card.
+  const alerts = useMemo(() => urgentProtections(items), [items]);
+
 
   const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
 
