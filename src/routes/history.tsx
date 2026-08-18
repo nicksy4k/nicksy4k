@@ -363,12 +363,29 @@ function HistoryPage() {
               className="flex-1"
             />
           </div>
+          <Select
+            value={protection ?? "none"}
+            onValueChange={(v) => setProtection(v as ProtectionFilter | "none")}
+          >
+            <SelectTrigger className="sm:w-[190px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Everything</SelectItem>
+              {PROTECTION_FILTERS.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {PROTECTION_LABELS[f]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
             </Button>
           )}
         </div>
+
       </div>
 
       {matchedSummary && matchedSummary.itemCount > 0 && (
