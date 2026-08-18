@@ -124,7 +124,9 @@ export function AttentionCard({
               </p>
             </div>
             <Button asChild variant="outline" size="sm" className="shrink-0">
-              <Link to="/history">Track</Link>
+              <Link to="/history" search={{ delivery: "on_the_way" }}>
+                Track
+              </Link>
             </Button>
           </div>
         )}
