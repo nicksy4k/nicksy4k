@@ -23,13 +23,13 @@ Each protection row keeps its tick ("Mark handled") button, which permanently di
 
 The delivery row is not dismissible (it disappears on its own when orders are marked delivered); the card offers Track instead.
 
-### 4. New Protections page (/protections)
-Because the dashboard now hides non-urgent protections, there needs to be somewhere to see them all. A simple page listing every transaction with a return window or warranty:
+### 4. Protections filter on History (no new page)
+Because the dashboard now hides non-urgent protections, History gains a filter/toggle to show only transactions carrying a return window or warranty:
 
-- Grouped/filterable by Active, Expiring soon, Expired, Dismissed.
-- Each row: retailer, item summary, type badge, amount, expiry date, days left chip, open-receipt button.
+- Toggle sits with the existing History filters; sub-filter by Active, Expiring soon, Expired, Dismissed.
+- Each row keeps its usual History layout plus type badge, expiry date and days-left chip.
 - Dismissed items can be restored (un-dismiss) so a mistaken tick is recoverable.
-- Reachable from a "View all" link in the alerts card and from the sidebar/mobile nav.
+- Reachable from a "View all" link in the alerts card, which opens History with the filter pre-applied.
 
 ### 5. Outgoings card left clean
 The "Outgoings this cycle" block becomes its own standalone card again, with the promo block removed from it.
