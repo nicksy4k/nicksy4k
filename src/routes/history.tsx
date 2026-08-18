@@ -82,7 +82,23 @@ import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 
+type ProtectionFilter = "all" | "active" | "soon" | "expired" | "dismissed";
+const PROTECTION_FILTERS: ProtectionFilter[] = ["all", "active", "soon", "expired", "dismissed"];
+const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
+  all: "All protections",
+  active: "Active protections",
+  soon: "Expiring soon",
+  expired: "Expired",
+  dismissed: "Handled",
+};
+
 export const Route = createFileRoute("/history")({
+  validateSearch: (search: Record<string, unknown>): { protection?: ProtectionFilter } => {
+    const p = search.protection;
+    return PROTECTION_FILTERS.includes(p as ProtectionFilter)
+      ? { protection: p as ProtectionFilter }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Transaction history — Ledgerly" },
@@ -96,6 +112,7 @@ export const Route = createFileRoute("/history")({
   component: HistoryPage,
   errorComponent: RouteError,
 });
+
 
 function HighlightText({ text, needle }: { text: string; needle: string }) {
   if (!needle) return <>{text}</>;
