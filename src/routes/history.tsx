@@ -403,22 +403,31 @@ function HistoryPage() {
               className="flex-1"
             />
           </div>
-          <Select
-            value={protection ?? "none"}
-            onValueChange={(v) => setProtection(v as ProtectionFilter | "none")}
-          >
-            <SelectTrigger className="sm:w-[190px]">
+          <Select value={filterValue} onValueChange={(v) => setFilterValue(v as FilterValue)}>
+            <SelectTrigger className="sm:w-[210px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Everything</SelectItem>
-              {PROTECTION_FILTERS.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {PROTECTION_LABELS[f]}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Protections</SelectLabel>
+                {PROTECTION_FILTERS.map((f) => (
+                  <SelectItem key={f} value={`p:${f}`}>
+                    {PROTECTION_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>Deliveries</SelectLabel>
+                {DELIVERY_FILTERS.map((f) => (
+                  <SelectItem key={f} value={`d:${f}`}>
+                    {DELIVERY_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
+
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
