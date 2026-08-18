@@ -177,10 +177,21 @@ function HistoryPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const protection = search.protection;
+  const delivery = search.delivery;
 
-  function setProtection(next: ProtectionFilter | "none") {
+  const filterValue: FilterValue = protection
+    ? `p:${protection}`
+    : delivery
+      ? `d:${delivery}`
+      : "none";
+
+  function setFilterValue(next: FilterValue) {
     navigate({
-      search: next === "none" ? {} : { protection: next },
+      search: next.startsWith("p:")
+        ? { protection: next.slice(2) as ProtectionFilter }
+        : next.startsWith("d:")
+          ? { delivery: next.slice(2) as DeliveryFilter }
+          : {},
       replace: true,
     });
   }
@@ -190,7 +201,8 @@ function HistoryPage() {
     selectedCats.size > 0 ||
     fromDate !== "" ||
     toDate !== "" ||
-    protection !== undefined;
+    protection !== undefined ||
+    delivery !== undefined;
   const needle = q.trim().toLowerCase();
 
   const filtered = useMemo(() => {
@@ -209,6 +221,11 @@ function HistoryPage() {
         if (protection === "soon" && status !== "warn") return false;
         if (protection === "active" && status === "expired") return false;
       }
+      if (delivery) {
+        if (delivery === "on_the_way") {
+          if (!isAwaitingDelivery(t)) return false;
+        } else if (t.delivery_status !== delivery) return false;
+      }
       if (fromDate && t.date < fromDate) return false;
       if (toDate && t.date > toDate) return false;
       const matchesCat =
@@ -222,11 +239,12 @@ function HistoryPage() {
         t.items.some((i) => i.item_name.toLowerCase().includes(needle))
       );
     });
-  }, [items, needle, selectedCats, fromDate, toDate, protection]);
+  }, [items, needle, selectedCats, fromDate, toDate, protection, delivery]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [needle, selectedCats, fromDate, toDate, protection]);
+  }, [needle, selectedCats, fromDate, toDate, protection, delivery]);
+
 
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
