@@ -304,7 +304,7 @@ function HistoryPage() {
     setSelectedCats(new Set());
     setFromDate("");
     setToDate("");
-    setProtection("none");
+    setFilterValue("none");
   }
 
 
