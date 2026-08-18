@@ -5,10 +5,8 @@ import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
-import type { Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   PieChart,
@@ -23,28 +21,22 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  AlertTriangle,
   ArrowUpRight,
-  Check,
-  FileText,
   PiggyBank,
   Plus,
   Receipt,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
-import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { countAwaitingDelivery } from "@/lib/delivery";
-import { isStoragePath } from "@/components/ReceiptUpload";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
 import { perCycleTotal } from "@/lib/outgoings";
-import { promoAlerts, daysUntilPromoEnd } from "@/lib/subscriptions";
+import { promoAlerts } from "@/lib/subscriptions";
+import { AttentionCard, urgentProtections } from "@/components/dashboard/AttentionCard";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 export const Route = createFileRoute("/")({
