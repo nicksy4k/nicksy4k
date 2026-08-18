@@ -36,6 +36,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.4",
+    title: "Filter History by delivery state",
+    date: "2026-08-18",
+    icon: Truck,
+    highlights: [
+      "The History filter now has a Deliveries group: on the way, awaiting dispatch, in transit or delivered.",
+      "The 'Track' button on the dashboard alerts card jumps straight to everything still on the way.",
+    ],
+  },
+  {
+
     version: "v3.1.3",
     title: "One 'Needs your attention' card",
     date: "2026-08-18",
