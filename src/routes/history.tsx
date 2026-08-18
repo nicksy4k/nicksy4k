@@ -93,13 +93,35 @@ const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
   dismissed: "Handled",
 };
 
+type DeliveryFilter = "on_the_way" | "awaiting_dispatch" | "in_transit" | "delivered";
+const DELIVERY_FILTERS: DeliveryFilter[] = [
+  "on_the_way",
+  "awaiting_dispatch",
+  "in_transit",
+  "delivered",
+];
+const DELIVERY_LABELS: Record<DeliveryFilter, string> = {
+  on_the_way: "On the way",
+  awaiting_dispatch: "Awaiting dispatch",
+  in_transit: "In transit",
+  delivered: "Delivered",
+};
+
+/** One dropdown drives two mutually exclusive URL params, so options are prefixed. */
+type FilterValue = "none" | `p:${ProtectionFilter}` | `d:${DeliveryFilter}`;
+
 export const Route = createFileRoute("/history")({
-  validateSearch: (search: Record<string, unknown>): { protection?: ProtectionFilter } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { protection?: ProtectionFilter; delivery?: DeliveryFilter } => {
     const p = search.protection;
-    return PROTECTION_FILTERS.includes(p as ProtectionFilter)
-      ? { protection: p as ProtectionFilter }
-      : {};
+    if (PROTECTION_FILTERS.includes(p as ProtectionFilter))
+      return { protection: p as ProtectionFilter };
+    const d = search.delivery;
+    if (DELIVERY_FILTERS.includes(d as DeliveryFilter)) return { delivery: d as DeliveryFilter };
+    return {};
   },
+
   head: () => ({
     meta: [
       { title: "Transaction history — Ledgerly" },
