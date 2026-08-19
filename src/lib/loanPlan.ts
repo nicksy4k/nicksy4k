@@ -57,6 +57,26 @@ export type LoanPlanSummary = {
 const EPS = 0.005;
 
 /**
+ * Whether a recorded repayment should be counted against the plan's
+ * instalments rather than treated as pre-plan history.
+ *
+ * A payment counts when it was explicitly linked to an instalment, when it
+ * falls on/after the plan's first due date, or when it was recorded on/after
+ * the plan was set up (covers paying a day or two early).
+ */
+export function countsTowardPlan(
+  p: LedgerPayment,
+  planStart: string,
+  planCreatedAt?: string | null,
+): boolean {
+  if (p.type === "topup") return false;
+  if (p.instalment_due_date) return true;
+  if (p.date >= planStart) return true;
+  if (planCreatedAt && p.date >= planCreatedAt.slice(0, 10)) return true;
+  return false;
+}
+
+/**
  * Build the instalment schedule for a loan from its plan fields plus the
  * payments already recorded. Nothing is stored per instalment — progress is
  * always derived, so deleting a payment rewinds the schedule automatically.
