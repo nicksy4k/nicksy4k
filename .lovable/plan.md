@@ -12,7 +12,7 @@ A "Due soon" section inside the existing card, listing up to 5 unpaid outgoings 
 
 A small line under the section states how much Bill Money is available versus how much is due in the window.
 
-Each row has a "Mark paid" tick. Tapping it does exactly what the Outgoings page does: sets paid, logs the auto transaction, deducts from Bill Money, syncs the linked BNPL debt if any, and rolls the due date forward — using the row's own cadence (annual rolls a year, everything else follows your global cycle: monthly or 4-weekly). A toast confirms with an "Undo" that reverses the same way the Outgoings page's unmark does.
+Each row has a "Mark paid" tick. Tapping it does exactly what the Outgoings page does: sets paid, logs the auto transaction, deducts from Bill Money, syncs the linked BNPL debt if any, and rolls the due date forward — and it opens the same confirm step you get on the Outgoings page, with "+1 month", "+4 weeks", "+1 year" for annual plans, and "Or pick a date". A toast confirms with an "Undo" that reverses the same way the Outgoings page's unmark does.
 
 Rows disappear from the card once paid; the card hides entirely when nothing needs attention, exactly as now. There's a "View all" link to the Outgoings page.
 
