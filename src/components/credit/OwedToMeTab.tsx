@@ -282,6 +282,15 @@ export function OwedToMeTab() {
                                 </span>
                                 <span className="flex items-center gap-2">
                                   <span className="tabular-nums">{fmt(s.amount)}</span>
+                                  {s.status !== "paid" && (
+                                    <button
+                                      type="button"
+                                      className="underline text-muted-foreground hover:text-foreground"
+                                      onClick={() => setLinkFor({ loan: l, dueDate: s.dueDate })}
+                                    >
+                                      Mark paid
+                                    </button>
+                                  )}
                                   <span
                                     className={
                                       s.status === "paid"
