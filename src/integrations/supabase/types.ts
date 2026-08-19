@@ -420,6 +420,7 @@ export type Database = {
           person_name: string
           plan_amount: number | null
           plan_cadence: string | null
+          plan_created_at: string | null
           plan_next_due: string | null
           plan_start_date: string | null
           start_date: string | null
@@ -434,6 +435,7 @@ export type Database = {
           person_name: string
           plan_amount?: number | null
           plan_cadence?: string | null
+          plan_created_at?: string | null
           plan_next_due?: string | null
           plan_start_date?: string | null
           start_date?: string | null
@@ -448,6 +450,7 @@ export type Database = {
           person_name?: string
           plan_amount?: number | null
           plan_cadence?: string | null
+          plan_created_at?: string | null
           plan_next_due?: string | null
           plan_start_date?: string | null
           start_date?: string | null

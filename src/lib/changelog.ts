@@ -37,6 +37,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.6",
+    title: "Mark a scheduled loan payment as paid",
+    date: "2026-08-19",
+    icon: HandCoins,
+    highlights: [
+      "Each instalment in a loan's payment schedule now has a 'Mark paid' action.",
+      "Link a repayment you already logged to that instalment — no double counting, and the next due date moves on.",
+      "Repayments logged after a plan is set up now count toward it even if they land a day or two before the first due date.",
+    ],
+  },
+  {
     version: "v3.1.5",
     title: "Outgoings due soon on the dashboard",
     date: "2026-08-19",

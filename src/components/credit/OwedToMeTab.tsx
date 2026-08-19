@@ -20,6 +20,7 @@ import { differenceInCalendarDays } from "date-fns";
 import {
   CADENCE_LABELS,
   buildLoanPlan,
+  countsTowardPlan,
   hasPlan,
   stepDate,
   type LoanCadence,
@@ -102,6 +103,9 @@ export function OwedToMeTab() {
 
   // Pending action awaiting a funding-source choice.
   const [planFor, setPlanFor] = useState<Loan | null>(null);
+
+  // Instalment awaiting an existing payment to be linked to it.
+  const [linkFor, setLinkFor] = useState<{ loan: Loan; dueDate: string } | null>(null);
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
@@ -282,6 +286,15 @@ export function OwedToMeTab() {
                                 </span>
                                 <span className="flex items-center gap-2">
                                   <span className="tabular-nums">{fmt(s.amount)}</span>
+                                  {s.status !== "paid" && (
+                                    <button
+                                      type="button"
+                                      className="underline text-muted-foreground hover:text-foreground"
+                                      onClick={() => setLinkFor({ loan: l, dueDate: s.dueDate })}
+                                    >
+                                      Mark paid
+                                    </button>
+                                  )}
                                   <span
                                     className={
                                       s.status === "paid"
@@ -342,6 +355,34 @@ export function OwedToMeTab() {
           })}
         </div>
       )}
+
+      <MarkInstalmentPaidDialog
+        target={linkFor}
+        onOpenChange={(v) => {
+          if (!v) setLinkFor(null);
+        }}
+        onLink={async (paymentId) => {
+          if (!linkFor) return;
+          const loan = linkFor.loan;
+          const next = (loan.payments ?? []).map((p) =>
+            p.id === paymentId ? { ...p, instalment_due_date: linkFor.dueDate } : p,
+          );
+          const before = buildLoanPlan(loan);
+          const after = buildLoanPlan({ ...loan, payments: next });
+          const patch: Partial<Loan> = { payments: next };
+          if (before?.nextDue && after) {
+            const advanced = after.paidCount - before.paidCount;
+            if (advanced > 0) {
+              patch.plan_next_due = after.nextDue
+                ? stepDate(before.nextDue.dueDate, loan.plan_cadence as LoanCadence, advanced)
+                : null;
+            }
+          }
+          await update(loan.id, patch);
+          setLinkFor(null);
+          toast.success("Instalment marked as paid");
+        }}
+      />
 
       <PlanDialog
         loan={planFor}
@@ -608,7 +649,13 @@ function PlanDialog({
               variant="ghost"
               className="mr-auto text-destructive"
               onClick={() =>
-                onSave({ plan_amount: null, plan_cadence: null, plan_start_date: null, plan_next_due: null })
+                onSave({
+                  plan_amount: null,
+                  plan_cadence: null,
+                  plan_start_date: null,
+                  plan_next_due: null,
+                  plan_created_at: null,
+                })
               }
             >
               Remove plan
@@ -628,6 +675,7 @@ function PlanDialog({
                 plan_cadence: cadence,
                 plan_start_date: firstDue,
                 plan_next_due: firstDue,
+                plan_created_at: loan?.plan_created_at ?? new Date().toISOString(),
               });
             }}
           >
@@ -756,3 +804,71 @@ function LoanDialog({
 }
 
 // ============ DEBTS & BNPL ============
+
+/**
+ * Attribute a repayment that's already recorded on the loan to a scheduled
+ * instalment — e.g. money that arrived a day before the plan's first due date.
+ */
+function MarkInstalmentPaidDialog({
+  target,
+  onOpenChange,
+  onLink,
+}: {
+  target: { loan: Loan; dueDate: string } | null;
+  onOpenChange: (v: boolean) => void;
+  onLink: (paymentId: string) => void | Promise<void>;
+}) {
+  const loan = target?.loan ?? null;
+  const planStart = loan?.plan_next_due ?? loan?.plan_start_date ?? loan?.start_date ?? todayISO();
+
+  const candidates = (loan?.payments ?? []).filter(
+    (p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan?.plan_created_at),
+  );
+
+  return (
+    <Dialog open={!!target} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            Mark instalment paid
+            {target && <> · {format(new Date(target.dueDate), "d MMM yyyy")}</>}
+          </DialogTitle>
+        </DialogHeader>
+        {candidates.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No unattributed repayments to link. Close this and use{" "}
+            <span className="font-medium text-foreground">Log Repayment</span> to record the payment
+            — it counts against this instalment automatically.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Pick a repayment already recorded on this loan to count against this instalment.
+            </p>
+            <ul className="divide-y divide-border/60">
+              {candidates.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0">
+                    <span className="text-sm font-medium tabular-nums">{fmt(p.amount)}</span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {format(new Date(p.date), "d MMM yyyy")}
+                      {p.notes ? ` · ${p.notes}` : ""}
+                    </span>
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => onLink(p.id)}>
+                    Use this
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
