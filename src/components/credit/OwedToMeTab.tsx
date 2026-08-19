@@ -355,6 +355,34 @@ export function OwedToMeTab() {
         </div>
       )}
 
+      <MarkInstalmentPaidDialog
+        target={linkFor}
+        onOpenChange={(v) => {
+          if (!v) setLinkFor(null);
+        }}
+        onLink={async (paymentId) => {
+          if (!linkFor) return;
+          const loan = linkFor.loan;
+          const next = (loan.payments ?? []).map((p) =>
+            p.id === paymentId ? { ...p, instalment_due_date: linkFor.dueDate } : p,
+          );
+          const before = buildLoanPlan(loan);
+          const after = buildLoanPlan({ ...loan, payments: next });
+          const patch: Partial<Loan> = { payments: next };
+          if (before?.nextDue && after) {
+            const advanced = after.paidCount - before.paidCount;
+            if (advanced > 0) {
+              patch.plan_next_due = after.nextDue
+                ? stepDate(before.nextDue.dueDate, loan.plan_cadence as LoanCadence, advanced)
+                : null;
+            }
+          }
+          await update(loan.id, patch);
+          setLinkFor(null);
+          toast.success("Instalment marked as paid");
+        }}
+      />
+
       <PlanDialog
         loan={planFor}
         onOpenChange={(v) => {
