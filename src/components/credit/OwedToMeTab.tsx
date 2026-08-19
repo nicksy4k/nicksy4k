@@ -20,6 +20,7 @@ import { differenceInCalendarDays } from "date-fns";
 import {
   CADENCE_LABELS,
   buildLoanPlan,
+  countsTowardPlan,
   hasPlan,
   stepDate,
   type LoanCadence,
@@ -648,7 +649,13 @@ function PlanDialog({
               variant="ghost"
               className="mr-auto text-destructive"
               onClick={() =>
-                onSave({ plan_amount: null, plan_cadence: null, plan_start_date: null, plan_next_due: null })
+                onSave({
+                  plan_amount: null,
+                  plan_cadence: null,
+                  plan_start_date: null,
+                  plan_next_due: null,
+                  plan_created_at: null,
+                })
               }
             >
               Remove plan
@@ -668,6 +675,7 @@ function PlanDialog({
                 plan_cadence: cadence,
                 plan_start_date: firstDue,
                 plan_next_due: firstDue,
+                plan_created_at: loan?.plan_created_at ?? new Date().toISOString(),
               });
             }}
           >
