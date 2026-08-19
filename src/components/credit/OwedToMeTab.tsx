@@ -15,7 +15,9 @@ import {
   ArrowUpRight,
   CalendarClock,
   History,
+  FileText,
 } from "lucide-react";
+
 import { differenceInCalendarDays } from "date-fns";
 import {
   CADENCE_LABELS,
@@ -93,6 +95,8 @@ import {
 } from "@/lib/credit";
 import { usePockets, useLedgerSync } from "@/lib/creditHooks";
 import { FundingSourceDialog, HistoryList, PaymentDialog } from "@/components/credit/shared";
+import { loanStatementText, printLoanStatement } from "@/lib/loanStatement";
+
 
 export function OwedToMeTab() {
   const { items, add, update, remove } = useLoans();
@@ -106,6 +110,10 @@ export function OwedToMeTab() {
 
   // Instalment awaiting an existing payment to be linked to it.
   const [linkFor, setLinkFor] = useState<{ loan: Loan; dueDate: string } | null>(null);
+
+  // Loan whose shareable statement is being previewed.
+  const [statementFor, setStatementFor] = useState<Loan | null>(null);
+
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
@@ -335,7 +343,10 @@ export function OwedToMeTab() {
                   </Accordion>
 
 
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setStatementFor(l)}>
+                      <FileText className="h-4 w-4" /> Statement
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -349,6 +360,7 @@ export function OwedToMeTab() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+
                 </CardContent>
               </Card>
             );
@@ -384,7 +396,15 @@ export function OwedToMeTab() {
         }}
       />
 
+      <StatementDialog
+        loan={statementFor}
+        onOpenChange={(v) => {
+          if (!v) setStatementFor(null);
+        }}
+      />
+
       <PlanDialog
+
         loan={planFor}
         onOpenChange={(v) => {
           if (!v) setPlanFor(null);
@@ -866,6 +886,95 @@ function MarkInstalmentPaidDialog({
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Preview + share a printable statement for a single loan. */
+function StatementDialog({
+  loan,
+  onOpenChange,
+}: {
+  loan: Loan | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    setNote("");
+  }, [loan?.id]);
+
+  if (!loan) return null;
+
+  const paid = loanPaid(loan);
+  const remaining = Math.max(0, loanRemaining(loan));
+  const plan = buildLoanPlan(loan);
+
+  return (
+    <Dialog open={!!loan} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Statement for {loan.person_name}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total lent</span>
+              <span className="tabular-nums">{fmt(loan.total_amount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Repaid</span>
+              <span className="tabular-nums">{fmt(paid)}</span>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <span>Outstanding</span>
+              <span className="tabular-nums">{fmt(remaining)}</span>
+            </div>
+            {plan?.nextDue && (
+              <p className="text-xs text-muted-foreground pt-1">
+                Next payment {fmt(plan.nextDue.amount - plan.nextDue.covered)} on{" "}
+                {format(new Date(plan.nextDue.dueDate), "d MMM yyyy")}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="statement-note">Message on the statement (optional)</Label>
+            <Textarea
+              id="statement-note"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. Thanks — next payment by bank transfer please."
+            />
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            The statement lists every loan, top-up and repayment with a running balance, plus any
+            remaining scheduled payments. Choose “Save as PDF” in the print dialog to share it.
+          </p>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(loanStatementText(loan));
+                toast.success("Summary copied");
+              } catch {
+                toast.error("Couldn't copy — try the PDF instead");
+              }
+            }}
+          >
+            Copy summary
+          </Button>
+          <Button onClick={() => printLoanStatement(loan, { note: note.trim() || undefined })}>
+            <FileText className="h-4 w-4" /> Save as PDF
           </Button>
         </DialogFooter>
       </DialogContent>
