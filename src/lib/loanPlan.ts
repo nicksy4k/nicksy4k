@@ -73,9 +73,9 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const planStart = loan.plan_start_date ?? loan.start_date ?? firstDue;
 
   // Payments made before the plan began are already reflected in the opening
-  // balance — only payments from the plan start date count against instalments.
+  // balance — only payments that count toward the plan reduce instalments.
   const priorPaid = (loan.payments ?? [])
-    .filter((p) => p.type !== "topup" && p.date < planStart)
+    .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at))
     .reduce((s, p) => s + p.amount, 0);
   const planPaid = Math.max(0, paid - priorPaid);
   const baseline = Math.max(0, loan.total_amount - priorPaid);
