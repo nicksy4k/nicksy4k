@@ -103,6 +103,9 @@ export function OwedToMeTab() {
   // Pending action awaiting a funding-source choice.
   const [planFor, setPlanFor] = useState<Loan | null>(null);
 
+  // Instalment awaiting an existing payment to be linked to it.
+  const [linkFor, setLinkFor] = useState<{ loan: Loan; dueDate: string } | null>(null);
+
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
     | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
