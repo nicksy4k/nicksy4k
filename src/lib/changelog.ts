@@ -20,6 +20,8 @@ import {
   HandCoins,
   AlertTriangle,
   CalendarClock,
+  FileText,
+
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -37,6 +39,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.7",
+    title: "Shareable loan statements",
+    date: "2026-08-19",
+    icon: FileText,
+    highlights: [
+      "Every loan now has a 'Statement' button that produces a printable PDF you can share with the person who owes you.",
+      "The statement shows total lent, repaid and outstanding, a running-balance history of every top-up and repayment, and any remaining scheduled payments.",
+      "Add an optional message to the statement, or copy a short summary for a quick text message.",
+    ],
+  },
+  {
+
     version: "v3.1.6",
     title: "Mark a scheduled loan payment as paid",
     date: "2026-08-19",
