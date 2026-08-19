@@ -796,3 +796,71 @@ function LoanDialog({
 }
 
 // ============ DEBTS & BNPL ============
+
+/**
+ * Attribute a repayment that's already recorded on the loan to a scheduled
+ * instalment — e.g. money that arrived a day before the plan's first due date.
+ */
+function MarkInstalmentPaidDialog({
+  target,
+  onOpenChange,
+  onLink,
+}: {
+  target: { loan: Loan; dueDate: string } | null;
+  onOpenChange: (v: boolean) => void;
+  onLink: (paymentId: string) => void | Promise<void>;
+}) {
+  const loan = target?.loan ?? null;
+  const planStart = loan?.plan_next_due ?? loan?.plan_start_date ?? loan?.start_date ?? todayISO();
+
+  const candidates = (loan?.payments ?? []).filter(
+    (p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan?.plan_created_at),
+  );
+
+  return (
+    <Dialog open={!!target} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            Mark instalment paid
+            {target && <> · {format(new Date(target.dueDate), "d MMM yyyy")}</>}
+          </DialogTitle>
+        </DialogHeader>
+        {candidates.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No unattributed repayments to link. Close this and use{" "}
+            <span className="font-medium text-foreground">Log Repayment</span> to record the payment
+            — it counts against this instalment automatically.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Pick a repayment already recorded on this loan to count against this instalment.
+            </p>
+            <ul className="divide-y divide-border/60">
+              {candidates.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0">
+                    <span className="text-sm font-medium tabular-nums">{fmt(p.amount)}</span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {format(new Date(p.date), "d MMM yyyy")}
+                      {p.notes ? ` · ${p.notes}` : ""}
+                    </span>
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => onLink(p.id)}>
+                    Use this
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
