@@ -9,14 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { fmt } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
-import { advanceDueDate, advanceForCommitment, useActiveCycle } from "@/lib/cycle";
+import { useActiveCycle } from "@/lib/cycle";
 import { cadenceLabel } from "@/lib/subscriptions";
-import { Row, todayISO } from "./shared";
+import { Row } from "./shared";
+import { ResetOptions } from "./ConfirmResetOptions";
 
 export function OutgoingDetailsDialog({
   item,
@@ -40,13 +40,9 @@ export function OutgoingDetailsDialog({
   onLogOffer: (c: Commitment) => void;
 }) {
   const [mode, setMode] = useState<"details" | "confirm">("details");
-  const [pickerDate, setPickerDate] = useState("");
 
   useEffect(() => {
-    if (item) {
-      setMode("details");
-      setPickerDate(item.next_due_date ?? todayISO());
-    }
+    if (item) setMode("details");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
 
