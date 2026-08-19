@@ -197,6 +197,8 @@ export interface Loan {
   plan_cadence?: LoanPlanCadence | string | null;
   plan_start_date?: string | null;
   plan_next_due?: string | null;
+  /** When the plan was set up — payments from this point on count against it. */
+  plan_created_at?: string | null;
 }
 
 export type DebtKind = "standard" | "bnpl";
