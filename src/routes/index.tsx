@@ -5,6 +5,11 @@ import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
 import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
+import { dueSoonOutgoings } from "@/lib/outgoings";
+import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
+import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Commitment } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,10 +69,17 @@ import { colorForKey } from "@/lib/colors";
 import { rollUpJoy, sliceColor } from "@/lib/joy";
 
 function DashboardPage() {
-  const { items: realItems, dismiss } = useTransactions();
+  const {
+    items: realItems,
+    dismiss,
+    add: addTransaction,
+    remove: removeTransaction,
+  } = useTransactions();
   const { items: realIncomes } = useIncomes();
-  const { items: realSavings } = useSavings();
-  const { items: commitments } = useCommitments();
+  const { items: realSavings, add: addSaving } = useSavings();
+  const { items: commitments, update: updateCommitment } = useCommitments();
+  const qc = useQueryClient();
+  const [payTarget, setPayTarget] = useState<Commitment | null>(null);
 
   const demo = useDemoMode();
   // While the tour is active we swap the whole dataset for a curated demo
@@ -95,6 +107,11 @@ function DashboardPage() {
   }, [tutorialCompleted, openWelcome]);
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
+  const dueSoon = useMemo(
+    () => dueSoonOutgoings(demo.active ? [] : commitments, realSavings),
+    [commitments, realSavings, demo.active],
+  );
+
   const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
   const cycleIncomes = useMemo(
     () => incomes.filter((i) => isInCycle(i.date, cycle)),
@@ -406,6 +423,49 @@ function DashboardPage() {
           deliveryCount={awaitingDeliveryCount}
           onDismiss={dismiss}
           highlightedId={demo.openAlertId}
+          dueSoon={dueSoon.rows}
+          pocketBalance={dueSoon.pocketBalance}
+          dueSoonTotal={dueSoon.totalDue}
+          onMarkPaid={demo.active ? undefined : setPayTarget}
+        />
+
+        <ConfirmResetDialog
+          item={payTarget}
+          cycle={cycle}
+          onClose={() => setPayTarget(null)}
+          onConfirm={async (c, newDue) => {
+            setPayTarget(null);
+            await markOutgoingPaid(
+              {
+                transactions: realItems,
+                updateCommitment,
+                addTransaction,
+                removeTransaction,
+                addSaving,
+                onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+              },
+              c,
+              newDue,
+            );
+            toast.success("Paid · logged & deducted from Bill Money", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  void unmarkOutgoingPaid(
+                    {
+                      transactions: realItems,
+                      updateCommitment,
+                      addTransaction,
+                      removeTransaction,
+                      addSaving,
+                      onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+                    },
+                    { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
+                  );
+                },
+              },
+            });
+          }}
         />
 
       </div>

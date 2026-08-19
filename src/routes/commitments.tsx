@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
+import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
