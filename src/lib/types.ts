@@ -180,6 +180,9 @@ export interface LedgerPayment {
   /** When set, this payment was auto-logged from a linked commitment
    *  marking itself paid. Used to reverse the payment on undo. */
   commitment_id?: string | null;
+  /** Set when this payment has been attributed to a scheduled instalment
+   *  (the instalment's due date at the time of linking). */
+  instalment_due_date?: string | null;
 }
 
 export type LoanPlanCadence = "weekly" | "fortnightly" | "four_weekly" | "monthly";
