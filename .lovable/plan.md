@@ -12,7 +12,7 @@ A "Due soon" section inside the existing card, listing up to 5 unpaid outgoings 
 
 A small line under the section states how much Bill Money is available versus how much is due in the window.
 
-Each row has a "Mark paid" tick. Tapping it does exactly what the Outgoings page does: sets paid, logs the auto transaction, deducts from Bill Money, syncs the linked BNPL debt if any, and rolls the due date forward — using the row's own cadence (annual rolls a year, everything else follows your global cycle: monthly or 4-weekly). A toast confirms with an "Undo" that reverses the same way the Outgoings page's unmark does.
+Each row has a "Mark paid" tick. Tapping it does exactly what the Outgoings page does: sets paid, logs the auto transaction, deducts from Bill Money, syncs the linked BNPL debt if any, and rolls the due date forward — and it opens the same confirm step you get on the Outgoings page, with "+1 month", "+4 weeks", "+1 year" for annual plans, and "Or pick a date". A toast confirms with an "Undo" that reverses the same way the Outgoings page's unmark does.
 
 Rows disappear from the card once paid; the card hides entirely when nothing needs attention, exactly as now. There's a "View all" link to the Outgoings page.
 
@@ -21,5 +21,5 @@ Rows disappear from the card once paid; the card hides entirely when nothing nee
 - Extract the current `markPaid` / `unmarkPaid` bodies from `src/routes/commitments.tsx` into a shared helper (`src/lib/markOutgoingPaid.ts`) that takes the store mutators (`update`, `addTransaction`, `removeTransaction`, `addSaving`), the commitment and the new due date. Both the Outgoings page and the dashboard call it, so behaviour cannot drift.
 - New `dueSoonOutgoings(commitments, savings, now)` selector (in `src/lib/outgoings.ts`) returning rows with a `funded: "full" | "partial" | "none"` flag. Funding reuses the same waterfall the Outgoings page runs: sort unpaid due rows by date, allocate the Bill Money pocket balance down the list.
 - `AttentionCard.tsx` gains `dueSoon` and `onMarkPaid` props plus a `DueRow` subcomponent; `src/routes/index.tsx` computes the list from `useCommitments()` + `useSavings()` and passes the handler.
-- Due-date roll-forward on the dashboard uses the existing `advanceForCommitment(next_due_date, cadence, cycle)`; no cadence picker on the dashboard (the Outgoings page keeps its full confirm dialog).
+- The dashboard reuses the existing confirm step from `OutgoingDetailsDialog` (extracted into a small shared `ConfirmResetDialog`), so the +1 month / +4 weeks / +1 year / pick-a-date options and their `advanceDueDate` / `advanceForCommitment` maths are identical on both surfaces.
 - No schema or query changes. Add a dated entry to `src/lib/changelog.ts`.
