@@ -42,6 +42,10 @@ interface Props {
   deliveryCount: number;
   onDismiss: (id: string) => void;
   highlightedId?: string | null;
+  dueSoon?: DueSoonOutgoing[];
+  pocketBalance?: number;
+  dueSoonTotal?: number;
+  onMarkPaid?: (c: Commitment) => void;
 }
 
 export function AttentionCard({
@@ -50,8 +54,13 @@ export function AttentionCard({
   deliveryCount,
   onDismiss,
   highlightedId,
+  dueSoon = [],
+  pocketBalance = 0,
+  dueSoonTotal = 0,
+  onMarkPaid,
 }: Props) {
-  const total = protections.length + promos.length + (deliveryCount > 0 ? 1 : 0);
+  const total =
+    protections.length + promos.length + dueSoon.length + (deliveryCount > 0 ? 1 : 0);
   if (total === 0) return null;
 
   return (
@@ -61,6 +70,25 @@ export function AttentionCard({
         <CardTitle>Needs your attention</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {dueSoon.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Due soon</p>
+              <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
+                <Link to="/commitments">View all</Link>
+              </Button>
+            </div>
+            <ul className="space-y-2">
+              {dueSoon.slice(0, 5).map((row) => (
+                <DueRow key={row.commitment.id} row={row} onMarkPaid={onMarkPaid} />
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Bill Money {fmt(pocketBalance)} · {fmt(dueSoonTotal)} due in the next 7 days
+            </p>
+          </div>
+        )}
+
         {protections.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
