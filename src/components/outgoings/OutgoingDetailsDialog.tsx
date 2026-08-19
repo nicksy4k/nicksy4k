@@ -111,7 +111,6 @@ export function OutgoingDetailsDialog({
                   checked={item.paid}
                   onCheckedChange={(v) => {
                     if (v) {
-                      setPickerDate(item.next_due_date ?? todayISO());
                       setMode("confirm");
                     } else {
                       void onUnmarkPaid(item);
