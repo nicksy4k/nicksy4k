@@ -19,6 +19,7 @@ import {
   Smartphone,
   HandCoins,
   AlertTriangle,
+  CalendarClock,
 } from "lucide-react";
 
 export interface ChangelogEntry {
