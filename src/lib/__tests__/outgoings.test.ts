@@ -113,7 +113,7 @@ describe("dueSoonOutgoings", () => {
       kind: "deposit",
       amount,
       account: "Bill Money",
-      notes: null,
+      notes: undefined,
       created_at: "2026-08-01",
     } as SavingsEntry,
   ];
