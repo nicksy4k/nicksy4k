@@ -9,14 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { fmt } from "@/lib/format";
 import type { Commitment } from "@/lib/types";
-import { advanceDueDate, advanceForCommitment, useActiveCycle } from "@/lib/cycle";
+import { useActiveCycle } from "@/lib/cycle";
 import { cadenceLabel } from "@/lib/subscriptions";
-import { Row, todayISO } from "./shared";
+import { Row } from "./shared";
+import { ResetOptions } from "./ConfirmResetOptions";
 
 export function OutgoingDetailsDialog({
   item,
@@ -40,13 +40,9 @@ export function OutgoingDetailsDialog({
   onLogOffer: (c: Commitment) => void;
 }) {
   const [mode, setMode] = useState<"details" | "confirm">("details");
-  const [pickerDate, setPickerDate] = useState("");
 
   useEffect(() => {
-    if (item) {
-      setMode("details");
-      setPickerDate(item.next_due_date ?? todayISO());
-    }
+    if (item) setMode("details");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
 
@@ -115,7 +111,6 @@ export function OutgoingDetailsDialog({
                   checked={item.paid}
                   onCheckedChange={(v) => {
                     if (v) {
-                      setPickerDate(item.next_due_date ?? todayISO());
                       setMode("confirm");
                     } else {
                       void onUnmarkPaid(item);
@@ -161,92 +156,7 @@ export function OutgoingDetailsDialog({
             <DialogHeader>
               <DialogTitle className="break-words">Confirm payment reset?</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <p className="text-muted-foreground break-words">
-                Marking <span className="font-medium text-foreground">{item.item_name}</span> as
-                paid will advance its next {isSub ? "renewal" : "due"} date. Choose how to roll it
-                forward:
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-col h-auto py-2"
-                  onClick={() =>
-                    void onConfirmReset(
-                      item,
-                      advanceDueDate(item.next_due_date ?? todayISO(), "monthly"),
-                    )
-                  }
-                >
-                  <span className="text-sm">+1 month</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(
-                      parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "monthly")),
-                      "d MMM yyyy",
-                    )}
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-col h-auto py-2"
-                  onClick={() =>
-                    void onConfirmReset(
-                      item,
-                      advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly"),
-                    )
-                  }
-                >
-                  <span className="text-sm">+4 weeks</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(
-                      parseISO(advanceDueDate(item.next_due_date ?? todayISO(), "four-weekly")),
-                      "d MMM yyyy",
-                    )}
-                  </span>
-                </Button>
-              </div>
-              {item.cadence === "annual" && (
-                <Button
-                  variant="outline"
-                  className="w-full flex-col h-auto py-2"
-                  onClick={() =>
-                    void onConfirmReset(
-                      item,
-                      advanceForCommitment(item.next_due_date ?? todayISO(), "annual", cycle),
-                    )
-                  }
-                >
-                  <span className="text-sm">+1 year (annual plan)</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(
-                      parseISO(
-                        advanceForCommitment(item.next_due_date ?? todayISO(), "annual", cycle),
-                      ),
-                      "d MMM yyyy",
-                    )}
-                  </span>
-                </Button>
-              )}
-              <p className="text-xs text-muted-foreground text-center">
-                Global cycle: {cycle.type === "four-weekly" ? "4-weekly" : "monthly"} — pick the
-                cadence that matches this row.
-              </p>
-              <div className="rounded-md border border-border p-3 space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Or pick a date
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    value={pickerDate}
-                    onChange={(e) => setPickerDate(e.target.value)}
-                  />
-                  <Button onClick={() => pickerDate && void onConfirmReset(item, pickerDate)}>
-                    Set
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ResetOptions item={item} cycle={cycle} onConfirm={onConfirmReset} />
             <DialogFooter>
               <Button variant="ghost" onClick={() => setMode("details")}>
                 Cancel

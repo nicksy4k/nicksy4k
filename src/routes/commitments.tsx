@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
+import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,89 +142,26 @@ function OutgoingsPage() {
     [allItems, detailsId],
   );
 
+  const paidCtx = {
+    transactions,
+    updateCommitment: update,
+    addTransaction,
+    removeTransaction,
+    addSaving,
+    onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+  };
+
   async function markPaid(c: Commitment, newDue: string) {
-    const paidDate = todayISO();
-    await update(c.id, {
-      paid: true,
-      last_paid_date: paidDate,
-      prev_due_date: c.next_due_date ?? null,
-      next_due_date: newDue,
-    });
-    try {
-      await addTransaction({
-        date: paidDate,
-        retailer: c.item_name,
-        total_amount: c.amount,
-        receipt_attached: false,
-        receipt_type: "None",
-        receipt_location: "",
-        notes: `Auto-logged from ${c.is_subscription ? "subscription" : "commitment"}: ${c.item_name}`,
-        commitment_id: c.id,
-        items: [
-          {
-            id: crypto.randomUUID(),
-            item_name: c.item_name,
-            price: c.amount,
-            category: c.category || "Subscriptions",
-          },
-        ],
-      });
-      await addSaving({
-        date: paidDate,
-        kind: "withdrawal",
-        amount: c.amount,
-        account: BILL_POCKET,
-        notes: `Auto-deducted for ${c.item_name}`,
-      });
-    } catch (err) {
-      console.error("Failed to auto-log paid outgoing", err);
-      toast.error("Marked paid, but auto-logging failed.");
-    }
-    if (c.debt_id) {
-      try {
-        await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
-        qc.invalidateQueries({ queryKey: ["debts"] });
-      } catch (err) {
-        console.error("Debt sync failed", err);
-      }
-    }
+    await markOutgoingPaid(paidCtx, c, newDue);
     toast.success("Paid · logged & deducted from Bill Money");
     setDetailsId(null);
   }
 
   async function unmarkPaid(c: Commitment) {
-    try {
-      const linked = transactions.filter((t) => t.commitment_id === c.id);
-      for (const t of linked) await removeTransaction(t.id);
-      const refundAmount = linked.reduce((s, t) => s + t.total_amount, 0) || c.amount;
-      await addSaving({
-        date: todayISO(),
-        kind: "deposit",
-        amount: refundAmount,
-        account: BILL_POCKET,
-        notes: `Refund — unmarked ${c.item_name}`,
-      });
-      await update(c.id, {
-        paid: false,
-        last_paid_date: null,
-        next_due_date: c.prev_due_date ?? c.next_due_date ?? null,
-        prev_due_date: null,
-      });
-      if (c.debt_id) {
-        try {
-          await undoDebtPaymentForCommitment(c);
-          qc.invalidateQueries({ queryKey: ["debts"] });
-        } catch (err) {
-          console.error("Debt undo failed", err);
-        }
-      }
-      toast.success("Reversed · transaction removed & Bill Money refunded");
-    } catch (err) {
-      console.error("Failed to undo paid outgoing", err);
-      toast.error("Could not fully undo. Check transactions & pocket.");
-    }
+    await unmarkOutgoingPaid(paidCtx, c);
     setDetailsId(null);
   }
+
 
   const filters: { key: View; label: string; count: number }[] = [
     { key: "all", label: "All outgoings", count: allItems.length },

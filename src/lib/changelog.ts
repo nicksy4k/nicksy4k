@@ -19,6 +19,7 @@ import {
   Smartphone,
   HandCoins,
   AlertTriangle,
+  CalendarClock,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -35,6 +36,17 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.1.5",
+    title: "Outgoings due soon on the dashboard",
+    date: "2026-08-19",
+    icon: CalendarClock,
+    highlights: [
+      "'Needs your attention' now lists unpaid bills and subscriptions due in the next 7 days.",
+      "Rows are colour-coded by Bill Money cover: green fully covered, amber part-covered, red uncovered or overdue.",
+      "Tick one to mark it paid using the same confirm step as the Outgoings page, with an Undo in the toast.",
+    ],
+  },
   {
     version: "v3.1.4",
     title: "Filter History by delivery state",

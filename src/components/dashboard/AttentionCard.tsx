@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { AlertTriangle, Check, FileText, Truck } from "lucide-react";
+import { AlertTriangle, Check, CalendarClock, FileText, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmt } from "@/lib/format";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { daysUntilPromoEnd } from "@/lib/subscriptions";
+import type { DueSoonOutgoing } from "@/lib/outgoings";
 import type { Commitment, Transaction } from "@/lib/types";
 
 /**
@@ -42,6 +43,10 @@ interface Props {
   deliveryCount: number;
   onDismiss: (id: string) => void;
   highlightedId?: string | null;
+  dueSoon?: DueSoonOutgoing[];
+  pocketBalance?: number;
+  dueSoonTotal?: number;
+  onMarkPaid?: (c: Commitment) => void;
 }
 
 export function AttentionCard({
@@ -50,8 +55,13 @@ export function AttentionCard({
   deliveryCount,
   onDismiss,
   highlightedId,
+  dueSoon = [],
+  pocketBalance = 0,
+  dueSoonTotal = 0,
+  onMarkPaid,
 }: Props) {
-  const total = protections.length + promos.length + (deliveryCount > 0 ? 1 : 0);
+  const total =
+    protections.length + promos.length + dueSoon.length + (deliveryCount > 0 ? 1 : 0);
   if (total === 0) return null;
 
   return (
@@ -61,6 +71,25 @@ export function AttentionCard({
         <CardTitle>Needs your attention</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {dueSoon.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Due soon</p>
+              <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
+                <Link to="/commitments">View all</Link>
+              </Button>
+            </div>
+            <ul className="space-y-2">
+              {dueSoon.slice(0, 5).map((row) => (
+                <DueRow key={row.commitment.id} row={row} onMarkPaid={onMarkPaid} />
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Bill Money {fmt(pocketBalance)} · {fmt(dueSoonTotal)} due in the next 7 days
+            </p>
+          </div>
+        )}
+
         {protections.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -217,6 +246,73 @@ function AlertRow({
       >
         <Check className="h-3.5 w-3.5" />
       </Button>
+    </li>
+  );
+}
+
+function DueRow({
+  row,
+  onMarkPaid,
+}: {
+  row: DueSoonOutgoing;
+  onMarkPaid?: (c: Commitment) => void;
+}) {
+  const { commitment: c, daysUntil, overdue, funded } = row;
+
+  const tone =
+    overdue || funded === "none"
+      ? "border-destructive/30 bg-destructive/10"
+      : funded === "partial"
+        ? "border-amber-500/30 bg-amber-500/10"
+        : "border-emerald-500/30 bg-emerald-500/10";
+
+  const chipClass =
+    overdue || funded === "none"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : funded === "partial"
+        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+        : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+
+  const chipLabel = overdue
+    ? `${Math.abs(daysUntil)}d late`
+    : daysUntil === 0
+      ? "Today"
+      : `${daysUntil}d`;
+
+  const fundedLabel = overdue
+    ? "Overdue"
+    : funded === "full"
+      ? "Covered by Bill Money"
+      : funded === "partial"
+        ? "Only part-covered"
+        : "Not covered";
+
+  return (
+    <li className={`flex items-start gap-2 rounded-lg border p-3 ${tone}`}>
+      <CalendarClock className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium truncate">{c.item_name}</p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
+          · {fundedLabel}
+        </p>
+      </div>
+      <span
+        className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
+      >
+        {chipLabel}
+      </span>
+      {onMarkPaid && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          title="Mark paid"
+          onClick={() => onMarkPaid(c)}
+        >
+          <Check className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </li>
   );
 }

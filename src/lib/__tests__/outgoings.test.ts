@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CYCLES_PER_YEAR, perCycleAmount, perCycleTotal } from "../outgoings";
-import type { Commitment } from "../types";
+import { CYCLES_PER_YEAR, dueSoonOutgoings, perCycleAmount, perCycleTotal } from "../outgoings";
+import type { Commitment, SavingsEntry } from "../types";
 
 function commitment(partial: Partial<Commitment>): Commitment {
   return {
@@ -101,5 +101,64 @@ describe("perCycleTotal", () => {
       }),
     ];
     expect(perCycleTotal(promo, "monthly").subs).toBe(5);
+  });
+});
+
+describe("dueSoonOutgoings", () => {
+  const now = new Date("2026-08-19T12:00:00Z");
+  const pocket = (amount: number): SavingsEntry[] => [
+    {
+      id: "s1",
+      date: "2026-08-01",
+      kind: "deposit",
+      amount,
+      account: "Bill Money",
+      notes: null,
+      created_at: "2026-08-01",
+    } as SavingsEntry,
+  ];
+
+  it("only returns unpaid rows due within the window, overdue first", () => {
+    const rows = dueSoonOutgoings(
+      [
+        commitment({ item_name: "Late", amount: 10, next_due_date: "2026-08-15" }),
+        commitment({ item_name: "Soon", amount: 10, next_due_date: "2026-08-22" }),
+        commitment({ item_name: "Later", amount: 10, next_due_date: "2026-09-30" }),
+        commitment({ item_name: "Done", amount: 10, next_due_date: "2026-08-20", paid: true }),
+      ],
+      pocket(1000),
+      now,
+    ).rows;
+    expect(rows.map((r) => r.commitment.item_name)).toEqual(["Late", "Soon"]);
+    expect(rows[0].overdue).toBe(true);
+    expect(rows[0].daysUntil).toBe(-4);
+    expect(rows[1].daysUntil).toBe(3);
+  });
+
+  it("waterfalls the Bill Money pocket in due order", () => {
+    const { rows, totalDue, pocketBalance } = dueSoonOutgoings(
+      [
+        commitment({ item_name: "A", amount: 40, next_due_date: "2026-08-20" }),
+        commitment({ item_name: "B", amount: 40, next_due_date: "2026-08-21" }),
+        commitment({ item_name: "C", amount: 40, next_due_date: "2026-08-22" }),
+      ],
+      pocket(50),
+      now,
+    );
+    expect(pocketBalance).toBe(50);
+    expect(totalDue).toBe(120);
+    expect(rows.map((r) => r.funded)).toEqual(["full", "partial", "none"]);
+  });
+
+  it("lets earlier unpaid rows outside the window consume the pocket first", () => {
+    const { rows } = dueSoonOutgoings(
+      [
+        commitment({ item_name: "Overdue big", amount: 100, next_due_date: "2026-08-01" }),
+        commitment({ item_name: "Upcoming", amount: 20, next_due_date: "2026-08-21" }),
+      ],
+      pocket(100),
+      now,
+    );
+    expect(rows.find((r) => r.commitment.item_name === "Upcoming")!.funded).toBe("none");
   });
 });
