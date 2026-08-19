@@ -132,3 +132,37 @@ describe("payments made before the plan started", () => {
     expect(p.nextDue?.covered).toBe(40);
   });
 });
+
+describe("counting payments toward the plan", () => {
+  it("counts a payment made after the plan was set up but before the first due date", () => {
+    const p = buildLoanPlan(
+      loan({
+        plan_start_date: "2026-08-19",
+        plan_next_due: "2026-08-19",
+        plan_created_at: "2026-08-17T10:00:00Z",
+        payments: [pay(100, "2026-08-18")],
+      }),
+      "2026-08-19",
+    )!;
+    expect(p.schedule[0]!.status).toBe("paid");
+    expect(p.paidCount).toBe(1);
+  });
+
+  it("counts a payment explicitly linked to an instalment", () => {
+    const linked: LedgerPayment = {
+      id: "x",
+      date: "2026-01-18",
+      amount: 100,
+      type: "payment",
+      instalment_due_date: "2026-02-01",
+    };
+    const p = buildLoanPlan(loan({ payments: [linked] }), "2026-01-20")!;
+    expect(p.schedule[0]!.status).toBe("paid");
+    expect(p.nextDue?.dueDate).toBe("2026-03-01");
+  });
+
+  it("still excludes untouched pre-plan history", () => {
+    const p = buildLoanPlan(loan({ payments: [pay(29, "2026-01-18")] }), "2026-01-20")!;
+    expect(p.nextDue?.covered).toBe(0);
+  });
+});
