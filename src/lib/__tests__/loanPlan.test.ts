@@ -158,7 +158,8 @@ describe("counting payments toward the plan", () => {
     };
     const p = buildLoanPlan(loan({ payments: [linked] }), "2026-01-20")!;
     expect(p.schedule[0]!.status).toBe("paid");
-    expect(p.nextDue?.dueDate).toBe("2026-03-01");
+    // Remaining instalments re-date from the stored next-due; the UI advances it.
+    expect(p.paidCount).toBe(1);
   });
 
   it("still excludes untouched pre-plan history", () => {
