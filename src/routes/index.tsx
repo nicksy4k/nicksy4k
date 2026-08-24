@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { toast } from "sonner";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
@@ -10,7 +10,7 @@ import { dueSoonOutgoings } from "@/lib/outgoings";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,12 @@ function DashboardPage() {
   const { items: commitments, update: updateCommitment } = useCommitments();
   const qc = useQueryClient();
   const [payTarget, setPayTarget] = useState<Commitment | null>(null);
+
+  // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
+  // the render that created them, so they must read the freshest transaction
+  // list — otherwise the just-auto-logged row is invisible and never removed.
+  const itemsRef = useRef(realItems);
+  itemsRef.current = realItems;
 
   const demo = useDemoMode();
   // While the tour is active we swap the whole dataset for a curated demo
@@ -438,7 +444,7 @@ function DashboardPage() {
             setPayTarget(null);
             await markOutgoingPaid(
               {
-                transactions: realItems,
+                transactions: itemsRef.current,
                 updateCommitment,
                 addTransaction,
                 removeTransaction,
@@ -452,17 +458,24 @@ function DashboardPage() {
               action: {
                 label: "Undo",
                 onClick: () => {
-                  void unmarkOutgoingPaid(
-                    {
-                      transactions: realItems,
-                      updateCommitment,
-                      addTransaction,
-                      removeTransaction,
-                      addSaving,
-                      onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
-                    },
-                    { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
-                  );
+                  void (async () => {
+                    // Pull the freshest list so the row auto-logged a moment ago
+                    // is included and actually gets removed.
+                    await qc.refetchQueries({ queryKey: ["transactions"] });
+                    const latest =
+                      qc.getQueryData<Transaction[]>(["transactions"]) ?? itemsRef.current;
+                    await unmarkOutgoingPaid(
+                      {
+                        transactions: latest,
+                        updateCommitment,
+                        addTransaction,
+                        removeTransaction,
+                        addSaving,
+                        onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+                      },
+                      { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
+                    );
+                  })();
                 },
               },
             });
