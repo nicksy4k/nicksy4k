@@ -77,7 +77,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           const { count } = await supabase
             .from("email_send_log")
             .select("id", { count: "exact", head: true })
-            .eq("triggered_by", callerKey)
+            .contains("metadata", { triggered_by: callerKey })
             .gte("created_at", tenMinAgo);
           if ((count ?? 0) >= 10) {
             return Response.json({ error: "Rate limit exceeded" }, { status: 429 });
