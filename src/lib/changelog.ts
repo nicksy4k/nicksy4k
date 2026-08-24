@@ -58,7 +58,7 @@ export const changelog: ChangelogEntry[] = [
       "Alerts, due outgoings and expiring offers are laid out in a responsive grid that stays compact on mobile.",
       "Each item is now a small card with hover actions on desktop and a familiar row layout on mobile.",
     ],
-  }
+  },
   {
     version: "v3.1.8",
     title: "Dashboard Undo now fully reverses a bill payment",
