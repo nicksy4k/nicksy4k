@@ -38,6 +38,7 @@ export function urgentProtections(items: Transaction[], now: Date = new Date()):
 }
 
 interface Props {
+  className?: string;
   protections: Transaction[];
   promos: Commitment[];
   deliveryCount: number;
