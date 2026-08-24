@@ -444,7 +444,7 @@ function DashboardPage() {
             setPayTarget(null);
             await markOutgoingPaid(
               {
-                transactions: realItems,
+                transactions: itemsRef.current,
                 updateCommitment,
                 addTransaction,
                 removeTransaction,
@@ -458,9 +458,15 @@ function DashboardPage() {
               action: {
                 label: "Undo",
                 onClick: () => {
-                  void unmarkOutgoingPaid(
-                    {
-                      transactions: realItems,
+                  void (async () => {
+                    // Pull the freshest list so the row auto-logged a moment ago
+                    // is included and actually gets removed.
+                    await qc.refetchQueries({ queryKey: ["transactions"] });
+                    const latest =
+                      qc.getQueryData<Transaction[]>(["transactions"]) ?? itemsRef.current;
+                    await unmarkOutgoingPaid(
+                      {
+                        transactions: latest,
                       updateCommitment,
                       addTransaction,
                       removeTransaction,
