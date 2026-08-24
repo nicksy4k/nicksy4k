@@ -348,6 +348,65 @@ function DashboardPage() {
         />
       </div>
 
+      <AttentionCard
+        className="mb-6"
+        protections={alerts}
+        promos={subsPromoAlerts}
+        deliveryCount={awaitingDeliveryCount}
+        onDismiss={dismiss}
+        highlightedId={demo.openAlertId}
+        dueSoon={dueSoon.rows}
+        pocketBalance={dueSoon.pocketBalance}
+        dueSoonTotal={dueSoon.totalDue}
+        onMarkPaid={demo.active ? undefined : setPayTarget}
+      />
+
+      <ConfirmResetDialog
+        item={payTarget}
+        cycle={cycle}
+        onClose={() => setPayTarget(null)}
+        onConfirm={async (c, newDue) => {
+          setPayTarget(null);
+          await markOutgoingPaid(
+            {
+              transactions: itemsRef.current,
+              updateCommitment,
+              addTransaction,
+              removeTransaction,
+              addSaving,
+              onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+            },
+            c,
+            newDue,
+          );
+          toast.success("Paid · logged & deducted from Bill Money", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                void (async () => {
+                  // Pull the freshest list so the row auto-logged a moment ago
+                  // is included and actually gets removed.
+                  await qc.refetchQueries({ queryKey: ["transactions"] });
+                  const latest =
+                    qc.getQueryData<Transaction[]>(["transactions"]) ?? itemsRef.current;
+                  await unmarkOutgoingPaid(
+                    {
+                      transactions: latest,
+                      updateCommitment,
+                      addTransaction,
+                      removeTransaction,
+                      addSaving,
+                      onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+                    },
+                    { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
+                  );
+                })();
+              },
+            },
+          });
+        }}
+      />
+
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
@@ -423,66 +482,6 @@ function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-        <AttentionCard
-          className="lg:col-span-3"
-          protections={alerts}
-          promos={subsPromoAlerts}
-          deliveryCount={awaitingDeliveryCount}
-          onDismiss={dismiss}
-          highlightedId={demo.openAlertId}
-          dueSoon={dueSoon.rows}
-          pocketBalance={dueSoon.pocketBalance}
-          dueSoonTotal={dueSoon.totalDue}
-          onMarkPaid={demo.active ? undefined : setPayTarget}
-        />
-
-        <ConfirmResetDialog
-          item={payTarget}
-          cycle={cycle}
-          onClose={() => setPayTarget(null)}
-          onConfirm={async (c, newDue) => {
-            setPayTarget(null);
-            await markOutgoingPaid(
-              {
-                transactions: itemsRef.current,
-                updateCommitment,
-                addTransaction,
-                removeTransaction,
-                addSaving,
-                onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
-              },
-              c,
-              newDue,
-            );
-            toast.success("Paid · logged & deducted from Bill Money", {
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  void (async () => {
-                    // Pull the freshest list so the row auto-logged a moment ago
-                    // is included and actually gets removed.
-                    await qc.refetchQueries({ queryKey: ["transactions"] });
-                    const latest =
-                      qc.getQueryData<Transaction[]>(["transactions"]) ?? itemsRef.current;
-                    await unmarkOutgoingPaid(
-                      {
-                        transactions: latest,
-                        updateCommitment,
-                        addTransaction,
-                        removeTransaction,
-                        addSaving,
-                        onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
-                      },
-                      { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
-                    );
-                  })();
-                },
-              },
-            });
-          }}
-        />
-
       </div>
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
