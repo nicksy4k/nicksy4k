@@ -39,6 +39,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.10",
+    title: "Action-first dashboard layout",
+    date: "2026-08-24",
+    icon: AlertTriangle,
+    highlights: [
+      "The 'Needs your attention' card now sits at the top of the dashboard, above the spending summary and outgoings cards.",
+      "Actionable alerts are the first thing you see when you open the app, so nothing urgent gets buried below the fold.",
+    ],
+  },
+  {
     version: "v3.1.9",
     title: "Wider 'Needs your attention' dashboard card",
     date: "2026-08-24",
@@ -48,7 +58,7 @@ export const changelog: ChangelogEntry[] = [
       "Alerts, due outgoings and expiring offers are laid out in a responsive grid that stays compact on mobile.",
       "Each item is now a small card with hover actions on desktop and a familiar row layout on mobile.",
     ],
-  },
+  }
   {
     version: "v3.1.8",
     title: "Dashboard Undo now fully reverses a bill payment",
