@@ -53,18 +53,28 @@ interface Props {
 
 export function AttentionCard({
   className,
-  protections,
-  promos,
+  protections: allProtections,
+  promos: allPromos,
   deliveryCount,
   onDismiss,
   highlightedId,
-  dueSoon = [],
+  dueSoon: allDueSoon = [],
   pocketBalance = 0,
   dueSoonTotal = 0,
   onMarkPaid,
 }: Props) {
-  const total =
-    protections.length + promos.length + dueSoon.length + (deliveryCount > 0 ? 1 : 0);
+  // Snoozed / dismissed rows are filtered out here so every section honours the
+  // persisted state stored in the database.
+  const { isHidden } = useAlertSnoozes();
+  const protections = allProtections.filter((t) => !isHidden(alertKeys.protection(t.id)));
+  const promos = allPromos.filter((c) => !isHidden(alertKeys.promo(c.id, c.promo_ends_on)));
+  const dueSoon = allDueSoon.filter(
+    (r) => !isHidden(alertKeys.due(r.commitment.id, r.commitment.next_due_date)),
+  );
+  const deliveriesHidden = isHidden(alertKeys.deliveries());
+  const deliveries = deliveriesHidden ? 0 : deliveryCount;
+
+  const total = protections.length + promos.length + dueSoon.length + (deliveries > 0 ? 1 : 0);
   if (total === 0) return null;
 
   return (
