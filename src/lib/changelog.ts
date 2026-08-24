@@ -39,6 +39,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.10",
+    title: "Action-first dashboard layout",
+    date: "2026-08-24",
+    icon: AlertTriangle,
+    highlights: [
+      "The 'Needs your attention' card now sits at the top of the dashboard, above the spending summary and outgoings cards.",
+      "Actionable alerts are the first thing you see when you open the app, so nothing urgent gets buried below the fold.",
+    ],
+  },
+  {
     version: "v3.1.9",
     title: "Wider 'Needs your attention' dashboard card",
     date: "2026-08-24",
