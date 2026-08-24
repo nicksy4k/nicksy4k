@@ -12,6 +12,8 @@ import { fmt } from "@/lib/format";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { daysUntilPromoEnd } from "@/lib/subscriptions";
 import type { DueSoonOutgoing } from "@/lib/outgoings";
+import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
+import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import type { Commitment, Transaction } from "@/lib/types";
 
 /**
@@ -141,7 +143,7 @@ export function AttentionCard({
           </section>
         )}
 
-        {(deliveryCount > 0 || dueSoon.length > 0) && (
+        {(deliveries > 0 || dueSoon.length > 0) && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>
@@ -152,13 +154,13 @@ export function AttentionCard({
                 <span className="font-semibold text-warning">{fmt(dueSoonTotal)}</span> due in the next 7 days
               </span>
             </div>
-            {deliveryCount > 0 && (
+            {deliveries > 0 && (
               <div className="flex items-center justify-between sm:justify-end gap-3">
                 <div className="flex items-center gap-2">
                   <Truck className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm">
-                    <span className="font-medium tabular-nums">{deliveryCount}</span> order
-                    {deliveryCount !== 1 ? "s" : ""} on the way
+                    <span className="font-medium tabular-nums">{deliveries}</span> order
+                    {deliveries !== 1 ? "s" : ""} on the way
                   </span>
                 </div>
                 <Button asChild variant="outline" size="sm" className="shrink-0">
@@ -166,6 +168,7 @@ export function AttentionCard({
                     Track
                   </Link>
                 </Button>
+                <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
               </div>
             )}
           </div>
@@ -279,6 +282,7 @@ function AlertRow({
         >
           <Check className="h-3.5 w-3.5" />
         </Button>
+        <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
       </div>
     </li>
   );
@@ -344,17 +348,20 @@ function DueRow({
         {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
         · {fundedLabel}
       </p>
-      {onMarkPaid && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground md:absolute md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-          title="Mark paid"
-          onClick={() => onMarkPaid(c)}
-        >
-          <Check className="h-3.5 w-3.5" />
-        </Button>
-      )}
+      <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        {onMarkPaid && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            title="Mark paid"
+            onClick={() => onMarkPaid(c)}
+          >
+            <Check className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
+      </div>
     </li>
   );
 }
@@ -379,6 +386,7 @@ function PromoRow({ commitment: c }: { commitment: Commitment }) {
             Review
           </Link>
         </Button>
+        <AlertSnoozeMenu alertKey={alertKeys.promo(c.id, c.promo_ends_on)} label={c.item_name} />
       </div>
     </li>
   );
