@@ -82,6 +82,12 @@ function DashboardPage() {
   const qc = useQueryClient();
   const [payTarget, setPayTarget] = useState<Commitment | null>(null);
 
+  // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
+  // the render that created them, so they must read the freshest transaction
+  // list — otherwise the just-auto-logged row is invisible and never removed.
+  const itemsRef = useRef(realItems);
+  itemsRef.current = realItems;
+
   const demo = useDemoMode();
   // While the tour is active we swap the whole dataset for a curated demo
   // slice so users can safely try filtering / expanding / logging without
