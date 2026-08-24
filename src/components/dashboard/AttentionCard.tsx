@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { AlertTriangle, Check, CalendarClock, FileText, Truck } from "lucide-react";
