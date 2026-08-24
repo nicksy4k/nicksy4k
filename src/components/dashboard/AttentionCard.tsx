@@ -164,6 +164,14 @@ export function AttentionCard({
   );
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
 function AlertRow({
   txn,
   onDismiss,
@@ -202,50 +210,65 @@ function AlertRow({
 
   return (
     <li
-      className={`flex items-start gap-2 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40"}`}
+      className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40 hover:border-border"}`}
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-sm font-medium truncate">{txn.retailer}</p>
-          <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">
-            {type}
-          </Badge>
-          {status === "expired" && (
-            <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">
-              Expired
-            </Badge>
-          )}
+      <div className="flex items-start justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+            <AlertTriangle className="h-4 w-4 text-warning" />
+          </div>
+          <div className="min-w-0 md:pr-6">
+            <p className="text-sm font-medium truncate">{txn.retailer}</p>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5 md:hidden">
+              <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">
+                {type}
+              </Badge>
+              {status === "expired" && (
+                <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">
+                  Expired
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
-          {itemSummary} · {fmt(txn.total_amount)} · expires{" "}
-          {format(parseISO(txn.expiration_date!), "MMM d")}
-        </p>
+        <span
+          className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
+        >
+          {chipLabel}
+        </span>
       </div>
-      <span
-        className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
-      >
-        {chipLabel}
-      </span>
-      {canOpenReceipt && (
+
+      <p className="hidden md:block text-xs text-muted-foreground truncate">
+        {itemSummary} · {fmt(txn.total_amount)} · expires{" "}
+        {format(parseISO(txn.expiration_date!), "MMM d")}
+      </p>
+      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">
+        {itemSummary} · {fmt(txn.total_amount)} · expires{" "}
+        {format(parseISO(txn.expiration_date!), "MMM d")}
+      </p>
+
+      <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        {canOpenReceipt && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            title="Open receipt"
+            onClick={openReceipt}
+          >
+            <FileText className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0"
-          title="Open receipt"
-          onClick={openReceipt}
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          title="Mark handled"
+          onClick={onDismiss}
         >
-          <FileText className="h-3.5 w-3.5" />
+          <Check className="h-3.5 w-3.5" />
         </Button>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-        title="Mark handled"
-        onClick={onDismiss}
-      >
-        <Check className="h-3.5 w-3.5" />
-      </Button>
+      </div>
     </li>
   );
 }
@@ -288,31 +311,64 @@ function DueRow({
         : "Not covered";
 
   return (
-    <li className={`flex items-start gap-2 rounded-lg border p-3 ${tone}`}>
-      <CalendarClock className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate">{c.item_name}</p>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
-          {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
-          · {fundedLabel}
-        </p>
+    <li className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 ${tone}`}>
+      <div className="flex items-start justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted/40">
+            <CalendarClock className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium truncate md:pr-6">{c.item_name}</p>
+        </div>
+        <span
+          className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
+        >
+          {chipLabel}
+        </span>
       </div>
-      <span
-        className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}
-      >
-        {chipLabel}
-      </span>
+      <p className="hidden md:block text-xs text-muted-foreground truncate">
+        {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
+        · {fundedLabel}
+      </p>
+      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">
+        {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
+        · {fundedLabel}
+      </p>
       {onMarkPaid && (
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground md:absolute md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
           title="Mark paid"
           onClick={() => onMarkPaid(c)}
         >
           <Check className="h-3.5 w-3.5" />
         </Button>
       )}
+    </li>
+  );
+}
+
+function PromoRow({ commitment: c }: { commitment: Commitment }) {
+  const days = daysUntilPromoEnd(c) ?? 0;
+
+  return (
+    <li className="group flex flex-row md:flex-col items-center md:items-start justify-between gap-2 rounded-lg border border-border/60 bg-card/40 p-3 hover:border-border transition">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-medium truncate">{c.item_name}</p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-xs text-muted-foreground">
+          {days > 0 ? `in ${days}d` : "today"}
+        </span>
+        <Button asChild size="sm" variant="outline" className="shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <Link to="/commitments" search={{ view: "subs" }}>
+            Review
+          </Link>
+        </Button>
+      </div>
     </li>
   );
 }
