@@ -39,6 +39,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.8",
+    title: "Dashboard Undo now fully reverses a bill payment",
+    date: "2026-08-24",
+    icon: FileText,
+    highlights: [
+      "Tapping 'Undo' on the dashboard 'paid' toast now also removes the auto-logged transaction, not just the Bill Money refund.",
+      "Stops bills being double-counted in your spending totals.",
+    ],
+  },
+  {
     version: "v3.1.7",
     title: "Shareable loan statements",
     date: "2026-08-19",
