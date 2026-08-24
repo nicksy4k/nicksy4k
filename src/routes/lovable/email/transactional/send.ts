@@ -41,8 +41,9 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ error: "Server configuration error" }, { status: 500 });
         }
 
-        // Verify the caller has a valid Supabase auth token.
-        // In TanStack, there is no Supabase gateway — we validate the JWT ourselves.
+        // This endpoint is server-to-server / admin only. Accept either the
+        // service-role key (internal callers) or a signed-in user who holds the
+        // 'admin' role. A plain authenticated session is NOT sufficient.
         const authHeader = request.headers.get("Authorization");
         if (!authHeader?.startsWith("Bearer ")) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,14 +51,39 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
 
         const token = authHeader.slice("Bearer ".length).trim();
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser(token);
 
-        if (authError || !user) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        let callerKey = "service";
+        if (token !== supabaseServiceKey) {
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser(token);
+
+          if (authError || !user) {
+            return Response.json({ error: "Unauthorized" }, { status: 401 });
+          }
+
+          const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+            _user_id: user.id,
+            _role: "admin",
+          });
+          if (roleError || !isAdmin) {
+            return Response.json({ error: "Forbidden" }, { status: 403 });
+          }
+          callerKey = user.id;
+
+          // Per-caller rate limit: max 10 sends / 10 minutes.
+          const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+          const { count } = await supabase
+            .from("email_send_log")
+            .select("id", { count: "exact", head: true })
+            .contains("metadata", { triggered_by: callerKey })
+            .gte("created_at", tenMinAgo);
+          if ((count ?? 0) >= 10) {
+            return Response.json({ error: "Rate limit exceeded" }, { status: 429 });
+          }
         }
+
 
         // Parse request body
         let templateName: string;
@@ -252,6 +278,8 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           template_name: templateName,
           recipient_email: effectiveRecipient,
           status: "pending",
+          metadata: { triggered_by: callerKey },
+
         });
 
         const { error: enqueueError } = await supabase.rpc("enqueue_email", {
