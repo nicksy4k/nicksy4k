@@ -51,6 +51,7 @@ interface Props {
 }
 
 export function AttentionCard({
+  className,
   protections,
   promos,
   deliveryCount,
@@ -66,21 +67,25 @@ export function AttentionCard({
   if (total === 0) return null;
 
   return (
-    <Card data-tour="warranty-alerts">
-      <CardHeader className="flex-row items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-warning" />
-        <CardTitle>Needs your attention</CardTitle>
+    <Card data-tour="warranty-alerts" className={className}>
+      <CardHeader className="flex-row items-center justify-between gap-4 border-b border-border/50 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-warning/10">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+          </div>
+          <CardTitle>Needs your attention</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6 p-4 md:p-6">
         {dueSoon.length > 0 && (
-          <div className="space-y-2">
+          <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Due soon</p>
+              <SectionTitle>Due soon</SectionTitle>
               <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
                 <Link to="/commitments">View all</Link>
               </Button>
             </div>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {dueSoon.slice(0, 5).map((row) => (
                 <DueRow key={row.commitment.id} row={row} onMarkPaid={onMarkPaid} />
               ))}
@@ -88,22 +93,20 @@ export function AttentionCard({
             <p className="text-xs text-muted-foreground">
               Bill Money {fmt(pocketBalance)} · {fmt(dueSoonTotal)} due in the next 7 days
             </p>
-          </div>
+          </section>
         )}
 
         {protections.length > 0 && (
-          <div className="space-y-2">
+          <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Returns &amp; warranties
-              </p>
+              <SectionTitle>Returns &amp; warranties</SectionTitle>
               <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
                 <Link to="/history" search={{ protection: "all" }}>
                   View all
                 </Link>
               </Button>
             </div>
-            <ul className="space-y-3">
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {protections.slice(0, 6).map((t) => (
                 <AlertRow
                   key={t.id}
@@ -113,51 +116,47 @@ export function AttentionCard({
                 />
               ))}
             </ul>
-          </div>
+          </section>
         )}
 
         {promos.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              Subscription offers ending
-            </p>
-            <ul className="space-y-1.5">
-              {promos.slice(0, 3).map((c) => {
-                const days = daysUntilPromoEnd(c) ?? 0;
-                return (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">
-                      {c.item_name}{" "}
-                      <span className="text-muted-foreground">
-                        · {days > 0 ? `in ${days}d` : "today"}
-                      </span>
-                    </span>
-                    <Button asChild size="sm" variant="outline" className="shrink-0">
-                      <Link to="/commitments" search={{ view: "subs" }}>
-                        Review
-                      </Link>
-                    </Button>
-                  </li>
-                );
-              })}
+          <section className="space-y-3">
+            <SectionTitle>Subscription offers ending</SectionTitle>
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {promos.slice(0, 3).map((c) => (
+                <PromoRow key={c.id} commitment={c} />
+              ))}
             </ul>
-          </div>
+          </section>
         )}
 
-        {deliveryCount > 0 && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/40 p-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Truck className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <p className="text-sm truncate">
-                <span className="font-medium tabular-nums">{deliveryCount}</span> order
-                {deliveryCount !== 1 ? "s" : ""} on the way
-              </p>
+        {(deliveryCount > 0 || dueSoon.length > 0) && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span>
+                Bill Money <span className="font-semibold text-foreground">{fmt(pocketBalance)}</span>
+              </span>
+              <span className="hidden sm:inline-block h-1 w-1 rounded-full bg-muted-foreground/50" />
+              <span>
+                <span className="font-semibold text-warning">{fmt(dueSoonTotal)}</span> due in the next 7 days
+              </span>
             </div>
-            <Button asChild variant="outline" size="sm" className="shrink-0">
-              <Link to="/history" search={{ delivery: "on_the_way" }}>
-                Track
-              </Link>
-            </Button>
+            {deliveryCount > 0 && (
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm">
+                    <span className="font-medium tabular-nums">{deliveryCount}</span> order
+                    {deliveryCount !== 1 ? "s" : ""} on the way
+                  </span>
+                </div>
+                <Button asChild variant="outline" size="sm" className="shrink-0">
+                  <Link to="/history" search={{ delivery: "on_the_way" }}>
+                    Track
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
