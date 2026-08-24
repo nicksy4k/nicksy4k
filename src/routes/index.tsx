@@ -10,7 +10,7 @@ import { dueSoonOutgoings } from "@/lib/outgoings";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
