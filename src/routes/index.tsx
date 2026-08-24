@@ -425,6 +425,7 @@ function DashboardPage() {
         </Card>
 
         <AttentionCard
+          className="lg:col-span-3"
           protections={alerts}
           promos={subsPromoAlerts}
           deliveryCount={awaitingDeliveryCount}
