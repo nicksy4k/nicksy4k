@@ -39,6 +39,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.11",
+    title: "Snooze or dismiss dashboard alerts",
+    date: "2026-08-24",
+    icon: AlertTriangle,
+    highlights: [
+      "Every row in 'Needs your attention' now has a menu to snooze it for 1 day, 3 days or a week, or dismiss it for good.",
+      "Your choice is saved to your account, so snoozed alerts stay hidden after a refresh and across devices.",
+      "Each toast offers an Undo if you hide something by mistake, and a new due date or offer date brings the alert back.",
+    ],
+  },
+  {
     version: "v3.1.10",
     title: "Action-first dashboard layout",
     date: "2026-08-24",

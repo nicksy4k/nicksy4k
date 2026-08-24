@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_snoozes: {
+        Row: {
+          alert_key: string
+          created_at: string
+          dismissed: boolean
+          id: string
+          snoozed_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_key: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          snoozed_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_key?: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          snoozed_until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_announcements: {
         Row: {
           enabled: boolean
