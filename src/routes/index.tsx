@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { toast } from "sonner";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
