@@ -467,14 +467,15 @@ function DashboardPage() {
                     await unmarkOutgoingPaid(
                       {
                         transactions: latest,
-                      updateCommitment,
-                      addTransaction,
-                      removeTransaction,
-                      addSaving,
-                      onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
-                    },
-                    { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
-                  );
+                        updateCommitment,
+                        addTransaction,
+                        removeTransaction,
+                        addSaving,
+                        onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+                      },
+                      { ...c, paid: true, prev_due_date: c.next_due_date ?? null },
+                    );
+                  })();
                 },
               },
             });
