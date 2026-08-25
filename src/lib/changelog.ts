@@ -17,6 +17,7 @@ import {
   BarChart3,
   Truck,
   Smartphone,
+  Eye,
   HandCoins,
   AlertTriangle,
   CalendarClock,
