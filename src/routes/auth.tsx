@@ -247,7 +247,16 @@ export function AuthPage() {
   async function startDemo() {
     setDemoLoading(true);
     try {
-      const tokens = await beginDemo();
+      const tokens = await beginDemo({
+        data: {
+          referrer: document.referrer || undefined,
+          landingPath: window.location.pathname + window.location.search,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          platform: navigator.platform,
+        },
+      });
       const { error } = await supabase.auth.setSession({
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,

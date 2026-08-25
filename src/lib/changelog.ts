@@ -17,6 +17,7 @@ import {
   BarChart3,
   Truck,
   Smartphone,
+  Eye,
   HandCoins,
   AlertTriangle,
   CalendarClock,
@@ -39,6 +40,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.13",
+    title: "Demo session log",
+    date: "2026-08-25",
+    icon: Eye,
+    highlights: [
+      "Every visit to the shared demo sandbox is now recorded with a timestamp, where the visitor came from and basic device details.",
+      "A new admin-only 'Demo session log' card in Settings lists the 25 most recent demo visits.",
+    ],
+  },
+  {
+
     version: "v3.1.12",
     title: "Dashboard attention card tidy-up",
     date: "2026-08-25",

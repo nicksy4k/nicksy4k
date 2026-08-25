@@ -7,7 +7,18 @@ import { createServerFn } from "@tanstack/react-start";
  * browser never sees it. Every session wipes and re-seeds the demo account so
  * it always looks pristine, and all writes are scoped to the demo user's id.
  */
-export const startDemoSession = createServerFn({ method: "POST" }).handler(async () => {
+export interface DemoVisitContext {
+  referrer?: string;
+  landingPath?: string;
+  language?: string;
+  timezone?: string;
+  screen?: string;
+  platform?: string;
+}
+
+export const startDemoSession = createServerFn({ method: "POST" })
+  .inputValidator((data: DemoVisitContext | undefined) => data ?? {})
+  .handler(async ({ data }) => {
   const { DEMO_EMAIL } = await import("@/lib/demoAccount");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { wipeAndSeedDemo } = await import("./demo-seed.server");
@@ -59,6 +70,34 @@ export const startDemoSession = createServerFn({ method: "POST" }).handler(async
   });
   if (signInErr || !session.session) {
     throw new Error("Could not start the demo session.");
+  }
+
+  // 4. Best-effort visit log (never blocks the demo)
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const ua = getRequestHeader("user-agent") ?? null;
+    const country = getRequestHeader("cf-ipcountry") ?? null;
+    const lower = (ua ?? "").toLowerCase();
+    const deviceType = /ipad|tablet/.test(lower)
+      ? "tablet"
+      : /mobi|iphone|android/.test(lower)
+        ? "mobile"
+        : ua
+          ? "desktop"
+          : null;
+    await supabaseAdmin.from("demo_sessions").insert({
+      referrer: data.referrer?.slice(0, 500) || null,
+      landing_path: data.landingPath?.slice(0, 300) || null,
+      user_agent: ua ? ua.slice(0, 500) : null,
+      device_type: deviceType,
+      platform: data.platform?.slice(0, 120) || null,
+      language: data.language?.slice(0, 40) || null,
+      timezone: data.timezone?.slice(0, 80) || null,
+      screen: data.screen?.slice(0, 40) || null,
+      country,
+    });
+  } catch {
+    /* logging must never break the demo */
   }
 
   return {
