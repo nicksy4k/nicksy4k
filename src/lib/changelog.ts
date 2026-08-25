@@ -39,6 +39,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.1.12",
+    title: "Dashboard attention card tidy-up",
+    date: "2026-08-25",
+    icon: AlertTriangle,
+    highlights: [
+      "Removed the duplicate 'Bill Money' summary from the 'Needs your attention' card so the due-soon total is only shown once.",
+      "Mark paid, Mark handled, receipt and snooze buttons are now always visible on tablets and touchscreens, not just on mouse hover.",
+    ],
+  },
+  {
     version: "v3.1.11",
     title: "Snooze or dismiss dashboard alerts",
     date: "2026-08-24",
