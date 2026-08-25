@@ -143,34 +143,23 @@ export function AttentionCard({
           </section>
         )}
 
-        {(deliveries > 0 || dueSoon.length > 0) && (
+        {deliveries > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Truck className="h-5 w-5 text-muted-foreground" />
               <span>
-                Bill Money <span className="font-semibold text-foreground">{fmt(pocketBalance)}</span>
-              </span>
-              <span className="hidden sm:inline-block h-1 w-1 rounded-full bg-muted-foreground/50" />
-              <span>
-                <span className="font-semibold text-warning">{fmt(dueSoonTotal)}</span> due in the next 7 days
+                <span className="font-medium tabular-nums">{deliveries}</span> order
+                {deliveries !== 1 ? "s" : ""} on the way
               </span>
             </div>
-            {deliveries > 0 && (
-              <div className="flex items-center justify-between sm:justify-end gap-3">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">
-                    <span className="font-medium tabular-nums">{deliveries}</span> order
-                    {deliveries !== 1 ? "s" : ""} on the way
-                  </span>
-                </div>
-                <Button asChild variant="outline" size="sm" className="shrink-0">
-                  <Link to="/history" search={{ delivery: "on_the_way" }}>
-                    Track
-                  </Link>
-                </Button>
-                <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
-              </div>
-            )}
+            <div className="flex items-center justify-between sm:justify-end gap-3">
+              <Button asChild variant="outline" size="sm" className="shrink-0">
+                <Link to="/history" search={{ delivery: "on_the_way" }}>
+                  Track
+                </Link>
+              </Button>
+              <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
+            </div>
           </div>
         )}
       </CardContent>
@@ -261,7 +250,7 @@ function AlertRow({
         {format(parseISO(txn.expiration_date!), "MMM d")}
       </p>
 
-      <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 transition-opacity">
         {canOpenReceipt && (
           <Button
             variant="ghost"
@@ -348,7 +337,7 @@ function DueRow({
         {fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"}{" "}
         · {fundedLabel}
       </p>
-      <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 transition-opacity">
         {onMarkPaid && (
           <Button
             variant="ghost"
@@ -381,7 +370,7 @@ function PromoRow({ commitment: c }: { commitment: Commitment }) {
         <span className="text-xs text-muted-foreground">
           {days > 0 ? `in ${days}d` : "today"}
         </span>
-        <Button asChild size="sm" variant="outline" className="shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        <Button asChild size="sm" variant="outline" className="shrink-0 transition-opacity">
           <Link to="/commitments" search={{ view: "subs" }}>
             Review
           </Link>
