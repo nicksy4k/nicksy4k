@@ -270,6 +270,51 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_sessions: {
+        Row: {
+          country: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          landing_path: string | null
+          language: string | null
+          platform: string | null
+          referrer: string | null
+          screen: string | null
+          started_at: string
+          timezone: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          landing_path?: string | null
+          language?: string | null
+          platform?: string | null
+          referrer?: string | null
+          screen?: string | null
+          started_at?: string
+          timezone?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          landing_path?: string | null
+          language?: string | null
+          platform?: string | null
+          referrer?: string | null
+          screen?: string | null
+          started_at?: string
+          timezone?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
