@@ -20,15 +20,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { sortLabels } from "@/lib/utils";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Debt } from "@/lib/types";
+import { debtRemaining } from "@/lib/credit";
+import { fmt } from "@/lib/format";
 import { PROMO_WARNING_DAYS } from "@/lib/subscriptions";
 import { Field } from "./shared";
+
+const NO_DEBT = "__none__";
 
 export function OutgoingDialog({
   open,
   onOpenChange,
   editing,
   categories,
+  debts = [],
   defaultSubscription,
   onSave,
 }: {
@@ -36,6 +41,8 @@ export function OutgoingDialog({
   onOpenChange: (v: boolean) => void;
   editing: Commitment | null;
   categories: string[];
+  /** Standard (non-BNPL) debts this outgoing can be linked to. */
+  debts?: Debt[];
   defaultSubscription: boolean;
   onSave: (data: Omit<Commitment, "id" | "created_at">) => void | Promise<void>;
 }) {
@@ -53,6 +60,11 @@ export function OutgoingDialog({
   const [onOffer, setOnOffer] = useState(false);
   const [promoEnds, setPromoEnds] = useState("");
   const [standardPrice, setStandardPrice] = useState("");
+  const [debtId, setDebtId] = useState<string>(NO_DEBT);
+
+  const standardDebts = debts.filter((d) => d.kind !== "bnpl");
+  const bnplLocked = !!editing?.debt_id && !standardDebts.some((d) => d.id === editing.debt_id);
+
 
   useEffect(() => {
     if (!open) return;
