@@ -89,6 +89,7 @@ export function OutgoingDialog({
     setStandardPrice(
       typeof editing?.standard_price === "number" ? String(editing.standard_price) : "",
     );
+    setDebtId(editing?.debt_id ?? NO_DEBT);
   }, [open, editing, categories, defaultSubscription]);
 
   async function submit() {
@@ -119,6 +120,7 @@ export function OutgoingDialog({
       promo_ends_on: usePromo ? promoEnds : null,
       standard_price: usePromo && std > 0 ? std : null,
       promo_alert_snoozed_until: null,
+      debt_id: bnplLocked ? (editing?.debt_id ?? null) : debtId === NO_DEBT ? null : debtId,
     });
   }
 
