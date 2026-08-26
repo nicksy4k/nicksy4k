@@ -157,6 +157,21 @@ function OutgoingsPage() {
     removeTransaction,
     addSaving,
     onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+    onDebtSettled: ({ commitment, debtName }: { commitment: Commitment; debtName: string }) => {
+      toast.success(`${debtName} is now fully repaid`, {
+        duration: 12000,
+        description: "Stop this outgoing so it doesn't come round again?",
+        action: {
+          label: "Stop it",
+          onClick: () => {
+            void (async () => {
+              await remove(commitment.id);
+              toast.success("Outgoing removed");
+            })();
+          },
+        },
+      });
+    },
   };
 
   async function markPaid(c: Commitment, newDue: string) {
@@ -164,6 +179,7 @@ function OutgoingsPage() {
     toast.success("Paid · logged & deducted from Bill Money");
     setDetailsId(null);
   }
+
 
   async function unmarkPaid(c: Commitment) {
     await unmarkOutgoingPaid(paidCtx, c);
