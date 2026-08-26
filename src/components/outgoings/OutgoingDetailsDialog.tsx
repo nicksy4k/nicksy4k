@@ -143,7 +143,7 @@ export function OutgoingDetailsDialog({
                   <Tag className="h-4 w-4" /> Log offer
                 </Button>
               )}
-              {!item.debt_id && (
+              {!(item.debt_id && (linkedDebt?.kind ?? "bnpl") === "bnpl") && (
                 <Button variant="outline" size="sm" onClick={() => onToggleType(item)}>
                   {isSub ? (
                     <>
