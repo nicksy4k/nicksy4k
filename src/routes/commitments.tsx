@@ -336,6 +336,7 @@ function OutgoingsPage() {
         onOpenChange={setFormOpen}
         editing={editing}
         categories={categories}
+        debts={debts}
         defaultSubscription={view === "subs"}
         onSave={async (data) => {
           if (editing) {
