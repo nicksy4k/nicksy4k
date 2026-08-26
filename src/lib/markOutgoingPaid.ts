@@ -18,6 +18,8 @@ export interface OutgoingPaidCtx {
   removeTransaction: (id: string) => Promise<void>;
   addSaving: (s: Omit<SavingsEntry, "id" | "created_at">) => Promise<void>;
   onDebtsChanged?: () => void;
+  /** Called when the linked (non-BNPL) debt hits zero after this payment. */
+  onDebtSettled?: (info: { commitment: Commitment; debtName: string }) => void;
 }
 
 function todayISO() {
@@ -68,8 +70,11 @@ export async function markOutgoingPaid(ctx: OutgoingPaidCtx, c: Commitment, newD
   }
   if (c.debt_id) {
     try {
-      await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
+      const res = await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
       ctx.onDebtsChanged?.();
+      if (res && res.kind !== "bnpl" && res.remaining <= 0.001) {
+        ctx.onDebtSettled?.({ commitment: c, debtName: res.name });
+      }
     } catch (err) {
       console.error("Debt sync failed", err);
     }

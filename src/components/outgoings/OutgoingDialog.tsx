@@ -20,15 +20,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { sortLabels } from "@/lib/utils";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Debt } from "@/lib/types";
+import { debtRemaining } from "@/lib/credit";
+import { fmt } from "@/lib/format";
 import { PROMO_WARNING_DAYS } from "@/lib/subscriptions";
 import { Field } from "./shared";
+
+const NO_DEBT = "__none__";
 
 export function OutgoingDialog({
   open,
   onOpenChange,
   editing,
   categories,
+  debts = [],
   defaultSubscription,
   onSave,
 }: {
@@ -36,6 +41,8 @@ export function OutgoingDialog({
   onOpenChange: (v: boolean) => void;
   editing: Commitment | null;
   categories: string[];
+  /** Standard (non-BNPL) debts this outgoing can be linked to. */
+  debts?: Debt[];
   defaultSubscription: boolean;
   onSave: (data: Omit<Commitment, "id" | "created_at">) => void | Promise<void>;
 }) {
@@ -53,6 +60,11 @@ export function OutgoingDialog({
   const [onOffer, setOnOffer] = useState(false);
   const [promoEnds, setPromoEnds] = useState("");
   const [standardPrice, setStandardPrice] = useState("");
+  const [debtId, setDebtId] = useState<string>(NO_DEBT);
+
+  const standardDebts = debts.filter((d) => d.kind !== "bnpl");
+  const bnplLocked = !!editing?.debt_id && !standardDebts.some((d) => d.id === editing.debt_id);
+
 
   useEffect(() => {
     if (!open) return;
@@ -77,6 +89,7 @@ export function OutgoingDialog({
     setStandardPrice(
       typeof editing?.standard_price === "number" ? String(editing.standard_price) : "",
     );
+    setDebtId(editing?.debt_id ?? NO_DEBT);
   }, [open, editing, categories, defaultSubscription]);
 
   async function submit() {
@@ -107,6 +120,7 @@ export function OutgoingDialog({
       promo_ends_on: usePromo ? promoEnds : null,
       standard_price: usePromo && std > 0 ? std : null,
       promo_alert_snoozed_until: null,
+      debt_id: bnplLocked ? (editing?.debt_id ?? null) : debtId === NO_DEBT ? null : debtId,
     });
   }
 
@@ -260,6 +274,33 @@ export function OutgoingDialog({
                 </>
               )}
             </div>
+          )}
+
+          {bnplLocked ? (
+            <p className="text-xs text-muted-foreground rounded-md border border-border p-3">
+              This outgoing is managed by a BNPL plan on Credit &amp; Debt, so its debt link can't
+              be changed here.
+            </p>
+          ) : (
+            <Field label="Counts towards a debt">
+              <Select value={debtId} onValueChange={setDebtId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DEBT}>None</SelectItem>
+                  {standardDebts.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name} · {fmt(debtRemaining(d))} left
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                When linked, marking this paid also logs a payment against the debt balance on
+                Credit &amp; Debt.
+              </p>
+            </Field>
           )}
 
           <Field label="Notes">

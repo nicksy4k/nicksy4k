@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { fmt } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Debt } from "@/lib/types";
+import { debtRemaining } from "@/lib/credit";
 import { useActiveCycle } from "@/lib/cycle";
 import { cadenceLabel } from "@/lib/subscriptions";
 import { Row } from "./shared";
@@ -21,6 +22,7 @@ import { ResetOptions } from "./ConfirmResetOptions";
 export function OutgoingDetailsDialog({
   item,
   cycle,
+  linkedDebt = null,
   onClose,
   onEdit,
   onDelete,
@@ -31,6 +33,8 @@ export function OutgoingDetailsDialog({
 }: {
   item: Commitment | null;
   cycle: ReturnType<typeof useActiveCycle>;
+  /** Debt this outgoing pays down, when linked. */
+  linkedDebt?: Debt | null;
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
@@ -98,6 +102,17 @@ export function OutgoingDetailsDialog({
                   }
                 />
               )}
+              {linkedDebt && (
+                <Row
+                  label="Pays down"
+                  value={
+                    <span>
+                      {linkedDebt.name} ·{" "}
+                      <span className="tabular-nums">{fmt(debtRemaining(linkedDebt))}</span> left
+                    </span>
+                  }
+                />
+              )}
               {item.notes && (
                 <Row
                   label="Notes"
@@ -128,7 +143,7 @@ export function OutgoingDetailsDialog({
                   <Tag className="h-4 w-4" /> Log offer
                 </Button>
               )}
-              {!item.debt_id && (
+              {!(item.debt_id && (linkedDebt?.kind ?? "bnpl") === "bnpl") && (
                 <Button variant="outline" size="sm" onClick={() => onToggleType(item)}>
                   {isSub ? (
                     <>

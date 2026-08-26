@@ -40,6 +40,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.0",
+    title: "Link any outgoing to a debt",
+    date: "2026-08-26",
+    icon: HandCoins,
+    highlights: [
+      "Outgoings can now be linked to any debt (not just BNPL plans) via a new 'Counts towards a debt' picker in the add/edit form.",
+      "Marking a linked outgoing paid logs the repayment against the debt balance automatically — one payment per cycle, and Undo removes just that cycle's payment.",
+      "The outgoing's details panel shows which debt it pays down and how much is left, and you're offered to stop the outgoing once the debt is fully repaid.",
+    ],
+  },
+  {
+
     version: "v3.1.13",
     title: "Demo session log",
     date: "2026-08-25",

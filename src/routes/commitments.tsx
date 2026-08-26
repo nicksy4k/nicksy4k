@@ -1,7 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
-import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
+import {
+  useCategories,
+  useCommitments,
+  useDebts,
+  useSavings,
+  useTransactions,
+} from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
@@ -62,8 +68,10 @@ function OutgoingsPage() {
   const { items: allItems, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
+  const { items: debts } = useDebts();
   const { list: categories } = useCategories();
   const qc = useQueryClient();
+
 
   const bills = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
   const subscriptions = useMemo(() => allItems.filter((c) => c.is_subscription), [allItems]);
@@ -149,6 +157,21 @@ function OutgoingsPage() {
     removeTransaction,
     addSaving,
     onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+    onDebtSettled: ({ commitment, debtName }: { commitment: Commitment; debtName: string }) => {
+      toast.success(`${debtName} is now fully repaid`, {
+        duration: 12000,
+        description: "Stop this outgoing so it doesn't come round again?",
+        action: {
+          label: "Stop it",
+          onClick: () => {
+            void (async () => {
+              await remove(commitment.id);
+              toast.success("Outgoing removed");
+            })();
+          },
+        },
+      });
+    },
   };
 
   async function markPaid(c: Commitment, newDue: string) {
@@ -156,6 +179,7 @@ function OutgoingsPage() {
     toast.success("Paid · logged & deducted from Bill Money");
     setDetailsId(null);
   }
+
 
   async function unmarkPaid(c: Commitment) {
     await unmarkOutgoingPaid(paidCtx, c);
@@ -312,6 +336,7 @@ function OutgoingsPage() {
         onOpenChange={setFormOpen}
         editing={editing}
         categories={categories}
+        debts={debts}
         defaultSubscription={view === "subs"}
         onSave={async (data) => {
           if (editing) {
@@ -338,6 +363,7 @@ function OutgoingsPage() {
       <OutgoingDetailsDialog
         item={detailsItem}
         cycle={cycle}
+        linkedDebt={debts.find((d) => d.id === detailsItem?.debt_id) ?? null}
         onClose={() => setDetailsId(null)}
         onEdit={(c) => {
           setDetailsId(null);
