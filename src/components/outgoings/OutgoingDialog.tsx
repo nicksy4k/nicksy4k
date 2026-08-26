@@ -276,6 +276,33 @@ export function OutgoingDialog({
             </div>
           )}
 
+          {bnplLocked ? (
+            <p className="text-xs text-muted-foreground rounded-md border border-border p-3">
+              This outgoing is managed by a BNPL plan on Credit &amp; Debt, so its debt link can't
+              be changed here.
+            </p>
+          ) : (
+            <Field label="Counts towards a debt">
+              <Select value={debtId} onValueChange={setDebtId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DEBT}>None</SelectItem>
+                  {standardDebts.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name} · {fmt(debtRemaining(d))} left
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                When linked, marking this paid also logs a payment against the debt balance on
+                Credit &amp; Debt.
+              </p>
+            </Field>
+          )}
+
           <Field label="Notes">
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
