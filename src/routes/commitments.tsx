@@ -363,6 +363,7 @@ function OutgoingsPage() {
       <OutgoingDetailsDialog
         item={detailsItem}
         cycle={cycle}
+        linkedDebt={debts.find((d) => d.id === detailsItem?.debt_id) ?? null}
         onClose={() => setDetailsId(null)}
         onEdit={(c) => {
           setDetailsId(null);
