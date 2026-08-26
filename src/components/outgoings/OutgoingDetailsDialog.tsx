@@ -102,6 +102,17 @@ export function OutgoingDetailsDialog({
                   }
                 />
               )}
+              {linkedDebt && (
+                <Row
+                  label="Pays down"
+                  value={
+                    <span>
+                      {linkedDebt.name} ·{" "}
+                      <span className="tabular-nums">{fmt(debtRemaining(linkedDebt))}</span> left
+                    </span>
+                  }
+                />
+              )}
               {item.notes && (
                 <Row
                   label="Notes"
