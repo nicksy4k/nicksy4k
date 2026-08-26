@@ -1,7 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
-import { useCategories, useCommitments, useSavings, useTransactions } from "@/lib/store";
+import {
+  useCategories,
+  useCommitments,
+  useDebts,
+  useSavings,
+  useTransactions,
+} from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
