@@ -62,8 +62,10 @@ function OutgoingsPage() {
   const { items: allItems, add, update, remove } = useCommitments();
   const { items: savings, add: addSaving } = useSavings();
   const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
+  const { items: debts } = useDebts();
   const { list: categories } = useCategories();
   const qc = useQueryClient();
+
 
   const bills = useMemo(() => allItems.filter((c) => !c.is_subscription), [allItems]);
   const subscriptions = useMemo(() => allItems.filter((c) => c.is_subscription), [allItems]);
