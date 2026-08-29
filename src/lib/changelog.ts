@@ -40,6 +40,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.1",
+    title: "Settle pending transactions from the dashboard",
+    date: "2026-08-26",
+    icon: FileText,
+    highlights: [
+      "Pending card transactions now appear in the dashboard's 'Needs your attention' card.",
+      "Settle a pending hold directly from the dashboard using the same itemized settlement flow as History.",
+      "Pending alerts can be snoozed and stay hidden after refresh using the existing alert preferences.",
+    ],
+  },
+  {
     version: "v3.2.0",
     title: "Link any outgoing to a debt",
     date: "2026-08-26",

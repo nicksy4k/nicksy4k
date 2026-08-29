@@ -5,10 +5,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
 import { useTutorialStatus, consumeTutorialPending } from "@/lib/tutorial";
 import { dashboardTourSteps } from "@/lib/dashboardTourSteps";
-import { useTransactions, useIncomes, useSavings, useCommitments } from "@/lib/store";
+import {
+  useTransactions,
+  useIncomes,
+  useSavings,
+  useCommitments,
+  useCategories,
+} from "@/lib/store";
 import { dueSoonOutgoings } from "@/lib/outgoings";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
+import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
@@ -79,8 +86,10 @@ function DashboardPage() {
   const { items: realIncomes } = useIncomes();
   const { items: realSavings, add: addSaving } = useSavings();
   const { items: commitments, update: updateCommitment } = useCommitments();
+  const { list: categories } = useCategories();
   const qc = useQueryClient();
   const [payTarget, setPayTarget] = useState<Commitment | null>(null);
+  const [settleTarget, setSettleTarget] = useState<Transaction | null>(null);
 
   // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
   // the render that created them, so they must read the freshest transaction
@@ -225,7 +234,7 @@ function DashboardPage() {
   // Only protections that actually need action soon (or just expired) surface
   // in the unified "Needs your attention" card.
   const alerts = useMemo(() => urgentProtections(items), [items]);
-
+  const pendingTransactions = useMemo(() => items.filter((t) => t.is_pending), [items]);
 
   const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
 
@@ -359,6 +368,8 @@ function DashboardPage() {
         pocketBalance={dueSoon.pocketBalance}
         dueSoonTotal={dueSoon.totalDue}
         onMarkPaid={demo.active ? undefined : setPayTarget}
+        pending={pendingTransactions}
+        onSettle={demo.active ? undefined : setSettleTarget}
       />
 
       <ConfirmResetDialog
@@ -405,6 +416,12 @@ function DashboardPage() {
             },
           });
         }}
+      />
+
+      <EditTransactionDialog
+        transaction={settleTarget}
+        categories={categories}
+        onClose={() => setSettleTarget(null)}
       />
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
