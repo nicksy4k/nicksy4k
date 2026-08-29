@@ -22,6 +22,7 @@ export const alertKeys = {
     `due:${commitmentId}:${dueDate ?? "none"}`,
   promo: (commitmentId: string, promoEndsOn: string | null | undefined) =>
     `promo:${commitmentId}:${promoEndsOn ?? "none"}`,
+  pending: (txnId: string) => `pending:${txnId}`,
   deliveries: () => "deliveries",
 };
 
