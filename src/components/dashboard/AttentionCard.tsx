@@ -51,6 +51,8 @@ interface Props {
   pocketBalance?: number;
   dueSoonTotal?: number;
   onMarkPaid?: (c: Commitment) => void;
+  pending?: Transaction[];
+  onSettle?: (t: Transaction) => void;
 }
 
 export function AttentionCard({
@@ -64,6 +66,8 @@ export function AttentionCard({
   pocketBalance = 0,
   dueSoonTotal = 0,
   onMarkPaid,
+  pending: allPending = [],
+  onSettle,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
   // persisted state stored in the database.
