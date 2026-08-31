@@ -21,9 +21,9 @@ export interface TourStep {
 
 export const dashboardTourSteps: TourStep[] = [
   {
-    selector: "[data-tour='safe-to-spend']",
+    selector: "[data-tour='left-to-spend']",
     title: "Your headline number",
-    body: "This is what's safe to spend today after your main balance and any unpaid outgoings in this cycle. Try logging a demo £12 spend and watch it drop live.",
+    body: "This is what's left in your current cycle after income, savings, and every expense. Try logging a demo £12 spend and watch it drop live.",
     placement: "bottom",
     action: { label: "Log a demo £12 coffee", doneLabel: "Logged — hit Next", kind: "add-spend" },
   },

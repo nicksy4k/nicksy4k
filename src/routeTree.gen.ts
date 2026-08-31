@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BetaDisclaimerRouteImport } from './routes/beta-disclaimer'
-import { Route as BudgetsRouteImport } from './routes/budgets'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CommitmentsRouteImport } from './routes/commitments'
 import { Route as CookiesRouteImport } from './routes/cookies'
@@ -60,11 +59,6 @@ const AuthRoute = AuthRouteImport.update({
 const BetaDisclaimerRoute = BetaDisclaimerRouteImport.update({
   id: '/beta-disclaimer',
   path: '/beta-disclaimer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BudgetsRoute = BudgetsRouteImport.update({
-  id: '/budgets',
-  path: '/budgets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangelogRoute = ChangelogRouteImport.update({
@@ -214,7 +208,6 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/beta-disclaimer': typeof BetaDisclaimerRoute
-  '/budgets': typeof BudgetsRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/cookies': typeof CookiesRoute
@@ -248,7 +241,6 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/beta-disclaimer': typeof BetaDisclaimerRoute
-  '/budgets': typeof BudgetsRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/cookies': typeof CookiesRoute
@@ -283,7 +275,6 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/beta-disclaimer': typeof BetaDisclaimerRoute
-  '/budgets': typeof BudgetsRoute
   '/changelog': typeof ChangelogRoute
   '/commitments': typeof CommitmentsRoute
   '/cookies': typeof CookiesRoute
@@ -319,7 +310,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/auth'
     | '/beta-disclaimer'
-    | '/budgets'
     | '/changelog'
     | '/commitments'
     | '/cookies'
@@ -353,7 +343,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/auth'
     | '/beta-disclaimer'
-    | '/budgets'
     | '/changelog'
     | '/commitments'
     | '/cookies'
@@ -387,7 +376,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/auth'
     | '/beta-disclaimer'
-    | '/budgets'
     | '/changelog'
     | '/commitments'
     | '/cookies'
@@ -422,7 +410,6 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   AuthRoute: typeof AuthRoute
   BetaDisclaimerRoute: typeof BetaDisclaimerRoute
-  BudgetsRoute: typeof BudgetsRoute
   ChangelogRoute: typeof ChangelogRoute
   CommitmentsRoute: typeof CommitmentsRoute
   CookiesRoute: typeof CookiesRoute
@@ -480,13 +467,6 @@ declare module '@tanstack/react-router' {
       path: '/beta-disclaimer'
       fullPath: '/beta-disclaimer'
       preLoaderRoute: typeof BetaDisclaimerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/budgets': {
-      id: '/budgets'
-      path: '/budgets'
-      fullPath: '/budgets'
-      preLoaderRoute: typeof BudgetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changelog': {
@@ -686,7 +666,6 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   AuthRoute: AuthRoute,
   BetaDisclaimerRoute: BetaDisclaimerRoute,
-  BudgetsRoute: BudgetsRoute,
   ChangelogRoute: ChangelogRoute,
   CommitmentsRoute: CommitmentsRoute,
   CookiesRoute: CookiesRoute,
