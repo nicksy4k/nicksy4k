@@ -195,7 +195,7 @@ function BudgetRow({ status }: { status: BudgetStatus }) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Badge variant={status.tone === "ok" ? "default" : status.tone === "warning" ? "secondary" : "destructive"}>
-            {status.remaining >= 0 ? `${prefs?.currency || "£"}${fmt(status.remaining)} left` : `${prefs?.currency || "£"}${fmt(Math.abs(status.remaining))} over`}
+            {status.remaining >= 0 ? `${fmt(status.remaining)} left` : `${fmt(Math.abs(status.remaining))} over`}
           </Badge>
           {status.tone === "warning" && <span className="text-xs text-amber-500">Getting close</span>}
           {status.tone === "danger" && <span className="text-xs text-destructive">Over budget</span>}
