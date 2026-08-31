@@ -157,9 +157,7 @@ function BudgetRow({ status }: { status: BudgetStatus }) {
           <div>
             <h3 className="font-medium text-base">{status.budget.category}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {prefs?.currency || "£"}
-              {fmt(status.spent)} of {prefs?.currency || "£"}
-              {fmt(status.budget.amount)}
+              {fmt(status.spent)} of {fmt(status.budget.amount)}
             </p>
           </div>
           <div className="flex items-center gap-1">
