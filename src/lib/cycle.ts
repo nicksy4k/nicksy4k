@@ -272,8 +272,7 @@ export function advanceByCadence(
 
 /**
  * Advance a commitment's due date by ITS OWN cadence when it has one
- * (a monthly bill stays monthly even when the global cycle is four-weekly),
- * otherwise fall back to the global cycle length.
+ * (subscriptions can renew annually), otherwise by the global cycle.
  */
 export function advanceForCommitment(
   dueISO: string,
@@ -281,14 +280,6 @@ export function advanceForCommitment(
   cycle: ActiveCycle | CycleType,
 ): string {
   if (cadence === "annual") return fmt(addMonths(parseISO(dueISO), 12));
-  if (
-    cadence === "weekly" ||
-    cadence === "fortnightly" ||
-    cadence === "four-weekly" ||
-    cadence === "monthly"
-  ) {
-    return advanceByCadence(dueISO, cadence);
-  }
   return advanceDueDate(dueISO, cycle);
 }
 
