@@ -1,12 +1,25 @@
-# What the 3.3 ideas would actually look like
+# Ledgerly 3.3 — Phase 2 roadmap
 
-Five candidates from the audit, sketched. Nothing here is built yet — pick one (or an order) and I'll plan it properly.
+Phase 1 audit polish (v3.2.2) is shipped: loading skeletons, icon-button labels, shared split maths, retired-route SEO cleanup, and 95 passing tests.
 
-## 1. Budgets per category, per cycle
+This plan covers the next release, 3.3. It keeps the four ideas from the audit that add the most value, in the order we should build them. The AI receipt scanner stays admin-only for now.
 
-A new Budgets page plus a dashboard strip. You set a target per category (Groceries 250, Joy 80) tied to your cycle type, so it resets automatically each cycle.
+## What we are building
 
-- Each category row: spent / target / remaining, a progress bar, and a pace marker showing how far through the cycle you are — so "60% spent on day 5" reads as a warning, not a number.
-- Amber past 80%, red past 100%. Joy categories keep their blur treatment.
-- Unbudgeted categories listed below with one-tap "set a budget".
-- Dashboard gets a compact three-bar summary of your worst-off budgets.
+1. **Forecast / Safe-to-spend** — one headline number on the dashboard that tells the user what they can actually spend today after upcoming outgoings and pocket allocations.
+2. **Budgets per category** — set a target for any spending category, see progress against it for the current cycle, and get warned before it runs out.
+3. **Insights / trends** — answer "what changed?" with cycle-over-cycle comparisons and subscription creep alerts.
+4. **Global search** — a Cmd+K command palette to jump to any transaction, outgoing, debt, or setting.
+
+## Out of scope for 3.3
+
+- Opening the AI receipt scanner to all users. It remains admin-only and demo-gated via the existing feature flag.
+- Offline capture, bank CSV import, and PWA service-worker caching. These are larger releases on their own.
+
+## Success criteria
+
+- Dashboard loads with a single, scannable "safe to spend" figure.
+- Budgets page lets users add, edit, and delete per-category targets tied to their cycle type.
+- Insights surface at least one actionable comparison (e.g., "Entertainment is up 25% vs last cycle").
+- Search opens from any page and navigates to the selected record in one click.
+- Every new feature has tests and a changelog entry.
