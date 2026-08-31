@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { addDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
+import { computeSafeToSpend, safeToSpendCaption } from "@/lib/forecast";
 import { countAwaitingDelivery } from "@/lib/delivery";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
@@ -207,10 +208,22 @@ function DashboardPage() {
     [byCategory, prefs.joyCategories],
   );
 
+  const forecast = useMemo(
+    () =>
+      computeSafeToSpend({
+        cycle,
+        incomes: cycleIncomes,
+        transactions: cycleItems,
+        savings: cycleSavings,
+        commitments: demo.active ? [] : commitments,
+      }),
+    [cycle, cycleIncomes, cycleItems, cycleSavings, commitments, demo.active],
+  );
+
   const encouragement = useMemo(
     () =>
       encouragementFor({
-        leftToSpend: stats.leftToSpend,
+        leftToSpend: forecast.safeToSpend,
         totalIncome: stats.totalIncome,
         totalExpenses: stats.totalExpenses,
         savingsBalance: stats.savingsBalance,
@@ -219,7 +232,7 @@ function DashboardPage() {
         transactionCount: stats.count,
         cycleEnd: cycle.end,
       }),
-    [stats, cycle.end],
+    [stats, forecast.safeToSpend, cycle.end],
   );
 
   const byRetailer = useMemo(() => {
@@ -271,23 +284,25 @@ function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
         <Card
-          data-tour="left-to-spend"
+          data-tour="safe-to-spend"
           className="lg:col-span-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5"
         >
           <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="min-w-0">
-
               <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
-                Left to spend
+                Safe to spend
               </p>
               <p
-                className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}
+                className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${forecast.safeToSpend >= 0 ? "text-foreground" : "text-destructive"}`}
               >
-                {fmt(stats.leftToSpend)}
+                {fmt(forecast.safeToSpend)}
               </p>
               <p className={`text-sm text-muted-foreground mt-2 ${blur}`}>
-                {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income ·{" "}
-                {fmt(stats.savingsBalance)} saved
+                {safeToSpendCaption(forecast)}
+              </p>
+              <p className={`text-xs text-muted-foreground/80 mt-1.5 ${blur}`}>
+                {fmt(forecast.mainBalance)} main balance − {fmt(forecast.unpaidOutgoings)} unpaid
+                outgoings
               </p>
               {joySpend > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">

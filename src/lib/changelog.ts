@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CalendarClock,
   FileText,
+  Target,
 
 } from "lucide-react";
 
@@ -39,6 +40,17 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.3.0",
+    title: "Forecast & category budgets",
+    date: "2026-08-31",
+    icon: Target,
+    highlights: [
+      "New 'Safe to spend' dashboard headline shows what's left after upcoming unpaid outgoings.",
+      "New Budgets page lets you set category spending targets and track pace with colour-coded progress bars.",
+      "Unbudgeted spending this cycle is surfaced so you can quickly add missing targets.",
+    ],
+  },
   {
     version: "v3.2.2",
     title: "Polish pass: loading states, accessibility and split maths",

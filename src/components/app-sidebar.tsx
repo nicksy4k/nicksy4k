@@ -12,6 +12,7 @@ import {
   CreditCard,
   Archive,
   BarChart3,
+  Target,
   LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ type NavItem = {
     | "/credit"
     | "/archive"
     | "/reports"
+    | "/budgets"
     | "/settings";
   label: string;
   icon: LucideIcon;
@@ -84,6 +86,7 @@ const groups: NavGroup[] = [
   {
     label: "Plan & review",
     items: [
+      { to: "/budgets", label: "Budgets", icon: Target },
       { to: "/reports", label: "Reports", icon: BarChart3 },
       { to: "/archive", label: "Past Cycles", icon: Archive },
     ],
