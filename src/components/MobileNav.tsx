@@ -12,6 +12,7 @@ import {
   Plus,
   Receipt,
   Settings,
+  Target,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -33,6 +34,7 @@ type Path =
   | "/credit"
   | "/archive"
   | "/reports"
+  | "/budgets"
   | "/settings";
 
 const moreLinks: Array<{ to: Path; label: string; icon: LucideIcon }> = [
@@ -40,6 +42,7 @@ const moreLinks: Array<{ to: Path; label: string; icon: LucideIcon }> = [
   { to: "/income", label: "Income", icon: TrendingUp },
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
   { to: "/credit", label: "Credit & Debt", icon: CreditCard },
+  { to: "/budgets", label: "Budgets", icon: Target },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/archive", label: "Past Cycles", icon: Archive },
   { to: "/settings", label: "Settings", icon: Settings },
