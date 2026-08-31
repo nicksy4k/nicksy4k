@@ -232,7 +232,6 @@ function BudgetRow({ status }: { status: BudgetStatus }) {
 function BudgetsPage() {
   const { statuses, unbudgeted, isLoading, totalBudgeted, totalSpent, totalRemaining } = useBudgetStatuses();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { prefs } = usePreferences();
   const cycle = useActiveCycle();
 
   return (
