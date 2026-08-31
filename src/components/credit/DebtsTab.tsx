@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -176,7 +177,7 @@ function DebtItemsSection({ debtId }: { debtId: string }) {
 }
 
 export function DebtsTab() {
-  const { items, update, remove } = useDebts();
+  const { items, isLoading, update, remove } = useDebts();
   const { items: commitments, add: addCommitment, remove: removeCommitment } = useCommitments();
   const { addMany: addDebtItems } = useDebtItems();
   const qc = useQueryClient();
@@ -223,7 +224,13 @@ export function DebtsTab() {
             Open-ended balances (rent arrears, IOUs, etc.)
           </span>
         </div>
-        {standard.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-6">
+              <ListSkeleton rows={2} />
+            </CardContent>
+          </Card>
+        ) : standard.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
               No standard debts. Add one to track its running balance.
@@ -315,7 +322,13 @@ export function DebtsTab() {
           <h2 className="text-lg font-semibold">BNPL plans</h2>
           <span className="text-xs text-muted-foreground">Clearpay, PayPal Pay in 4, Klarna…</span>
         </div>
-        {bnpl.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-6">
+              <ListSkeleton rows={2} />
+            </CardContent>
+          </Card>
+        ) : bnpl.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
               No installment plans. Add one to track each scheduled payment.

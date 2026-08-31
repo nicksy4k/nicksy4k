@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTutorial } from "@/components/tutorial/TutorialProvider";
@@ -79,6 +80,7 @@ import { rollUpJoy, sliceColor } from "@/lib/joy";
 function DashboardPage() {
   const {
     items: realItems,
+    isLoading: transactionsLoading,
     dismiss,
     add: addTransaction,
     remove: removeTransaction,
@@ -548,7 +550,9 @@ function DashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            {recent.length === 0 ? (
+            {transactionsLoading && !demo.active ? (
+              <ListSkeleton rows={4} />
+            ) : recent.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">No transactions yet.</p>
             ) : (
               <ul className="space-y-3">

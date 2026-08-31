@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -99,7 +100,7 @@ import { loanStatementText, printLoanStatement } from "@/lib/loanStatement";
 
 
 export function OwedToMeTab() {
-  const { items, add, update, remove } = useLoans();
+  const { items, isLoading, add, update, remove } = useLoans();
   const ledger = useLedgerSync();
 
   const [open, setOpen] = useState(false);
@@ -135,7 +136,13 @@ export function OwedToMeTab() {
         </Button>
       </div>
 
-      {items.length === 0 ? (
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <ListSkeleton rows={3} />
+          </CardContent>
+        </Card>
+      ) : items.length === 0 ? (
         <Card>
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
             No loans tracked yet. Log money you've lent out to keep tabs on repayments.
