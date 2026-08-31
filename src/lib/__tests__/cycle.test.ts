@@ -122,9 +122,10 @@ describe("due-date advancement", () => {
     expect(advanceByCadence("2026-08-05", "monthly")).toBe("2026-09-05");
   });
 
-  it("advances annual subscriptions by a whole year", () => {
+  it("advances annual subscriptions by a whole year and uses explicit cadence when supplied", () => {
     expect(advanceForCommitment("2026-08-05", "annual", "monthly")).toBe("2027-08-05");
-    expect(advanceForCommitment("2026-08-05", "monthly", "four-weekly")).toBe("2026-09-02");
+    expect(advanceForCommitment("2026-08-05", "monthly", "four-weekly")).toBe("2026-09-05");
+    expect(advanceForCommitment("2026-08-05", undefined, "four-weekly")).toBe("2026-09-02");
   });
 
   it("rolls a stale due date forward past the target date", () => {
