@@ -262,10 +262,7 @@ function BudgetsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">
-              {prefs?.currency || "£"}
-              {fmt(totalBudgeted)}
-            </div>
+            <div className="text-2xl font-semibold">{fmt(totalBudgeted)}</div>
           </CardContent>
         </Card>
         <Card>
