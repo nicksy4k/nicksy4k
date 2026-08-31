@@ -285,7 +285,6 @@ function BudgetsPage() {
           </CardHeader>
           <CardContent>
             <div className={cn("text-2xl font-semibold", totalRemaining < 0 && "text-destructive")}>
-              {prefs?.currency || "£"}
               {fmt(totalRemaining)}
             </div>
           </CardContent>
