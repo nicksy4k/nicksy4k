@@ -321,10 +321,7 @@ function BudgetsPage() {
                 <div key={u.category} className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm font-medium">{u.category}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">
-                      {prefs?.currency || "£"}
-                      {fmt(u.spent)}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{fmt(u.spent)}</span>
                     <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setDialogOpen(true)}>
                       Set budget
                       <ArrowRight className="h-3 w-3" />
