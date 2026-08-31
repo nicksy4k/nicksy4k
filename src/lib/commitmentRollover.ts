@@ -2,7 +2,12 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Commitment } from "@/lib/types";
-import { useActiveCycle, rollDueDateForward, type ActiveCycle } from "@/lib/cycle";
+import {
+  getActiveCycle,
+  rollDueDateForward,
+  useCycleSettings,
+  type ActiveCycle,
+} from "@/lib/cycle";
 
 const STORAGE_KEY = "ledgerly.commitments.lastCycleStart";
 
@@ -20,12 +25,17 @@ const STORAGE_KEY = "ledgerly.commitments.lastCycleStart";
  * have been removed in favour of this single source of truth.
  */
 export function useCommitmentRollover() {
-  const cycle = useActiveCycle();
+  const { settings, isReady } = useCycleSettings();
+  const cycle = getActiveCycle(settings);
   const qc = useQueryClient();
   const running = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // The cache is only a display fallback. Rollover writes must wait for the
+    // signed-in account's authoritative cycle settings to prevent stale dates
+    // from advancing commitments or resetting paid states.
+    if (!isReady) return;
     const last = localStorage.getItem(STORAGE_KEY);
 
     // Skip only when we already processed this exact cycle on this device.
@@ -48,7 +58,7 @@ export function useCommitmentRollover() {
       .finally(() => {
         running.current = false;
       });
-  }, [cycle, cycle.startISO, cycle.type, qc]);
+  }, [cycle, cycle.startISO, cycle.type, isReady, qc]);
 }
 
 async function rolloverAllCommitments(cycle: ActiveCycle) {
