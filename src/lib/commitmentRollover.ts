@@ -11,12 +11,16 @@ import {
 
 const STORAGE_KEY = "ledgerly.commitments.lastCycleStart";
 
+function storageKeyFor(userId: string) {
+  return `${STORAGE_KEY}.${userId}`;
+}
+
 /**
  * MASTER cycle-rollover engine for commitments. Mount ONCE at the app root.
  *
  * Whenever the global active cycle advances (its startISO changes), this
  * walks EVERY commitment row in the database (not just the page-loaded set):
- *   1. Rolls `next_due_date` forward in cycle-sized steps until it lands
+ *   1. Rolls `next_due_date` forward in cadence-sized steps until it lands
  *      inside or after the new cycle window.
  *   2. Resets `paid` → false and clears `last_paid_date` so the indicator
  *      reverts to the red "unpaid" dot for the fresh cycle.
@@ -36,22 +40,26 @@ export function useCommitmentRollover() {
     // signed-in account's authoritative cycle settings to prevent stale dates
     // from advancing commitments or resetting paid states.
     if (!isReady) return;
-    const last = localStorage.getItem(STORAGE_KEY);
-
-    // Skip only when we already processed this exact cycle on this device.
-    // If `last` is missing (new device, cleared browser, new user), we still
-    // run — rollover is idempotent (rolls forward past due dates and resets
-    // paid on rows actually due in the new cycle), so running once more is
-    // safe; skipping would leave stale-paid indicators indefinitely.
-    if (last === cycle.startISO) return;
+    // Sanity gate: only ever write against a window that actually contains
+    // today. A window that has drifted (stale anchor, clock skew) would roll
+    // bills that are still due in the real current cycle.
+    const todayISO = todayLocalISO();
+    if (todayISO < cycle.startISO || todayISO > cycle.endISO) return;
     if (running.current) return;
 
     running.current = true;
-    void rolloverAllCommitments(cycle)
-      .then(() => {
-        localStorage.setItem(STORAGE_KEY, cycle.startISO);
-        qc.invalidateQueries({ queryKey: ["commitments"] });
-      })
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      // Keys are scoped per account so switching users (or demo mode) can
+      // never make one account inherit another's "already processed" marker.
+      const key = storageKeyFor(u.user.id);
+      if (localStorage.getItem(key) === cycle.startISO) return;
+
+      await rolloverAllCommitments(cycle, u.user.id);
+      localStorage.setItem(key, cycle.startISO);
+      qc.invalidateQueries({ queryKey: ["commitments"] });
+    })()
       .catch((err) => {
         console.error("Commitment rollover failed", err);
       })
@@ -61,17 +69,14 @@ export function useCommitmentRollover() {
   }, [cycle, cycle.startISO, cycle.type, isReady, qc]);
 }
 
-async function rolloverAllCommitments(cycle: ActiveCycle) {
-  const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return;
-
+async function rolloverAllCommitments(cycle: ActiveCycle, userId: string) {
   // Pull EVERY commitment for the user — no status / due-date filter so we
   // don't accidentally update only a subset of items.
-  const { data, error } = await supabase.from("commitments").select("*").eq("user_id", u.user.id);
+  const { data, error } = await supabase.from("commitments").select("*").eq("user_id", userId);
   if (error) throw error;
 
   const rows = (data ?? []) as unknown as Commitment[];
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayISO = todayLocalISO();
 
   await Promise.all(
     rows.map(async (c) => {
