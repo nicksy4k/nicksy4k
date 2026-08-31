@@ -17,11 +17,12 @@ const STORAGE_KEY = "ledgerly.recurringIncome.lastRunISO";
  * device.
  */
 export function useRecurringIncomeGenerator() {
+  const { isReady } = useCycleSettings();
   const qc = useQueryClient();
   const running = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !isReady) return;
     if (running.current) return;
     running.current = true;
 
@@ -49,7 +50,7 @@ export function useRecurringIncomeGenerator() {
       .finally(() => {
         running.current = false;
       });
-  }, [qc]);
+  }, [isReady, qc]);
 }
 
 export interface GenerateResult {
