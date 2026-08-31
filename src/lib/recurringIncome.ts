@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { RecurringIncome, RecurringIncomeAllocation } from "@/lib/types";
-import { advanceByCadence } from "@/lib/cycle";
+import { advanceByCadence, useCycleSettings } from "@/lib/cycle";
 import { todayLocalISO } from "@/lib/format";
 
 const STORAGE_KEY = "ledgerly.recurringIncome.lastRunISO";
