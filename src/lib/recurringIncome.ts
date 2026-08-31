@@ -22,22 +22,27 @@ export function useRecurringIncomeGenerator() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const today = todayLocalISO();
-    const last = localStorage.getItem(STORAGE_KEY);
-    if (last === today) return;
     if (running.current) return;
     running.current = true;
 
-    void generateDueRecurringIncomes(today)
-      .then(({ created, warnings }) => {
-        localStorage.setItem(STORAGE_KEY, today);
-        if (created > 0) {
-          qc.invalidateQueries({ queryKey: ["incomes"] });
-          qc.invalidateQueries({ queryKey: ["savings"] });
-          qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
-        }
-        warnings.forEach((w) => toast.warning(w));
-      })
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const today = todayLocalISO();
+      // Per-account key: switching users (or demo mode) must not suppress or
+      // trigger generation for a different account on the same device.
+      const key = `${STORAGE_KEY}.${u.user.id}`;
+      if (localStorage.getItem(key) === today) return;
+
+      const { created, warnings } = await generateDueRecurringIncomes(today);
+      localStorage.setItem(key, today);
+      if (created > 0) {
+        qc.invalidateQueries({ queryKey: ["incomes"] });
+        qc.invalidateQueries({ queryKey: ["savings"] });
+        qc.invalidateQueries({ queryKey: ["recurring_incomes"] });
+      }
+      warnings.forEach((w) => toast.warning(w));
+    })()
       .catch((err) => {
         console.error("Recurring income generation failed", err);
       })
