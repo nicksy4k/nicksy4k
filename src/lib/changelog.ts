@@ -40,6 +40,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.4",
+    title: "Cycle automation safety audit",
+    date: "2026-08-31",
+    icon: ShieldCheck,
+    highlights: [
+      "Recurring income generation now waits for your saved account settings before creating income or pocket entries.",
+      "Automatic cycle markers are isolated per account, preventing one signed-in account from suppressing or triggering another account's financial automation.",
+      "Restored paid status for commitments with confirmed payments in the current cycle, including linked Rent Arrears repayments.",
+    ],
+  },
+  {
     version: "v3.2.3",
     title: "Cycle dates restored and protected",
     date: "2026-08-31",
