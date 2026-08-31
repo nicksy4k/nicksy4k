@@ -5,7 +5,6 @@ import { Plus, Pencil, Trash2, Target, ArrowRight, TrendingUp, Wallet } from "lu
 import { RouteError } from "@/components/RouteError";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,6 @@ import { useCategories } from "@/lib/store";
 import { useBudgets, useBudgetStatuses, type Budget, type BudgetStatus } from "@/lib/budgets";
 import { useActiveCycle, type CycleType } from "@/lib/cycle";
 import { fmt } from "@/lib/format";
-import { usePreferences } from "@/lib/preferences";
 import { cn } from "@/lib/utils";
 import { ListSkeleton } from "@/components/ListSkeleton";
 
