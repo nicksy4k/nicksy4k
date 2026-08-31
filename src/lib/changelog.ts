@@ -40,6 +40,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.3",
+    title: "Cycle dates restored and protected",
+    date: "2026-08-31",
+    icon: CalendarClock,
+    highlights: [
+      "Cycle carryover and commitment rollover now wait for your saved account settings before changing financial records, preventing stale browser dates from affecting a newly signed-in account.",
+      "Restored the affected four-weekly cycle and removed the duplicate carryover created by the incorrect temporary window.",
+    ],
+  },
+  {
     version: "v3.2.2",
     title: "Polish pass: loading states, accessibility and split maths",
     date: "2026-08-31",

@@ -309,6 +309,7 @@ export function rollDueDateForward(
  */
 export function useCycleSettings() {
   const [settings, setSettings] = useState<CycleSettings>(() => readCache());
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -319,12 +320,14 @@ export function useCycleSettings() {
       if (remote.status === "ok") {
         writeCache(remote.settings);
         setSettings(remote.settings);
+        setIsReady(true);
         broadcast();
       } else if (remote.status === "missing") {
         // Genuinely no row yet — seed the remote with whatever we currently
         // have so future devices pick it up too.
         const cached = readCache();
         await upsertRemote(cached);
+        if (!cancelled) setIsReady(true);
       }
     }
 
@@ -336,6 +339,7 @@ export function useCycleSettings() {
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setIsReady(false);
         refresh();
       }
     });
@@ -356,7 +360,7 @@ export function useCycleSettings() {
     void upsertRemote(next);
   };
 
-  return { settings, update };
+  return { settings, update, isReady };
 }
 
 export function useActiveCycle(): ActiveCycle {

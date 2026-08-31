@@ -149,11 +149,15 @@ async function runCarryover(
  * leftover (positive or negative) into the current cycle as an income row.
  */
 export function useCycleCarryover() {
-  const { settings, update } = useCycleSettings();
+  const { settings, update, isReady } = useCycleSettings();
   const qc = useQueryClient();
   const running = useRef(false);
 
   useEffect(() => {
+    // Never mutate financial data from the local first-paint cache. Wait for
+    // this account's authoritative settings so a stale anchor cannot create a
+    // carryover for the wrong window after sign-in or an account switch.
+    if (!isReady) return;
     if (!settings.carryoverEnabled) return;
     const prev = previousCycleWindow(settings);
     if (settings.lastCarryoverCycleKey === prev.startISO) return;
@@ -174,7 +178,7 @@ export function useCycleCarryover() {
         running.current = false;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.carryoverEnabled, settings.lastCarryoverCycleKey, settings.anchor, settings.type]);
+  }, [isReady, settings.carryoverEnabled, settings.lastCarryoverCycleKey, settings.anchor, settings.type]);
 }
 
 export const CARRYOVER_SOURCE_LABEL = CARRYOVER_SOURCE;
