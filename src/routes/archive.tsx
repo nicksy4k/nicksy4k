@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -115,10 +116,11 @@ function labelFor(c: ActiveCycle): string {
 }
 
 function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
-  const { items: txns } = useTransactions();
-  const { items: incomes } = useIncomes();
-  const { items: savings } = useSavings();
-  const { items: commitments } = useCommitments();
+  const { items: txns, isLoading: txnsLoading } = useTransactions();
+  const { items: incomes, isLoading: incomesLoading } = useIncomes();
+  const { items: savings, isLoading: savingsLoading } = useSavings();
+  const { items: commitments, isLoading: commitmentsLoading } = useCommitments();
+  const isLoading = txnsLoading || incomesLoading || savingsLoading || commitmentsLoading;
 
   const cycleTxns = useMemo(() => txns.filter((t) => isInCycle(t.date, cycle)), [txns, cycle]);
   const cycleIncomes = useMemo(
@@ -286,7 +288,9 @@ function CycleSnapshot({ cycle }: { cycle: ActiveCycle }) {
             </Link>
           </CardHeader>
           <CardContent>
-            {cycleTxns.length === 0 ? (
+            {isLoading ? (
+              <ListSkeleton rows={3} />
+            ) : cycleTxns.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">No transactions.</p>
             ) : (
               <ul className="divide-y divide-border">
@@ -360,7 +364,7 @@ function ReceiptButton({ path }: { path: string }) {
     window.open(data.signedUrl, "_blank", "noopener");
   }
   return (
-    <Button variant="ghost" size="icon" className="h-7 w-7" title="Open receipt" onClick={open}>
+    <Button variant="ghost" size="icon" className="h-7 w-7" title="Open receipt" aria-label="Open receipt" onClick={open}>
       <FileText className="h-3.5 w-3.5" />
     </Button>
   );

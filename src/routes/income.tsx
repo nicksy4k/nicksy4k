@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { useMemo, useState } from "react";
 import { useIncomes, useIncomeCategories, useSavings, useRecurringIncomes } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { isOverAllocated, remainderOf, sumAmounts } from "@/lib/money";
 import { sortLabels } from "@/lib/utils";
 import { useActiveCycle, isInCycle, advanceByCadence } from "@/lib/cycle";
 import { generateDueRecurringIncomes, applyAllocationsOnce } from "@/lib/recurringIncome";
@@ -72,7 +74,7 @@ export const Route = createFileRoute("/income")({
 });
 
 function IncomePage() {
-  const { items, add, remove } = useIncomes();
+  const { items, isLoading, add, remove } = useIncomes();
   const { items: savingsItems, add: addSaving } = useSavings();
   const { list: categories } = useIncomeCategories();
   const {
@@ -269,9 +271,9 @@ function IncomePage() {
   }, [items, savingsItems]);
 
   const totalAmt = parseFloat(amount) || 0;
-  const splitSum = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
-  const remainder = +(totalAmt - splitSum).toFixed(2);
-  const overAllocated = splitSum > totalAmt + 0.0001;
+  const splitSum = sumAmounts(splits.map((x) => x.amount));
+  const remainder = remainderOf(totalAmt, splitSum);
+  const overAllocated = isOverAllocated(totalAmt, splitSum);
 
   function addSplitRow() {
     setSplits((s) => {
@@ -319,8 +321,8 @@ function IncomePage() {
       return;
     }
     const validSplits = splits.filter((s) => s.pocket && (parseFloat(s.amount) || 0) > 0);
-    const sum = validSplits.reduce((s, x) => s + parseFloat(x.amount), 0);
-    if (sum > amt + 0.0001) {
+    const sum = sumAmounts(validSplits.map((x) => x.amount));
+    if (isOverAllocated(amt, sum)) {
       toast.error("Split total exceeds the income amount.");
       return;
     }
@@ -848,7 +850,9 @@ function IncomePage() {
           <CardTitle>Income history</CardTitle>
         </CardHeader>
         <CardContent>
-          {items.length === 0 ? (
+          {isLoading ? (
+            <ListSkeleton />
+          ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No income recorded yet.
             </p>
@@ -1047,7 +1051,7 @@ function RecurringAllocationsEditor({
                     value={isCover ? "" : a.amount ? String(a.amount) : ""}
                     onChange={(e) => update(a.id, { amount: parseFloat(e.target.value) || 0 })}
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(a.id)}>
+                  <Button type="button" variant="ghost" size="icon" aria-label="Remove allocation" onClick={() => remove(a.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

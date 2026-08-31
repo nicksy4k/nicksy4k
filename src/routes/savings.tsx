@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
 import { useMemo, useState } from "react";
 import { useSavings } from "@/lib/store";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import type { SavingsKind } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
 import { colorForKey } from "@/lib/colors";
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/savings")({
 });
 
 function SavingsPage() {
-  const { items, add, remove } = useSavings();
+  const { items, isLoading, add, remove } = useSavings();
 
   const [date, setDate] = useState(todayLocalISO());
   const [kind, setKind] = useState<SavingsKind>("deposit");
@@ -278,7 +279,9 @@ function SavingsPage() {
           <CardTitle>History</CardTitle>
         </CardHeader>
         <CardContent>
-          {items.length === 0 ? (
+          {isLoading ? (
+            <ListSkeleton />
+          ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No savings activity yet.
             </p>

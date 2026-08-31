@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useSavings } from "@/lib/store";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { remainderOf, sumAmounts } from "@/lib/money";
 import { colorForKey } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,8 +98,8 @@ export function PaymentSplitEditor({
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [savings]);
 
-  const allocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
-  const remainder = +(total - allocated).toFixed(2);
+  const allocated = sumAmounts(splits.map((x) => x.amount));
+  const remainder = remainderOf(total, allocated);
 
   const update = (id: string, patch: Partial<SplitDraft>) =>
     onChange(splits.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -114,7 +115,7 @@ export function PaymentSplitEditor({
 
   const remove = (id: string) => onChange(splits.filter((s) => s.id !== id));
   const add = () => {
-    const left = +(total - allocated).toFixed(2);
+    const left = remainderOf(total, allocated);
     const seed = emptySplit("main");
     if (left > 0) seed.amount = String(left);
     onChange([...splits, seed]);

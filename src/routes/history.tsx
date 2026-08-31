@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
 import { fmt } from "@/lib/format";
@@ -165,7 +166,7 @@ function HighlightText({ text, needle }: { text: string; needle: string }) {
 const PAGE_SIZE = 50;
 
 function HistoryPage() {
-  const { items, remove, update: updateTransaction } = useTransactions();
+  const { items, isLoading, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -460,7 +461,13 @@ function HistoryPage() {
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <ListSkeleton rows={5} />
+          </CardContent>
+        </Card>
+      ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
             {hasFilters
