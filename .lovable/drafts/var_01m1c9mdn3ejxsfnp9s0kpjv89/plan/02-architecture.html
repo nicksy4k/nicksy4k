@@ -1,0 +1,62 @@
+<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root {
+      --foreground: hsl(var(--foreground));
+      --muted-foreground: hsl(var(--muted-foreground));
+      --border: hsl(var(--border));
+      --muted: hsl(var(--muted));
+      --background: hsl(var(--background));
+      --card: hsl(var(--card));
+      --accent: hsl(var(--accent));
+      --accent-foreground: hsl(var(--accent-foreground));
+      --primary: hsl(var(--primary));
+    }
+    text { font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif; }
+    .box { fill: var(--card); stroke: var(--border); stroke-width: 1; rx: 8; }
+    .accent-box { fill: var(--accent); stroke: var(--accent); }
+    .muted-box { fill: var(--muted); stroke: var(--border); }
+    .label { font-size: 13px; fill: var(--foreground); font-weight: 600; }
+    .small { font-size: 11px; fill: var(--muted-foreground); }
+    .wire { stroke: var(--border); stroke-width: 1; fill: none; }
+    .accent-wire { stroke: var(--accent); stroke-width: 2; fill: none; }
+  </style>
+
+  <!-- Dashboard card -->
+  <rect x="20" y="20" width="280" height="160" class="box" />
+  <text x="40" y="48" class="label">Dashboard</text>
+  <rect x="40" y="62" width="240" height="54" class="accent-box" rx="8" />
+  <text x="60" y="88" class="label" style="fill: var(--accent-foreground);">Safe to spend</text>
+  <text x="60" y="105" class="small" style="fill: var(--accent-foreground); opacity: .8;">£184 left · 11 days · £16/day</text>
+  <rect x="40" y="128" width="240" height="30" class="muted-box" />
+  <text x="52" y="148" class="small">Needs your attention · 3</text>
+
+  <!-- Budgets page -->
+  <rect x="320" y="20" width="300" height="220" class="box" />
+  <text x="340" y="48" class="label">Budgets</text>
+  <rect x="340" y="62" width="260" height="24" class="muted-box" />
+  <text x="350" y="78" class="small">Groceries · £180 / £250 · 72%</text>
+  <rect x="340" y="96" width="260" height="24" class="muted-box" />
+  <text x="350" y="112" class="small">Entertainment · £95 / £80 · 119%</text>
+  <rect x="340" y="130" width="260" height="24" class="muted-box" />
+  <text x="350" y="146" class="small">Joy · blurred</text>
+  <rect x="340" y="164" width="260" height="24" class="muted-box" />
+  <text x="350" y="180" class="small">Unbudgeted: Household, Tech</text>
+  <rect x="340" y="198" width="120" height="30" class="accent-box" />
+  <text x="355" y="218" class="small" style="fill: var(--accent-foreground);">+ Add budget</text>
+
+  <!-- Insights strip -->
+  <rect x="20" y="200" width="280" height="60" class="box" />
+  <text x="40" y="225" class="label">Insights</text>
+  <text x="40" y="245" class="small">Takeaway spend up 18% vs last cycle</text>
+
+  <!-- Search -->
+  <rect x="320" y="260" width="300" height="80" class="box" />
+  <rect x="340" y="275" width="260" height="34" class="muted-box" />
+  <text x="352" y="296" class="small">Search transactions, outgoings, settings…</text>
+  <text x="340" y="325" class="small">Cmd+K from any page</text>
+
+  <!-- Connections -->
+  <line x1="300" y1="89" x2="320" y2="89" class="accent-wire" />
+  <line x1="300" y1="230" x2="320" y2="230" class="wire" />
+  <line x1="480" y1="240" x2="480" y2="260" class="wire" />
+</svg>
