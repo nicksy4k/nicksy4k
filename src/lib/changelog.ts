@@ -40,6 +40,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.2",
+    title: "Polish pass: loading states, accessibility and split maths",
+    date: "2026-08-31",
+    icon: Sparkles,
+    highlights: [
+      "Lists no longer flash 'nothing here yet' while your data loads — History, Income, Savings, Outgoings, Credit & Debt, Archive and the dashboard now show placeholder rows instead.",
+      "Icon-only buttons (open receipt, mark handled, mark paid, remove allocation) are now labelled for screen readers.",
+      "Payment and income split maths moved into one shared helper so rounding and over-allocation warnings behave identically everywhere.",
+      "The retired Subscriptions redirect is no longer indexed by search engines.",
+    ],
+  },
+  {
     version: "v3.2.1",
     title: "Settle pending transactions from the dashboard",
     date: "2026-08-26",
