@@ -141,7 +141,6 @@ function BudgetDialog({
 }
 
 function BudgetRow({ status }: { status: BudgetStatus }) {
-  const { prefs } = usePreferences();
   const { remove } = useBudgets();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
