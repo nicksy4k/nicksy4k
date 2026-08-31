@@ -300,8 +300,8 @@ function AlertRow({
         {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
       </p>
       <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 transition-opacity">
-        {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
+        {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" aria-label="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" aria-label="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
         <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
       </div>
     </li>
@@ -324,7 +324,7 @@ function DueRow({ row, onMarkPaid }: { row: DueSoonOutgoing; onMarkPaid?: (c: Co
       <p className="hidden md:block text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
       <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
       <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 transition-opacity">
-        {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
+        {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
         <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
       </div>
     </li>

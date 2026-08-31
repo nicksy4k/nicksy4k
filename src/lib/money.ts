@@ -79,3 +79,28 @@ export function formatMoney(n: number, f: MoneyFormat = active): string {
   const sign = value < 0 ? "-" : "";
   return f.symbolPosition === "after" ? `${sign}${abs}\u00a0${symbol}` : `${sign}${symbol}${abs}`;
 }
+
+// ===== Allocation / split maths =====
+// Shared by income routing, new-transaction payment splits and
+// PaymentSplitEditor so rounding and tolerance rules can never drift apart.
+
+/** Float comparison tolerance for money (well under a penny). */
+export const MONEY_EPSILON = 0.0001;
+
+/** Sum of a set of draft amounts that may be strings or numbers. */
+export function sumAmounts(values: Array<string | number | null | undefined>): number {
+  return values.reduce<number>((s, v) => s + (typeof v === "number" ? v : parseFloat(v ?? "") || 0), 0);
+}
+
+/** What's left of `total` after `allocated`, rounded to 2dp. Negative = over-allocated. */
+export function remainderOf(total: number, allocated: number): number {
+  return +(total - allocated).toFixed(2);
+}
+
+export function isOverAllocated(total: number, allocated: number): boolean {
+  return allocated > total + MONEY_EPSILON;
+}
+
+export function isFullyAllocated(total: number, allocated: number): boolean {
+  return Math.abs(total - allocated) <= MONEY_EPSILON;
+}

@@ -18,6 +18,9 @@ export const Route = createFileRoute("/subscriptions")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      // Retired page: it only redirects to /commitments, so keep it out of
+      // search results rather than competing with the real Outgoings page.
+      { name: "robots", content: "noindex, follow" },
     ],
   }),
   beforeLoad: () => {

@@ -10,6 +10,7 @@ import {
   type ReceiptType,
 } from "@/lib/types";
 import { fmt, todayLocalISO } from "@/lib/format";
+import { remainderOf, sumAmounts, isOverAllocated } from "@/lib/money";
 import { sortLabels, cn } from "@/lib/utils";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
@@ -486,9 +487,9 @@ function NewTransactionPage() {
     const totalAmt = cleanItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
 
     // Validate splits
-    const allocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
-    const remainder = +(totalAmt - allocated).toFixed(2);
-    if (remainder < 0) {
+    const allocated = sumAmounts(splits.map((x) => x.amount));
+    const remainder = remainderOf(totalAmt, allocated);
+    if (isOverAllocated(totalAmt, allocated)) {
       errs.splits = `Split amounts (${fmt(allocated)}) exceed the transaction total (${fmt(totalAmt)}).`;
     }
     for (const s of splits) {

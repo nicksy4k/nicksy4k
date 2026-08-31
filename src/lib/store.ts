@@ -18,7 +18,7 @@ import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "./types";
 // ===== Transactions =====
 export function useTransactions() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["transactions"],
     queryFn: async () => {
@@ -106,13 +106,13 @@ export function useTransactions() {
     await invalidate();
   }, [invalidate]);
 
-  return { items: data ?? [], add, update, remove, dismiss, clear };
+  return { items: data ?? [], isLoading, add, update, remove, dismiss, clear };
 }
 
 // ===== Incomes =====
 export function useIncomes() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["incomes"],
     queryFn: async () => {
@@ -146,13 +146,13 @@ export function useIncomes() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, remove };
+  return { items: data ?? [], isLoading, add, remove };
 }
 
 // ===== Recurring incomes =====
 export function useRecurringIncomes() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["recurring_incomes"],
     queryFn: async () => {
@@ -216,13 +216,13 @@ export function useRecurringIncomes() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, update, remove };
+  return { items: data ?? [], isLoading, add, update, remove };
 }
 
 // ===== Savings =====
 export function useSavings() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["savings"],
     queryFn: async () => {
@@ -256,7 +256,7 @@ export function useSavings() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, remove };
+  return { items: data ?? [], isLoading, add, remove };
 }
 
 // ===== Categories =====
@@ -264,7 +264,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
   const qc = useQueryClient();
   const queryKey = useMemo(() => ["categories", kind], [kind]);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -329,7 +329,7 @@ function useCategoryList(kind: "expense" | "income", defaults: string[]) {
     await invalidate();
   }, [invalidate, kind, defaults]);
 
-  return { list: data ?? [], add, remove, reset };
+  return { list: data ?? [], isLoading, add, remove, reset };
 }
 
 export function useCategories() {
@@ -343,7 +343,7 @@ export function useIncomeCategories() {
 // ===== Commitments =====
 export function useCommitments() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["commitments"],
     queryFn: async () => {
@@ -384,13 +384,13 @@ export function useCommitments() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, update, remove };
+  return { items: data ?? [], isLoading, add, update, remove };
 }
 
 // ===== Loans (Owed to me) =====
 export function useLoans() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["loans"],
     queryFn: async () => {
@@ -459,13 +459,13 @@ export function useLoans() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, update, remove, addPayment };
+  return { items: data ?? [], isLoading, add, update, remove, addPayment };
 }
 
 // ===== Debts (My debts & BNPL) =====
 export function useDebts() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["debts"],
     queryFn: async () => {
@@ -543,13 +543,13 @@ export function useDebts() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, update, remove, addPayment };
+  return { items: data ?? [], isLoading, add, update, remove, addPayment };
 }
 
 // ===== Debt items =====
 export function useDebtItems() {
   const qc = useQueryClient();
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     staleTime: 60_000,
     queryKey: ["debt_items"],
     queryFn: async () => {
@@ -599,7 +599,7 @@ export function useDebtItems() {
     [invalidate],
   );
 
-  return { items: data ?? [], add, addMany, remove };
+  return { items: data ?? [], isLoading, add, addMany, remove };
 }
 
 // ===== Global clear =====

@@ -16,6 +16,7 @@ import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BellRing, Plus } from "lucide-react";
+import { ListSkeleton } from "@/components/ListSkeleton";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle } from "@/lib/cycle";
@@ -65,11 +66,12 @@ function OutgoingsPage() {
   const { view = "all" } = Route.useSearch();
   const navigate = useNavigate({ from: "/commitments" });
 
-  const { items: allItems, add, update, remove } = useCommitments();
-  const { items: savings, add: addSaving } = useSavings();
-  const { items: transactions, add: addTransaction, remove: removeTransaction } = useTransactions();
-  const { items: debts } = useDebts();
-  const { list: categories } = useCategories();
+  const { items: allItems, isLoading: commitmentsLoading, add, update, remove } = useCommitments();
+  const { items: savings, isLoading: savingsLoading, add: addSaving } = useSavings();
+  const { items: transactions, isLoading: transactionsLoading, add: addTransaction, remove: removeTransaction } = useTransactions();
+  const { items: debts, isLoading: debtsLoading } = useDebts();
+  const { list: categories, isLoading: categoriesLoading } = useCategories();
+  const isLoading = commitmentsLoading || savingsLoading || transactionsLoading || debtsLoading || categoriesLoading;
   const qc = useQueryClient();
 
 
@@ -315,19 +317,23 @@ function OutgoingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <OutgoingsList
-            items={visible}
-            resetDate={resetDate}
-            fundedMap={fundedMap}
-            onSelect={setDetailsId}
-            emptyLabel={
-              view === "subs"
-                ? "No subscriptions yet — add Netflix, Spotify, your gym…"
-                : view === "bills"
-                  ? "No bills yet."
-                  : "Nothing tracked yet."
-            }
-          />
+          {isLoading ? (
+            <ListSkeleton rows={5} />
+          ) : (
+            <OutgoingsList
+              items={visible}
+              resetDate={resetDate}
+              fundedMap={fundedMap}
+              onSelect={setDetailsId}
+              emptyLabel={
+                view === "subs"
+                  ? "No subscriptions yet — add Netflix, Spotify, your gym…"
+                  : view === "bills"
+                    ? "No bills yet."
+                    : "Nothing tracked yet."
+              }
+            />
+          )}
         </CardContent>
       </Card>
 
