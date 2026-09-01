@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateShareToken, isShareUsable, isValidTokenShape } from "@/lib/loanShare";
 import { CUSTOM_CURRENCY, type MoneyFormat } from "@/lib/money";
-import type { LedgerPayment } from "@/lib/types";
+import type { LedgerPayment, LoanRepaymentAdjustment } from "@/lib/types";
 
 export type LoanShareSummary = {
   id: string;
@@ -145,7 +145,7 @@ export const getSharedStatement = createServerFn({ method: "POST" })
     const { data: loan, error: loanError } = await db
       .from("loans")
       .select(
-        "id, person_name, total_amount, start_date, notes, payments, created_at, plan_amount, plan_cadence, plan_start_date, plan_next_due, plan_created_at",
+        "id, person_name, total_amount, start_date, notes, payments, repayment_adjustments, created_at, plan_amount, plan_cadence, plan_start_date, plan_next_due, plan_created_at",
       )
       .eq("id", share.loan_id)
       .maybeSingle();
@@ -192,6 +192,7 @@ export const getSharedStatement = createServerFn({ method: "POST" })
         start_date: loan.start_date ?? null,
         notes: loan.notes ?? null,
         payments: (loan.payments ?? []) as LedgerPayment[],
+        repayment_adjustments: (loan.repayment_adjustments ?? []) as LoanRepaymentAdjustment[],
         created_at: loan.created_at,
         plan_amount: loan.plan_amount === null ? null : Number(loan.plan_amount),
         plan_cadence: loan.plan_cadence ?? null,
