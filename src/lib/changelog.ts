@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CalendarClock,
   FileText,
+  Share2,
 
 } from "lucide-react";
 
@@ -39,6 +40,16 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.3.0",
+    title: "Share loan statements by link",
+    date: "2026-09-01",
+    icon: Share2,
+    highlights: [
+      "Create a private, read-only link for any loan statement and share it directly through WhatsApp or another app.",
+      "Shared statements stay current as repayments are recorded, with optional expiry and revoke controls.",
+    ],
+  },
   {
     version: "v3.2.5",
     title: "Paid bills stay paid",

@@ -252,7 +252,7 @@ function AuthGate() {
   }
   if (status === "out") {
     // Legal pages are public — render them instead of the auth screen.
-    const publicRoutes = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog"];
+    const publicRoutes = ["/privacy", "/beta-disclaimer", "/cookies", "/changelog", "/s"];
     if (publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
       return <Outlet />;
     }
