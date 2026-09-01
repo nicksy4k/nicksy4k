@@ -128,6 +128,25 @@ describe("top-up repayment adjustments", () => {
   });
 });
 
+describe("scheduled one-off repayments", () => {
+  it("keeps the regular cadence while including an extra payment on its own date", () => {
+    const p = buildLoanPlan(
+      loan({
+        repayment_adjustments: [
+          { id: "michelle-extra", due_date: "2026-02-10", amount: 3, type: "extra" },
+        ],
+      }),
+      "2026-02-01",
+    )!;
+
+    expect(p.schedule[0]).toMatchObject({ kind: "regular", dueDate: "2026-02-01", amount: 100 });
+    expect(p.schedule[1]).toMatchObject({ kind: "extra", dueDate: "2026-02-10", amount: 3 });
+    expect(p.schedule[2]).toMatchObject({ kind: "regular", dueDate: "2026-03-01", amount: 100 });
+    expect(p.projectedClearDate).toBe("2026-07-01");
+    expect(p.remaining).toBe(600);
+  });
+});
+
 describe("applyExtraPayment", () => {
   it("shortens the plan", () => {
     const r = applyExtraPayment(loan(), 200, "2026-01-15")!;

@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.2",
+    title: "One-off loan repayments",
+    date: "2026-09-01",
+    icon: CalendarClock,
+    highlights: [
+      "Add an extra repayment to an existing plan on its own date without changing the regular cadence.",
+      "The repayment schedule, outstanding balance view, and projected clear date now include scheduled one-off payments.",
+    ],
+  },
+  {
     version: "v3.3.1",
     title: "Flexible loan top-up repayments",
     date: "2026-09-01",

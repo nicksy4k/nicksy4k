@@ -123,6 +123,10 @@ export function OwedToMeTab() {
   // Loan whose shareable statement is being previewed.
   const [statementFor, setStatementFor] = useState<Loan | null>(null);
 
+  // Loan gaining a one-off, off-schedule repayment.
+  const [extraFor, setExtraFor] = useState<Loan | null>(null);
+
+
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
@@ -252,13 +256,25 @@ export function OwedToMeTab() {
                           Plan complete — nothing left to pay.
                         </p>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setPlanFor(l)}
-                        className="text-[11px] underline text-muted-foreground hover:text-foreground"
-                      >
-                        Adjust plan
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPlanFor(l)}
+                          className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                        >
+                          Adjust plan
+                        </button>
+                        {!settled && (
+                          <button
+                            type="button"
+                            onClick={() => setExtraFor(l)}
+                            className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                          >
+                            Add one-off payment
+                          </button>
+                        )}
+                      </div>
+
                     </div>
                   ) : (
                     !settled && (
@@ -442,6 +458,21 @@ export function OwedToMeTab() {
           await update(planFor.id, patch);
           setPlanFor(null);
           toast.success(patch.plan_amount ? "Payment plan saved" : "Payment plan removed");
+        }}
+      />
+
+      <ExtraRepaymentDialog
+        loan={extraFor}
+        onOpenChange={(v) => {
+          if (!v) setExtraFor(null);
+        }}
+        onSave={async (adjustment) => {
+          if (!extraFor) return;
+          await update(extraFor.id, {
+            repayment_adjustments: [...(extraFor.repayment_adjustments ?? []), adjustment],
+          });
+          setExtraFor(null);
+          toast.success("One-off repayment added to the plan");
         }}
       />
 
@@ -744,6 +775,74 @@ function PlanDialog({
   );
 }
 
+
+function ExtraRepaymentDialog({
+  loan,
+  onOpenChange,
+  onSave,
+}: {
+  loan: Loan | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (adjustment: LoanRepaymentAdjustment) => void | Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [dueDate, setDueDate] = useState(todayISO());
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (!loan) return;
+    setAmount("");
+    setDueDate(todayISO());
+    setNote("");
+  }, [loan]);
+
+  const value = Number.parseFloat(amount);
+  return (
+    <Dialog open={!!loan} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Add one-off repayment</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Add an extra payment to {loan?.person_name ?? "this loan"} without changing the regular repayment cadence.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount (£)</Label>
+              <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Due date</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Note (optional)</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Michelle's extra payment" />
+          </div>
+          {loan && value > 0 && (
+            <p className="text-xs text-muted-foreground">
+              The outstanding balance will reduce by {fmt(Math.min(value, loanRemaining(loan)))} when this repayment is recorded.
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => {
+            if (!(value > 0) || !dueDate) {
+              toast.error("Enter an amount and due date.");
+              return;
+            }
+            if (loan && value > loanRemaining(loan) + 0.005) {
+              toast.error("The repayment cannot exceed the outstanding balance.");
+              return;
+            }
+            onSave({ id: crypto.randomUUID(), due_date: dueDate, amount: value, type: "extra", note: note || undefined });
+          }}>Add repayment</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function TopUpLauncher({
   loan,
