@@ -431,6 +431,9 @@ export function useLoans() {
     async (id: string, patch: Partial<Omit<Loan, "id" | "created_at">>) => {
       const clean: Record<string, unknown> = { ...patch };
       if (patch.payments) clean.payments = patch.payments as never;
+      if (patch.repayment_adjustments) {
+        clean.repayment_adjustments = patch.repayment_adjustments as never;
+      }
       await supabase
         .from("loans")
         .update(clean as never)
