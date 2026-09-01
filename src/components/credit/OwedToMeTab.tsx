@@ -126,7 +126,14 @@ export function OwedToMeTab() {
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
-    | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
+    | {
+        kind: "topup";
+        loan: Loan;
+        amount: number;
+        date: string;
+        notes?: string;
+        adjustments: LoanRepaymentAdjustment[];
+      }
     | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string }
     | null
   >(null);
