@@ -419,6 +419,7 @@ export function useLoans() {
         plan_cadence: l.plan_cadence ?? null,
         plan_start_date: l.plan_start_date ?? null,
         plan_next_due: l.plan_next_due ?? null,
+        repayment_adjustments: (l.repayment_adjustments ?? []) as never,
       } as never);
       if (error) throw error;
       await invalidate();

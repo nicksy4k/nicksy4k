@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.1",
+    title: "Flexible loan top-up repayments",
+    date: "2026-09-01",
+    icon: CalendarClock,
+    highlights: [
+      "When topping up a loan with a repayment plan, schedule a one-off repayment before the next due date or increase the next planned amount.",
+      "The schedule keeps its normal cadence and automatically reallocates the top-up across the planned repayments.",
+    ],
+  },
+  {
     version: "v3.3.0",
     title: "Share loan statements by link",
     date: "2026-09-01",

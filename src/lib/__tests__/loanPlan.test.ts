@@ -93,6 +93,41 @@ describe("buildLoanPlan", () => {
   });
 });
 
+describe("top-up repayment adjustments", () => {
+  it("adds a one-off repayment before the next regular payment", () => {
+    const p = buildLoanPlan(
+      loan({
+        total_amount: 603,
+        plan_next_due: "2026-09-19",
+        repayment_adjustments: [
+          { id: "extra", due_date: "2026-09-10", amount: 3, type: "extra" },
+        ],
+      }),
+      "2026-09-01",
+    )!;
+    expect(p.schedule[0]!.kind).toBe("extra");
+    expect(p.schedule[0]!.dueDate).toBe("2026-09-10");
+    expect(p.schedule[0]!.amount).toBe(3);
+    expect(p.nextDue?.dueDate).toBe("2026-09-10");
+  });
+
+  it("increases the next regular payment without changing the cadence", () => {
+    const p = buildLoanPlan(
+      loan({
+        total_amount: 603,
+        plan_next_due: "2026-09-19",
+        repayment_adjustments: [
+          { id: "increase", due_date: "2026-09-19", amount: 3, type: "increase" },
+        ],
+      }),
+      "2026-09-01",
+    )!;
+    expect(p.schedule[0]!.amount).toBe(103);
+    expect(p.schedule[1]!.dueDate).toBe("2026-10-19");
+    expect(p.schedule.reduce((sum, entry) => sum + entry.amount, 0)).toBeCloseTo(603, 2);
+  });
+});
+
 describe("applyExtraPayment", () => {
   it("shortens the plan", () => {
     const r = applyExtraPayment(loan(), 200, "2026-01-15")!;

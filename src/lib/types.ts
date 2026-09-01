@@ -200,8 +200,19 @@ export interface Loan {
   plan_cadence?: LoanPlanCadence | string | null;
   plan_start_date?: string | null;
   plan_next_due?: string | null;
+  /** One-off or next-payment adjustments added during a top-up. */
+  repayment_adjustments?: LoanRepaymentAdjustment[];
   /** When the plan was set up — payments from this point on count against it. */
   plan_created_at?: string | null;
+}
+
+export interface LoanRepaymentAdjustment {
+  id: string;
+  due_date: string;
+  amount: number;
+  /** "extra" is a separate instalment; "increase" adds to the next regular payment. */
+  type: "extra" | "increase";
+  note?: string;
 }
 
 export type DebtKind = "standard" | "bnpl";

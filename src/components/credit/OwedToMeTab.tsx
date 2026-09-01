@@ -85,7 +85,8 @@ import {
   useSavings,
   useTransactions,
 } from "@/lib/store";
-import type { Debt, LedgerPayment, Loan } from "@/lib/types";
+import type { Debt, LedgerPayment, Loan, LoanRepaymentAdjustment } from "@/lib/types";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
@@ -125,7 +126,14 @@ export function OwedToMeTab() {
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
-    | { kind: "topup"; loan: Loan; amount: number; date: string; notes?: string }
+    | {
+        kind: "topup";
+        loan: Loan;
+        amount: number;
+        date: string;
+        notes?: string;
+        adjustments: LoanRepaymentAdjustment[];
+      }
     | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string }
     | null
   >(null);
@@ -281,9 +289,10 @@ export function OwedToMeTab() {
                   />
 
                   <TopUpLauncher
+                    loan={l}
                     label={`Top up ${l.person_name}'s loan`}
-                    onSubmit={({ amount, date, notes }) =>
-                      setPending({ kind: "topup", loan: l, amount, date, notes })
+                    onSubmit={({ amount, date, notes, adjustments }) =>
+                      setPending({ kind: "topup", loan: l, amount, date, notes, adjustments })
                     }
                   />
 
@@ -305,6 +314,11 @@ export function OwedToMeTab() {
                               >
                                 <span className="text-muted-foreground">
                                   #{s.index} · {format(new Date(s.dueDate), "d MMM yyyy")}
+                                  {s.kind === "extra" && (
+                                    <span className="ml-1.5 text-amber-700 dark:text-amber-300">
+                                      · Extra
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="flex items-center gap-2">
                                   <span className="tabular-nums">{fmt(s.amount)}</span>
@@ -492,6 +506,10 @@ export function OwedToMeTab() {
               await update(pending.loan.id, {
                 total_amount: pending.loan.total_amount + pending.amount,
                 payments: next,
+                repayment_adjustments: [
+                  ...(pending.loan.repayment_adjustments ?? []),
+                  ...pending.adjustments,
+                ],
               });
               await ledger.debit(choice, {
                 amount: pending.amount,
@@ -500,7 +518,11 @@ export function OwedToMeTab() {
                 category: "Loans",
                 notes: pending.notes,
               });
-              toast.success("Top-up logged");
+              toast.success(
+                pending.adjustments.length > 0
+                  ? "Top-up logged and repayment scheduled"
+                  : "Top-up logged",
+              );
             } else if (pending.kind === "repay") {
               const next: LedgerPayment[] = [
                 ...(pending.loan.payments ?? []),
@@ -689,6 +711,7 @@ function PlanDialog({
                   plan_start_date: null,
                   plan_next_due: null,
                   plan_created_at: null,
+                  repayment_adjustments: [],
                 })
               }
             >
@@ -723,13 +746,22 @@ function PlanDialog({
 
 
 function TopUpLauncher({
+  loan,
   label,
   onSubmit,
 }: {
+  loan: Loan;
   label: string;
-  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+  onSubmit: (v: {
+    amount: number;
+    date: string;
+    notes?: string;
+    adjustments: LoanRepaymentAdjustment[];
+  }) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<{ amount: number; date: string; notes?: string } | null>(null);
+
   return (
     <>
       <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen(true)}>
@@ -743,10 +775,199 @@ function TopUpLauncher({
         hideRemaining
         onSave={(v) => {
           setOpen(false);
-          onSubmit(v);
+          // Only ask about repayment scheduling when there's a plan to adjust.
+          if (hasPlan(loan)) setDraft(v);
+          else onSubmit({ ...v, adjustments: [] });
+        }}
+      />
+      <TopUpRepaymentDialog
+        loan={loan}
+        draft={draft}
+        onOpenChange={(v) => {
+          if (!v) setDraft(null);
+        }}
+        onConfirm={(adjustments) => {
+          if (!draft) return;
+          onSubmit({ ...draft, adjustments });
+          setDraft(null);
         }}
       />
     </>
+  );
+}
+
+/**
+ * Asks how a top-up should be repaid: leave it to the existing plan, collect it
+ * as a one-off payment before the next due date, and/or bump the next payment.
+ */
+function TopUpRepaymentDialog({
+  loan,
+  draft,
+  onOpenChange,
+  onConfirm,
+}: {
+  loan: Loan;
+  draft: { amount: number; date: string; notes?: string } | null;
+  onOpenChange: (v: boolean) => void;
+  onConfirm: (adjustments: LoanRepaymentAdjustment[]) => void;
+}) {
+  const topUpAmount = draft?.amount ?? 0;
+  const nextDue = loan.plan_next_due ?? loan.plan_start_date ?? todayISO();
+
+  const [extraOn, setExtraOn] = useState(false);
+  const [extraAmount, setExtraAmount] = useState("");
+  const [extraDate, setExtraDate] = useState(todayISO());
+  const [increaseOn, setIncreaseOn] = useState(false);
+  const [increaseAmount, setIncreaseAmount] = useState("");
+
+  useEffect(() => {
+    if (!draft) return;
+    setExtraOn(false);
+    setIncreaseOn(false);
+    setExtraAmount(draft.amount.toFixed(2));
+    setIncreaseAmount(draft.amount.toFixed(2));
+    setExtraDate(todayISO());
+  }, [draft]);
+
+  const extra = parseFloat(extraAmount);
+  const increase = parseFloat(increaseAmount);
+  const scheduled =
+    (extraOn && extra > 0 ? extra : 0) + (increaseOn && increase > 0 ? increase : 0);
+
+  return (
+    <Dialog open={!!draft} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>How should this top-up be repaid?</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {fmt(topUpAmount)} is being added to {loan.person_name}'s balance. By default it's
+            absorbed into the existing plan — the last payment grows. You can also collect it
+            sooner.
+          </p>
+
+          <div className="rounded-lg border border-border/60 p-3 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={extraOn}
+                onCheckedChange={(v) => setExtraOn(v === true)}
+                className="mt-0.5"
+              />
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium">Add a one-off extra payment</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  A separate payment scheduled before the next planned one.
+                </span>
+              </span>
+            </label>
+            {extraOn && (
+              <div className="grid grid-cols-2 gap-3 pl-7">
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Amount (£)
+                  </Label>
+                  <Input
+                    inputMode="decimal"
+                    value={extraAmount}
+                    onChange={(e) => setExtraAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Due date
+                  </Label>
+                  <Input
+                    type="date"
+                    value={extraDate}
+                    onChange={(e) => setExtraDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border/60 p-3 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={increaseOn}
+                onCheckedChange={(v) => setIncreaseOn(v === true)}
+                className="mt-0.5"
+              />
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium">
+                  Increase the next planned payment
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Due {format(new Date(nextDue), "d MMM yyyy")} · normally{" "}
+                  {fmt(Number(loan.plan_amount ?? 0))}
+                </span>
+              </span>
+            </label>
+            {increaseOn && (
+              <div className="pl-7 space-y-1.5">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Add to that payment (£)
+                </Label>
+                <Input
+                  inputMode="decimal"
+                  value={increaseAmount}
+                  onChange={(e) => setIncreaseAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            )}
+          </div>
+
+          {scheduled > topUpAmount + 0.005 && (
+            <p className="text-[11px] text-destructive">
+              You're scheduling {fmt(scheduled)} but only topping up {fmt(topUpAmount)} — the extra
+              will come out of the rest of the plan.
+            </p>
+          )}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="ghost" onClick={() => onConfirm([])}>
+            Just add to the balance
+          </Button>
+          <Button
+            onClick={() => {
+              const adjustments: LoanRepaymentAdjustment[] = [];
+              if (extraOn) {
+                if (!(extra > 0) || !extraDate) {
+                  toast.error("Enter an amount and date for the extra payment.");
+                  return;
+                }
+                adjustments.push({
+                  id: crypto.randomUUID(),
+                  due_date: extraDate,
+                  amount: extra,
+                  type: "extra",
+                  note: draft?.notes,
+                });
+              }
+              if (increaseOn) {
+                if (!(increase > 0)) {
+                  toast.error("Enter how much to add to the next payment.");
+                  return;
+                }
+                adjustments.push({
+                  id: crypto.randomUUID(),
+                  due_date: nextDue,
+                  amount: increase,
+                  type: "increase",
+                  note: draft?.notes,
+                });
+              }
+              onConfirm(adjustments);
+            }}
+          >
+            Continue
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
