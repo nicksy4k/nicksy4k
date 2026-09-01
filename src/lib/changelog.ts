@@ -40,6 +40,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.2.5",
+    title: "Paid bills stay paid",
+    date: "2026-09-01",
+    icon: ShieldCheck,
+    highlights: [
+      "The cycle rollover can no longer un-tick an outgoing you already paid in the current cycle, even if it runs again on a new device or after an update.",
+    ],
+  },
+  {
     version: "v3.2.4",
     title: "Cycle automation safety audit",
     date: "2026-08-31",
