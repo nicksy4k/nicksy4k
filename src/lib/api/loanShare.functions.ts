@@ -109,6 +109,7 @@ export type SharedStatement =
         start_date: string | null;
         notes: string | null;
         payments: LedgerPayment[];
+        repayment_adjustments: LoanRepaymentAdjustment[];
         created_at: string;
         plan_amount: number | null;
         plan_cadence: string | null;
