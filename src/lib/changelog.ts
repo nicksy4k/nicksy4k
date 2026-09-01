@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.3",
+    title: "Loan schedule fix",
+    date: "2026-09-01",
+    icon: CalendarClock,
+    highlights: [
+      "Repayments recorded against an older plan no longer mark an instalment on a new plan as paid.",
+      "Fixes duplicate instalments appearing on the same date after adding a one-off repayment.",
+    ],
+  },
+  {
     version: "v3.3.2",
     title: "One-off loan repayments",
     date: "2026-09-01",
