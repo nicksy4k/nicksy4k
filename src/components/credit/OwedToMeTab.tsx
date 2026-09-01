@@ -461,6 +461,21 @@ export function OwedToMeTab() {
         }}
       />
 
+      <ExtraRepaymentDialog
+        loan={extraFor}
+        onOpenChange={(v) => {
+          if (!v) setExtraFor(null);
+        }}
+        onSave={async (adjustment) => {
+          if (!extraFor) return;
+          await update(extraFor.id, {
+            repayment_adjustments: [...(extraFor.repayment_adjustments ?? []), adjustment],
+          });
+          setExtraFor(null);
+          toast.success("One-off repayment added to the plan");
+        }}
+      />
+
       <LoanDialog
 
         open={open}
