@@ -711,6 +711,7 @@ function PlanDialog({
                   plan_start_date: null,
                   plan_next_due: null,
                   plan_created_at: null,
+                  repayment_adjustments: [],
                 })
               }
             >
