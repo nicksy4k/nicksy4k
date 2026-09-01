@@ -314,6 +314,11 @@ export function OwedToMeTab() {
                               >
                                 <span className="text-muted-foreground">
                                   #{s.index} · {format(new Date(s.dueDate), "d MMM yyyy")}
+                                  {s.kind === "extra" && (
+                                    <span className="ml-1.5 text-amber-700 dark:text-amber-300">
+                                      · Extra
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="flex items-center gap-2">
                                   <span className="tabular-nums">{fmt(s.amount)}</span>
