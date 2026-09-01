@@ -77,7 +77,9 @@ export function countsTowardPlan(
   planCreatedAt?: string | null,
 ): boolean {
   if (p.type === "topup") return false;
-  if (p.instalment_due_date) return true;
+  // A link to an instalment only counts when that instalment belongs to the
+  // current plan — payments linked to a previous plan's schedule are history.
+  if (p.instalment_due_date) return p.instalment_due_date >= planStart;
   if (p.date >= planStart) return true;
   if (planCreatedAt && p.date >= planCreatedAt.slice(0, 10)) return true;
   return false;
