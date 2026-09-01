@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -17,6 +18,10 @@ import {
   CalendarClock,
   History,
   FileText,
+  Link2,
+  Copy,
+  Share2,
+  Trash2 as TrashIcon,
 } from "lucide-react";
 
 import { differenceInCalendarDays } from "date-fns";
@@ -97,6 +102,8 @@ import {
 import { usePockets, useLedgerSync } from "@/lib/creditHooks";
 import { FundingSourceDialog, HistoryList, PaymentDialog } from "@/components/credit/shared";
 import { loanStatementText, printLoanStatement } from "@/lib/loanStatement";
+import { createLoanShare, listLoanShares, revokeLoanShare } from "@/lib/api/loanShare.functions";
+import { expiryFromDays, expiryLabel, isShareUsable, shareUrl, SHARE_EXPIRY_OPTIONS, type LoanShareRecord } from "@/lib/loanShare";
 
 
 export function OwedToMeTab() {
@@ -900,6 +907,139 @@ function MarkInstalmentPaidDialog({
   );
 }
 
+function ShareLinkSection({ loan, note }: { loan: Loan; note: string }) {
+  const create = useServerFn(createLoanShare);
+  const list = useServerFn(listLoanShares);
+  const revoke = useServerFn(revokeLoanShare);
+  const [expiryDays, setExpiryDays] = useState("0");
+  const [share, setShare] = useState<LoanShareRecord & { id: string; note: string | null } | null>(null);
+  const [origin, setOrigin] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const shares = useQuery({
+    queryKey: ["loan-shares", loan.id],
+    queryFn: () => list({ data: { loanId: loan.id } }),
+  });
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    const active = shares.data?.find((item) => isShareUsable(item));
+    if (active) setShare(active);
+  }, [shares.data]);
+
+  const url = share && origin ? shareUrl(origin, share.token) : "";
+
+  async function copyLink(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success("Statement link copied");
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
+  }
+
+  async function createLink() {
+    setBusy(true);
+    try {
+      const created = await create({
+        data: {
+          loanId: loan.id,
+          note: note.trim() || undefined,
+          expiresAt: expiryFromDays(Number(expiryDays)),
+        },
+      });
+      setShare(created);
+      await copyLink(shareUrl(window.location.origin, created.token));
+      await shares.refetch();
+    } catch {
+      toast.error("Couldn't create the statement link");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revokeLink() {
+    if (!share) return;
+    setBusy(true);
+    try {
+      await revoke({ data: { id: share.id } });
+      setShare(null);
+      await shares.refetch();
+      toast.success("Statement link revoked");
+    } catch {
+      toast.error("Couldn't revoke the link");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function shareLink() {
+    if (!url) return;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: `Loan statement for ${loan.person_name}`, url });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    await copyLink(url);
+  }
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Share a live statement</p>
+          <p className="text-xs text-muted-foreground">Anyone with the link can view it without an account.</p>
+        </div>
+        <Link2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+      </div>
+
+      {url ? (
+        <>
+          <div className="flex gap-2">
+            <Input value={url} readOnly aria-label="Shareable statement link" className="text-xs" />
+            <Button type="button" variant="outline" size="icon" aria-label="Copy statement link" onClick={() => copyLink(url)}>
+              <Copy />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{share ? expiryLabel(share) : ""}</p>
+            <div className="flex gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={shareLink}>
+                <Share2 /> Share
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={revokeLink} disabled={busy}>
+                <TrashIcon /> Revoke
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Select value={expiryDays} onValueChange={setExpiryDays}>
+            <SelectTrigger className="flex-1" aria-label="Statement link expiry">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SHARE_EXPIRY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="button" onClick={createLink} disabled={busy}>
+            <Share2 /> {busy ? "Creating…" : "Create link"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Preview + share a printable statement for a single loan. */
 function StatementDialog({
   loan,
@@ -960,11 +1100,14 @@ function StatementDialog({
             />
           </div>
 
+          <ShareLinkSection loan={loan} note={note} />
+
           <p className="text-xs text-muted-foreground">
             The statement lists every loan, top-up and repayment with a running balance, plus any
             remaining scheduled payments. Choose “Save as PDF” in the print dialog to share it.
           </p>
         </div>
+
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
