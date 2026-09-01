@@ -252,13 +252,25 @@ export function OwedToMeTab() {
                           Plan complete — nothing left to pay.
                         </p>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setPlanFor(l)}
-                        className="text-[11px] underline text-muted-foreground hover:text-foreground"
-                      >
-                        Adjust plan
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPlanFor(l)}
+                          className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                        >
+                          Adjust plan
+                        </button>
+                        {!settled && (
+                          <button
+                            type="button"
+                            onClick={() => setExtraFor(l)}
+                            className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                          >
+                            Add one-off payment
+                          </button>
+                        )}
+                      </div>
+
                     </div>
                   ) : (
                     !settled && (
