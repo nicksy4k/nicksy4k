@@ -221,3 +221,27 @@ describe("counting payments toward the plan", () => {
     expect(p.nextDue?.covered).toBe(0);
   });
 });
+
+describe("payments linked to a previous plan", () => {
+  it("does not count them against the new plan's instalments", () => {
+    const old: LedgerPayment = {
+      id: "old",
+      date: "2026-08-18",
+      amount: 100,
+      type: "payment",
+      instalment_due_date: "2026-08-19",
+    };
+    const p = buildLoanPlan(
+      loan({
+        payments: [old],
+        plan_start_date: "2026-09-19",
+        plan_next_due: "2026-09-19",
+        plan_created_at: "2026-09-01T15:00:00Z",
+      }),
+      "2026-09-01",
+    )!;
+    expect(p.paidCount).toBe(0);
+    expect(p.schedule[0]!.dueDate).toBe("2026-09-19");
+    expect(new Set(p.schedule.map((s) => s.dueDate)).size).toBe(p.schedule.length);
+  });
+});
