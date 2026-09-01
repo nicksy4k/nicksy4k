@@ -575,6 +575,7 @@ export type Database = {
           plan_created_at: string | null
           plan_next_due: string | null
           plan_start_date: string | null
+          repayment_adjustments: Json
           start_date: string | null
           total_amount: number
           user_id: string
@@ -590,6 +591,7 @@ export type Database = {
           plan_created_at?: string | null
           plan_next_due?: string | null
           plan_start_date?: string | null
+          repayment_adjustments?: Json
           start_date?: string | null
           total_amount?: number
           user_id: string
@@ -605,6 +607,7 @@ export type Database = {
           plan_created_at?: string | null
           plan_next_due?: string | null
           plan_start_date?: string | null
+          repayment_adjustments?: Json
           start_date?: string | null
           total_amount?: number
           user_id?: string
