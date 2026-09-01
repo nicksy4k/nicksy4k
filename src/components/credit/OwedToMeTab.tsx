@@ -85,7 +85,8 @@ import {
   useSavings,
   useTransactions,
 } from "@/lib/store";
-import type { Debt, LedgerPayment, Loan } from "@/lib/types";
+import type { Debt, LedgerPayment, Loan, LoanRepaymentAdjustment } from "@/lib/types";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fmt } from "@/lib/format";
 import { addMonths } from "date-fns";
 import { syncCommitmentAfterDebtPayment } from "@/lib/bnplSync";
@@ -281,9 +282,10 @@ export function OwedToMeTab() {
                   />
 
                   <TopUpLauncher
+                    loan={l}
                     label={`Top up ${l.person_name}'s loan`}
-                    onSubmit={({ amount, date, notes }) =>
-                      setPending({ kind: "topup", loan: l, amount, date, notes })
+                    onSubmit={({ amount, date, notes, adjustments }) =>
+                      setPending({ kind: "topup", loan: l, amount, date, notes, adjustments })
                     }
                   />
 
