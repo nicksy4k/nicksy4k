@@ -44,21 +44,80 @@ function fmtDate(iso?: string | null) {
   }
 }
 
+function BrandMark() {
+  return (
+    <Link to="/" className="flex items-center gap-2 group">
+      <div className="h-8 w-8 rounded-lg bg-primary grid place-items-center shadow-sm">
+        <Wallet className="h-4 w-4 text-primary-foreground" />
+      </div>
+      <div className="leading-tight">
+        <p className="text-sm font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
+          Ledgerly
+        </p>
+        <p className="text-[10px] text-muted-foreground">by Itemized Keeper</p>
+      </div>
+    </Link>
+  );
+}
+
+function BrandedHeader() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
+        <BrandMark />
+        <Button asChild variant="default" size="sm" className="h-8 text-xs">
+          <Link to="/">Get Ledgerly free</Link>
+        </Button>
+      </div>
+    </header>
+  );
+}
+
+function BrandedFooterCTA() {
+  return (
+    <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-5 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="h-10 w-10 rounded-xl bg-primary grid place-items-center shrink-0">
+          <Wallet className="h-5 w-5 text-primary-foreground" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="font-semibold">Track your own spending & commitments</h3>
+          <p className="text-sm text-muted-foreground">
+            Ledgerly helps you itemise purchases, manage outgoings, track debts, and keep tabs on
+            warranties — all in one place.
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <Button asChild size="sm">
+          <Link to="/">Try Ledgerly free</Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/">Learn more</Link>
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function Unavailable() {
   return (
-    <div className="min-h-screen grid place-items-center p-6 bg-background">
-      <div className="max-w-sm text-center space-y-3">
-        <div className="mx-auto h-12 w-12 rounded-xl bg-muted grid place-items-center">
-          <Link2Off className="h-6 w-6 text-muted-foreground" />
+    <div className="min-h-screen flex flex-col bg-background">
+      <BrandedHeader />
+      <div className="flex-1 grid place-items-center p-6">
+        <div className="max-w-sm text-center space-y-4">
+          <div className="mx-auto h-12 w-12 rounded-xl bg-muted grid place-items-center">
+            <Link2Off className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold">This statement link is no longer available</h1>
+          <p className="text-sm text-muted-foreground">
+            The link may have expired or been revoked by the person who sent it. Ask them for a fresh
+            link.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/">Go to Ledgerly</Link>
+          </Button>
         </div>
-        <h1 className="text-xl font-semibold">This statement link is no longer available</h1>
-        <p className="text-sm text-muted-foreground">
-          The link may have expired or been revoked by the person who sent it. Ask them for a fresh
-          link.
-        </p>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/">Go to Itemized Keeper</Link>
-        </Button>
       </div>
     </div>
   );
