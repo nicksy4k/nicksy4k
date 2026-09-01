@@ -123,6 +123,10 @@ export function OwedToMeTab() {
   // Loan whose shareable statement is being previewed.
   const [statementFor, setStatementFor] = useState<Loan | null>(null);
 
+  // Loan gaining a one-off, off-schedule repayment.
+  const [extraFor, setExtraFor] = useState<Loan | null>(null);
+
+
 
   const [pending, setPending] = useState<
     | { kind: "create"; draft: Omit<Loan, "id" | "created_at" | "payments"> }
