@@ -501,6 +501,10 @@ export function OwedToMeTab() {
               await update(pending.loan.id, {
                 total_amount: pending.loan.total_amount + pending.amount,
                 payments: next,
+                repayment_adjustments: [
+                  ...(pending.loan.repayment_adjustments ?? []),
+                  ...pending.adjustments,
+                ],
               });
               await ledger.debit(choice, {
                 amount: pending.amount,
@@ -509,7 +513,11 @@ export function OwedToMeTab() {
                 category: "Loans",
                 notes: pending.notes,
               });
-              toast.success("Top-up logged");
+              toast.success(
+                pending.adjustments.length > 0
+                  ? "Top-up logged and repayment scheduled"
+                  : "Top-up logged",
+              );
             } else if (pending.kind === "repay") {
               const next: LedgerPayment[] = [
                 ...(pending.loan.payments ?? []),
