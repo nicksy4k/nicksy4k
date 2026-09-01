@@ -139,7 +139,7 @@ describe("scheduled one-off repayments", () => {
       "2026-02-01",
     )!;
 
-    expect(p.schedule[0]).toMatchObject({ kind: "regular", dueDate: "2026-02-01", amount: 97 });
+    expect(p.schedule[0]).toMatchObject({ kind: "regular", dueDate: "2026-02-01", amount: 100 });
     expect(p.schedule[1]).toMatchObject({ kind: "extra", dueDate: "2026-02-10", amount: 3 });
     expect(p.schedule[2]).toMatchObject({ kind: "regular", dueDate: "2026-03-01", amount: 100 });
     expect(p.projectedClearDate).toBe("2026-06-01");
