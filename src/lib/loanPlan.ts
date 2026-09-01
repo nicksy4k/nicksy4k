@@ -104,6 +104,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     .reduce((s, p) => s + p.amount, 0);
   const planPaid = Math.max(0, paid - priorPaid);
   const baseline = Math.max(0, loan.total_amount - priorPaid);
+  const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
   const adjustments = (loan.repayment_adjustments ?? []).filter(
     (a): a is LoanRepaymentAdjustment => a.amount > EPS && !!a.due_date,
   );
