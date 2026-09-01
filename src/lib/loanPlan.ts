@@ -177,6 +177,24 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     return { ...entry, covered, status };
   });
 
+  // Fully-paid cadence instalments drop off the front, so the outstanding ones
+  // re-date from the stored next-due. One-off entries keep their own dates.
+  const regulars = schedule.filter((s) => s.kind === "regular");
+  const firstUnpaidRegular = regulars.findIndex((s) => s.status !== "paid");
+  if (firstUnpaidRegular > 0) {
+    let d = firstDue;
+    for (let i = firstUnpaidRegular; i < regulars.length; i++) {
+      const entry = regulars[i]!;
+      entry.dueDate = d;
+      entry.status = entry.covered > EPS ? "part" : d <= today ? "due" : "upcoming";
+      d = stepDate(d, cadence);
+    }
+    schedule = [...schedule].sort(
+      (a, b) => a.dueDate.localeCompare(b.dueDate) || (a.kind === b.kind ? 0 : a.kind === "extra" ? -1 : 1),
+    );
+  }
+  schedule = schedule.map((s, i) => ({ ...s, index: i + 1 }));
+
   const unpaid = schedule.filter((s) => s.status !== "paid");
   const nextDue = unpaid[0] ?? null;
   const paidCount = schedule.length - unpaid.length;
