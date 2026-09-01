@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { FileText, Link2Off } from "lucide-react";
+import { FileText, Link2Off, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RouteError } from "@/components/RouteError";
