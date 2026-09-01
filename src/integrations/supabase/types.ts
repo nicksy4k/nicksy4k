@@ -516,6 +516,53 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_shares: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_viewed_at: string | null
+          loan_id: string
+          note: string | null
+          revoked_at: string | null
+          token: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          loan_id: string
+          note?: string | null
+          revoked_at?: string | null
+          token: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          loan_id?: string
+          note?: string | null
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_shares_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           created_at: string
