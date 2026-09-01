@@ -55,6 +55,12 @@ export function useCommitmentRollover() {
       // Keys are scoped per account so switching users (or demo mode) can
       // never make one account inherit another's "already processed" marker.
       const key = storageKeyFor(u.user.id);
+      // Migrate the pre-scoping global marker so devices that already
+      // processed this cycle don't re-run it under the new per-user key.
+      const legacy = localStorage.getItem(STORAGE_KEY);
+      if (localStorage.getItem(key) === null && legacy !== null) {
+        localStorage.setItem(key, legacy);
+      }
       if (localStorage.getItem(key) === cycle.startISO) return;
 
       await rolloverAllCommitments(cycle, u.user.id);
@@ -113,7 +119,12 @@ async function rolloverAllCommitments(cycle: ActiveCycle, userId: string) {
         !!effectiveDue && effectiveDue >= cycle.startISO && effectiveDue <= cycle.endISO;
       const rolledForward = !!patch.next_due_date;
 
-      if (c.paid && (rolledForward || dueInsideNewCycle)) {
+      // Never undo a payment that was actually made inside the current
+      // cycle window — a re-run of the rollover must be a no-op for bills
+      // the user has already ticked off this cycle.
+      const paidThisCycle = !!c.last_paid_date && c.last_paid_date >= cycle.startISO;
+
+      if (c.paid && !paidThisCycle && (rolledForward || dueInsideNewCycle)) {
         patch.paid = false;
         patch.last_paid_date = null;
       }
