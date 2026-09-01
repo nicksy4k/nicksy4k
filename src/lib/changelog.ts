@@ -41,6 +41,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.4",
+    title: "Shared statements show one-off repayments",
+    date: "2026-09-01",
+    icon: Share2,
+    highlights: [
+      "Extra, off-schedule repayments now appear on shared loan statement links.",
+    ],
+  },
+  {
     version: "v3.3.3",
     title: "Loan schedule fix",
     date: "2026-09-01",
