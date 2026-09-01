@@ -1,6 +1,6 @@
 import { addDays, addMonths, differenceInCalendarDays, format, parseISO } from "date-fns";
 
-import type { LedgerPayment, Loan } from "./types";
+import type { LedgerPayment, Loan, LoanRepaymentAdjustment } from "./types";
 import { loanPaid, loanRemaining, todayISO } from "./credit";
 
 export type LoanCadence = "weekly" | "fortnightly" | "four_weekly" | "monthly";
@@ -38,6 +38,11 @@ export type ScheduleEntry = {
   status: "paid" | "part" | "due" | "upcoming";
   /** How much of this instalment has been covered by recorded payments. */
   covered: number;
+  /** "regular" follows the cadence; "extra" is a one-off scheduled payment. */
+  kind: "regular" | "extra";
+  /** Set on one-off entries so they can be edited/removed. */
+  extraId?: string;
+  note?: string;
 };
 
 export type LoanPlanSummary = {
@@ -47,6 +52,8 @@ export type LoanPlanSummary = {
   /** Next unpaid instalment, or null when the loan is settled. */
   nextDue: ScheduleEntry | null;
   paidCount: number;
+  /** Paid entries that follow the cadence (excludes one-off extras). */
+  paidRegularCount: number;
   totalCount: number;
   remainingCount: number;
   projectedClearDate: string | null;
@@ -92,57 +99,88 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const firstDue = loan.plan_next_due ?? loan.plan_start_date ?? loan.start_date ?? today;
   const planStart = loan.plan_start_date ?? loan.start_date ?? firstDue;
 
-  // Payments made before the plan began are already reflected in the opening
-  // balance — only payments that count toward the plan reduce instalments.
   const priorPaid = (loan.payments ?? [])
     .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at))
     .reduce((s, p) => s + p.amount, 0);
   const planPaid = Math.max(0, paid - priorPaid);
   const baseline = Math.max(0, loan.total_amount - priorPaid);
-
-  // Instalments needed to cover the balance outstanding when the plan started.
   const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
+  const adjustments = (loan.repayment_adjustments ?? []).filter(
+    (a): a is LoanRepaymentAdjustment => a.amount > EPS && !!a.due_date,
+  );
+  const increases = new Map<string, number>();
+  for (const adjustment of adjustments) {
+    if (adjustment.type === "increase") {
+      increases.set(adjustment.due_date, (increases.get(adjustment.due_date) ?? 0) + adjustment.amount);
+    }
+  }
 
-  const schedule: ScheduleEntry[] = [];
-  let coveredPool = planPaid;
+  // Start with the regular cadence, then allocate top-up instructions within
+  // that same balance. This keeps the schedule total equal to the loan total:
+  // an earlier extra/increase makes the final regular instalment smaller.
+  const regularAmounts: number[] = [];
+  const regularDates: string[] = [];
   let date = firstDue;
-
   for (let i = 0; i < count; i++) {
-    const amount = i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment;
-
-    const covered = Math.min(amount, Math.max(0, coveredPool));
-    coveredPool -= covered;
-
-    const status: ScheduleEntry["status"] =
-      covered >= amount - EPS
-        ? "paid"
-        : covered > EPS
-          ? "part"
-          : date <= today
-            ? "due"
-            : "upcoming";
-
-    schedule.push({ index: i + 1, dueDate: date, amount, status, covered });
+    regularDates.push(date);
+    regularAmounts.push(i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment);
+    regularAmounts[i] = Math.max(0, regularAmounts[i] + (increases.get(date) ?? 0));
     date = stepDate(date, cadence);
   }
 
-  // Fully-paid instalments are pushed off the front of the remaining schedule,
-  // so re-date the unpaid ones from the first outstanding due date.
-  const firstUnpaidIdx = schedule.findIndex((s) => s.status !== "paid");
-  if (firstUnpaidIdx > 0) {
-    let d = firstDue;
-    for (let i = firstUnpaidIdx; i < schedule.length; i++) {
-      schedule[i]!.dueDate = d;
-      schedule[i]!.status =
-        schedule[i]!.covered > EPS ? "part" : d <= today ? "due" : "upcoming";
-      d = stepDate(d, cadence);
-    }
+  const extraAdjustments = adjustments.filter((a) => a.type === "extra");
+  const allocatedAdjustmentTotal = extraAdjustments.reduce((sum, a) => sum + a.amount, 0) +
+    [...increases.values()].reduce((sum, amount) => sum + amount, 0);
+  let toReallocate = Math.min(baseline, allocatedAdjustmentTotal);
+  for (let i = regularAmounts.length - 1; i >= 0 && toReallocate > EPS; i--) {
+    const reduction = Math.min(regularAmounts[i]!, toReallocate);
+    regularAmounts[i] = Math.max(0, regularAmounts[i]! - reduction);
+    toReallocate -= reduction;
   }
+
+  const entries: Array<ScheduleEntry & { order: number }> = regularDates.map((dueDate, i) => ({
+    index: i + 1,
+    dueDate,
+    amount: regularAmounts[i]!,
+    status: "upcoming",
+    covered: 0,
+    kind: "regular",
+    order: i,
+  }));
+  for (const adjustment of extraAdjustments) {
+    entries.push({
+      index: 0,
+      dueDate: adjustment.due_date,
+      amount: Math.min(adjustment.amount, baseline),
+      status: "upcoming",
+      covered: 0,
+      kind: "extra",
+      extraId: adjustment.id,
+      note: adjustment.note,
+      order: entries.length,
+    });
+  }
+  entries.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.order - b.order);
+
+  let coveredPool = planPaid;
+  let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }) => {
+    const covered = Math.min(entry.amount, Math.max(0, coveredPool));
+    coveredPool -= covered;
+    const status: ScheduleEntry["status"] =
+      covered >= entry.amount - EPS
+        ? "paid"
+        : covered > EPS
+          ? "part"
+          : entry.dueDate <= today
+            ? "due"
+            : "upcoming";
+    return { ...entry, covered, status };
+  });
 
   const unpaid = schedule.filter((s) => s.status !== "paid");
   const nextDue = unpaid[0] ?? null;
   const paidCount = schedule.length - unpaid.length;
-
+  const paidRegularCount = schedule.filter((s) => s.kind === "regular" && s.status === "paid").length;
   const last = schedule[schedule.length - 1];
   const projectedClearDate = remaining <= EPS ? null : (last?.dueDate ?? null);
   const overdueBy =
@@ -156,6 +194,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     remaining,
     nextDue,
     paidCount,
+    paidRegularCount,
     totalCount: schedule.length,
     remainingCount: unpaid.length,
     projectedClearDate,
