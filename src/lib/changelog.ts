@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.5",
+    title: "Shared statement links promote Ledgerly",
+    date: "2026-09-01",
+    icon: Wallet,
+    highlights: [
+      "Shared loan statement pages now carry Ledgerly branding, a sticky header, and a footer call-to-action linking back to the app.",
+      "Recipients can learn more about Ledgerly and sign up directly from any shared statement.",
+    ],
+  },
+  {
     version: "v3.3.4",
     title: "Shared statements show one-off repayments",
     date: "2026-09-01",
