@@ -256,3 +256,25 @@ export function amountForCount(total: number, n: number): number {
   if (!(n > 0)) return 0;
   return Math.round((total / n) * 100) / 100;
 }
+
+/**
+ * Where `plan_next_due` should move to after recording a payment.
+ *
+ * Only completed *regular* instalments advance the cadence — one-off extras
+ * (and zero-amount trailing rows) must never push the next regular payment
+ * back a whole period. Returns `undefined` when nothing should change.
+ */
+export function nextDueAfterPayment(
+  before: LoanPlanSummary | null,
+  after: LoanPlanSummary | null,
+  cadence: LoanCadence,
+): string | null | undefined {
+  if (!before || !after) return undefined;
+  const beforeRegular = before.schedule.find((s) => s.kind === "regular" && s.status !== "paid");
+  if (!beforeRegular) return undefined;
+  const advanced = after.paidRegularCount - before.paidRegularCount;
+  if (advanced <= 0) return undefined;
+  const anyRegularLeft = after.schedule.some((s) => s.kind === "regular" && s.status !== "paid");
+  if (!anyRegularLeft || !after.nextDue) return null;
+  return stepDate(beforeRegular.dueDate, cadence, advanced);
+}

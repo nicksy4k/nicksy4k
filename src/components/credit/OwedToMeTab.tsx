@@ -426,14 +426,9 @@ export function OwedToMeTab() {
           const before = buildLoanPlan(loan);
           const after = buildLoanPlan({ ...loan, payments: next });
           const patch: Partial<Loan> = { payments: next };
-          if (before?.nextDue && after) {
-            const advanced = after.paidCount - before.paidCount;
-            if (advanced > 0) {
-              patch.plan_next_due = after.nextDue
-                ? stepDate(before.nextDue.dueDate, loan.plan_cadence as LoanCadence, advanced)
-                : null;
-            }
-          }
+          const moved = nextDueAfterPayment(before, after, loan.plan_cadence as LoanCadence);
+          if (moved !== undefined) patch.plan_next_due = moved;
+
           await update(loan.id, patch);
           setLinkFor(null);
           toast.success("Instalment marked as paid");
