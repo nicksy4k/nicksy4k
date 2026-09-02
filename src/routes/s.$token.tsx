@@ -259,11 +259,17 @@ function SharedStatementPage() {
           </Button>
         </div>
 
-        <footer className="pt-4 border-t border-border/60 text-xs text-muted-foreground">
+        <BrandedFooterCTA />
+
+        <footer className="pt-2 text-xs text-muted-foreground text-center">
           {settled
             ? "This loan is fully repaid."
             : `Outstanding balance as at ${format(new Date(), "d MMM yyyy")}: ${m(remaining)}.`}{" "}
-          This is a read-only personal record produced with Itemized Keeper.
+          Read-only record produced with{" "}
+          <Link to="/" className="underline hover:text-foreground">
+            Ledgerly
+          </Link>
+          .
         </footer>
       </div>
     </div>
