@@ -140,8 +140,9 @@ function SharedStatementPage() {
   const upcoming = plan?.schedule.filter((s) => s.status !== "paid") ?? [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-2xl px-4 py-8 md:py-12 space-y-6">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <BrandedHeader />
+      <div className="mx-auto max-w-2xl w-full px-4 py-8 md:py-12 space-y-6">
         <header className="space-y-1">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Shared loan statement
