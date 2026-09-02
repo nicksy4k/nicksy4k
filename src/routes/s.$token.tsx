@@ -140,8 +140,9 @@ function SharedStatementPage() {
   const upcoming = plan?.schedule.filter((s) => s.status !== "paid") ?? [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-2xl px-4 py-8 md:py-12 space-y-6">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <BrandedHeader />
+      <div className="mx-auto max-w-2xl w-full px-4 py-8 md:py-12 space-y-6">
         <header className="space-y-1">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Shared loan statement
@@ -258,11 +259,17 @@ function SharedStatementPage() {
           </Button>
         </div>
 
-        <footer className="pt-4 border-t border-border/60 text-xs text-muted-foreground">
+        <BrandedFooterCTA />
+
+        <footer className="pt-2 text-xs text-muted-foreground text-center">
           {settled
             ? "This loan is fully repaid."
             : `Outstanding balance as at ${format(new Date(), "d MMM yyyy")}: ${m(remaining)}.`}{" "}
-          This is a read-only personal record produced with Itemized Keeper.
+          Read-only record produced with{" "}
+          <Link to="/" className="underline hover:text-foreground">
+            Ledgerly
+          </Link>
+          .
         </footer>
       </div>
     </div>
