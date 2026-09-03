@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { amountForCount, applyExtraPayment, buildLoanPlan, stepDate } from "../loanPlan";
+import {
+  amountForCount,
+  applyExtraPayment,
+  buildLoanPlan,
+  nextDueAfterPayment,
+  stepDate,
+} from "../loanPlan";
 import type { LedgerPayment, Loan } from "../types";
 
 function loan(overrides: Partial<Loan> = {}): Loan {
@@ -243,5 +249,30 @@ describe("payments linked to a previous plan", () => {
     expect(p.paidCount).toBe(0);
     expect(p.schedule[0]!.dueDate).toBe("2026-09-19");
     expect(new Set(p.schedule.map((s) => s.dueDate)).size).toBe(p.schedule.length);
+  });
+});
+
+describe("nextDueAfterPayment", () => {
+  const base = loan({
+    total_amount: 603,
+    plan_amount: 50,
+    plan_next_due: "2026-09-19",
+    plan_start_date: "2026-09-19",
+    repayment_adjustments: [{ id: "extra", due_date: "2026-09-10", amount: 3, type: "extra" }],
+  });
+
+  it("does not advance the cadence when only the one-off extra is paid", () => {
+    const before = buildLoanPlan(base, "2026-09-05");
+    const after = buildLoanPlan({ ...base, payments: [pay(3, "2026-09-10")] }, "2026-09-10");
+    expect(nextDueAfterPayment(before, after, "monthly")).toBeUndefined();
+  });
+
+  it("advances when a regular instalment is completed", () => {
+    const before = buildLoanPlan(base, "2026-09-05");
+    const after = buildLoanPlan(
+      { ...base, payments: [pay(3, "2026-09-10"), pay(50, "2026-09-19")] },
+      "2026-09-19",
+    );
+    expect(nextDueAfterPayment(before, after, "monthly")).toBe("2026-10-19");
   });
 });
