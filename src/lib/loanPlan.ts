@@ -200,7 +200,11 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const unpaid = schedule.filter((s) => s.status !== "paid");
   const nextDue = unpaid[0] ?? null;
   const paidCount = schedule.length - unpaid.length;
-  const paidRegularCount = schedule.filter((s) => s.kind === "regular" && s.status === "paid").length;
+  // Zero-amount trailing rows (created when extras are reallocated off the
+  // tail) are not real instalments, so they must not count as progress.
+  const paidRegularCount = schedule.filter(
+    (s) => s.kind === "regular" && s.status === "paid" && s.amount > EPS,
+  ).length;
   const last = schedule[schedule.length - 1];
   const projectedClearDate = remaining <= EPS ? null : (last?.dueDate ?? null);
   const overdueBy =

@@ -41,6 +41,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.6",
+    title: "One-off repayments keep the schedule intact",
+    date: "2026-09-02",
+    icon: CalendarClock,
+    highlights: [
+      "Recording a small off-schedule repayment no longer pushes the next regular payment forward a whole cycle.",
+      "Only completed regular instalments move the next due date now.",
+    ],
+  },
+  {
+
     version: "v3.3.5",
     title: "Shared statement links promote Ledgerly",
     date: "2026-09-01",

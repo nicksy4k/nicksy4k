@@ -30,7 +30,9 @@ import {
   buildLoanPlan,
   countsTowardPlan,
   hasPlan,
+  nextDueAfterPayment,
   stepDate,
+
   type LoanCadence,
 } from "@/lib/loanPlan";
 
@@ -561,23 +563,19 @@ export function OwedToMeTab() {
                   source: encodeSource(choice),
                 },
               ];
-              // Advance the plan's next due date by however many instalments
-              // this payment completed, so early/extra payments pull it forward.
+              // Advance the plan's next due date by however many *regular*
+              // instalments this payment completed. One-off extras must not
+              // push the next scheduled payment forward a whole period.
               const before = buildLoanPlan(pending.loan);
               const after = buildLoanPlan({ ...pending.loan, payments: next });
               const patch: Partial<Loan> = { payments: next };
-              if (before?.nextDue && after) {
-                const advanced = after.paidCount - before.paidCount;
-                if (advanced > 0) {
-                  patch.plan_next_due = after.nextDue
-                    ? stepDate(
-                        before.nextDue.dueDate,
-                        pending.loan.plan_cadence as LoanCadence,
-                        advanced,
-                      )
-                    : null;
-                }
-              }
+              const moved = nextDueAfterPayment(
+                before,
+                after,
+                pending.loan.plan_cadence as LoanCadence,
+              );
+              if (moved !== undefined) patch.plan_next_due = moved;
+
               await update(pending.loan.id, patch);
 
               await ledger.credit(choice, {
