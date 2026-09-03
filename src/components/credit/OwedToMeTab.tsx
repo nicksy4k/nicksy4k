@@ -30,7 +30,9 @@ import {
   buildLoanPlan,
   countsTowardPlan,
   hasPlan,
+  nextDueAfterPayment,
   stepDate,
+
   type LoanCadence,
 } from "@/lib/loanPlan";
 
