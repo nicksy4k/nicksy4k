@@ -258,6 +258,7 @@ describe("nextDueAfterPayment", () => {
     plan_amount: 50,
     plan_next_due: "2026-09-19",
     plan_start_date: "2026-09-19",
+    plan_created_at: "2026-09-01T00:00:00Z",
     repayment_adjustments: [{ id: "extra", due_date: "2026-09-10", amount: 3, type: "extra" }],
   });
 
