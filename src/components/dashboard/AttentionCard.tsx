@@ -189,7 +189,11 @@ export function AttentionCard({
             <SectionTitle>Subscription offers ending</SectionTitle>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {promos.slice(0, 3).map((c) => (
-                <PromoRow key={c.id} commitment={c} />
+                <PromoRow
+                  key={c.id}
+                  commitment={c}
+                  onView={() => onViewCommitment?.(c)}
+                />
               ))}
             </ul>
           </section>
