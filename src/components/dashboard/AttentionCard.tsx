@@ -407,3 +407,51 @@ function PromoRow({ commitment: c, onView }: { commitment: Commitment; onView?: 
     </ClickableRow>
   );
 }
+
+function stopPropagation(e: React.MouseEvent) {
+  e.stopPropagation();
+}
+
+function ClickableRow({
+  children,
+  onClick,
+  tone = "default",
+  highlighted,
+  ariaLabel,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  tone?: "default" | "amber" | "destructive" | "emerald";
+  highlighted?: boolean;
+  ariaLabel?: string;
+}) {
+  const toneStyles = {
+    default: "border-border/60 bg-card/40 hover:border-border hover:bg-card/60",
+    amber: "border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50 hover:bg-amber-500/15",
+    destructive: "border-destructive/30 bg-destructive/10 hover:border-destructive/50 hover:bg-destructive/15",
+    emerald: "border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-500/50 hover:bg-emerald-500/15",
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
+  return (
+    <li
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={`group relative flex flex-col gap-1 rounded-lg border p-3 transition cursor-pointer ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : toneStyles[tone]}`}
+    >
+      {onClick && (
+        <ChevronRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
+      )}
+      {children}
+    </li>
+  );
+}
