@@ -379,6 +379,8 @@ function DashboardPage() {
         onMarkPaid={demo.active ? undefined : setPayTarget}
         pending={pendingTransactions}
         onSettle={demo.active ? undefined : setSettleTarget}
+        onViewTransaction={demo.active ? undefined : setSettleTarget}
+        onViewCommitment={demo.active ? undefined : setDetailsCommitment}
       />
 
       <ConfirmResetDialog
