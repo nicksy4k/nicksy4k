@@ -1,7 +1,15 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { AlertTriangle, Check, CalendarClock, Clock3, FileText, Truck } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CalendarClock,
+  Clock3,
+  FileText,
+  Truck,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
