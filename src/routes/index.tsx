@@ -90,8 +90,9 @@ function DashboardPage() {
   } = useTransactions();
   const { items: realIncomes } = useIncomes();
   const { items: realSavings, add: addSaving } = useSavings();
-  const { items: commitments, update: updateCommitment } = useCommitments();
+  const { items: commitments, update: updateCommitment, add: addCommitment, remove: removeCommitment } = useCommitments();
   const { list: categories } = useCategories();
+  const { items: debts } = useDebts();
   const qc = useQueryClient();
   const [payTarget, setPayTarget] = useState<Commitment | null>(null);
   const [settleTarget, setSettleTarget] = useState<Transaction | null>(null);
