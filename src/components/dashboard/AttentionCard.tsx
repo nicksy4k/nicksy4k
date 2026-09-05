@@ -146,7 +146,12 @@ export function AttentionCard({
             </div>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {dueSoon.slice(0, 5).map((row) => (
-                <DueRow key={row.commitment.id} row={row} onMarkPaid={onMarkPaid} />
+                <DueRow
+                  key={row.commitment.id}
+                  row={row}
+                  onMarkPaid={onMarkPaid}
+                  onView={() => onViewCommitment?.(row.commitment)}
+                />
               ))}
             </ul>
             <p className="text-xs text-muted-foreground">
