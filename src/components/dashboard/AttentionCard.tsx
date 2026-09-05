@@ -177,6 +177,7 @@ export function AttentionCard({
                   txn={t}
                   onDismiss={() => onDismiss(t.id)}
                   highlighted={highlightedId === t.id}
+                  onView={() => onViewTransaction?.(t)}
                 />
               ))}
             </ul>
