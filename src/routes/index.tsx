@@ -12,11 +12,14 @@ import {
   useSavings,
   useCommitments,
   useCategories,
+  useDebts,
 } from "@/lib/store";
 import { dueSoonOutgoings } from "@/lib/outgoings";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
+import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
+import { OutgoingDialog } from "@/components/outgoings/OutgoingDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
@@ -87,11 +90,15 @@ function DashboardPage() {
   } = useTransactions();
   const { items: realIncomes } = useIncomes();
   const { items: realSavings, add: addSaving } = useSavings();
-  const { items: commitments, update: updateCommitment } = useCommitments();
+  const { items: commitments, update: updateCommitment, add: addCommitment, remove: removeCommitment } = useCommitments();
   const { list: categories } = useCategories();
+  const { items: debts } = useDebts();
   const qc = useQueryClient();
   const [payTarget, setPayTarget] = useState<Commitment | null>(null);
   const [settleTarget, setSettleTarget] = useState<Transaction | null>(null);
+  const [detailsCommitment, setDetailsCommitment] = useState<Commitment | null>(null);
+  const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
   // the render that created them, so they must read the freshest transaction
@@ -372,6 +379,8 @@ function DashboardPage() {
         onMarkPaid={demo.active ? undefined : setPayTarget}
         pending={pendingTransactions}
         onSettle={demo.active ? undefined : setSettleTarget}
+        onViewTransaction={demo.active ? undefined : setSettleTarget}
+        onViewCommitment={demo.active ? undefined : setDetailsCommitment}
       />
 
       <ConfirmResetDialog

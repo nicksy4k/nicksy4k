@@ -1,7 +1,15 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { AlertTriangle, Check, CalendarClock, Clock3, FileText, Truck } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CalendarClock,
+  Clock3,
+  FileText,
+  Truck,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +61,10 @@ interface Props {
   onMarkPaid?: (c: Commitment) => void;
   pending?: Transaction[];
   onSettle?: (t: Transaction) => void;
+  /** Open a transaction in its detail/edit card. */
+  onViewTransaction?: (t: Transaction) => void;
+  /** Open a commitment in its detail card. */
+  onViewCommitment?: (c: Commitment) => void;
 }
 
 export function AttentionCard({
@@ -68,6 +80,8 @@ export function AttentionCard({
   onMarkPaid,
   pending: allPending = [],
   onSettle,
+  onViewTransaction,
+  onViewCommitment,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
   // persisted state stored in the database.
@@ -106,7 +120,12 @@ export function AttentionCard({
             </div>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {pending.slice(0, 6).map((t) => (
-                <PendingRow key={t.id} txn={t} onSettle={onSettle} />
+                <PendingRow
+                  key={t.id}
+                  txn={t}
+                  onSettle={onSettle}
+                  onView={() => onViewTransaction?.(t)}
+                />
               ))}
             </ul>
             {pending.length > 6 && (
@@ -127,7 +146,12 @@ export function AttentionCard({
             </div>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {dueSoon.slice(0, 5).map((row) => (
-                <DueRow key={row.commitment.id} row={row} onMarkPaid={onMarkPaid} />
+                <DueRow
+                  key={row.commitment.id}
+                  row={row}
+                  onMarkPaid={onMarkPaid}
+                  onView={() => onViewCommitment?.(row.commitment)}
+                />
               ))}
             </ul>
             <p className="text-xs text-muted-foreground">
@@ -153,6 +177,7 @@ export function AttentionCard({
                   txn={t}
                   onDismiss={() => onDismiss(t.id)}
                   highlighted={highlightedId === t.id}
+                  onView={() => onViewTransaction?.(t)}
                 />
               ))}
             </ul>
@@ -164,7 +189,11 @@ export function AttentionCard({
             <SectionTitle>Subscription offers ending</SectionTitle>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {promos.slice(0, 3).map((c) => (
-                <PromoRow key={c.id} commitment={c} />
+                <PromoRow
+                  key={c.id}
+                  commitment={c}
+                  onView={() => onViewCommitment?.(c)}
+                />
               ))}
             </ul>
           </section>
@@ -203,33 +232,36 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function PendingRow({
   txn,
   onSettle,
+  onView,
 }: {
   txn: Transaction;
   onSettle?: (t: Transaction) => void;
+  onView?: () => void;
 }) {
   const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
 
   return (
-    <li className="group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-500/15">
-            <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{txn.retailer}</p>
-            <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
-          </div>
+    <ClickableRow onClick={onView} tone="amber" ariaLabel={`Pending transaction at ${txn.retailer}`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-500/15">
+          <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
-        <Badge className="shrink-0 font-normal bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/15">
-          Pending
-        </Badge>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{txn.retailer}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">~{fmt(txn.total_amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
+        </div>
       </div>
-      <div className="flex items-center justify-between gap-3 md:mt-auto">
-        <p className="text-xs text-muted-foreground">
-          {format(parseISO(txn.date), "d MMM")} · <span className="font-medium text-foreground">~{fmt(txn.total_amount)}</span>
-        </p>
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge className="font-normal bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/15">
+            Pending
+          </Badge>
+          <span className="text-xs text-muted-foreground">{format(parseISO(txn.date), "d MMM")}</span>
+        </div>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
           {onSettle && (
             <Button variant="outline" size="sm" className="h-8 border-amber-500/40" onClick={() => onSettle(txn)}>
               Settle
@@ -238,7 +270,7 @@ function PendingRow({
           <AlertSnoozeMenu alertKey={alertKeys.pending(txn.id)} label={txn.retailer} />
         </div>
       </div>
-    </li>
+    </ClickableRow>
   );
 }
 
@@ -246,10 +278,12 @@ function AlertRow({
   txn,
   onDismiss,
   highlighted,
+  onView,
 }: {
   txn: Transaction;
   onDismiss: () => void;
   highlighted?: boolean;
+  onView?: () => void;
 }) {
   const type = (txn.protection_type as ProtectionType) ?? "Return Window";
   const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
@@ -263,7 +297,8 @@ function AlertRow({
   const chipLabel = status === "expired" ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`;
   const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
 
-  async function openReceipt() {
+  async function openReceipt(e: React.MouseEvent) {
+    e.stopPropagation();
     const { data, error } = await supabase.storage
       .from("receipts")
       .createSignedUrl(txn.receipt_location, 3600);
@@ -275,68 +310,148 @@ function AlertRow({
   }
 
   return (
-    <li
-      className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40 hover:border-border"}`}
+    <ClickableRow
+      onClick={onView}
+      highlighted={highlighted}
+      ariaLabel={`${type} for ${txn.retailer}`}
     >
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-          </div>
-          <div className="min-w-0 md:pr-6">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+          <AlertTriangle className="h-4 w-4 text-warning" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium truncate">{txn.retailer}</p>
-            <div className="flex items-center gap-1.5 flex-wrap mt-0.5 md:hidden">
-              <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
-              {status === "expired" && <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>}
-            </div>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(txn.total_amount)}</p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
+            {status === "expired" && <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>}
           </div>
         </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
         <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" aria-label="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" aria-label="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
+          <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
+        </div>
       </div>
-      <p className="hidden md:block text-xs text-muted-foreground truncate">
-        {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
-      </p>
-      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">
-        {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
-      </p>
-      <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 transition-opacity">
-        {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" aria-label="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" aria-label="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
-        <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
-      </div>
-    </li>
+    </ClickableRow>
   );
 }
 
-function DueRow({ row, onMarkPaid }: { row: DueSoonOutgoing; onMarkPaid?: (c: Commitment) => void }) {
+function DueRow({ row, onMarkPaid, onView }: { row: DueSoonOutgoing; onMarkPaid?: (c: Commitment) => void; onView?: () => void }) {
   const { commitment: c, daysUntil, overdue, funded } = row;
-  const tone = overdue || funded === "none" ? "border-destructive/30 bg-destructive/10" : funded === "partial" ? "border-amber-500/30 bg-amber-500/10" : "border-emerald-500/30 bg-emerald-500/10";
+  const tone = overdue || funded === "none" ? "destructive" : funded === "partial" ? "amber" : "emerald";
   const chipClass = overdue || funded === "none" ? "bg-destructive/15 text-destructive border-destructive/30" : funded === "partial" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
   const chipLabel = overdue ? `${Math.abs(daysUntil)}d late` : daysUntil === 0 ? "Today" : `${daysUntil}d`;
   const fundedLabel = overdue ? "Overdue" : funded === "full" ? "Covered by Bill Money" : funded === "partial" ? "Only part-covered" : "Not covered";
 
   return (
-    <li className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 ${tone}`}>
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted/40"><CalendarClock className="h-4 w-4 text-muted-foreground" /></div><p className="text-sm font-medium truncate md:pr-6">{c.item_name}</p></div>
+    <ClickableRow onClick={onView} tone={tone} ariaLabel={`${c.item_name} due soon`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted/40">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{c.item_name}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(c.amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
         <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
+          <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
+        </div>
       </div>
-      <p className="hidden md:block text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
-      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
-      <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 transition-opacity">
-        {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
-        <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
-      </div>
-    </li>
+    </ClickableRow>
   );
 }
 
-function PromoRow({ commitment: c }: { commitment: Commitment }) {
+function PromoRow({ commitment: c, onView }: { commitment: Commitment; onView?: () => void }) {
   const days = daysUntilPromoEnd(c) ?? 0;
   return (
-    <li className="group flex flex-row md:flex-col items-center md:items-start justify-between gap-2 rounded-lg border border-border/60 bg-card/40 p-3 hover:border-border transition">
-      <div className="flex items-center gap-2 min-w-0"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60"><CalendarClock className="h-4 w-4 text-muted-foreground" /></div><p className="text-sm font-medium truncate">{c.item_name}</p></div>
-      <div className="flex items-center gap-2 shrink-0"><span className="text-xs text-muted-foreground">{days > 0 ? `in ${days}d` : "today"}</span><Button asChild size="sm" variant="outline" className="shrink-0 transition-opacity"><Link to="/commitments" search={{ view: "subs" }}>Review</Link></Button><AlertSnoozeMenu alertKey={alertKeys.promo(c.id, c.promo_ends_on)} label={c.item_name} /></div>
+    <ClickableRow onClick={onView} ariaLabel={`${c.item_name} subscription offer ending`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{c.item_name}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(c.amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {days > 0 ? `Offer ends in ${days} days` : "Offer ends today"}
+            {typeof c.standard_price === "number" ? ` · rises to ${fmt(c.standard_price)}` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <span className="shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 bg-muted/40 text-muted-foreground border-border/60">
+          {days > 0 ? `in ${days}d` : "today"}
+        </span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          <Button asChild size="sm" variant="outline" className="shrink-0 transition-opacity">
+            <Link to="/commitments" search={{ view: "subs" }}>Review</Link>
+          </Button>
+          <AlertSnoozeMenu alertKey={alertKeys.promo(c.id, c.promo_ends_on)} label={c.item_name} />
+        </div>
+      </div>
+    </ClickableRow>
+  );
+}
+
+function stopPropagation(e: React.MouseEvent) {
+  e.stopPropagation();
+}
+
+function ClickableRow({
+  children,
+  onClick,
+  tone = "default",
+  highlighted,
+  ariaLabel,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  tone?: "default" | "amber" | "destructive" | "emerald";
+  highlighted?: boolean;
+  ariaLabel?: string;
+}) {
+  const toneStyles = {
+    default: "border-border/60 bg-card/40 hover:border-border hover:bg-card/60",
+    amber: "border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50 hover:bg-amber-500/15",
+    destructive: "border-destructive/30 bg-destructive/10 hover:border-destructive/50 hover:bg-destructive/15",
+    emerald: "border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-500/50 hover:bg-emerald-500/15",
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
+  return (
+    <li
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={`group relative flex flex-col gap-1 rounded-lg border p-3 transition cursor-pointer ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : toneStyles[tone]}`}
+    >
+      {onClick && (
+        <ChevronRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
+      )}
+      {children}
     </li>
   );
 }
