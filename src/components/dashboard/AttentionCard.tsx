@@ -374,12 +374,36 @@ function DueRow({ row, onMarkPaid, onView }: { row: DueSoonOutgoing; onMarkPaid?
   );
 }
 
-function PromoRow({ commitment: c }: { commitment: Commitment }) {
+function PromoRow({ commitment: c, onView }: { commitment: Commitment; onView?: () => void }) {
   const days = daysUntilPromoEnd(c) ?? 0;
   return (
-    <li className="group flex flex-row md:flex-col items-center md:items-start justify-between gap-2 rounded-lg border border-border/60 bg-card/40 p-3 hover:border-border transition">
-      <div className="flex items-center gap-2 min-w-0"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60"><CalendarClock className="h-4 w-4 text-muted-foreground" /></div><p className="text-sm font-medium truncate">{c.item_name}</p></div>
-      <div className="flex items-center gap-2 shrink-0"><span className="text-xs text-muted-foreground">{days > 0 ? `in ${days}d` : "today"}</span><Button asChild size="sm" variant="outline" className="shrink-0 transition-opacity"><Link to="/commitments" search={{ view: "subs" }}>Review</Link></Button><AlertSnoozeMenu alertKey={alertKeys.promo(c.id, c.promo_ends_on)} label={c.item_name} /></div>
-    </li>
+    <ClickableRow onClick={onView} ariaLabel={`${c.item_name} subscription offer ending`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{c.item_name}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(c.amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {days > 0 ? `Offer ends in ${days} days` : "Offer ends today"}
+            {typeof c.standard_price === "number" ? ` · rises to ${fmt(c.standard_price)}` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <span className="shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 bg-muted/40 text-muted-foreground border-border/60">
+          {days > 0 ? `in ${days}d` : "today"}
+        </span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          <Button asChild size="sm" variant="outline" className="shrink-0 transition-opacity">
+            <Link to="/commitments" search={{ view: "subs" }}>Review</Link>
+          </Button>
+          <AlertSnoozeMenu alertKey={alertKeys.promo(c.id, c.promo_ends_on)} label={c.item_name} />
+        </div>
+      </div>
+    </ClickableRow>
   );
 }
