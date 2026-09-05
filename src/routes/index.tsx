@@ -12,6 +12,7 @@ import {
   useSavings,
   useCommitments,
   useCategories,
+  useDebts,
 } from "@/lib/store";
 import { dueSoonOutgoings } from "@/lib/outgoings";
 import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
@@ -19,7 +20,6 @@ import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
 import { OutgoingDialog } from "@/components/outgoings/OutgoingDialog";
-import { useDebts } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
