@@ -80,6 +80,8 @@ export function AttentionCard({
   onMarkPaid,
   pending: allPending = [],
   onSettle,
+  onViewTransaction,
+  onViewCommitment,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
   // persisted state stored in the database.
