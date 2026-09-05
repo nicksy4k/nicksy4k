@@ -120,7 +120,12 @@ export function AttentionCard({
             </div>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {pending.slice(0, 6).map((t) => (
-                <PendingRow key={t.id} txn={t} onSettle={onSettle} />
+                <PendingRow
+                  key={t.id}
+                  txn={t}
+                  onSettle={onSettle}
+                  onView={() => onViewTransaction?.(t)}
+                />
               ))}
             </ul>
             {pending.length > 6 && (
