@@ -232,33 +232,36 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function PendingRow({
   txn,
   onSettle,
+  onView,
 }: {
   txn: Transaction;
   onSettle?: (t: Transaction) => void;
+  onView?: () => void;
 }) {
   const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
 
   return (
-    <li className="group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-500/15">
-            <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{txn.retailer}</p>
-            <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
-          </div>
+    <ClickableRow onClick={onView} tone="amber" ariaLabel={`Pending transaction at ${txn.retailer}`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-500/15">
+          <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
-        <Badge className="shrink-0 font-normal bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/15">
-          Pending
-        </Badge>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{txn.retailer}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">~{fmt(txn.total_amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
+        </div>
       </div>
-      <div className="flex items-center justify-between gap-3 md:mt-auto">
-        <p className="text-xs text-muted-foreground">
-          {format(parseISO(txn.date), "d MMM")} · <span className="font-medium text-foreground">~{fmt(txn.total_amount)}</span>
-        </p>
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge className="font-normal bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/15">
+            Pending
+          </Badge>
+          <span className="text-xs text-muted-foreground">{format(parseISO(txn.date), "d MMM")}</span>
+        </div>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
           {onSettle && (
             <Button variant="outline" size="sm" className="h-8 border-amber-500/40" onClick={() => onSettle(txn)}>
               Settle
@@ -267,7 +270,7 @@ function PendingRow({
           <AlertSnoozeMenu alertKey={alertKeys.pending(txn.id)} label={txn.retailer} />
         </div>
       </div>
-    </li>
+    </ClickableRow>
   );
 }
 
