@@ -61,6 +61,10 @@ interface Props {
   onMarkPaid?: (c: Commitment) => void;
   pending?: Transaction[];
   onSettle?: (t: Transaction) => void;
+  /** Open a transaction in its detail/edit card. */
+  onViewTransaction?: (t: Transaction) => void;
+  /** Open a commitment in its detail card. */
+  onViewCommitment?: (c: Commitment) => void;
 }
 
 export function AttentionCard({
