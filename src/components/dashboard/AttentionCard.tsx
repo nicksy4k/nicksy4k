@@ -278,10 +278,12 @@ function AlertRow({
   txn,
   onDismiss,
   highlighted,
+  onView,
 }: {
   txn: Transaction;
   onDismiss: () => void;
   highlighted?: boolean;
+  onView?: () => void;
 }) {
   const type = (txn.protection_type as ProtectionType) ?? "Return Window";
   const { status, daysLeft } = protectionStatus(type, txn.expiration_date!);
@@ -295,7 +297,8 @@ function AlertRow({
   const chipLabel = status === "expired" ? "Expired" : daysLeft === 0 ? "Today" : `${daysLeft}d`;
   const canOpenReceipt = txn.receipt_attached && isStoragePath(txn.receipt_location);
 
-  async function openReceipt() {
+  async function openReceipt(e: React.MouseEvent) {
+    e.stopPropagation();
     const { data, error } = await supabase.storage
       .from("receipts")
       .createSignedUrl(txn.receipt_location, 3600);
@@ -307,36 +310,35 @@ function AlertRow({
   }
 
   return (
-    <li
-      className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 transition ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : "border-border/60 bg-card/40 hover:border-border"}`}
+    <ClickableRow
+      onClick={onView}
+      highlighted={highlighted}
+      ariaLabel={`${type} for ${txn.retailer}`}
     >
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-          </div>
-          <div className="min-w-0 md:pr-6">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary/60">
+          <AlertTriangle className="h-4 w-4 text-warning" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium truncate">{txn.retailer}</p>
-            <div className="flex items-center gap-1.5 flex-wrap mt-0.5 md:hidden">
-              <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
-              {status === "expired" && <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>}
-            </div>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(txn.total_amount)}</p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <Badge variant="outline" className="font-normal text-[10px] h-4 px-1.5">{type}</Badge>
+            {status === "expired" && <Badge variant="destructive" className="font-normal text-[10px] h-4 px-1.5">Expired</Badge>}
           </div>
         </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
         <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" aria-label="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" aria-label="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
+          <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
+        </div>
       </div>
-      <p className="hidden md:block text-xs text-muted-foreground truncate">
-        {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
-      </p>
-      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">
-        {itemSummary} · {fmt(txn.total_amount)} · expires {format(parseISO(txn.expiration_date!), "MMM d")}
-      </p>
-      <div className="flex items-center gap-1 md:absolute md:top-3 md:right-3 transition-opacity">
-        {canOpenReceipt && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Open receipt" aria-label="Open receipt" onClick={openReceipt}><FileText className="h-3.5 w-3.5" /></Button>}
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark handled" aria-label="Mark handled" onClick={onDismiss}><Check className="h-3.5 w-3.5" /></Button>
-        <AlertSnoozeMenu alertKey={alertKeys.protection(txn.id)} label={txn.retailer} />
-      </div>
-    </li>
+    </ClickableRow>
   );
 }
 
