@@ -342,26 +342,35 @@ function AlertRow({
   );
 }
 
-function DueRow({ row, onMarkPaid }: { row: DueSoonOutgoing; onMarkPaid?: (c: Commitment) => void }) {
+function DueRow({ row, onMarkPaid, onView }: { row: DueSoonOutgoing; onMarkPaid?: (c: Commitment) => void; onView?: () => void }) {
   const { commitment: c, daysUntil, overdue, funded } = row;
-  const tone = overdue || funded === "none" ? "border-destructive/30 bg-destructive/10" : funded === "partial" ? "border-amber-500/30 bg-amber-500/10" : "border-emerald-500/30 bg-emerald-500/10";
+  const tone = overdue || funded === "none" ? "destructive" : funded === "partial" ? "amber" : "emerald";
   const chipClass = overdue || funded === "none" ? "bg-destructive/15 text-destructive border-destructive/30" : funded === "partial" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
   const chipLabel = overdue ? `${Math.abs(daysUntil)}d late` : daysUntil === 0 ? "Today" : `${daysUntil}d`;
   const fundedLabel = overdue ? "Overdue" : funded === "full" ? "Covered by Bill Money" : funded === "partial" ? "Only part-covered" : "Not covered";
 
   return (
-    <li className={`group relative flex flex-row md:flex-col gap-2 md:gap-3 rounded-lg border p-3 ${tone}`}>
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted/40"><CalendarClock className="h-4 w-4 text-muted-foreground" /></div><p className="text-sm font-medium truncate md:pr-6">{c.item_name}</p></div>
+    <ClickableRow onClick={onView} tone={tone} ariaLabel={`${c.item_name} due soon`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted/40">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{c.item_name}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(c.amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
         <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
+          <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
+        </div>
       </div>
-      <p className="hidden md:block text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
-      <p className="md:hidden flex-1 text-xs text-muted-foreground truncate">{fmt(c.amount)} · due {c.next_due_date ? format(parseISO(c.next_due_date), "d MMM") : "—"} · {fundedLabel}</p>
-      <div className="flex items-center gap-1 md:absolute md:top-2 md:right-2 transition-opacity">
-        {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
-        <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />
-      </div>
-    </li>
+    </ClickableRow>
   );
 }
 
