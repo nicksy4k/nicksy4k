@@ -20,6 +20,7 @@ import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
 import { OutgoingDialog } from "@/components/outgoings/OutgoingDialog";
+import { PromoOfferDialog } from "@/components/outgoings/PromoOfferDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
