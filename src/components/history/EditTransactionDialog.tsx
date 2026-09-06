@@ -77,6 +77,7 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { normalizeProtectionDuration } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
@@ -287,8 +288,7 @@ function EditTransactionDialog({
         ? {
             enabled: true,
             type: transaction.protection_type as ProtectionValue["type"],
-            duration:
-              (transaction.protection_duration as ProtectionValue["duration"]) ?? "Custom Date",
+            duration: normalizeProtectionDuration(transaction.protection_duration),
             expiration: transaction.expiration_date,
           }
         : emptyProtection(),

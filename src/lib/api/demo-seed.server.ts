@@ -268,7 +268,7 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
         },
       ],
       protection_type: "Return Window",
-      protection_duration: "30 days",
+      protection_duration: "30 Days",
       expiration_date: iso(9),
       payment_splits: [],
       refunds: [],

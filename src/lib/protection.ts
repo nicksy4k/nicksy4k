@@ -13,9 +13,21 @@ export const PROTECTION_DURATIONS = [
   "Custom Date",
 ] as const;
 
+const DURATION_NORMALIZE = new Map<string, ProtectionDuration>(
+  PROTECTION_DURATIONS.map((d) => [d.toLowerCase(), d]),
+);
+
+export function normalizeProtectionDuration(
+  value: string | null | undefined,
+): ProtectionDuration {
+  if (!value) return "Custom Date";
+  const normalized = DURATION_NORMALIZE.get(value.toLowerCase());
+  return normalized ?? (PROTECTION_DURATIONS.includes(value as ProtectionDuration) ? (value as ProtectionDuration) : "Custom Date");
+}
+
 export type ProtectionDuration = (typeof PROTECTION_DURATIONS)[number];
 
-/** Returns ISO date (yyyy-mm-dd) for transactionDate + duration, or null for Custom Date. */
+/** Returns ISO date (yyyy-mm-dd) for transactionDate + duration, or null for Custom Date / unknown. */
 export function computeExpiration(
   transactionDate: string,
   duration: ProtectionDuration,
@@ -40,6 +52,8 @@ export function computeExpiration(
       result = addYears(base, 2);
       break;
     case "Custom Date":
+      return null;
+    default:
       return null;
   }
   return result.toISOString().slice(0, 10);
