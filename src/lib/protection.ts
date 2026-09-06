@@ -15,7 +15,7 @@ export const PROTECTION_DURATIONS = [
 
 export type ProtectionDuration = (typeof PROTECTION_DURATIONS)[number];
 
-/** Returns ISO date (yyyy-mm-dd) for transactionDate + duration, or null for Custom Date. */
+/** Returns ISO date (yyyy-mm-dd) for transactionDate + duration, or null for Custom Date / unknown. */
 export function computeExpiration(
   transactionDate: string,
   duration: ProtectionDuration,
@@ -40,6 +40,8 @@ export function computeExpiration(
       result = addYears(base, 2);
       break;
     case "Custom Date":
+      return null;
+    default:
       return null;
   }
   return result.toISOString().slice(0, 10);
