@@ -20,6 +20,7 @@ import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
 import { OutgoingDialog } from "@/components/outgoings/OutgoingDialog";
+import { PromoOfferDialog } from "@/components/outgoings/PromoOfferDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Commitment, Transaction } from "@/lib/types";
 import { fmt, mainExpensePortion } from "@/lib/format";
@@ -98,6 +99,7 @@ function DashboardPage() {
   const [settleTarget, setSettleTarget] = useState<Transaction | null>(null);
   const [detailsCommitment, setDetailsCommitment] = useState<Commitment | null>(null);
   const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
+  const [offerFor, setOfferFor] = useState<Commitment | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
   // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
@@ -433,6 +435,101 @@ function DashboardPage() {
         transaction={settleTarget}
         categories={categories}
         onClose={() => setSettleTarget(null)}
+      />
+
+      <OutgoingDetailsDialog
+        item={detailsCommitment}
+        cycle={cycle}
+        linkedDebt={debts.find((d) => d.id === detailsCommitment?.debt_id) ?? null}
+        onClose={() => setDetailsCommitment(null)}
+        onEdit={(c) => {
+          setDetailsCommitment(null);
+          setEditingCommitment(c);
+          setFormOpen(true);
+        }}
+        onDelete={async (id) => {
+          await removeCommitment(id);
+          setDetailsCommitment(null);
+          toast.success("Removed");
+        }}
+        onConfirmReset={async (c, newDue) => {
+          setDetailsCommitment(null);
+          await markOutgoingPaid(
+            {
+              transactions: itemsRef.current,
+              updateCommitment,
+              addTransaction,
+              removeTransaction,
+              addSaving,
+              onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+            },
+            c,
+            newDue,
+          );
+          toast.success("Paid · logged & deducted from Bill Money");
+        }}
+        onUnmarkPaid={async (c) => {
+          await unmarkOutgoingPaid(
+            {
+              transactions: itemsRef.current,
+              updateCommitment,
+              addTransaction,
+              removeTransaction,
+              addSaving,
+              onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+            },
+            c,
+          );
+          setDetailsCommitment(null);
+        }}
+        onLogOffer={(c) => {
+          setDetailsCommitment(null);
+          setOfferFor(c);
+        }}
+        onToggleType={async (c) => {
+          setDetailsCommitment(null);
+          const next = !c.is_subscription;
+          await updateCommitment(c.id, {
+            is_subscription: next,
+            ...(next ? { cadence: c.cadence === "annual" ? "annual" : "monthly" } : {}),
+          });
+          toast.success(next ? "Now a subscription" : "Moved back to bills", {
+            action: {
+              label: "Undo",
+              onClick: () => void updateCommitment(c.id, { is_subscription: !next }),
+            },
+          });
+        }}
+      />
+
+      <OutgoingDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editing={editingCommitment}
+        categories={categories}
+        debts={debts}
+        defaultSubscription={editingCommitment?.is_subscription ?? false}
+        onSave={async (data) => {
+          if (editingCommitment) {
+            await updateCommitment(editingCommitment.id, data);
+            toast.success("Updated");
+          } else {
+            await addCommitment(data);
+            toast.success("Added");
+          }
+          setFormOpen(false);
+          setEditingCommitment(null);
+        }}
+      />
+
+      <PromoOfferDialog
+        item={offerFor}
+        onClose={() => setOfferFor(null)}
+        onSave={async (item, patch) => {
+          await updateCommitment(item.id, patch);
+          setOfferFor(null);
+          toast.success("New offer saved");
+        }}
       />
 
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
