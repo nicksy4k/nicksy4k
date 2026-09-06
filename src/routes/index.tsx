@@ -435,6 +435,81 @@ function DashboardPage() {
         onClose={() => setSettleTarget(null)}
       />
 
+      <OutgoingDetailsDialog
+        item={detailsCommitment}
+        cycle={cycle}
+        linkedDebt={debts.find((d) => d.id === detailsCommitment?.debt_id) ?? null}
+        onClose={() => setDetailsCommitment(null)}
+        onEdit={(c) => {
+          setDetailsCommitment(null);
+          setEditingCommitment(c);
+          setFormOpen(true);
+        }}
+        onDelete={async (id) => {
+          await removeCommitment(id);
+          setDetailsCommitment(null);
+          toast.success("Removed");
+        }}
+        onConfirmReset={async (c, newDue) => {
+          setDetailsCommitment(null);
+          setPayTarget(c);
+          // ConfirmResetDialog will handle the actual payment; we just re-open it.
+        }}
+        onUnmarkPaid={async (c) => {
+          await unmarkOutgoingPaid(
+            {
+              transactions: itemsRef.current,
+              updateCommitment,
+              addTransaction,
+              removeTransaction,
+              addSaving,
+              onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+            },
+            c,
+          );
+          setDetailsCommitment(null);
+        }}
+        onLogOffer={(c) => {
+          setDetailsCommitment(null);
+          setEditingCommitment(c);
+          setFormOpen(true);
+        }}
+        onToggleType={async (c) => {
+          setDetailsCommitment(null);
+          const next = !c.is_subscription;
+          await updateCommitment(c.id, {
+            is_subscription: next,
+            ...(next ? { cadence: c.cadence === "annual" ? "annual" : "monthly" } : {}),
+          });
+          toast.success(next ? "Now a subscription" : "Moved back to bills", {
+            action: {
+              label: "Undo",
+              onClick: () => void updateCommitment(c.id, { is_subscription: !next }),
+            },
+          });
+        }}
+      />
+
+      <OutgoingDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editing={editingCommitment}
+        categories={categories}
+        debts={debts}
+        defaultSubscription={editingCommitment?.is_subscription ?? false}
+        onSave={async (data) => {
+          if (editingCommitment) {
+            await updateCommitment(editingCommitment.id, data);
+            toast.success("Updated");
+          } else {
+            await addCommitment(data);
+            toast.success("Added");
+          }
+          setFormOpen(false);
+          setEditingCommitment(null);
+        }}
+      />
+
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
