@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.7",
+    title: "Dashboard alerts are clearer and tappable",
+    date: "2026-09-05",
+    icon: Eye,
+    highlights: [
+      "Amounts on the “Needs your attention” card are now fully visible instead of being cut off on small screens.",
+      "Tap any alert row to open the matching transaction or outgoing detail card directly from the dashboard.",
+    ],
+  },
+  {
     version: "v3.3.6",
     title: "One-off repayments keep the schedule intact",
     date: "2026-09-02",
