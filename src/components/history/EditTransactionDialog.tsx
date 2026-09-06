@@ -287,8 +287,7 @@ function EditTransactionDialog({
         ? {
             enabled: true,
             type: transaction.protection_type as ProtectionValue["type"],
-            duration:
-              (transaction.protection_duration as ProtectionValue["duration"]) ?? "Custom Date",
+            duration: normalizeProtectionDuration(transaction.protection_duration),
             expiration: transaction.expiration_date,
           }
         : emptyProtection(),
