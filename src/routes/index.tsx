@@ -484,8 +484,7 @@ function DashboardPage() {
         }}
         onLogOffer={(c) => {
           setDetailsCommitment(null);
-          setEditingCommitment(c);
-          setFormOpen(true);
+          setOfferFor(c);
         }}
         onToggleType={async (c) => {
           setDetailsCommitment(null);
