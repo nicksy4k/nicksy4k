@@ -96,7 +96,7 @@ export function buildDemoTransactions(): Transaction[] {
         },
       ],
       protection_type: "Return Window",
-      protection_duration: "30 days",
+      protection_duration: "30 Days",
       expiration_date: today(9), // ~9 days from now → amber warning band
       created_at: nowIso(),
     },
