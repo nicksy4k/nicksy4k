@@ -522,6 +522,16 @@ function DashboardPage() {
         }}
       />
 
+      <PromoOfferDialog
+        item={offerFor}
+        onClose={() => setOfferFor(null)}
+        onSave={async (item, patch) => {
+          await updateCommitment(item.id, patch);
+          setOfferFor(null);
+          toast.success("New offer saved");
+        }}
+      />
+
       <div className="grid gap-4 md:gap-6 lg:grid-cols-3 mb-6">
         <Card data-tour="category-chart" className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
