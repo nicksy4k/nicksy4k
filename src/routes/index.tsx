@@ -99,6 +99,7 @@ function DashboardPage() {
   const [settleTarget, setSettleTarget] = useState<Transaction | null>(null);
   const [detailsCommitment, setDetailsCommitment] = useState<Commitment | null>(null);
   const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
+  const [offerFor, setOfferFor] = useState<Commitment | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
   // Toast actions (e.g. Undo after marking an outgoing paid) fire long after
