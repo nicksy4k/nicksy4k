@@ -452,8 +452,19 @@ function DashboardPage() {
         }}
         onConfirmReset={async (c, newDue) => {
           setDetailsCommitment(null);
-          setPayTarget(c);
-          // ConfirmResetDialog will handle the actual payment; we just re-open it.
+          await markOutgoingPaid(
+            {
+              transactions: itemsRef.current,
+              updateCommitment,
+              addTransaction,
+              removeTransaction,
+              addSaving,
+              onDebtsChanged: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+            },
+            c,
+            newDue,
+          );
+          toast.success("Paid · logged & deducted from Bill Money");
         }}
         onUnmarkPaid={async (c) => {
           await unmarkOutgoingPaid(
