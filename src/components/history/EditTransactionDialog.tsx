@@ -77,6 +77,7 @@ import {
   emptyProtection,
   type ProtectionValue,
 } from "@/components/ProtectionFields";
+import { normalizeProtectionDuration } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { ShortcutsHelp } from "@/components/KeyboardShortcutsDialog";
