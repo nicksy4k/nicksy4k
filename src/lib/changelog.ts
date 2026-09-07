@@ -41,6 +41,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.8",
+    title: "Protection alerts open reliably",
+    date: "2026-09-07",
+    icon: ShieldCheck,
+    highlights: [
+      "Tapping a return or warranty alert on the dashboard now opens the transaction every time.",
+      "Fixed a crash when a protection duration was stored in an older format.",
+    ],
+  },
+  {
     version: "v3.3.7",
     title: "Dashboard alerts are clearer and tappable",
     date: "2026-09-05",
