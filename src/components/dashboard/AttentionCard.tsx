@@ -446,7 +446,7 @@ function ClickableRow({
       aria-label={ariaLabel}
       onClick={onClick}
       onKeyDown={handleKeyDown}
-      className={`group relative flex flex-col gap-1 rounded-lg border p-3 transition cursor-pointer ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : toneStyles[tone]}`}
+      className={`group relative flex flex-col gap-1 rounded-lg border p-3 md:pr-10 transition cursor-pointer ${highlighted ? "border-primary/60 bg-primary/10 ring-2 ring-primary/40" : toneStyles[tone]}`}
     >
       {onClick && (
         <ChevronRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
