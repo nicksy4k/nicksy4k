@@ -41,6 +41,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.3.9",
+    title: "Attention card amounts stay visible on hover",
+    date: "2026-09-08",
+    icon: Eye,
+    highlights: [
+      "The dashboard “Needs your attention” card now reserves space for its hover arrow, so amounts are never covered on desktop.",
+    ],
+  },
+  {
     version: "v3.3.8",
     title: "Protection alerts open reliably",
     date: "2026-09-07",
