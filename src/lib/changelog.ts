@@ -23,7 +23,7 @@ import {
   CalendarClock,
   FileText,
   Share2,
-
+  Receipt,
 } from "lucide-react";
 
 export interface ChangelogEntry {
