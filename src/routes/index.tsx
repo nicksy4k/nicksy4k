@@ -664,10 +664,20 @@ function DashboardPage() {
               <ul className="space-y-3">
                 {recent.map((t) => {
                   const expanded = demo.expandedTxnId === t.id;
+                  const clickable = !demo.active;
                   return (
                     <li
                       key={t.id}
-                      className={`rounded-lg ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""}`}
+                      role={clickable ? "button" : undefined}
+                      tabIndex={clickable ? 0 : undefined}
+                      onClick={() => clickable && setSettleTarget(t)}
+                      onKeyDown={(e) => {
+                        if (clickable && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          setSettleTarget(t);
+                        }
+                      }}
+                      className={`rounded-lg transition ${expanded ? "border border-primary/40 bg-primary/5 p-2.5" : ""} ${clickable ? "cursor-pointer hover:bg-secondary/40" : ""}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">

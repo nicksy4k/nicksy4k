@@ -23,7 +23,7 @@ import {
   CalendarClock,
   FileText,
   Share2,
-
+  Receipt,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -40,6 +40,15 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.3.10",
+    title: "Recent transactions open from the dashboard",
+    date: "2026-09-08",
+    icon: Receipt,
+    highlights: [
+      "Click any transaction in the dashboard “Recent” list to open its detail card without going to History.",
+    ],
+  },
   {
     version: "v3.3.9",
     title: "Attention card amounts stay visible on hover",
