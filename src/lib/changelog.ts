@@ -24,6 +24,7 @@ import {
   FileText,
   Share2,
   Receipt,
+  Printer,
 } from "lucide-react";
 
 export interface ChangelogEntry {
@@ -40,6 +41,16 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  {
+    version: "v3.3.11",
+    title: "Print or save any transaction as a PDF",
+    date: "2026-09-09",
+    icon: Printer,
+    highlights: [
+      "Every transaction in History now has a print button that opens a clean receipt you can print or save as a PDF.",
+      "The receipt lists items, payment method, refunds, and any return or warranty dates.",
+    ],
+  },
   {
     version: "v3.3.10",
     title: "Recent transactions open from the dashboard",

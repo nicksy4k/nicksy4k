@@ -62,6 +62,7 @@ import {
   FileText,
   MapPin,
   Pencil,
+  Printer,
   Plus,
   RotateCcw,
   Search,
@@ -85,6 +86,7 @@ import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
+import { PrintableReceipt } from "@/components/PrintableReceipt";
 
 type ProtectionFilter = "all" | "active" | "soon" | "expired" | "dismissed";
 const PROTECTION_FILTERS: ProtectionFilter[] = ["all", "active", "soon", "expired", "dismissed"];
@@ -176,6 +178,19 @@ function HistoryPage() {
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [refunding, setRefunding] = useState<Transaction | null>(null);
+  const [printing, setPrinting] = useState<Transaction | null>(null);
+
+  useEffect(() => {
+    if (!printing) return;
+    const done = () => setPrinting(null);
+    window.addEventListener("afterprint", done);
+    // Let the receipt mount before opening the print dialog.
+    const id = window.setTimeout(() => window.print(), 50);
+    return () => {
+      window.removeEventListener("afterprint", done);
+      window.clearTimeout(id);
+    };
+  }, [printing]);
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -645,6 +660,27 @@ function HistoryPage() {
                           <span
                             role="button"
                             tabIndex={0}
+                            aria-label="Print or save as PDF"
+                            title="Print / Save as PDF"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setPrinting(t);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setPrinting(t);
+                              }
+                            }}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </span>
+                          <span
+                            role="button"
+                            tabIndex={0}
                             aria-label="Edit transaction"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -946,6 +982,15 @@ function HistoryPage() {
                             <Check className="h-4 w-4" /> Mark delivered
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Print or save as PDF"
+                          title="Print / Save as PDF"
+                          onClick={() => setPrinting(t)}
+                        >
+                          <Printer className="h-4 w-4" /> Print
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" /> Edit
                         </Button>
@@ -1007,6 +1052,7 @@ function HistoryPage() {
         onClose={() => setEditing(null)}
       />
       <RefundDialog transaction={refunding} onClose={() => setRefunding(null)} />
+      {printing && <PrintableReceipt transaction={printing} />}
     </div>
   );
 }
