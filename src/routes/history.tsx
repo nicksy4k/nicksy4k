@@ -660,6 +660,27 @@ function HistoryPage() {
                           <span
                             role="button"
                             tabIndex={0}
+                            aria-label="Print or save as PDF"
+                            title="Print / Save as PDF"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setPrinting(t);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setPrinting(t);
+                              }
+                            }}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </span>
+                          <span
+                            role="button"
+                            tabIndex={0}
                             aria-label="Edit transaction"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -961,6 +982,15 @@ function HistoryPage() {
                             <Check className="h-4 w-4" /> Mark delivered
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Print or save as PDF"
+                          title="Print / Save as PDF"
+                          onClick={() => setPrinting(t)}
+                        >
+                          <Printer className="h-4 w-4" /> Print
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" /> Edit
                         </Button>
@@ -1022,6 +1052,7 @@ function HistoryPage() {
         onClose={() => setEditing(null)}
       />
       <RefundDialog transaction={refunding} onClose={() => setRefunding(null)} />
+      {printing && <PrintableReceipt transaction={printing} />}
     </div>
   );
 }
