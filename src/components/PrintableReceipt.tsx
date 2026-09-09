@@ -107,7 +107,11 @@ export function PrintableReceipt({ transaction: t }: { transaction: Transaction 
             {t.receipt_attached && t.receipt_location && (
               <tr>
                 <td>Receipt</td>
-                <td className="right">{t.receipt_location}</td>
+                <td className="right">
+                  {t.receipt_location.includes("/")
+                    ? `Attached file (${t.receipt_type === "pdf" ? "PDF" : "image"})`
+                    : t.receipt_location}
+                </td>
               </tr>
             )}
             {t.protection_type && (
