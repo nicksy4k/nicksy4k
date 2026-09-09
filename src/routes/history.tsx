@@ -62,6 +62,7 @@ import {
   FileText,
   MapPin,
   Pencil,
+  Printer,
   Plus,
   RotateCcw,
   Search,
@@ -85,6 +86,7 @@ import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
+import { PrintableReceipt } from "@/components/PrintableReceipt";
 
 type ProtectionFilter = "all" | "active" | "soon" | "expired" | "dismissed";
 const PROTECTION_FILTERS: ProtectionFilter[] = ["all", "active", "soon", "expired", "dismissed"];
@@ -176,6 +178,19 @@ function HistoryPage() {
   const [toDate, setToDate] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [refunding, setRefunding] = useState<Transaction | null>(null);
+  const [printing, setPrinting] = useState<Transaction | null>(null);
+
+  useEffect(() => {
+    if (!printing) return;
+    const done = () => setPrinting(null);
+    window.addEventListener("afterprint", done);
+    // Let the receipt mount before opening the print dialog.
+    const id = window.setTimeout(() => window.print(), 50);
+    return () => {
+      window.removeEventListener("afterprint", done);
+      window.clearTimeout(id);
+    };
+  }, [printing]);
   const [showRestIds, setShowRestIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
