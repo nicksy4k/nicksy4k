@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  getActiveCycle,
   previousCycleWindow,
   useCycleSettings,
   type ActiveCycle,
@@ -14,6 +15,7 @@ import { mainExpensePortion } from "@/lib/format";
  * carryover row and stay idempotent across devices.
  */
 const CARRYOVER_SOURCE = "Carryover from previous cycle";
+const AUTO_PREFIX = "Auto-generated carryover:";
 function carryoverTag(prevStartISO: string): string {
   return `carryover:${prevStartISO}`;
 }
@@ -37,6 +39,39 @@ interface SavingsRow {
   amount: number;
 }
 
+/**
+ * Pure leftover maths for a cycle window: income − main-balance expenses −
+ * net savings movement. Exported for tests.
+ */
+export function leftoverFromRows(
+  txs: Pick<TxRow, "total_amount" | "payment_splits">[],
+  incs: Pick<IncomeRow, "amount">[],
+  savs: Pick<SavingsRow, "kind" | "amount">[],
+): number {
+  const expenses = txs.reduce(
+    (s, t) =>
+      s +
+      mainExpensePortion({
+        total_amount: t.total_amount,
+        payment_splits: t.payment_splits ?? undefined,
+      }),
+    0,
+  );
+  const income = incs.reduce((s, i) => s + i.amount, 0);
+  const savingsDelta = savs.reduce((s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount), 0);
+  return +(income - expenses - savingsDelta).toFixed(2);
+}
+
+/** True when an auto-generated carryover row has drifted from the truth. */
+export function carryoverHasDrifted(current: number, recomputed: number): boolean {
+  return Math.abs(current - recomputed) >= 0.005;
+}
+
+/** Only rows the app wrote itself may be silently corrected. */
+export function isAutoCarryoverRow(row: { source?: string | null; notes?: string | null }): boolean {
+  return row.source === CARRYOVER_SOURCE && !!row.notes && row.notes.startsWith(AUTO_PREFIX);
+}
+
 async function computePrevLeftover(uid: string, prev: ActiveCycle): Promise<number> {
   const [txRes, incRes, savRes] = await Promise.all([
     supabase
@@ -58,78 +93,69 @@ async function computePrevLeftover(uid: string, prev: ActiveCycle): Promise<numb
       .gte("date", prev.startISO)
       .lte("date", prev.endISO),
   ]);
-  const txs = (txRes.data ?? []) as unknown as TxRow[];
-  const incs = (incRes.data ?? []) as unknown as IncomeRow[];
-  const savs = (savRes.data ?? []) as unknown as SavingsRow[];
-
-  const expenses = txs.reduce(
-    (s, t) =>
-      s +
-      mainExpensePortion({
-        total_amount: t.total_amount,
-        payment_splits: t.payment_splits ?? undefined,
-      }),
-    0,
+  return leftoverFromRows(
+    (txRes.data ?? []) as unknown as TxRow[],
+    (incRes.data ?? []) as unknown as IncomeRow[],
+    (savRes.data ?? []) as unknown as SavingsRow[],
   );
-  const income = incs.reduce((s, i) => s + i.amount, 0);
-  const savingsDelta = savs.reduce((s, e) => s + (e.kind === "deposit" ? e.amount : -e.amount), 0);
-  return +(income - expenses - savingsDelta).toFixed(2);
 }
 
-async function runCarryover(
-  settings: CycleSettings,
-): Promise<{ inserted: boolean; amount: number } | null> {
+export interface CarryoverResult {
+  /** "inserted" — new row; "corrected" — stale amount fixed; "ok" — nothing to do. */
+  action: "inserted" | "corrected" | "ok" | "skipped";
+  amount: number;
+  previous?: number;
+  windowLabel?: string;
+}
+
+/**
+ * Creates the current cycle's carryover row when missing, or reconciles an
+ * existing auto-generated one whose amount has drifted (e.g. a past-cycle
+ * purchase was later re-dated or its amount corrected).
+ */
+export async function syncCarryover(settings: CycleSettings): Promise<CarryoverResult> {
   const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return null;
+  if (!u.user) return { action: "skipped", amount: 0 };
   const uid = u.user.id;
 
   const prev = previousCycleWindow(settings);
-  const key = prev.startISO;
+  const current = getActiveCycle(settings);
+  const windowLabel = `${prev.startISO} → ${prev.endISO}`;
+  const notes = `Auto-generated ${carryoverTag(prev.startISO)} · from ${windowLabel}`;
 
-  // Already carried this cycle over on any device.
-  if (settings.lastCarryoverCycleKey === key) return null;
-
-  // Cross-device idempotency: check for an existing tagged income row.
-  const tag = carryoverTag(key);
-  const { data: existing } = await supabase
+  // Any auto-generated carryover already sitting inside the current window is
+  // THE row for this cycle — one per cycle is the invariant.
+  const { data: rows } = await supabase
     .from("incomes")
-    .select("id,notes")
+    .select("id,amount,notes,source")
     .eq("user_id", uid)
     .eq("source", CARRYOVER_SOURCE)
-    .like("notes", `%${tag}%`)
+    .like("notes", `${AUTO_PREFIX}%`)
+    .gte("date", current.startISO)
+    .lte("date", current.endISO)
+    .order("created_at", { ascending: true })
     .limit(1);
-  if (existing && existing.length > 0) {
-    return { inserted: false, amount: 0 };
-  }
-
-  // Extra guard: if cycle settings changed since the last carryover ran,
-  // the previous-cycle key can shift and bypass the tag check above. Skip
-  // the insert if ANY auto-generated carryover already sits inside the
-  // current cycle window — one per cycle is the invariant.
-  const { getActiveCycle: getActiveCycleForGuard } = await import("@/lib/cycle");
-  const currentForGuard = getActiveCycleForGuard(settings);
-  const { data: existingInCurrent } = await supabase
-    .from("incomes")
-    .select("id")
-    .eq("user_id", uid)
-    .eq("source", CARRYOVER_SOURCE)
-    .like("notes", "Auto-generated carryover:%")
-    .gte("date", currentForGuard.startISO)
-    .lte("date", currentForGuard.endISO)
-    .limit(1);
-  if (existingInCurrent && existingInCurrent.length > 0) {
-    return { inserted: false, amount: 0 };
-  }
 
   const leftover = await computePrevLeftover(uid, prev);
-  if (Math.abs(leftover) < 0.005) {
-    return { inserted: false, amount: 0 };
+  const existing = rows?.[0];
+
+  if (existing) {
+    if (!isAutoCarryoverRow(existing)) return { action: "skipped", amount: existing.amount };
+    if (!carryoverHasDrifted(existing.amount, leftover)) {
+      return { action: "ok", amount: existing.amount, windowLabel };
+    }
+    const { error } = await supabase
+      .from("incomes")
+      .update({ amount: leftover, notes })
+      .eq("id", existing.id)
+      .eq("user_id", uid);
+    if (error) throw error;
+    return { action: "corrected", amount: leftover, previous: existing.amount, windowLabel };
   }
 
-  // Post to the first day of the CURRENT cycle so it counts toward the new window.
-  // Compute current cycle start via the same helper by importing lazily.
-  const { getActiveCycle } = await import("@/lib/cycle");
-  const current = getActiveCycle(settings);
+  if (Math.abs(leftover) < 0.005) {
+    return { action: "ok", amount: 0, windowLabel };
+  }
 
   const { error } = await supabase.from("incomes").insert({
     user_id: uid,
@@ -137,21 +163,22 @@ async function runCarryover(
     source: CARRYOVER_SOURCE,
     amount: leftover,
     category: "Other",
-    notes: `Auto-generated ${tag} · from ${prev.startISO} → ${prev.endISO}`,
+    notes,
   });
   if (error) throw error;
 
-  return { inserted: true, amount: leftover };
+  return { action: "inserted", amount: leftover, windowLabel };
 }
 
 /**
- * Mount ONCE at app root. Runs on cycle advance to carry the previous cycle's
- * leftover (positive or negative) into the current cycle as an income row.
+ * Mount ONCE at app root. Creates the current cycle's carryover on advance and
+ * keeps it in step with later edits to the previous cycle's entries.
  */
 export function useCycleCarryover() {
   const { settings, update, isReady } = useCycleSettings();
   const qc = useQueryClient();
   const running = useRef(false);
+  const ranForKey = useRef<string | null>(null);
 
   useEffect(() => {
     // Never mutate financial data from the local first-paint cache. Wait for
@@ -160,14 +187,16 @@ export function useCycleCarryover() {
     if (!isReady) return;
     if (!settings.carryoverEnabled) return;
     const prev = previousCycleWindow(settings);
-    if (settings.lastCarryoverCycleKey === prev.startISO) return;
     if (running.current) return;
+    if (ranForKey.current === prev.startISO) return;
     running.current = true;
-    void runCarryover(settings)
+    ranForKey.current = prev.startISO;
+    void syncCarryover(settings)
       .then((res) => {
-        // Advance the key regardless of insert so we don't re-check every mount.
-        update({ ...settings, lastCarryoverCycleKey: prev.startISO });
-        if (res?.inserted) {
+        if (settings.lastCarryoverCycleKey !== prev.startISO) {
+          update({ ...settings, lastCarryoverCycleKey: prev.startISO });
+        }
+        if (res.action === "inserted" || res.action === "corrected") {
           qc.invalidateQueries({ queryKey: ["incomes"] });
         }
       })
@@ -178,7 +207,7 @@ export function useCycleCarryover() {
         running.current = false;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, settings.carryoverEnabled, settings.lastCarryoverCycleKey, settings.anchor, settings.type]);
+  }, [isReady, settings.carryoverEnabled, settings.anchor, settings.type, settings.override]);
 }
 
 export const CARRYOVER_SOURCE_LABEL = CARRYOVER_SOURCE;

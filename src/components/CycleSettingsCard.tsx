@@ -14,10 +14,44 @@ import {
 import { CalendarClock } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
-import { type CycleSettings, type CycleType, getActiveCycle, useCycleSettings } from "@/lib/cycle";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  type CycleSettings,
+  type CycleType,
+  getActiveCycle,
+  previousCycleWindow,
+  useCycleSettings,
+} from "@/lib/cycle";
+import { syncCarryover } from "@/lib/carryover";
+import { fmt } from "@/lib/format";
 
 export function CycleSettingsCard() {
   const { settings, update } = useCycleSettings();
+  const qc = useQueryClient();
+  const [recalcing, setRecalcing] = useState(false);
+  const prevWindow = previousCycleWindow(settings);
+
+  async function recalc() {
+    setRecalcing(true);
+    try {
+      const res = await syncCarryover(settings);
+      qc.invalidateQueries({ queryKey: ["incomes"] });
+      if (res.action === "corrected") {
+        toast.success(`Carryover corrected to ${fmt(res.amount)}`, {
+          description: `Was ${fmt(res.previous ?? 0)} — recalculated from ${res.windowLabel}.`,
+        });
+      } else if (res.action === "inserted") {
+        toast.success(`Carryover of ${fmt(res.amount)} added`);
+      } else {
+        toast.success("Carryover is already up to date");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't recalculate the carryover");
+    } finally {
+      setRecalcing(false);
+    }
+  }
+
   const [type, setType] = useState<CycleType>(settings.type);
   const [anchor, setAnchor] = useState(settings.anchor);
   const [overrideOn, setOverrideOn] = useState(Boolean(settings.override));
@@ -140,6 +174,18 @@ export function CycleSettingsCard() {
             </div>
             <Switch id="cycle-carryover" checked={carryover} onCheckedChange={setCarryover} />
           </div>
+          {carryover && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">
+                Checked against {format(parseISO(prevWindow.startISO), "d MMM")} –{" "}
+                {format(parseISO(prevWindow.endISO), "d MMM")}. Recheck if you've edited anything
+                from that window.
+              </p>
+              <Button variant="outline" size="sm" onClick={recalc} disabled={recalcing}>
+                {recalcing ? "Checking…" : "Recalculate carryover"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-sm">
