@@ -98,18 +98,25 @@ const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
   dismissed: "Handled",
 };
 
-type DeliveryFilter = "on_the_way" | "awaiting_dispatch" | "in_transit" | "delivered";
+type DeliveryFilter =
+  | "on_the_way"
+  | "awaiting_dispatch"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered";
 const DELIVERY_FILTERS: DeliveryFilter[] = [
   "on_the_way",
   "awaiting_dispatch",
   "in_transit",
+  "out_for_delivery",
   "delivered",
 ];
 const DELIVERY_LABELS: Record<DeliveryFilter, string> = {
   on_the_way: "On the way",
   awaiting_dispatch: "Awaiting dispatch",
   in_transit: "In transit",
-  delivered: "Delivered",
+  out_for_delivery: "Out for delivery",
+  delivered: "Received",
 };
 
 /** One dropdown drives two mutually exclusive URL params, so options are prefixed. */
