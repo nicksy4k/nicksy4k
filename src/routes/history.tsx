@@ -575,6 +575,11 @@ function HistoryPage() {
                         <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
                           {format(parseISO(t.date), "MMM d, yyyy")}
                         </p>
+                        {t.delivery_status && (t.courier || t.tracking_number) && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {[t.courier, t.tracking_number].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
                         {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
                           <p className="hidden sm:flex text-xs text-muted-foreground mt-1 truncate items-center gap-x-2 flex-wrap">
 
