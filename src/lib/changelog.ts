@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.4.1",
+    title: "Carryover now keeps itself honest",
+    date: "2026-09-11",
+    icon: CalendarClock,
+    highlights: [
+      "Fixed a case where editing a purchase after a new cycle had started left the “Carryover from previous cycle” figure stale, so “Left to spend” was wrong.",
+      "The carryover is now rechecked each time the app loads and quietly corrected if the old cycle's entries have changed. Income you entered yourself is never touched.",
+      "New “Recalculate carryover” button in Cycle settings, showing which window it was worked out from.",
+    ],
+  },
+  {
     version: "v3.4.0",
     title: "Easier delivery tracking",
     date: "2026-09-11",
