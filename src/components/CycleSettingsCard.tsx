@@ -14,10 +14,44 @@ import {
 import { CalendarClock } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
-import { type CycleSettings, type CycleType, getActiveCycle, useCycleSettings } from "@/lib/cycle";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  type CycleSettings,
+  type CycleType,
+  getActiveCycle,
+  previousCycleWindow,
+  useCycleSettings,
+} from "@/lib/cycle";
+import { syncCarryover } from "@/lib/carryover";
+import { fmt } from "@/lib/format";
 
 export function CycleSettingsCard() {
   const { settings, update } = useCycleSettings();
+  const qc = useQueryClient();
+  const [recalcing, setRecalcing] = useState(false);
+  const prevWindow = previousCycleWindow(settings);
+
+  async function recalc() {
+    setRecalcing(true);
+    try {
+      const res = await syncCarryover(settings);
+      qc.invalidateQueries({ queryKey: ["incomes"] });
+      if (res.action === "corrected") {
+        toast.success(`Carryover corrected to ${fmt(res.amount)}`, {
+          description: `Was ${fmt(res.previous ?? 0)} — recalculated from ${res.windowLabel}.`,
+        });
+      } else if (res.action === "inserted") {
+        toast.success(`Carryover of ${fmt(res.amount)} added`);
+      } else {
+        toast.success("Carryover is already up to date");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't recalculate the carryover");
+    } finally {
+      setRecalcing(false);
+    }
+  }
+
   const [type, setType] = useState<CycleType>(settings.type);
   const [anchor, setAnchor] = useState(settings.anchor);
   const [overrideOn, setOverrideOn] = useState(Boolean(settings.override));
