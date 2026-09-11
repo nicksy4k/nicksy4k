@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DELIVERY_STATUSES, deliveryMeta, isAwaitingDelivery } from "@/lib/delivery";
+import { DeliveryActions } from "@/components/history/DeliveryActions";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -98,18 +99,25 @@ const PROTECTION_LABELS: Record<ProtectionFilter, string> = {
   dismissed: "Handled",
 };
 
-type DeliveryFilter = "on_the_way" | "awaiting_dispatch" | "in_transit" | "delivered";
+type DeliveryFilter =
+  | "on_the_way"
+  | "awaiting_dispatch"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered";
 const DELIVERY_FILTERS: DeliveryFilter[] = [
   "on_the_way",
   "awaiting_dispatch",
   "in_transit",
+  "out_for_delivery",
   "delivered",
 ];
 const DELIVERY_LABELS: Record<DeliveryFilter, string> = {
   on_the_way: "On the way",
   awaiting_dispatch: "Awaiting dispatch",
   in_transit: "In transit",
-  delivered: "Delivered",
+  out_for_delivery: "Out for delivery",
+  delivered: "Received",
 };
 
 /** One dropdown drives two mutually exclusive URL params, so options are prefixed. */
@@ -567,6 +575,11 @@ function HistoryPage() {
                         <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
                           {format(parseISO(t.date), "MMM d, yyyy")}
                         </p>
+                        {t.delivery_status && (t.courier || t.tracking_number) && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {[t.courier, t.tracking_number].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
                         {!t.is_pending && t.payment_splits && t.payment_splits.length > 0 && (
                           <p className="hidden sm:flex text-xs text-muted-foreground mt-1 truncate items-center gap-x-2 flex-wrap">
 
@@ -966,22 +979,7 @@ function HistoryPage() {
                             <RotateCcw className="h-4 w-4" /> Refund
                           </Button>
                         )}
-                        {isAwaitingDelivery(t) && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                await updateTransaction(t.id, { delivery_status: "delivered" });
-                                toast.success("Marked as delivered");
-                              } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Failed to update");
-                              }
-                            }}
-                          >
-                            <Check className="h-4 w-4" /> Mark delivered
-                          </Button>
-                        )}
+                        <DeliveryActions transaction={t} onUpdate={updateTransaction} />
                         <Button
                           variant="ghost"
                           size="sm"

@@ -20,6 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { useCategories, useSavings, useTransactions } from "@/lib/store";
 import { activeSymbol, usePreferences } from "@/lib/preferences";
 import type { PaymentSplit } from "@/lib/types";
@@ -48,6 +49,9 @@ export function QuickAddSheet({ open, onOpenChange }: Props) {
   const [category, setCategory] = useState("");
   const [source, setSource] = useState("main");
   const [saving, setSaving] = useState(false);
+  const [expectingDelivery, setExpectingDelivery] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
 
   const pockets = useMemo(() => {
     const map = new Map<string, number>();
@@ -63,6 +67,9 @@ export function QuickAddSheet({ open, onOpenChange }: Props) {
     setRetailer("");
     setCategory("");
     setSource("main");
+    setExpectingDelivery(false);
+    setCourier("");
+    setTrackingNumber("");
   };
 
   const close = () => {
@@ -114,6 +121,13 @@ export function QuickAddSheet({ open, onOpenChange }: Props) {
           },
         ],
         payment_splits: splits,
+        delivery_status: expectingDelivery
+          ? courier.trim() || trackingNumber.trim()
+            ? "in_transit"
+            : "awaiting_dispatch"
+          : null,
+        courier: expectingDelivery ? courier.trim() || null : null,
+        tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
 
       toast.success(`Logged ${symbol}${value.toFixed(2)} at ${shop}`, {
@@ -209,6 +223,37 @@ export function QuickAddSheet({ open, onOpenChange }: Props) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="qa-delivery" className="text-sm">
+                Expecting delivery
+              </Label>
+              <Switch
+                id="qa-delivery"
+                checked={expectingDelivery}
+                onCheckedChange={setExpectingDelivery}
+              />
+            </div>
+            {expectingDelivery && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Input
+                  placeholder="Courier"
+                  aria-label="Courier"
+                  value={courier}
+                  onChange={(e) => setCourier(e.target.value)}
+                  className="h-11"
+                />
+                <Input
+                  placeholder="Tracking no."
+                  aria-label="Tracking number"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            )}
           </div>
 
           <Button className="h-12 w-full text-base" onClick={save} disabled={saving}>
