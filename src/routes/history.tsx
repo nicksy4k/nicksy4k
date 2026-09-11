@@ -973,22 +973,7 @@ function HistoryPage() {
                             <RotateCcw className="h-4 w-4" /> Refund
                           </Button>
                         )}
-                        {isAwaitingDelivery(t) && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                await updateTransaction(t.id, { delivery_status: "delivered" });
-                                toast.success("Marked as delivered");
-                              } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Failed to update");
-                              }
-                            }}
-                          >
-                            <Check className="h-4 w-4" /> Mark delivered
-                          </Button>
-                        )}
+                        <DeliveryActions transaction={t} onUpdate={updateTransaction} />
                         <Button
                           variant="ghost"
                           size="sm"
