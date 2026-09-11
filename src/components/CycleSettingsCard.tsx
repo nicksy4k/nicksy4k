@@ -140,6 +140,18 @@ export function CycleSettingsCard() {
             </div>
             <Switch id="cycle-carryover" checked={carryover} onCheckedChange={setCarryover} />
           </div>
+          {carryover && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">
+                Checked against {format(parseISO(prevWindow.startISO), "d MMM")} –{" "}
+                {format(parseISO(prevWindow.endISO), "d MMM")}. Recheck if you've edited anything
+                from that window.
+              </p>
+              <Button variant="outline" size="sm" onClick={recalc} disabled={recalcing}>
+                {recalcing ? "Checking…" : "Recalculate carryover"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-sm">
