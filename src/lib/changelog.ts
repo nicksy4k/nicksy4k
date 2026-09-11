@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.4.0",
+    title: "Easier delivery tracking",
+    date: "2026-09-11",
+    icon: Truck,
+    highlights: [
+      "The “Expecting delivery” switch now sits at the top of the new purchase form, works on pending holds, and is in Quick add too.",
+      "New “Out for delivery” step, and “Delivered” is now called “Received”.",
+      "Move an order along straight from History: mark dispatched (with courier and tracking), out for delivery, or received — no editing needed.",
+      "Courier and tracking details show on the transaction card.",
+    ],
+  },
+  {
     version: "v3.3.11",
     title: "Print or save any transaction as a PDF",
     date: "2026-09-09",
