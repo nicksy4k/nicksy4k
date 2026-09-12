@@ -417,6 +417,13 @@ function NewTransactionPage() {
           expiration_date: null,
           payment_splits: [],
           is_pending: true,
+          delivery_status: expectingDelivery
+            ? courier.trim() || trackingNumber.trim()
+              ? "in_transit"
+              : "awaiting_dispatch"
+            : null,
+          courier: expectingDelivery ? courier.trim() || null : null,
+          tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
         } as never);
         trackEvent("transaction_added", { pending: true });
         toast.success("Pending hold logged");

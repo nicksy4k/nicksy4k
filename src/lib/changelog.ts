@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.4.2",
+    title: "Delivery tracking fixes",
+    date: "2026-09-12",
+    icon: Truck,
+    highlights: [
+      "The “Out for delivery” step now saves properly instead of showing an error.",
+      "Courier and tracking details entered on a pending hold are now kept with the purchase.",
+    ],
+  },
+  {
     version: "v3.4.1",
     title: "Carryover now keeps itself honest",
     date: "2026-09-11",
