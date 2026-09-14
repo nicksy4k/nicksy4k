@@ -253,6 +253,8 @@ function OutgoingsPage() {
         everyCycleTotal={everyCycle.total}
         everyCycleCount={everyCycle.count}
         billPocketBalance={billPocketBalance}
+        billMoneyNeeded={needed.billMoney}
+        paidElsewhere={paidElsewhere}
       />
 
       {alerts.length > 0 && view !== "bills" && (
@@ -347,6 +349,7 @@ function OutgoingsPage() {
               items={visible}
               resetDate={resetDate}
               fundedMap={fundedMap}
+              elsewhereLabels={elsewhereLabels}
               onSelect={setDetailsId}
               emptyLabel={
                 view === "subs"
@@ -393,6 +396,7 @@ function OutgoingsPage() {
         item={detailsItem}
         cycle={cycle}
         linkedDebt={debts.find((d) => d.id === detailsItem?.debt_id) ?? null}
+        lastSource={detailsItem ? (sources[detailsItem.id] ?? null) : null}
         onClose={() => setDetailsId(null)}
         onEdit={(c) => {
           setDetailsId(null);
