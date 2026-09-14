@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.1",
+    title: "Editing a pay-later plan keeps its dates",
+    date: "2026-09-14",
+    icon: CalendarClock,
+    highlights: [
+      "Fixed a bug where opening an existing pay-later plan just to tweak the name or amount quietly rewrote all its payment dates to a 2-week schedule.",
+      "The plan's rhythm (weekly, every 2 weeks, every 4 weeks, or monthly) is now recovered from its saved dates when you edit it.",
+      "Payment dates are only regenerated when you actually change the provider, number of payments, frequency, or start date.",
+    ],
+  },
+  {
     version: "v3.5.0",
     title: "Easier pay-later plans that stay in sync",
     date: "2026-09-14",
