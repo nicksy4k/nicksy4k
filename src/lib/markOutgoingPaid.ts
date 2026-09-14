@@ -22,16 +22,38 @@ export interface OutgoingPaidCtx {
   onDebtSettled?: (info: { commitment: Commitment; debtName: string }) => void;
 }
 
+/** Encoded funding source: "main" | "pocket:<name>". */
+export const DEFAULT_OUTGOING_SOURCE = `pocket:${BILL_POCKET}`;
+
 function todayISO() {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+function pocketOf(source: string): string | null {
+  return source.startsWith("pocket:") ? source.slice(7) : null;
+}
+
+export function outgoingSourceLabel(source: string): string {
+  const pocket = pocketOf(source);
+  return pocket ? pocket : "Main balance";
+}
+
 /**
  * Mark a recurring outgoing paid: roll the due date forward, auto-log the
- * spend and deduct it from the Bill Money pocket, then sync any linked BNPL.
+ * spend, take it out of the chosen pocket (or straight off the main balance),
+ * then sync any linked debt.
+ *
+ * A pocket-funded payment writes BOTH rows — the withdrawal credits main back
+ * and the transaction debits it again — so only the pocket moves.
  */
-export async function markOutgoingPaid(ctx: OutgoingPaidCtx, c: Commitment, newDue: string) {
+export async function markOutgoingPaid(
+  ctx: OutgoingPaidCtx,
+  c: Commitment,
+  newDue: string,
+  source: string = DEFAULT_OUTGOING_SOURCE,
+) {
   const paidDate = todayISO();
+  const pocket = pocketOf(source);
   await ctx.updateCommitment(c.id, {
     paid: true,
     last_paid_date: paidDate,
@@ -56,21 +78,24 @@ export async function markOutgoingPaid(ctx: OutgoingPaidCtx, c: Commitment, newD
           category: c.category || "Subscriptions",
         },
       ],
+      payment_splits: pocket ? [{ source, amount: c.amount }] : [],
     });
-    await ctx.addSaving({
-      date: paidDate,
-      kind: "withdrawal",
-      amount: c.amount,
-      account: BILL_POCKET,
-      notes: `Auto-deducted for ${c.item_name}`,
-    });
+    if (pocket) {
+      await ctx.addSaving({
+        date: paidDate,
+        kind: "withdrawal",
+        amount: c.amount,
+        account: pocket,
+        notes: `Auto-deducted for ${c.item_name}`,
+      });
+    }
   } catch (err) {
     console.error("Failed to auto-log paid outgoing", err);
     toast.error("Marked paid, but auto-logging failed.");
   }
   if (c.debt_id) {
     try {
-      const res = await syncDebtAfterCommitmentPayment(c, paidDate, `pocket:${BILL_POCKET}`);
+      const res = await syncDebtAfterCommitmentPayment(c, paidDate, source);
       ctx.onDebtsChanged?.();
       if (res && res.kind !== "bnpl" && res.remaining <= 0.001) {
         ctx.onDebtSettled?.({ commitment: c, debtName: res.name });
@@ -87,13 +112,22 @@ export async function unmarkOutgoingPaid(ctx: OutgoingPaidCtx, c: Commitment) {
     const linked = ctx.transactions.filter((t) => t.commitment_id === c.id);
     for (const t of linked) await ctx.removeTransaction(t.id);
     const refundAmount = linked.reduce((s, t) => s + t.total_amount, 0) || c.amount;
-    await ctx.addSaving({
-      date: todayISO(),
-      kind: "deposit",
-      amount: refundAmount,
-      account: BILL_POCKET,
-      notes: `Refund — unmarked ${c.item_name}`,
-    });
+
+    // Refund whichever pocket funded it. Rows logged before funding sources
+    // existed carry no splits and always came out of Bill Money.
+    const split = linked.flatMap((t) => t.payment_splits ?? []).find((s) => s.source?.length);
+    const hasSplits = linked.some((t) => (t.payment_splits ?? []).length > 0);
+    const pocket = split ? pocketOf(split.source) : hasSplits ? null : BILL_POCKET;
+    if (pocket) {
+      await ctx.addSaving({
+        date: todayISO(),
+        kind: "deposit",
+        amount: refundAmount,
+        account: pocket,
+        notes: `Refund — unmarked ${c.item_name}`,
+      });
+    }
+
     await ctx.updateCommitment(c.id, {
       paid: false,
       last_paid_date: null,
@@ -108,7 +142,9 @@ export async function unmarkOutgoingPaid(ctx: OutgoingPaidCtx, c: Commitment) {
         console.error("Debt undo failed", err);
       }
     }
-    toast.success("Reversed · transaction removed & Bill Money refunded");
+    toast.success(
+      pocket ? `Reversed · transaction removed & ${pocket} refunded` : "Reversed · transaction removed",
+    );
   } catch (err) {
     console.error("Failed to undo paid outgoing", err);
     toast.error("Could not fully undo. Check transactions & pocket.");
