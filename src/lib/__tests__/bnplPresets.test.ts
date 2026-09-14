@@ -37,7 +37,7 @@ describe("bnpl presets", () => {
   it("stores a cadence the per-cycle maths understands", () => {
     const cadence = commitmentCadenceFor("fortnightly");
     // A £25 fortnightly instalment costs roughly two payments per monthly cycle.
-    const perCycle = perCycleAmount({ amount: 25, cadence } as never, "monthly");
+    const perCycle = perCycleAmount(25, cadence, "monthly");
     expect(perCycle).toBeGreaterThan(25);
   });
 });
