@@ -404,9 +404,16 @@ export function PaymentSplitEditor({
         );
       })}
 
-      <Button variant="outline" size="sm" onClick={add} className="w-full">
-        <Plus className="h-4 w-4" /> Add another source
-      </Button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" onClick={add} className="w-full">
+          <Plus className="h-4 w-4" /> Add another source
+        </Button>
+        {allowBnpl && !hasBnpl && (
+          <Button variant="outline" size="sm" onClick={addPayLater} className="w-full">
+            <CalendarClock className="h-4 w-4" /> Pay later (Clearpay/Klarna)
+          </Button>
+        )}
+      </div>
 
       <div className="flex items-center justify-between rounded-md border border-border bg-card/60 p-3 text-sm">
         <div className="flex items-center gap-4">
