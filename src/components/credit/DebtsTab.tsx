@@ -39,6 +39,12 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
+  BNPL_PRESETS,
+  cadenceEveryLabel,
+  generateInstallmentDates,
+  type BnplCadence,
+} from "@/lib/bnplPresets";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
