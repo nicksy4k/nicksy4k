@@ -36,6 +36,8 @@ export function OutgoingDetailsDialog({
   cycle: ReturnType<typeof useActiveCycle>;
   /** Debt this outgoing pays down, when linked. */
   linkedDebt?: Debt | null;
+  /** Encoded source this outgoing was last actually paid from. */
+  lastSource?: string | null;
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
