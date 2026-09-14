@@ -672,6 +672,7 @@ function DebtDialog({
       payFirstNow: boolean;
       firstPaymentSource: SourceChoice | null;
       items: Array<{ item_name: string; price: number; quantity: number }>;
+      cadence: BnplCadence;
     },
   ) => void | Promise<void>;
 }) {
@@ -680,6 +681,8 @@ function DebtDialog({
   const [kind, setKind] = useState<"standard" | "bnpl">("standard");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("4");
+  const [cadence, setCadence] = useState<BnplCadence>("fortnightly");
+  const [preset, setPreset] = useState("clearpay");
   const [startDate, setStartDate] = useState(todayISO());
   const [dates, setDates] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
@@ -696,6 +699,8 @@ function DebtDialog({
       setKind(editing?.kind ?? "standard");
       setAmount(editing ? String(editing.total_amount) : "");
       setInstallments(editing?.installments_total ? String(editing.installments_total) : "4");
+      setCadence("fortnightly");
+      setPreset(editing ? "custom" : "clearpay");
       setStartDate(editing?.start_date ?? todayISO());
       setDates(editing?.installment_dates ?? []);
       setNotes(editing?.notes ?? "");
@@ -723,20 +728,24 @@ function DebtDialog({
     setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
   }, [itemsTotal, totalDirty, editing, itemRows.length]);
 
-  // Keep date array length aligned with installments count.
+  // Regenerate the schedule whenever the shape of the plan changes.
   const n = parseInt(installments, 10) || 4;
   useEffect(() => {
     if (kind !== "bnpl") return;
-    setDates((prev) => {
-      const out = [...prev];
-      while (out.length < n) {
-        const base = new Date(startDate || todayISO());
-        base.setMonth(base.getMonth() + out.length);
-        out.push(format(base, "yyyy-MM-dd"));
-      }
-      return out.slice(0, n);
-    });
-  }, [kind, n, startDate]);
+    setDates(generateInstallmentDates(startDate || todayISO(), n, cadence));
+  }, [kind, n, startDate, cadence]);
+
+  /** One-tap provider preset. */
+  function applyPreset(id: string) {
+    const p = BNPL_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setPreset(p.id);
+    if (p.installments == null) return;
+    setInstallments(String(p.installments));
+    setCadence(p.cadence);
+    setPayFirstNow(p.firstPaymentToday);
+    if (p.firstPaymentToday) setStartDate(todayISO());
+  }
 
   const showPayFirst = !editing && kind === "bnpl";
   const amtNum = parseFloat(amount);
