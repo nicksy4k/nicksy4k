@@ -16,11 +16,16 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 
+export type { BnplCadence } from "@/lib/bnplPresets";
+export { generateInstallmentDates } from "@/lib/bnplPresets";
+
 export interface BnplDetails {
   name: string;
   installments: string;
   firstDate: string;
-  cadence: "weekly" | "fortnightly" | "monthly";
+  cadence: BnplCadence;
+  /** Provider preset id this plan was seeded from ("clearpay", "custom", …). */
+  preset: string;
   /** When true, installment #1 is deducted today and removed from the debt. */
   firstPaymentToday: boolean;
   /** Source for the today-deducted first installment. "main" | "pocket:<name>" */
@@ -41,32 +46,14 @@ export function emptySplit(source = "main"): SplitDraft {
 
 export function defaultBnpl(retailer: string, firstDate: string): BnplDetails {
   return {
-    name: retailer.trim() ? `${retailer.trim()} – BNPL` : "BNPL plan",
+    name: retailer.trim() ? `${retailer.trim()} – Pay later` : "Pay later plan",
     installments: "4",
     firstDate,
     cadence: "fortnightly",
-    firstPaymentToday: false,
+    preset: "clearpay",
+    firstPaymentToday: true,
     firstSource: "main",
   };
-}
-
-export function generateInstallmentDates(
-  firstDate: string,
-  count: number,
-  cadence: BnplDetails["cadence"],
-): string[] {
-  const out: string[] = [];
-  const [y, m, d] = firstDate.split("-").map(Number);
-  for (let i = 0; i < count; i++) {
-    const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
-    if (cadence === "weekly") dt.setDate(dt.getDate() + 7 * i);
-    else if (cadence === "fortnightly") dt.setDate(dt.getDate() + 14 * i);
-    else dt.setMonth(dt.getMonth() + i);
-    out.push(
-      `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`,
-    );
-  }
-  return out;
 }
 
 interface Props {
