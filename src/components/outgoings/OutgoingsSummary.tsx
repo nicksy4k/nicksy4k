@@ -37,9 +37,13 @@ export function OutgoingsSummary({
   everyCycleTotal,
   everyCycleCount,
   billPocketBalance,
+  billMoneyNeeded,
+  paidElsewhere = [],
 }: OutgoingsSummaryProps) {
   const total = bills + subs;
-  const shortfall = leftToPay - billPocketBalance;
+  const needed = billMoneyNeeded ?? leftToPay;
+  const shortfall = needed - billPocketBalance;
+  const elsewhereTotal = paidElsewhere.reduce((s, e) => s + e.amount, 0);
 
   return (
     <div className="space-y-3 md:space-y-4 mb-5 md:mb-6">
