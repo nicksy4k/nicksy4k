@@ -586,6 +586,15 @@ export function DebtsTab() {
               console.error("Commitment sync failed", err);
             }
 
+            // Tag the payment with the outgoing so undoing from either side
+            // removes exactly this row (and never double-logs the cycle).
+            if (linkedCommitmentId) {
+              const last = next[next.length - 1];
+              if (last) last.commitment_id = linkedCommitmentId;
+              updatedDebt.payments = next;
+              await update(pending.debt.id, { payments: next });
+            }
+
             await ledger.debit(choice, {
               amount: pending.amount,
               date: pending.date,
