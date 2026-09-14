@@ -44,11 +44,15 @@ export function OutgoingsList({
             ? format(parseISO(c.last_paid_date), "d MMM yyyy")
             : "date unknown";
           const notDueYet = !!c.next_due_date && c.next_due_date >= resetDate;
+          const elsewhere = elsewhereLabels[c.id];
           let statusTitle: string;
           let statusBody: string;
           if (c.paid) {
             statusTitle = "Paid this cycle";
-            statusBody = `Marked paid on ${paidLabel}. Next due ${dueLabel}.`;
+            statusBody = `Marked paid on ${paidLabel}${elsewhere ? ` from ${elsewhere}` : ""}. Next due ${dueLabel}.`;
+          } else if (elsewhere) {
+            statusTitle = `Paid from ${elsewhere}`;
+            statusBody = `Due ${dueLabel} (this cycle). Last time this came out of ${elsewhere}, so it isn't counted against Bill Money.`;
           } else if (notDueYet) {
             statusTitle = "Covered — not due this cycle";
             statusBody = `Next due ${dueLabel}, after the current cycle ends on ${resetLabel}.`;
