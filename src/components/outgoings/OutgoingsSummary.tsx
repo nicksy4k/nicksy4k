@@ -70,8 +70,8 @@ export function OutgoingsSummary({
               label="Left to pay"
               value={fmt(leftToPay)}
               hint={
-                elsewhereTotal > 0.001
-                  ? `${fmt(needed)} from Bill Money · ${fmt(elsewhereTotal)} elsewhere`
+                unlinkedDebtDue > 0.001
+                  ? `plus ${fmt(unlinkedDebtDue)} of plan repayments`
                   : "Unpaid only"
               }
               destructive={leftToPay > 0.001}
