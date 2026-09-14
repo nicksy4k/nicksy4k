@@ -255,8 +255,8 @@ function OutgoingsPage() {
         everyCycleTotal={everyCycle.total}
         everyCycleCount={everyCycle.count}
         billPocketBalance={billPocketBalance}
-        billMoneyNeeded={needed.billMoney}
-        paidElsewhere={paidElsewhere}
+        billMoneyNeeded={billMoneyNeeded}
+        unlinkedDebtDue={unlinkedDebtDue}
       />
 
       {alerts.length > 0 && view !== "bills" && (
