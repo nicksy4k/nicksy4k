@@ -572,6 +572,20 @@ export function DebtsTab() {
               },
             ];
             await update(pending.debt.id, { payments: next });
+
+            // Sync the linked outgoing first (any debt kind, not just
+            // pay-later) so the logged spend can be tagged with it and both
+            // pages show the same paid state.
+            const updatedDebt: Debt = { ...pending.debt, payments: next };
+            let linkedCommitmentId: string | null = null;
+            try {
+              const linked = await syncCommitmentAfterDebtPayment(updatedDebt, pending.date);
+              linkedCommitmentId = linked?.id ?? null;
+              if (linked) qc.invalidateQueries({ queryKey: ["commitments"] });
+            } catch (err) {
+              console.error("Commitment sync failed", err);
+            }
+
             await ledger.debit(choice, {
               amount: pending.amount,
               date: pending.date,
@@ -581,18 +595,8 @@ export function DebtsTab() {
                   : `Debt · ${pending.debt.name}`,
               category: "Debt",
               notes: pending.notes,
+              commitmentId: linkedCommitmentId,
             });
-
-            // Sync linked commitment: mark paid + advance to next installment.
-            const updatedDebt: Debt = { ...pending.debt, payments: next };
-            if (pending.debt.kind === "bnpl") {
-              try {
-                await syncCommitmentAfterDebtPayment(updatedDebt, pending.date);
-                qc.invalidateQueries({ queryKey: ["commitments"] });
-              } catch (err) {
-                console.error("Commitment sync failed", err);
-              }
-            }
 
             // Kill-switch: drop the linked recurring commitment when settled.
             const remainingAfter = debtRemaining(updatedDebt);
