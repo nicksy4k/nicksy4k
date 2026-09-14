@@ -10,22 +10,44 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Commitment, Debt, LedgerPayment } from "@/lib/types";
 
 /**
- * Advance a commitment to its next installment after a debt payment is
- * logged. Marks paid + rolls next_due_date forward to the next entry in
- * `debt.installment_dates` (or clears it if this was the final one).
+ * The due date a linked outgoing should roll to after a payment lands on the
+ * debt. Pay-later plans follow their stored instalment dates; every other
+ * linked debt (arrears, loans repaid monthly…) rolls on by its own cadence,
+ * so a standard debt never loses its due date.
  */
-export async function syncCommitmentAfterDebtPayment(debt: Debt, paidDate: string): Promise<void> {
+export function nextDueAfterDebtPayment(
+  debt: Debt,
+  currentDue: string | null,
+  cadence?: string | null,
+): string | null {
+  const dates = (debt.installment_dates ?? []).slice().sort();
+  if (dates.length > 0) {
+    return dates.find((d) => currentDue == null || d > currentDue) ?? null;
+  }
+  if (!currentDue) return null;
+  return advanceForCommitment(currentDue, cadence ?? undefined, "monthly");
+}
+
+/**
+ * Advance a commitment to its next payment after a debt payment is logged.
+ * Marks paid + rolls next_due_date forward. Runs for EVERY linked debt kind,
+ * not just pay-later plans, so logging a repayment on the debts page ticks
+ * the matching outgoing too.
+ */
+export async function syncCommitmentAfterDebtPayment(
+  debt: Debt,
+  paidDate: string,
+): Promise<Commitment | null> {
   const { data: rows, error } = await supabase
     .from("commitments")
     .select("*")
     .eq("debt_id", debt.id);
   if (error) throw error;
   const commitment = (rows ?? [])[0] as unknown as Commitment | undefined;
-  if (!commitment) return;
+  if (!commitment) return null;
 
-  const dates = (debt.installment_dates ?? []).slice().sort();
   const currentDue = commitment.next_due_date ?? null;
-  const nextDue = dates.find((d) => currentDue == null || d > currentDue) ?? null;
+  const nextDue = nextDueAfterDebtPayment(debt, currentDue, commitment.cadence);
 
   await supabase
     .from("commitments")
@@ -36,6 +58,7 @@ export async function syncCommitmentAfterDebtPayment(debt: Debt, paidDate: strin
       next_due_date: nextDue,
     })
     .eq("id", commitment.id);
+  return { ...commitment, paid: true, last_paid_date: paidDate, prev_due_date: currentDue, next_due_date: nextDue };
 }
 
 /**
