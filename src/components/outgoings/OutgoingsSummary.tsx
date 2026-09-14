@@ -112,20 +112,30 @@ export function OutgoingsSummary({
             ) : (
               <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             )}
-            {shortfall > 0.001 ? (
-              <p className="break-words">
-                <span className="font-semibold">Shortfall:</span> move{" "}
-                <span className="font-semibold tabular-nums">{fmt(shortfall)}</span> into your Bill
-                Money pocket to cover what's left.
-              </p>
-            ) : (
-              <p className="break-words">
-                <span className="font-semibold">Bill Money is fully funded.</span>{" "}
-                <span className="text-muted-foreground">
-                  Balance {fmt(billPocketBalance)} · needed {fmt(leftToPay)}
-                </span>
-              </p>
-            )}
+            <div className="break-words">
+              {shortfall > 0.001 ? (
+                <p>
+                  <span className="font-semibold">Shortfall:</span> move{" "}
+                  <span className="font-semibold tabular-nums">{fmt(shortfall)}</span> into your Bill
+                  Money pocket to cover what's left.
+                </p>
+              ) : (
+                <p>
+                  <span className="font-semibold">Bill Money is fully funded.</span>{" "}
+                  <span className="text-muted-foreground">
+                    Balance {fmt(billPocketBalance)} · needed {fmt(needed)}
+                  </span>
+                </p>
+              )}
+              {elsewhereTotal > 0.001 && (
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Not counted here:{" "}
+                  {paidElsewhere
+                    .map((e) => `${fmt(e.amount)} from ${e.label}`)
+                    .join(" · ")}
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
