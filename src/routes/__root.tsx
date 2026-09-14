@@ -192,6 +192,9 @@ function AuthGate() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<"loading" | "in" | "out">("loading");
 
+  // Live updates across open tabs/devices.
+  useLedgerRealtime();
+
   useEffect(() => {
     let mounted = true;
     let lastUserId: string | null = null;
