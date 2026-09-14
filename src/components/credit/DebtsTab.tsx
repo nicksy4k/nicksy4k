@@ -693,6 +693,10 @@ function DebtDialog({
     Array<{ item_name: string; price: string; quantity: string }>
   >([]);
   const [totalDirty, setTotalDirty] = useState(false);
+  // True once the user changes the plan shape (preset / payments / cadence /
+  // start date). Guards the regenerate effect so opening an existing plan for
+  // a small edit never wipes its stored dates.
+  const [shapeDirty, setShapeDirty] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -700,7 +704,9 @@ function DebtDialog({
       setKind(editing?.kind ?? "standard");
       setAmount(editing ? String(editing.total_amount) : "");
       setInstallments(editing?.installments_total ? String(editing.installments_total) : "4");
-      setCadence("fortnightly");
+      // Recover the cadence from the stored schedule; without this every edit
+      // would fall back to fortnightly and corrupt monthly plans on save.
+      setCadence(editing?.installment_dates ? inferBnplCadence(editing.installment_dates) : "fortnightly");
       setPreset(editing ? "custom" : "clearpay");
       setStartDate(editing?.start_date ?? todayISO());
       setDates(editing?.installment_dates ?? []);
@@ -709,6 +715,9 @@ function DebtDialog({
       setSourceValue("main");
       setItemRows([]);
       setTotalDirty(!!editing);
+      // New plans need an initial generated schedule; edits keep theirs until
+      // the user deliberately changes the shape.
+      setShapeDirty(!editing);
     }
   }, [open, editing]);
 
@@ -729,12 +738,14 @@ function DebtDialog({
     setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
   }, [itemsTotal, totalDirty, editing, itemRows.length]);
 
-  // Regenerate the schedule whenever the shape of the plan changes.
+  // Regenerate the schedule whenever the shape of the plan changes — but only
+  // after the user actually changes it (or it's a brand-new plan).
   const n = parseInt(installments, 10) || 4;
   useEffect(() => {
     if (kind !== "bnpl") return;
+    if (!shapeDirty) return;
     setDates(generateInstallmentDates(startDate || todayISO(), n, cadence));
-  }, [kind, n, startDate, cadence]);
+  }, [kind, n, startDate, cadence, shapeDirty]);
 
   /** One-tap provider preset. */
   function applyPreset(id: string) {
@@ -742,6 +753,7 @@ function DebtDialog({
     if (!p) return;
     setPreset(p.id);
     if (p.installments == null) return;
+    setShapeDirty(true);
     setInstallments(String(p.installments));
     setCadence(p.cadence);
     setPayFirstNow(p.firstPaymentToday);
