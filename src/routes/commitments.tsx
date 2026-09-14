@@ -21,7 +21,12 @@ import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useActiveCycle } from "@/lib/cycle";
 import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
-import { perCycleTotal } from "@/lib/outgoings";
+import {
+  isBillMoneySource,
+  lastFundingSources,
+  neededBySource,
+  perCycleTotal,
+} from "@/lib/outgoings";
 import {
   acceptFullPricePatch,
   daysUntilPromoEnd,
@@ -112,18 +117,35 @@ function OutgoingsPage() {
   );
   const everyCycle = useMemo(() => perCycleTotal(allItems, cycle.type), [allItems, cycle.type]);
 
-  const leftToPay = useMemo(
-    () =>
-      allItems
-        .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
-        .reduce((s, i) => s + i.amount, 0),
+  const unpaidDue = useMemo(
+    () => allItems.filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate),
     [allItems, resetDate],
   );
 
+  const leftToPay = useMemo(() => unpaidDue.reduce((s, i) => s + i.amount, 0), [unpaidDue]);
+
+  // Where each row was last actually paid from, so a pay-later instalment you
+  // settle off the main balance stops inflating the Bill Money figure.
+  const sources = useMemo(() => lastFundingSources(transactions), [transactions]);
+  const needed = useMemo(() => neededBySource(unpaidDue, sources), [unpaidDue, sources]);
+  const elsewhereLabels = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of unpaidDue) {
+      const s = sources[c.id];
+      if (s && !isBillMoneySource(s)) map[c.id] = outgoingSourceLabel(s);
+    }
+    return map;
+  }, [unpaidDue, sources]);
+  const paidElsewhere = useMemo(
+    () => needed.elsewhere.map((e) => ({ label: outgoingSourceLabel(e.source), amount: e.amount })),
+    [needed],
+  );
+
   // Waterfall: allocate Bill Money down the unpaid, due-this-cycle rows by date.
+  // Rows funded from elsewhere sit out of the waterfall entirely.
   const fundedMap = useMemo(() => {
-    const unpaidSorted = allItems
-      .filter((i) => !i.paid && i.next_due_date && i.next_due_date < resetDate)
+    const unpaidSorted = unpaidDue
+      .filter((i) => !elsewhereLabels[i.id])
       .slice()
       .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
     let remaining = billPocketBalance;
@@ -137,7 +159,7 @@ function OutgoingsPage() {
       }
     }
     return map;
-  }, [allItems, billPocketBalance, resetDate]);
+  }, [unpaidDue, elsewhereLabels, billPocketBalance]);
 
   const alerts = useMemo(() => promoAlerts(subscriptions), [subscriptions]);
 
@@ -231,6 +253,8 @@ function OutgoingsPage() {
         everyCycleTotal={everyCycle.total}
         everyCycleCount={everyCycle.count}
         billPocketBalance={billPocketBalance}
+        billMoneyNeeded={needed.billMoney}
+        paidElsewhere={paidElsewhere}
       />
 
       {alerts.length > 0 && view !== "bills" && (
@@ -325,6 +349,7 @@ function OutgoingsPage() {
               items={visible}
               resetDate={resetDate}
               fundedMap={fundedMap}
+              elsewhereLabels={elsewhereLabels}
               onSelect={setDetailsId}
               emptyLabel={
                 view === "subs"
@@ -371,6 +396,7 @@ function OutgoingsPage() {
         item={detailsItem}
         cycle={cycle}
         linkedDebt={debts.find((d) => d.id === detailsItem?.debt_id) ?? null}
+        lastSource={detailsItem ? (sources[detailsItem.id] ?? null) : null}
         onClose={() => setDetailsId(null)}
         onEdit={(c) => {
           setDetailsId(null);

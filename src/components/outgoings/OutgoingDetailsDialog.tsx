@@ -16,6 +16,7 @@ import type { Commitment, Debt } from "@/lib/types";
 import { debtRemaining } from "@/lib/credit";
 import { useActiveCycle } from "@/lib/cycle";
 import { cadenceLabel } from "@/lib/subscriptions";
+import { outgoingSourceLabel } from "@/lib/markOutgoingPaid";
 import { Row } from "./shared";
 import { ResetOptions } from "./ConfirmResetOptions";
 
@@ -23,6 +24,7 @@ export function OutgoingDetailsDialog({
   item,
   cycle,
   linkedDebt = null,
+  lastSource = null,
   onClose,
   onEdit,
   onDelete,
@@ -35,6 +37,8 @@ export function OutgoingDetailsDialog({
   cycle: ReturnType<typeof useActiveCycle>;
   /** Debt this outgoing pays down, when linked. */
   linkedDebt?: Debt | null;
+  /** Encoded source this outgoing was last actually paid from. */
+  lastSource?: string | null;
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
@@ -89,6 +93,9 @@ export function OutgoingDetailsDialog({
                   item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"
                 }
               />
+              {lastSource && (
+                <Row label="Paid from" value={outgoingSourceLabel(lastSource)} />
+              )}
               {isSub && item.promo_ends_on && (
                 <Row
                   label="Offer"
@@ -175,6 +182,7 @@ export function OutgoingDetailsDialog({
               item={item}
               cycle={cycle}
               linkedDebt={linkedDebt}
+              defaultSource={lastSource}
               onConfirm={onConfirmReset}
             />
             <DialogFooter>

@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.2",
+    title: "Bill Money knows what it really has to cover",
+    date: "2026-09-14",
+    icon: Wallet,
+    highlights: [
+      "Outgoings you last paid from your main balance or another pocket no longer count towards the Bill Money shortfall.",
+      "Those rows now show a “From Main balance” tag, and the summary lists what's expected to come from elsewhere.",
+      "The paid-from choice defaults to wherever you paid it last time, and the details card shows the source.",
+    ],
+  },
+  {
     version: "v3.5.1",
     title: "Editing a pay-later plan keeps its dates",
     date: "2026-09-14",

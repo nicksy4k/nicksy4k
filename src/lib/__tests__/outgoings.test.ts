@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { CYCLES_PER_YEAR, dueSoonOutgoings, perCycleAmount, perCycleTotal } from "../outgoings";
-import type { Commitment, SavingsEntry } from "../types";
+import {
+  CYCLES_PER_YEAR,
+  dueSoonOutgoings,
+  isBillMoneySource,
+  lastFundingSources,
+  neededBySource,
+  perCycleAmount,
+  perCycleTotal,
+} from "../outgoings";
+import type { Commitment, SavingsEntry, Transaction } from "../types";
 
 function commitment(partial: Partial<Commitment>): Commitment {
   return {
@@ -160,5 +168,55 @@ describe("dueSoonOutgoings", () => {
       now,
     );
     expect(rows.find((r) => r.commitment.item_name === "Upcoming")!.funded).toBe("none");
+  });
+});
+
+describe("funding sources for outgoings", () => {
+  const tx = (partial: Record<string, unknown>) =>
+    ({
+      id: crypto.randomUUID(),
+      date: "2026-09-01",
+      retailer: "X",
+      total_amount: 10,
+      receipt_attached: false,
+      receipt_type: "None",
+      receipt_location: "",
+      items: [],
+      payment_splits: [],
+      is_pending: false,
+      refunds: [],
+      ...partial,
+    }) as unknown as Transaction;
+
+  it("reads the latest source per outgoing, defaulting to main", () => {
+    const sources = lastFundingSources([
+      tx({ commitment_id: "a", date: "2026-08-01", payment_splits: [{ source: "pocket:Bill Money", amount: 10 }] }),
+      tx({ commitment_id: "a", date: "2026-09-01", payment_splits: [] }),
+      tx({ commitment_id: "b", payment_splits: [{ source: "pocket:Holiday", amount: 5 }] }),
+    ]);
+    expect(sources.a).toBe("main");
+    expect(sources.b).toBe("pocket:Holiday");
+  });
+
+  it("keeps rows never paid before against Bill Money", () => {
+    const rows = [commitment({ id: "x", amount: 40 })];
+    expect(neededBySource(rows, {}).billMoney).toBe(40);
+  });
+
+  it("takes rows paid elsewhere out of the Bill Money figure", () => {
+    const rows = [
+      commitment({ id: "x", amount: 40 }),
+      commitment({ id: "y", amount: 22.5 }),
+    ];
+    const out = neededBySource(rows, { y: "main" });
+    expect(out.billMoney).toBe(40);
+    expect(out.elsewhereTotal).toBe(22.5);
+    expect(out.elsewhere).toEqual([{ source: "main", amount: 22.5 }]);
+  });
+
+  it("treats the Bill Money pocket and unknown sources as Bill Money", () => {
+    expect(isBillMoneySource("pocket:Bill Money")).toBe(true);
+    expect(isBillMoneySource(undefined)).toBe(true);
+    expect(isBillMoneySource("main")).toBe(false);
   });
 });

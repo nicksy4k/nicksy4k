@@ -1,6 +1,76 @@
 import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import type { CycleType } from "@/lib/cycle";
-import type { Commitment, SavingsEntry } from "@/lib/types";
+import type { Commitment, SavingsEntry, Transaction } from "@/lib/types";
+
+/** Name of the pocket the Outgoings page funds bills from. */
+export const BILL_POCKET_NAME = "Bill Money";
+/** Encoded source meaning "straight off the main balance". */
+export const MAIN_SOURCE = "main";
+
+/**
+ * The funding source each outgoing was last actually paid from, keyed by
+ * commitment id. Derived from the auto-logged transactions: a pocket-funded
+ * payment carries a `payment_splits` row, anything else came off main.
+ */
+export function lastFundingSources(transactions: Transaction[]): Record<string, string> {
+  const latest = new Map<string, Transaction>();
+  for (const t of transactions) {
+    if (!t.commitment_id) continue;
+    const prev = latest.get(t.commitment_id);
+    const key = `${t.date ?? ""}|${t.created_at ?? ""}`;
+    const prevKey = prev ? `${prev.date ?? ""}|${prev.created_at ?? ""}` : "";
+    if (!prev || key >= prevKey) latest.set(t.commitment_id, t);
+  }
+  const out: Record<string, string> = {};
+  for (const [id, t] of latest) {
+    const split = (t.payment_splits ?? []).find((s) => s.source?.length);
+    out[id] = split ? split.source : MAIN_SOURCE;
+  }
+  return out;
+}
+
+export interface NeededBySource {
+  /** What the Bill Money pocket actually has to cover. */
+  billMoney: number;
+  /** Rows funded from somewhere else, grouped by source. */
+  elsewhere: { source: string; amount: number }[];
+  elsewhereTotal: number;
+}
+
+/** Is this encoded source the Bill Money pocket? */
+export function isBillMoneySource(source: string | undefined | null): boolean {
+  if (!source) return true; // unknown → assume Bill Money, as before
+  return source.toLowerCase() === `pocket:${BILL_POCKET_NAME}`.toLowerCase();
+}
+
+/**
+ * Split what's still to pay by where the money is expected to come from,
+ * using each row's last actual payment source. Rows never paid before fall
+ * back to Bill Money, so the shortfall figure only changes once a payment
+ * has genuinely come from somewhere else (e.g. a pay-later instalment paid
+ * off the main balance).
+ */
+export function neededBySource(
+  unpaid: Commitment[],
+  sources: Record<string, string>,
+): NeededBySource {
+  let billMoney = 0;
+  const groups = new Map<string, number>();
+  for (const c of unpaid) {
+    const source = sources[c.id];
+    if (isBillMoneySource(source)) {
+      billMoney += c.amount;
+    } else {
+      groups.set(source, (groups.get(source) ?? 0) + c.amount);
+    }
+  }
+  const elsewhere = [...groups.entries()].map(([source, amount]) => ({ source, amount }));
+  return {
+    billMoney,
+    elsewhere,
+    elsewhereTotal: elsewhere.reduce((s, e) => s + e.amount, 0),
+  };
+}
 
 export interface PerCycleTotals {
   bills: number;

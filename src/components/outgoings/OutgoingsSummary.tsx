@@ -18,6 +18,10 @@ export interface OutgoingsSummaryProps {
   everyCycleTotal: number;
   everyCycleCount: number;
   billPocketBalance: number;
+  /** Of `leftToPay`, the part Bill Money actually has to cover. */
+  billMoneyNeeded?: number;
+  /** The rest, grouped by where it's actually paid from. */
+  paidElsewhere?: { label: string; amount: number }[];
 }
 
 export function OutgoingsSummary({
@@ -33,9 +37,13 @@ export function OutgoingsSummary({
   everyCycleTotal,
   everyCycleCount,
   billPocketBalance,
+  billMoneyNeeded,
+  paidElsewhere = [],
 }: OutgoingsSummaryProps) {
   const total = bills + subs;
-  const shortfall = leftToPay - billPocketBalance;
+  const needed = billMoneyNeeded ?? leftToPay;
+  const shortfall = needed - billPocketBalance;
+  const elsewhereTotal = paidElsewhere.reduce((s, e) => s + e.amount, 0);
 
   return (
     <div className="space-y-3 md:space-y-4 mb-5 md:mb-6">
@@ -59,7 +67,11 @@ export function OutgoingsSummary({
             <Figure
               label="Left to pay"
               value={fmt(leftToPay)}
-              hint="Unpaid only"
+              hint={
+                elsewhereTotal > 0.001
+                  ? `${fmt(needed)} from Bill Money · ${fmt(elsewhereTotal)} elsewhere`
+                  : "Unpaid only"
+              }
               destructive={leftToPay > 0.001}
             />
           </div>
@@ -100,20 +112,30 @@ export function OutgoingsSummary({
             ) : (
               <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             )}
-            {shortfall > 0.001 ? (
-              <p className="break-words">
-                <span className="font-semibold">Shortfall:</span> move{" "}
-                <span className="font-semibold tabular-nums">{fmt(shortfall)}</span> into your Bill
-                Money pocket to cover what's left.
-              </p>
-            ) : (
-              <p className="break-words">
-                <span className="font-semibold">Bill Money is fully funded.</span>{" "}
-                <span className="text-muted-foreground">
-                  Balance {fmt(billPocketBalance)} · needed {fmt(leftToPay)}
-                </span>
-              </p>
-            )}
+            <div className="break-words">
+              {shortfall > 0.001 ? (
+                <p>
+                  <span className="font-semibold">Shortfall:</span> move{" "}
+                  <span className="font-semibold tabular-nums">{fmt(shortfall)}</span> into your Bill
+                  Money pocket to cover what's left.
+                </p>
+              ) : (
+                <p>
+                  <span className="font-semibold">Bill Money is fully funded.</span>{" "}
+                  <span className="text-muted-foreground">
+                    Balance {fmt(billPocketBalance)} · needed {fmt(needed)}
+                  </span>
+                </p>
+              )}
+              {elsewhereTotal > 0.001 && (
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Not counted here:{" "}
+                  {paidElsewhere
+                    .map((e) => `${fmt(e.amount)} from ${e.label}`)
+                    .join(" · ")}
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

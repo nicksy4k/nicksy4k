@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { CalendarClock, Check, Repeat, Tag } from "lucide-react";
+import { CalendarClock, Check, Repeat, Tag, Wallet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fmt } from "@/lib/format";
 import type { Commitment, Debt } from "@/lib/types";
@@ -12,6 +12,7 @@ export function OutgoingsList({
   onSelect,
   emptyLabel,
   debts = [],
+  elsewhereLabels = {},
 }: {
   items: Commitment[];
   resetDate: string;
@@ -20,6 +21,8 @@ export function OutgoingsList({
   emptyLabel: string;
   /** Used to show pay-later plan progress on linked rows. */
   debts?: Debt[];
+  /** Rows last paid from somewhere other than Bill Money, by id → source label. */
+  elsewhereLabels?: Record<string, string>;
 }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground py-8 text-center">{emptyLabel}</p>;
@@ -41,11 +44,15 @@ export function OutgoingsList({
             ? format(parseISO(c.last_paid_date), "d MMM yyyy")
             : "date unknown";
           const notDueYet = !!c.next_due_date && c.next_due_date >= resetDate;
+          const elsewhere = elsewhereLabels[c.id];
           let statusTitle: string;
           let statusBody: string;
           if (c.paid) {
             statusTitle = "Paid this cycle";
-            statusBody = `Marked paid on ${paidLabel}. Next due ${dueLabel}.`;
+            statusBody = `Marked paid on ${paidLabel}${elsewhere ? ` from ${elsewhere}` : ""}. Next due ${dueLabel}.`;
+          } else if (elsewhere) {
+            statusTitle = `Paid from ${elsewhere}`;
+            statusBody = `Due ${dueLabel} (this cycle). Last time this came out of ${elsewhere}, so it isn't counted against Bill Money.`;
           } else if (notDueYet) {
             statusTitle = "Covered — not due this cycle";
             statusBody = `Next due ${dueLabel}, after the current cycle ends on ${resetLabel}.`;
@@ -88,6 +95,12 @@ export function OutgoingsList({
                         ? `${c.is_subscription ? "Renews" : "Due"} ${dueLabel}`
                         : "No date"}
                     </span>
+                    {elsewhere && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px]">
+                        <Wallet className="h-3 w-3" />
+                        From {elsewhere}
+                      </span>
+                    )}
                     {planTotal > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px]">
                         <CalendarClock className="h-3 w-3" />
