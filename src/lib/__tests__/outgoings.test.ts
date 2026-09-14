@@ -220,3 +220,30 @@ describe("funding sources for outgoings", () => {
     expect(isBillMoneySource("main")).toBe(false);
   });
 });
+
+describe("unlinkedDebtDueThisCycle", () => {
+  const plan = (partial: Record<string, unknown>) =>
+    ({
+      id: "d1",
+      kind: "bnpl",
+      total_amount: 200,
+      installments_total: 4,
+      installment_dates: ["2026-09-01", "2026-09-15", "2026-09-29", "2026-10-13"],
+      payments: [],
+      ...partial,
+    }) as never;
+
+  it("counts instalments due this cycle on plans with no outgoing row", () => {
+    expect(unlinkedDebtDueThisCycle([plan({})], [], "2026-09-20")).toBe(100);
+  });
+
+  it("ignores instalments already paid", () => {
+    const p = plan({ payments: [{ amount: 50, type: "payment" }] });
+    expect(unlinkedDebtDueThisCycle([p], [], "2026-09-20")).toBe(50);
+  });
+
+  it("skips plans that already have a linked outgoing", () => {
+    const linked = [{ id: "c1", debt_id: "d1", amount: 50 }] as never;
+    expect(unlinkedDebtDueThisCycle([plan({})], linked, "2026-09-20")).toBe(0);
+  });
+});
