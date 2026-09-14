@@ -41,24 +41,27 @@ export function ResetOptions({
   item,
   cycle,
   linkedDebt = null,
+  defaultSource = null,
   onConfirm,
 }: {
   item: Commitment;
   cycle: Cycle;
   /** Debt this outgoing pays down, when linked. */
   linkedDebt?: Debt | null;
+  /** Pre-select the source this row was last actually paid from. */
+  defaultSource?: string | null;
   onConfirm: ResetConfirm;
 }) {
   const [pickerDate, setPickerDate] = useState(item.next_due_date ?? todayISO());
-  const [source, setSource] = useState<string>(DEFAULT_OUTGOING_SOURCE);
+  const [source, setSource] = useState<string>(defaultSource || DEFAULT_OUTGOING_SOURCE);
   const pockets = usePockets();
   const isSub = !!item.is_subscription;
   const base = item.next_due_date ?? todayISO();
 
   useEffect(() => {
     setPickerDate(item.next_due_date ?? todayISO());
-    setSource(DEFAULT_OUTGOING_SOURCE);
-  }, [item.id, item.next_due_date]);
+    setSource(defaultSource || DEFAULT_OUTGOING_SOURCE);
+  }, [item.id, item.next_due_date, defaultSource]);
 
   // A pay-later plan drives its own dates — offer the plan's remaining
   // instalments instead of a generic "+1 month / +4 weeks".

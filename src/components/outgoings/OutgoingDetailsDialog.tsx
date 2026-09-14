@@ -92,6 +92,9 @@ export function OutgoingDetailsDialog({
                   item.last_paid_date ? format(parseISO(item.last_paid_date), "d MMM yyyy") : "—"
                 }
               />
+              {lastSource && (
+                <Row label="Paid from" value={outgoingSourceLabel(lastSource)} />
+              )}
               {isSub && item.promo_ends_on && (
                 <Row
                   label="Offer"
@@ -178,6 +181,7 @@ export function OutgoingDetailsDialog({
               item={item}
               cycle={cycle}
               linkedDebt={linkedDebt}
+              defaultSource={lastSource}
               onConfirm={onConfirmReset}
             />
             <DialogFooter>
