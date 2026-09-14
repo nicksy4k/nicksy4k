@@ -39,6 +39,12 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
+  BNPL_PRESETS,
+  cadenceEveryLabel,
+  generateInstallmentDates,
+  type BnplCadence,
+} from "@/lib/bnplPresets";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -516,6 +522,7 @@ export function DebtsTab() {
                 payment_method: "BNPL",
                 amount: per,
                 category: "Debt",
+                cadence: extras.cadence,
                 next_due_date: nextDue,
                 last_paid_date: paidFirst ? today : null,
                 prev_due_date: null,
@@ -666,6 +673,7 @@ function DebtDialog({
       payFirstNow: boolean;
       firstPaymentSource: SourceChoice | null;
       items: Array<{ item_name: string; price: number; quantity: number }>;
+      cadence: BnplCadence;
     },
   ) => void | Promise<void>;
 }) {
@@ -674,6 +682,8 @@ function DebtDialog({
   const [kind, setKind] = useState<"standard" | "bnpl">("standard");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("4");
+  const [cadence, setCadence] = useState<BnplCadence>("fortnightly");
+  const [preset, setPreset] = useState("clearpay");
   const [startDate, setStartDate] = useState(todayISO());
   const [dates, setDates] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
@@ -690,6 +700,8 @@ function DebtDialog({
       setKind(editing?.kind ?? "standard");
       setAmount(editing ? String(editing.total_amount) : "");
       setInstallments(editing?.installments_total ? String(editing.installments_total) : "4");
+      setCadence("fortnightly");
+      setPreset(editing ? "custom" : "clearpay");
       setStartDate(editing?.start_date ?? todayISO());
       setDates(editing?.installment_dates ?? []);
       setNotes(editing?.notes ?? "");
@@ -717,20 +729,24 @@ function DebtDialog({
     setAmount(itemsTotal > 0 ? itemsTotal.toFixed(2) : "");
   }, [itemsTotal, totalDirty, editing, itemRows.length]);
 
-  // Keep date array length aligned with installments count.
+  // Regenerate the schedule whenever the shape of the plan changes.
   const n = parseInt(installments, 10) || 4;
   useEffect(() => {
     if (kind !== "bnpl") return;
-    setDates((prev) => {
-      const out = [...prev];
-      while (out.length < n) {
-        const base = new Date(startDate || todayISO());
-        base.setMonth(base.getMonth() + out.length);
-        out.push(format(base, "yyyy-MM-dd"));
-      }
-      return out.slice(0, n);
-    });
-  }, [kind, n, startDate]);
+    setDates(generateInstallmentDates(startDate || todayISO(), n, cadence));
+  }, [kind, n, startDate, cadence]);
+
+  /** One-tap provider preset. */
+  function applyPreset(id: string) {
+    const p = BNPL_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setPreset(p.id);
+    if (p.installments == null) return;
+    setInstallments(String(p.installments));
+    setCadence(p.cadence);
+    setPayFirstNow(p.firstPaymentToday);
+    if (p.firstPaymentToday) setStartDate(todayISO());
+  }
 
   const showPayFirst = !editing && kind === "bnpl";
   const amtNum = parseFloat(amount);
@@ -808,21 +824,76 @@ function DebtDialog({
             <>
               <div className="space-y-1.5">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Installments
+                  Provider
                 </Label>
-                <Select value={installments} onValueChange={setInstallments}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[2, 3, 4, 6, 8, 12].map((nn) => (
-                      <SelectItem key={nn} value={String(nn)}>
-                        {nn}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2">
+                  {BNPL_PRESETS.map((p) => (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      size="sm"
+                      variant={preset === p.id ? "default" : "outline"}
+                      className="h-auto flex-col items-start py-1.5"
+                      onClick={() => applyPreset(p.id)}
+                    >
+                      <span className="text-xs">{p.label}</span>
+                      <span className="text-[10px] opacity-70">{p.hint}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Payments
+                  </Label>
+                  <Select
+                    value={installments}
+                    onValueChange={(v) => {
+                      setInstallments(v);
+                      setPreset("custom");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2, 3, 4, 6, 8, 12].map((nn) => (
+                        <SelectItem key={nn} value={String(nn)}>
+                          {nn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    How often
+                  </Label>
+                  <Select
+                    value={cadence}
+                    onValueChange={(v) => {
+                      setCadence(v as BnplCadence);
+                      setPreset("custom");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Every week</SelectItem>
+                      <SelectItem value="fortnightly">Every 2 weeks</SelectItem>
+                      <SelectItem value="four-weekly">Every 4 weeks</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {amtNum > 0 && (
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {n} × {fmt(amtNum / n)} — {cadenceEveryLabel(cadence)}
+                </p>
+              )}
               <div className="space-y-1.5">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Scheduled due dates
@@ -1009,6 +1080,7 @@ function DebtDialog({
                 {
                   payFirstNow: showPayFirst && payFirstNow,
                   firstPaymentSource,
+                  cadence,
                   items: editing
                     ? []
                     : itemRows

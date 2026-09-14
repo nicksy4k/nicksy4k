@@ -14,13 +14,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CalendarClock } from "lucide-react";
+import {
+  BNPL_PRESETS,
+  cadenceEveryLabel,
+  generateInstallmentDates,
+  type BnplCadence,
+} from "@/lib/bnplPresets";
+
+export type { BnplCadence } from "@/lib/bnplPresets";
+export { generateInstallmentDates } from "@/lib/bnplPresets";
 
 export interface BnplDetails {
   name: string;
   installments: string;
   firstDate: string;
-  cadence: "weekly" | "fortnightly" | "monthly";
+  cadence: BnplCadence;
+  /** Provider preset id this plan was seeded from ("clearpay", "custom", …). */
+  preset: string;
   /** When true, installment #1 is deducted today and removed from the debt. */
   firstPaymentToday: boolean;
   /** Source for the today-deducted first installment. "main" | "pocket:<name>" */
@@ -41,32 +52,14 @@ export function emptySplit(source = "main"): SplitDraft {
 
 export function defaultBnpl(retailer: string, firstDate: string): BnplDetails {
   return {
-    name: retailer.trim() ? `${retailer.trim()} – BNPL` : "BNPL plan",
+    name: retailer.trim() ? `${retailer.trim()} – Pay later` : "Pay later plan",
     installments: "4",
     firstDate,
     cadence: "fortnightly",
-    firstPaymentToday: false,
+    preset: "clearpay",
+    firstPaymentToday: true,
     firstSource: "main",
   };
-}
-
-export function generateInstallmentDates(
-  firstDate: string,
-  count: number,
-  cadence: BnplDetails["cadence"],
-): string[] {
-  const out: string[] = [];
-  const [y, m, d] = firstDate.split("-").map(Number);
-  for (let i = 0; i < count; i++) {
-    const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
-    if (cadence === "weekly") dt.setDate(dt.getDate() + 7 * i);
-    else if (cadence === "fortnightly") dt.setDate(dt.getDate() + 14 * i);
-    else dt.setMonth(dt.getMonth() + i);
-    out.push(
-      `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`,
-    );
-  }
-  return out;
 }
 
 interface Props {
@@ -119,6 +112,37 @@ export function PaymentSplitEditor({
     const seed = emptySplit("main");
     if (left > 0) seed.amount = String(left);
     onChange([...splits, seed]);
+  };
+
+  const hasBnpl = splits.some((s) => s.source === "bnpl:new");
+
+  /** One tap: turn the whole (or remaining) amount into a pay-later plan. */
+  const addPayLater = () => {
+    const blank = splits.find((s) => s.source === "main" && !s.amount.trim());
+    const left = remainderOf(total, allocated);
+    const amount = String(blank ? total : left > 0 ? left : total);
+    const bnpl = defaultBnpl(retailer, todayLocalISO());
+    if (blank) {
+      onChange(
+        splits.map((s) => (s.id === blank.id ? { ...s, source: "bnpl:new", amount, bnpl } : s)),
+      );
+      return;
+    }
+    onChange([...splits, { id: crypto.randomUUID(), source: "bnpl:new", amount, bnpl }]);
+  };
+
+  /** Apply a provider preset to a BNPL split. */
+  const applyPreset = (id: string, presetId: string) => {
+    const p = BNPL_PRESETS.find((x) => x.id === presetId);
+    if (!p) return;
+    const patch: Partial<BnplDetails> = { preset: p.id };
+    if (p.installments != null) {
+      patch.installments = String(p.installments);
+      patch.cadence = p.cadence;
+      patch.firstPaymentToday = p.firstPaymentToday;
+      if (p.firstPaymentToday) patch.firstDate = todayLocalISO();
+    }
+    updateBnpl(id, patch);
   };
 
   function handleSourceChange(id: string, newSource: string) {
@@ -221,8 +245,23 @@ export function PaymentSplitEditor({
             {s.source === "bnpl:new" && s.bnpl && (
               <div className="rounded-md border border-border/60 bg-card/60 p-3 space-y-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  New BNPL plan
+                  New pay-later plan
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {BNPL_PRESETS.map((p) => (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      size="sm"
+                      variant={s.bnpl!.preset === p.id ? "default" : "outline"}
+                      className="h-auto flex-col items-start py-1.5"
+                      onClick={() => applyPreset(s.id, p.id)}
+                    >
+                      <span className="text-xs">{p.label}</span>
+                      <span className="text-[10px] opacity-70">{p.hint}</span>
+                    </Button>
+                  ))}
+                </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Plan name</Label>
@@ -232,11 +271,13 @@ export function PaymentSplitEditor({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Installments</Label>
+                    <Label className="text-xs">Payments</Label>
                     <Input
                       inputMode="numeric"
                       value={s.bnpl.installments}
-                      onChange={(e) => updateBnpl(s.id, { installments: e.target.value })}
+                      onChange={(e) =>
+                        updateBnpl(s.id, { installments: e.target.value, preset: "custom" })
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -248,24 +289,50 @@ export function PaymentSplitEditor({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Cadence</Label>
+                    <Label className="text-xs">How often</Label>
                     <Select
                       value={s.bnpl.cadence}
                       onValueChange={(v) =>
-                        updateBnpl(s.id, { cadence: v as BnplDetails["cadence"] })
+                        updateBnpl(s.id, { cadence: v as BnplCadence, preset: "custom" })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                        <SelectItem value="weekly">Every week</SelectItem>
+                        <SelectItem value="fortnightly">Every 2 weeks</SelectItem>
+                        <SelectItem value="four-weekly">Every 4 weeks</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {(() => {
+                  const amt = parseFloat(s.amount) || 0;
+                  const n = Math.max(1, parseInt(s.bnpl!.installments, 10) || 1);
+                  const per = +(amt / n).toFixed(2);
+                  const dates = generateInstallmentDates(s.bnpl!.firstDate, n, s.bnpl!.cadence);
+                  return (
+                    <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
+                      <p className="text-xs font-medium tabular-nums">
+                        {n} × {fmt(per)} — {cadenceEveryLabel(s.bnpl!.cadence)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1 break-words">
+                        {dates
+                          .map((d) =>
+                            new Date(`${d}T00:00:00`).toLocaleDateString(undefined, {
+                              day: "numeric",
+                              month: "short",
+                            }),
+                          )
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  );
+                })()}
+
 
                 <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
                   <div className="min-w-0">
@@ -337,9 +404,16 @@ export function PaymentSplitEditor({
         );
       })}
 
-      <Button variant="outline" size="sm" onClick={add} className="w-full">
-        <Plus className="h-4 w-4" /> Add another source
-      </Button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" onClick={add} className="w-full">
+          <Plus className="h-4 w-4" /> Add another source
+        </Button>
+        {allowBnpl && !hasBnpl && (
+          <Button variant="outline" size="sm" onClick={addPayLater} className="w-full">
+            <CalendarClock className="h-4 w-4" /> Pay later (Clearpay/Klarna)
+          </Button>
+        )}
+      </div>
 
       <div className="flex items-center justify-between rounded-md border border-border bg-card/60 p-3 text-sm">
         <div className="flex items-center gap-4">

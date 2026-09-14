@@ -42,6 +42,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.0",
+    title: "Easier pay-later plans that stay in sync",
+    date: "2026-09-14",
+    icon: CalendarClock,
+    highlights: [
+      "One-tap Clearpay, Klarna and PayPal presets when adding a pay-later plan — Clearpay correctly sets 4 payments every 2 weeks.",
+      "Pay later is now a payment option on a new purchase, with a preview of every payment date before you save.",
+      "Outgoings created from a plan follow the plan's own dates, so marking one paid always lines up the next real payment.",
+      "You can now choose where each outgoing payment comes from — main balance or any pocket — instead of it always coming out of Bill Money.",
+      "Pay-later outgoings show how far through the plan you are, e.g. “Payment 2 of 4”.",
+    ],
+  },
+  {
     version: "v3.4.2",
     title: "Delivery tracking fixes",
     date: "2026-09-12",

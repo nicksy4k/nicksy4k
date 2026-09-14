@@ -38,7 +38,7 @@ export function OutgoingDetailsDialog({
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
-  onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
+  onConfirmReset: (c: Commitment, newDue: string, source: string) => void | Promise<void>;
   onUnmarkPaid: (c: Commitment) => void | Promise<void>;
   onToggleType: (c: Commitment) => void;
   onLogOffer: (c: Commitment) => void;
@@ -171,7 +171,12 @@ export function OutgoingDetailsDialog({
             <DialogHeader>
               <DialogTitle className="break-words">Confirm payment reset?</DialogTitle>
             </DialogHeader>
-            <ResetOptions item={item} cycle={cycle} onConfirm={onConfirmReset} />
+            <ResetOptions
+              item={item}
+              cycle={cycle}
+              linkedDebt={linkedDebt}
+              onConfirm={onConfirmReset}
+            />
             <DialogFooter>
               <Button variant="ghost" onClick={() => setMode("details")}>
                 Cancel
