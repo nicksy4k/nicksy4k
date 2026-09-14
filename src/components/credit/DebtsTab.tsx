@@ -831,7 +831,14 @@ function DebtDialog({
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Start date
             </Label>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setShapeDirty(true);
+              }}
+            />
           </div>
           {kind === "bnpl" && (
             <>
@@ -865,6 +872,7 @@ function DebtDialog({
                     onValueChange={(v) => {
                       setInstallments(v);
                       setPreset("custom");
+                      setShapeDirty(true);
                     }}
                   >
                     <SelectTrigger>
@@ -888,6 +896,7 @@ function DebtDialog({
                     onValueChange={(v) => {
                       setCadence(v as BnplCadence);
                       setPreset("custom");
+                      setShapeDirty(true);
                     }}
                   >
                     <SelectTrigger>
