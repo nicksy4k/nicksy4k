@@ -18,10 +18,13 @@ export interface OutgoingsSummaryProps {
   everyCycleTotal: number;
   everyCycleCount: number;
   billPocketBalance: number;
-  /** Of `leftToPay`, the part Bill Money actually has to cover. */
+  /**
+   * Everything scheduled inside this cycle that still has to be covered —
+   * whatever ends up paying it. Defaults to `leftToPay`.
+   */
   billMoneyNeeded?: number;
-  /** The rest, grouped by where it's actually paid from. */
-  paidElsewhere?: { label: string; amount: number }[];
+  /** Part of `billMoneyNeeded` coming from plans with no outgoing row. */
+  unlinkedDebtDue?: number;
 }
 
 export function OutgoingsSummary({
