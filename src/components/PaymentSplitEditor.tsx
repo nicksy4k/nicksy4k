@@ -245,8 +245,23 @@ export function PaymentSplitEditor({
             {s.source === "bnpl:new" && s.bnpl && (
               <div className="rounded-md border border-border/60 bg-card/60 p-3 space-y-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  New BNPL plan
+                  New pay-later plan
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {BNPL_PRESETS.map((p) => (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      size="sm"
+                      variant={s.bnpl!.preset === p.id ? "default" : "outline"}
+                      className="h-auto flex-col items-start py-1.5"
+                      onClick={() => applyPreset(s.id, p.id)}
+                    >
+                      <span className="text-xs">{p.label}</span>
+                      <span className="text-[10px] opacity-70">{p.hint}</span>
+                    </Button>
+                  ))}
+                </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Plan name</Label>
@@ -256,11 +271,13 @@ export function PaymentSplitEditor({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Installments</Label>
+                    <Label className="text-xs">Payments</Label>
                     <Input
                       inputMode="numeric"
                       value={s.bnpl.installments}
-                      onChange={(e) => updateBnpl(s.id, { installments: e.target.value })}
+                      onChange={(e) =>
+                        updateBnpl(s.id, { installments: e.target.value, preset: "custom" })
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -272,24 +289,50 @@ export function PaymentSplitEditor({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Cadence</Label>
+                    <Label className="text-xs">How often</Label>
                     <Select
                       value={s.bnpl.cadence}
                       onValueChange={(v) =>
-                        updateBnpl(s.id, { cadence: v as BnplDetails["cadence"] })
+                        updateBnpl(s.id, { cadence: v as BnplCadence, preset: "custom" })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                        <SelectItem value="weekly">Every week</SelectItem>
+                        <SelectItem value="fortnightly">Every 2 weeks</SelectItem>
+                        <SelectItem value="four-weekly">Every 4 weeks</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {(() => {
+                  const amt = parseFloat(s.amount) || 0;
+                  const n = Math.max(1, parseInt(s.bnpl!.installments, 10) || 1);
+                  const per = +(amt / n).toFixed(2);
+                  const dates = generateInstallmentDates(s.bnpl!.firstDate, n, s.bnpl!.cadence);
+                  return (
+                    <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
+                      <p className="text-xs font-medium tabular-nums">
+                        {n} × {fmt(per)} — {cadenceEveryLabel(s.bnpl!.cadence)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1 break-words">
+                        {dates
+                          .map((d) =>
+                            new Date(`${d}T00:00:00`).toLocaleDateString(undefined, {
+                              day: "numeric",
+                              month: "short",
+                            }),
+                          )
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  );
+                })()}
+
 
                 <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
                   <div className="min-w-0">
