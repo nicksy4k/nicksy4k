@@ -8,6 +8,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Commitment, Debt, LedgerPayment } from "@/lib/types";
+import { advanceForCommitment } from "@/lib/cycle";
 
 /**
  * The due date a linked outgoing should roll to after a payment lands on the
