@@ -4,6 +4,7 @@ import {
   cadenceEveryLabel,
   commitmentCadenceFor,
   generateInstallmentDates,
+  inferBnplCadence,
 } from "@/lib/bnplPresets";
 import { perCycleAmount } from "@/lib/outgoings";
 
@@ -39,5 +40,20 @@ describe("bnpl presets", () => {
     // A £25 fortnightly instalment costs roughly two payments per monthly cycle.
     const perCycle = perCycleAmount(25, cadence, "monthly");
     expect(perCycle).toBeGreaterThan(25);
+  });
+
+  // Regression: editing a saved plan must not silently turn a monthly Klarna
+  // schedule into fortnightly — the cadence is recovered from stored dates.
+  it("recovers cadence from stored schedules", () => {
+    expect(inferBnplCadence(generateInstallmentDates("2026-09-14", 4, "fortnightly"))).toBe(
+      "fortnightly",
+    );
+    expect(inferBnplCadence(generateInstallmentDates("2026-09-14", 3, "monthly"))).toBe("monthly");
+    expect(inferBnplCadence(generateInstallmentDates("2026-09-14", 2, "weekly"))).toBe("weekly");
+    expect(inferBnplCadence(generateInstallmentDates("2026-09-14", 2, "four-weekly"))).toBe(
+      "four-weekly",
+    );
+    expect(inferBnplCadence(["2026-09-14"])).toBe("monthly");
+    expect(inferBnplCadence([])).toBe("monthly");
   });
 });
