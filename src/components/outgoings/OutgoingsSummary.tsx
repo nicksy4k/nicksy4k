@@ -18,6 +18,10 @@ export interface OutgoingsSummaryProps {
   everyCycleTotal: number;
   everyCycleCount: number;
   billPocketBalance: number;
+  /** Of `leftToPay`, the part Bill Money actually has to cover. */
+  billMoneyNeeded?: number;
+  /** The rest, grouped by where it's actually paid from. */
+  paidElsewhere?: { label: string; amount: number }[];
 }
 
 export function OutgoingsSummary({
