@@ -632,6 +632,7 @@ function NewTransactionPage() {
                 payment_method: "BNPL",
                 amount: perInstallment,
                 category: "Debt",
+                cadence: s.bnpl.cadence,
                 next_due_date: dates[0],
                 last_paid_date: null,
                 prev_due_date: null,
