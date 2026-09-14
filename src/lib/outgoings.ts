@@ -72,6 +72,42 @@ export function neededBySource(
   };
 }
 
+/** Minimal shape of a debt needed for the cycle requirement maths. */
+export interface DebtLike {
+  id: string;
+  kind: string;
+  total_amount: number;
+  installments_total?: number | null;
+  installment_dates?: string[];
+  payments?: { amount: number; type?: string | null }[];
+}
+
+/**
+ * Repayments falling due inside the current cycle on pay-later plans that have
+ * NO linked outgoing row of their own. Without this they'd be invisible to the
+ * Bill Money figure even though the money still has to be there.
+ */
+export function unlinkedDebtDueThisCycle(
+  debts: DebtLike[],
+  commitments: Commitment[],
+  resetDate: string,
+): number {
+  const linked = new Set(commitments.map((c) => c.debt_id).filter(Boolean) as string[]);
+  let total = 0;
+  for (const d of debts) {
+    if (linked.has(d.id)) continue;
+    const dates = (d.installment_dates ?? []).slice().sort();
+    const count = d.installments_total ?? dates.length;
+    if (!count || dates.length === 0) continue;
+    const per = d.total_amount / count;
+    const paidCount = (d.payments ?? []).filter((p) => (p.type ?? "payment") !== "topup").length;
+    const dueThisCycle = dates.filter((x) => x < resetDate).length;
+    const outstanding = Math.max(0, dueThisCycle - paidCount);
+    total += outstanding * per;
+  }
+  return total;
+}
+
 export interface PerCycleTotals {
   bills: number;
   subs: number;
