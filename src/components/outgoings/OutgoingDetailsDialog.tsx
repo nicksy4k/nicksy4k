@@ -23,6 +23,7 @@ export function OutgoingDetailsDialog({
   item,
   cycle,
   linkedDebt = null,
+  lastSource = null,
   onClose,
   onEdit,
   onDelete,

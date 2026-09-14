@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { CalendarClock, Check, Repeat, Tag } from "lucide-react";
+import { CalendarClock, Check, Repeat, Tag, Wallet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fmt } from "@/lib/format";
 import type { Commitment, Debt } from "@/lib/types";
