@@ -1024,6 +1024,7 @@ function DebtDialog({
                 {
                   payFirstNow: showPayFirst && payFirstNow,
                   firstPaymentSource,
+                  cadence,
                   items: editing
                     ? []
                     : itemRows
