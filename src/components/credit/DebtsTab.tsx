@@ -522,6 +522,7 @@ export function DebtsTab() {
                 payment_method: "BNPL",
                 amount: per,
                 category: "Debt",
+                cadence: extras.cadence,
                 next_due_date: nextDue,
                 last_paid_date: paidFirst ? today : null,
                 prev_due_date: null,
