@@ -95,6 +95,12 @@ export function OutgoingsList({
                         ? `${c.is_subscription ? "Renews" : "Due"} ${dueLabel}`
                         : "No date"}
                     </span>
+                    {elsewhere && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px]">
+                        <Wallet className="h-3 w-3" />
+                        From {elsewhere}
+                      </span>
+                    )}
                     {planTotal > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px]">
                         <CalendarClock className="h-3 w-3" />
