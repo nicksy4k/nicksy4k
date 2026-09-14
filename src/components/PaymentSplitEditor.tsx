@@ -114,6 +114,37 @@ export function PaymentSplitEditor({
     onChange([...splits, seed]);
   };
 
+  const hasBnpl = splits.some((s) => s.source === "bnpl:new");
+
+  /** One tap: turn the whole (or remaining) amount into a pay-later plan. */
+  const addPayLater = () => {
+    const blank = splits.find((s) => s.source === "main" && !s.amount.trim());
+    const left = remainderOf(total, allocated);
+    const amount = String(blank ? total : left > 0 ? left : total);
+    const bnpl = defaultBnpl(retailer, todayLocalISO());
+    if (blank) {
+      onChange(
+        splits.map((s) => (s.id === blank.id ? { ...s, source: "bnpl:new", amount, bnpl } : s)),
+      );
+      return;
+    }
+    onChange([...splits, { id: crypto.randomUUID(), source: "bnpl:new", amount, bnpl }]);
+  };
+
+  /** Apply a provider preset to a BNPL split. */
+  const applyPreset = (id: string, presetId: string) => {
+    const p = BNPL_PRESETS.find((x) => x.id === presetId);
+    if (!p) return;
+    const patch: Partial<BnplDetails> = { preset: p.id };
+    if (p.installments != null) {
+      patch.installments = String(p.installments);
+      patch.cadence = p.cadence;
+      patch.firstPaymentToday = p.firstPaymentToday;
+      if (p.firstPaymentToday) patch.firstDate = todayLocalISO();
+    }
+    updateBnpl(id, patch);
+  };
+
   function handleSourceChange(id: string, newSource: string) {
     const current = splits.find((s) => s.id === id);
     const patch: Partial<SplitDraft> = { source: newSource };
