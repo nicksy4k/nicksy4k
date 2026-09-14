@@ -56,6 +56,7 @@ export function useLedgerSync() {
         receipt_type: "None",
         receipt_location: "",
         notes: t.notes,
+        commitment_id: args.commitmentId ?? null,
         items: [
           {
             id: crypto.randomUUID(),
