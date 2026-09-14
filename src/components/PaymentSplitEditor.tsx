@@ -14,7 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CalendarClock } from "lucide-react";
+import {
+  BNPL_PRESETS,
+  cadenceEveryLabel,
+  generateInstallmentDates,
+  type BnplCadence,
+} from "@/lib/bnplPresets";
 
 export type { BnplCadence } from "@/lib/bnplPresets";
 export { generateInstallmentDates } from "@/lib/bnplPresets";
