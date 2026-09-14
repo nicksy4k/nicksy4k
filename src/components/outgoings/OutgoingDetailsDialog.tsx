@@ -171,7 +171,12 @@ export function OutgoingDetailsDialog({
             <DialogHeader>
               <DialogTitle className="break-words">Confirm payment reset?</DialogTitle>
             </DialogHeader>
-            <ResetOptions item={item} cycle={cycle} onConfirm={onConfirmReset} />
+            <ResetOptions
+              item={item}
+              cycle={cycle}
+              linkedDebt={linkedDebt}
+              onConfirm={onConfirmReset}
+            />
             <DialogFooter>
               <Button variant="ghost" onClick={() => setMode("details")}>
                 Cancel
