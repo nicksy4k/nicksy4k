@@ -67,7 +67,11 @@ export function OutgoingsSummary({
             <Figure
               label="Left to pay"
               value={fmt(leftToPay)}
-              hint="Unpaid only"
+              hint={
+                elsewhereTotal > 0.001
+                  ? `${fmt(needed)} from Bill Money · ${fmt(elsewhereTotal)} elsewhere`
+                  : "Unpaid only"
+              }
               destructive={leftToPay > 0.001}
             />
           </div>
