@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppLayout } from "../components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { resetPreferences } from "@/lib/preferences";
+import { useLedgerRealtime } from "@/lib/useLedgerRealtime";
 
 import { AuthPage } from "./auth";
 import { ConsentBanner } from "@/components/ConsentBanner";
