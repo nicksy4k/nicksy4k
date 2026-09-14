@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.3",
+    title: "Bill Money covers everything due this cycle",
+    date: "2026-09-14",
+    icon: Wallet,
+    highlights: [
+      "The amount needed now includes every outgoing and repayment falling in this cycle, whatever pot ends up paying it — so what's left really is safe to spend.",
+      "Pay-later instalments due this cycle count too, even when they don't have their own outgoing row.",
+      "Logging a repayment on the Debts page now ticks the matching outgoing for every linked debt, not just pay-later plans.",
+      "Payments made on one screen now appear on the others straight away, including a second tab or your phone.",
+    ],
+  },
+  {
     version: "v3.5.2",
     title: "Bill Money knows what it really has to cover",
     date: "2026-09-14",

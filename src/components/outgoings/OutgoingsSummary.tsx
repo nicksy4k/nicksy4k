@@ -18,10 +18,13 @@ export interface OutgoingsSummaryProps {
   everyCycleTotal: number;
   everyCycleCount: number;
   billPocketBalance: number;
-  /** Of `leftToPay`, the part Bill Money actually has to cover. */
+  /**
+   * Everything scheduled inside this cycle that still has to be covered —
+   * whatever ends up paying it. Defaults to `leftToPay`.
+   */
   billMoneyNeeded?: number;
-  /** The rest, grouped by where it's actually paid from. */
-  paidElsewhere?: { label: string; amount: number }[];
+  /** Part of `billMoneyNeeded` coming from plans with no outgoing row. */
+  unlinkedDebtDue?: number;
 }
 
 export function OutgoingsSummary({
@@ -38,12 +41,11 @@ export function OutgoingsSummary({
   everyCycleCount,
   billPocketBalance,
   billMoneyNeeded,
-  paidElsewhere = [],
+  unlinkedDebtDue = 0,
 }: OutgoingsSummaryProps) {
   const total = bills + subs;
   const needed = billMoneyNeeded ?? leftToPay;
   const shortfall = needed - billPocketBalance;
-  const elsewhereTotal = paidElsewhere.reduce((s, e) => s + e.amount, 0);
 
   return (
     <div className="space-y-3 md:space-y-4 mb-5 md:mb-6">
@@ -68,8 +70,8 @@ export function OutgoingsSummary({
               label="Left to pay"
               value={fmt(leftToPay)}
               hint={
-                elsewhereTotal > 0.001
-                  ? `${fmt(needed)} from Bill Money · ${fmt(elsewhereTotal)} elsewhere`
+                unlinkedDebtDue > 0.001
+                  ? `plus ${fmt(unlinkedDebtDue)} of plan repayments`
                   : "Unpaid only"
               }
               destructive={leftToPay > 0.001}
@@ -127,14 +129,13 @@ export function OutgoingsSummary({
                   </span>
                 </p>
               )}
-              {elsewhereTotal > 0.001 && (
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Not counted here:{" "}
-                  {paidElsewhere
-                    .map((e) => `${fmt(e.amount)} from ${e.label}`)
-                    .join(" · ")}
-                </p>
-              )}
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                Needed covers everything scheduled this cycle
+                {unlinkedDebtDue > 0.001
+                  ? `, including ${fmt(unlinkedDebtDue)} of plan repayments`
+                  : ""}
+                , whichever pot you end up paying it from.
+              </p>
             </div>
           </CardContent>
         </Card>

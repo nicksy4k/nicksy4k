@@ -50,9 +50,9 @@ export function OutgoingsList({
           if (c.paid) {
             statusTitle = "Paid this cycle";
             statusBody = `Marked paid on ${paidLabel}${elsewhere ? ` from ${elsewhere}` : ""}. Next due ${dueLabel}.`;
-          } else if (elsewhere) {
-            statusTitle = `Paid from ${elsewhere}`;
-            statusBody = `Due ${dueLabel} (this cycle). Last time this came out of ${elsewhere}, so it isn't counted against Bill Money.`;
+          } else if (elsewhere && !fundedMap[c.id]) {
+            statusTitle = `Usually paid from ${elsewhere}`;
+            statusBody = `Due ${dueLabel} (this cycle). Last time this came out of ${elsewhere} — it still counts towards what you need set aside.`;
           } else if (notDueYet) {
             statusTitle = "Covered — not due this cycle";
             statusBody = `Next due ${dueLabel}, after the current cycle ends on ${resetLabel}.`;

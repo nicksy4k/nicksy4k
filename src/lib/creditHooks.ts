@@ -34,7 +34,15 @@ export function useLedgerSync() {
    */
   async function debit(
     source: SourceChoice,
-    args: { amount: number; date: string; label: string; category?: string; notes?: string },
+    args: {
+      amount: number;
+      date: string;
+      label: string;
+      category?: string;
+      notes?: string;
+      /** Tags the logged spend to a linked outgoing so both pages agree. */
+      commitmentId?: string | null;
+    },
   ) {
     const plan = planDebit(source, args);
     if (plan.saving) await addSaving(plan.saving);
@@ -48,6 +56,7 @@ export function useLedgerSync() {
         receipt_type: "None",
         receipt_location: "",
         notes: t.notes,
+        commitment_id: args.commitmentId ?? null,
         items: [
           {
             id: crypto.randomUUID(),

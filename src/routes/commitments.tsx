@@ -24,8 +24,8 @@ import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
 import {
   isBillMoneySource,
   lastFundingSources,
-  neededBySource,
   perCycleTotal,
+  unlinkedDebtDueThisCycle,
 } from "@/lib/outgoings";
 import {
   acceptFullPricePatch,
@@ -124,10 +124,9 @@ function OutgoingsPage() {
 
   const leftToPay = useMemo(() => unpaidDue.reduce((s, i) => s + i.amount, 0), [unpaidDue]);
 
-  // Where each row was last actually paid from, so a pay-later instalment you
-  // settle off the main balance stops inflating the Bill Money figure.
+  // Where each row was last actually paid from. Informational only: it labels
+  // rows and preselects the source — it never reduces what Bill Money needs.
   const sources = useMemo(() => lastFundingSources(transactions), [transactions]);
-  const needed = useMemo(() => neededBySource(unpaidDue, sources), [unpaidDue, sources]);
   const elsewhereLabels = useMemo(() => {
     const map: Record<string, string> = {};
     for (const c of unpaidDue) {
@@ -136,16 +135,19 @@ function OutgoingsPage() {
     }
     return map;
   }, [unpaidDue, sources]);
-  const paidElsewhere = useMemo(
-    () => needed.elsewhere.map((e) => ({ label: outgoingSourceLabel(e.source), amount: e.amount })),
-    [needed],
-  );
 
-  // Waterfall: allocate Bill Money down the unpaid, due-this-cycle rows by date.
-  // Rows funded from elsewhere sit out of the waterfall entirely.
+  // Repayments due this cycle on pay-later plans with no outgoing row of their
+  // own still have to be covered, so they count towards the reserve too.
+  const unlinkedDebtDue = useMemo(
+    () => unlinkedDebtDueThisCycle(debts, allItems, resetDate),
+    [debts, allItems, resetDate],
+  );
+  const billMoneyNeeded = leftToPay + unlinkedDebtDue;
+
+  // Waterfall: allocate Bill Money down EVERY unpaid, due-this-cycle row by
+  // date, whatever source ends up paying it.
   const fundedMap = useMemo(() => {
     const unpaidSorted = unpaidDue
-      .filter((i) => !elsewhereLabels[i.id])
       .slice()
       .sort((a, b) => (a.next_due_date ?? "9999").localeCompare(b.next_due_date ?? "9999"));
     let remaining = billPocketBalance;
@@ -253,8 +255,8 @@ function OutgoingsPage() {
         everyCycleTotal={everyCycle.total}
         everyCycleCount={everyCycle.count}
         billPocketBalance={billPocketBalance}
-        billMoneyNeeded={needed.billMoney}
-        paidElsewhere={paidElsewhere}
+        billMoneyNeeded={billMoneyNeeded}
+        unlinkedDebtDue={unlinkedDebtDue}
       />
 
       {alerts.length > 0 && view !== "bills" && (
