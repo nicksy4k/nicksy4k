@@ -12,6 +12,7 @@ export function OutgoingsList({
   onSelect,
   emptyLabel,
   debts = [],
+  elsewhereLabels = {},
 }: {
   items: Commitment[];
   resetDate: string;
@@ -20,6 +21,8 @@ export function OutgoingsList({
   emptyLabel: string;
   /** Used to show pay-later plan progress on linked rows. */
   debts?: Debt[];
+  /** Rows last paid from somewhere other than Bill Money, by id → source label. */
+  elsewhereLabels?: Record<string, string>;
 }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground py-8 text-center">{emptyLabel}</p>;
