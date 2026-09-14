@@ -10,7 +10,7 @@ import {
 } from "@/lib/store";
 import { syncDebtAfterCommitmentPayment, undoDebtPaymentForCommitment } from "@/lib/bnplSync";
 import { useQueryClient } from "@tanstack/react-query";
-import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
+import { markOutgoingPaid, outgoingSourceLabel, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import type { Commitment } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -176,9 +176,9 @@ function OutgoingsPage() {
     },
   };
 
-  async function markPaid(c: Commitment, newDue: string) {
-    await markOutgoingPaid(paidCtx, c, newDue);
-    toast.success("Paid · logged & deducted from Bill Money");
+  async function markPaid(c: Commitment, newDue: string, source: string) {
+    await markOutgoingPaid(paidCtx, c, newDue, source);
+    toast.success(`Paid · logged & deducted from ${outgoingSourceLabel(source)}`);
     setDetailsId(null);
   }
 

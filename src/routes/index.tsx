@@ -15,7 +15,7 @@ import {
   useDebts,
 } from "@/lib/store";
 import { dueSoonOutgoings } from "@/lib/outgoings";
-import { markOutgoingPaid, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
+import { markOutgoingPaid, outgoingSourceLabel, unmarkOutgoingPaid } from "@/lib/markOutgoingPaid";
 import { ConfirmResetDialog } from "@/components/outgoings/ConfirmResetOptions";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { OutgoingDetailsDialog } from "@/components/outgoings/OutgoingDetailsDialog";
@@ -389,7 +389,7 @@ function DashboardPage() {
         item={payTarget}
         cycle={cycle}
         onClose={() => setPayTarget(null)}
-        onConfirm={async (c, newDue) => {
+        onConfirm={async (c, newDue, source) => {
           setPayTarget(null);
           await markOutgoingPaid(
             {
@@ -402,8 +402,9 @@ function DashboardPage() {
             },
             c,
             newDue,
+            source,
           );
-          toast.success("Paid · logged & deducted from Bill Money", {
+          toast.success(`Paid · logged & deducted from ${outgoingSourceLabel(source)}`, {
             action: {
               label: "Undo",
               onClick: () => {
@@ -452,7 +453,7 @@ function DashboardPage() {
           setDetailsCommitment(null);
           toast.success("Removed");
         }}
-        onConfirmReset={async (c, newDue) => {
+        onConfirmReset={async (c, newDue, source) => {
           setDetailsCommitment(null);
           await markOutgoingPaid(
             {
@@ -465,8 +466,9 @@ function DashboardPage() {
             },
             c,
             newDue,
+            source,
           );
-          toast.success("Paid · logged & deducted from Bill Money");
+          toast.success(`Paid · logged & deducted from ${outgoingSourceLabel(source)}`);
         }}
         onUnmarkPaid={async (c) => {
           await unmarkOutgoingPaid(

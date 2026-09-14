@@ -38,7 +38,7 @@ export function OutgoingDetailsDialog({
   onClose: () => void;
   onEdit: (c: Commitment) => void;
   onDelete: (id: string) => void;
-  onConfirmReset: (c: Commitment, newDue: string) => void | Promise<void>;
+  onConfirmReset: (c: Commitment, newDue: string, source: string) => void | Promise<void>;
   onUnmarkPaid: (c: Commitment) => void | Promise<void>;
   onToggleType: (c: Commitment) => void;
   onLogOffer: (c: Commitment) => void;
