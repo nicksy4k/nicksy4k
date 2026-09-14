@@ -16,6 +16,7 @@ import type { Commitment, Debt } from "@/lib/types";
 import { debtRemaining } from "@/lib/credit";
 import { useActiveCycle } from "@/lib/cycle";
 import { cadenceLabel } from "@/lib/subscriptions";
+import { outgoingSourceLabel } from "@/lib/markOutgoingPaid";
 import { Row } from "./shared";
 import { ResetOptions } from "./ConfirmResetOptions";
 
