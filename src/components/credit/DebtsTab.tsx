@@ -42,6 +42,7 @@ import {
   BNPL_PRESETS,
   cadenceEveryLabel,
   generateInstallmentDates,
+  inferBnplCadence,
   type BnplCadence,
 } from "@/lib/bnplPresets";
 import {
