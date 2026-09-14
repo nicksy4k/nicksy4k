@@ -129,14 +129,13 @@ export function OutgoingsSummary({
                   </span>
                 </p>
               )}
-              {elsewhereTotal > 0.001 && (
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Not counted here:{" "}
-                  {paidElsewhere
-                    .map((e) => `${fmt(e.amount)} from ${e.label}`)
-                    .join(" · ")}
-                </p>
-              )}
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                Needed covers everything scheduled this cycle
+                {unlinkedDebtDue > 0.001
+                  ? `, including ${fmt(unlinkedDebtDue)} of plan repayments`
+                  : ""}
+                , whichever pot you end up paying it from.
+              </p>
             </div>
           </CardContent>
         </Card>
