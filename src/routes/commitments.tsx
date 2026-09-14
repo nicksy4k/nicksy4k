@@ -321,6 +321,7 @@ function OutgoingsPage() {
             <ListSkeleton rows={5} />
           ) : (
             <OutgoingsList
+              debts={debts}
               items={visible}
               resetDate={resetDate}
               fundedMap={fundedMap}

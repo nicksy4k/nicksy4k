@@ -1,8 +1,8 @@
 import { format, parseISO } from "date-fns";
-import { Check, Repeat, Tag } from "lucide-react";
+import { CalendarClock, Check, Repeat, Tag } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fmt } from "@/lib/format";
-import type { Commitment } from "@/lib/types";
+import type { Commitment, Debt } from "@/lib/types";
 import { cadenceLabel, hasActivePromo } from "@/lib/subscriptions";
 
 export function OutgoingsList({
@@ -11,12 +11,15 @@ export function OutgoingsList({
   fundedMap,
   onSelect,
   emptyLabel,
+  debts = [],
 }: {
   items: Commitment[];
   resetDate: string;
   fundedMap: Record<string, boolean>;
   onSelect: (id: string) => void;
   emptyLabel: string;
+  /** Used to show pay-later plan progress on linked rows. */
+  debts?: Debt[];
 }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground py-8 text-center">{emptyLabel}</p>;
@@ -54,6 +57,12 @@ export function OutgoingsList({
             statusBody = `Due ${dueLabel} (this cycle). Bill Money is exhausted by earlier rows — top up or reprioritise.`;
           }
           const promo = c.is_subscription && hasActivePromo(c);
+          const plan = c.debt_id ? debts.find((d) => d.id === c.debt_id) : undefined;
+          const planTotal = plan?.kind === "bnpl" ? (plan.installments_total ?? 0) : 0;
+          const planPaid =
+            planTotal > 0
+              ? (plan!.payments ?? []).filter((p) => (p.type ?? "payment") === "payment").length
+              : 0;
 
           return (
             <li key={c.id}>
@@ -79,6 +88,12 @@ export function OutgoingsList({
                         ? `${c.is_subscription ? "Renews" : "Due"} ${dueLabel}`
                         : "No date"}
                     </span>
+                    {planTotal > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px]">
+                        <CalendarClock className="h-3 w-3" />
+                        Payment {Math.min(planPaid + 1, planTotal)} of {planTotal}
+                      </span>
+                    )}
                     {promo && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px]">
                         <Tag className="h-3 w-3" />
