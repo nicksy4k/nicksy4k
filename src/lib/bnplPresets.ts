@@ -97,3 +97,22 @@ export function generateInstallmentDates(
 export function commitmentCadenceFor(c: BnplCadence): string {
   return c;
 }
+
+/**
+ * Best-effort cadence recovery for a stored schedule. Debt records don't
+ * persist the cadence, so when editing we infer it from the gap between the
+ * first two instalment dates: 7 days → weekly, 14 → fortnightly, 28 →
+ * four-weekly, otherwise monthly.
+ */
+export function inferBnplCadence(dates: string[]): BnplCadence {
+  if (dates.length < 2) return "monthly";
+  const toMs = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1).getTime();
+  };
+  const days = Math.round((toMs(dates[1]!) - toMs(dates[0]!)) / 86_400_000);
+  if (days === 7) return "weekly";
+  if (days === 14) return "fortnightly";
+  if (days === 28) return "four-weekly";
+  return "monthly";
+}
