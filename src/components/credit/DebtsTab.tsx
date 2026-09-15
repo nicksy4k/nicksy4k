@@ -580,7 +580,7 @@ export function DebtsTab() {
             let linkedInstalmentDueDate: string | null = null;
             try {
               const syncResult = await syncCommitmentAfterDebtPayment(
-                updatedDebt,
+                pending.debt,
                 pending.date,
                 pending.amount,
               );
