@@ -61,7 +61,11 @@ export async function syncCommitmentAfterDebtPayment(
   debt: Debt,
   paidDate: string,
   paymentAmount: number,
-): Promise<Commitment | null> {
+): Promise<{
+  commitment: Commitment;
+  completed: boolean;
+  instalmentDueDate: string | null;
+} | null> {
   const { data: rows, error } = await supabase
     .from("commitments")
     .select("*")
@@ -71,7 +75,11 @@ export async function syncCommitmentAfterDebtPayment(
   if (!commitment) return null;
 
   if (!debtPaymentCoversLinkedOutgoing(debt, commitment, paymentAmount)) {
-    return commitment;
+    return {
+      commitment,
+      completed: false,
+      instalmentDueDate: commitment.next_due_date ?? null,
+    };
   }
 
   const currentDue = commitment.next_due_date ?? null;
@@ -86,7 +94,17 @@ export async function syncCommitmentAfterDebtPayment(
       next_due_date: nextDue,
     })
     .eq("id", commitment.id);
-  return { ...commitment, paid: true, last_paid_date: paidDate, prev_due_date: currentDue, next_due_date: nextDue };
+  return {
+    commitment: {
+      ...commitment,
+      paid: true,
+      last_paid_date: paidDate,
+      prev_due_date: currentDue,
+      next_due_date: nextDue,
+    },
+    completed: true,
+    instalmentDueDate: currentDue,
+  };
 }
 
 /**

@@ -579,14 +579,14 @@ export function DebtsTab() {
             let linkedCommitmentId: string | null = null;
             let linkedInstalmentDueDate: string | null = null;
             try {
-              const linked = await syncCommitmentAfterDebtPayment(
+              const syncResult = await syncCommitmentAfterDebtPayment(
                 updatedDebt,
                 pending.date,
                 pending.amount,
               );
-              linkedCommitmentId = linked?.id ?? null;
-              linkedInstalmentDueDate = linked?.prev_due_date ?? linked?.next_due_date ?? null;
-              if (linked) qc.invalidateQueries({ queryKey: ["commitments"] });
+              linkedCommitmentId = syncResult?.commitment.id ?? null;
+              linkedInstalmentDueDate = syncResult?.instalmentDueDate ?? null;
+              if (syncResult?.completed) qc.invalidateQueries({ queryKey: ["commitments"] });
             } catch (err) {
               console.error("Commitment sync failed", err);
             }
