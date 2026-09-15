@@ -573,14 +573,19 @@ export function DebtsTab() {
             ];
             await update(pending.debt.id, { payments: next });
 
-            // Sync the linked outgoing first (any debt kind, not just
-            // pay-later) so the logged spend can be tagged with it and both
-            // pages show the same paid state.
+            // Sync the linked outgoing only when this payment (plus earlier
+            // parts attributed to the same instalment) covers its full amount.
             const updatedDebt: Debt = { ...pending.debt, payments: next };
             let linkedCommitmentId: string | null = null;
+            let linkedInstalmentDueDate: string | null = null;
             try {
-              const linked = await syncCommitmentAfterDebtPayment(updatedDebt, pending.date);
+              const linked = await syncCommitmentAfterDebtPayment(
+                updatedDebt,
+                pending.date,
+                pending.amount,
+              );
               linkedCommitmentId = linked?.id ?? null;
+              linkedInstalmentDueDate = linked?.prev_due_date ?? linked?.next_due_date ?? null;
               if (linked) qc.invalidateQueries({ queryKey: ["commitments"] });
             } catch (err) {
               console.error("Commitment sync failed", err);
@@ -590,7 +595,10 @@ export function DebtsTab() {
             // removes exactly this row (and never double-logs the cycle).
             if (linkedCommitmentId) {
               const last = next[next.length - 1];
-              if (last) last.commitment_id = linkedCommitmentId;
+              if (last) {
+                last.commitment_id = linkedCommitmentId;
+                last.instalment_due_date = linkedInstalmentDueDate;
+              }
               updatedDebt.payments = next;
               await update(pending.debt.id, { payments: next });
             }

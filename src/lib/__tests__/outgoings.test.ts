@@ -10,6 +10,7 @@ import {
   unlinkedDebtDueThisCycle,
 } from "../outgoings";
 import type { Commitment, SavingsEntry, Transaction } from "../types";
+import { debtPaymentCoversLinkedOutgoing } from "../bnplSync";
 
 function commitment(partial: Partial<Commitment>): Commitment {
   return {
@@ -246,5 +247,48 @@ describe("unlinkedDebtDueThisCycle", () => {
   it("skips plans that already have a linked outgoing", () => {
     const linked = [{ id: "c1", debt_id: "d1", amount: 50 }] as never;
     expect(unlinkedDebtDueThisCycle([plan({})], linked, "2026-09-20")).toBe(0);
+  });
+});
+
+describe("linked debt part-payments", () => {
+  const linked = commitment({ id: "rent-outgoing", amount: 50, next_due_date: "2026-09-16" });
+
+  it("does not complete the outgoing for a small part-payment", () => {
+    const debt = { id: "rent", payments: [] } as never;
+    expect(debtPaymentCoversLinkedOutgoing(debt, linked, 10)).toBe(false);
+  });
+
+  it("completes once attributed parts cover the scheduled amount", () => {
+    const debt = {
+      id: "rent",
+      payments: [
+        {
+          id: "part-one",
+          date: "2026-09-15",
+          amount: 20,
+          type: "payment",
+          commitment_id: "rent-outgoing",
+          instalment_due_date: "2026-09-16",
+        },
+      ],
+    } as never;
+    expect(debtPaymentCoversLinkedOutgoing(debt, linked, 30)).toBe(true);
+  });
+
+  it("does not count payments attributed to an earlier instalment", () => {
+    const debt = {
+      id: "rent",
+      payments: [
+        {
+          id: "old-payment",
+          date: "2026-08-16",
+          amount: 50,
+          type: "payment",
+          commitment_id: "rent-outgoing",
+          instalment_due_date: "2026-08-16",
+        },
+      ],
+    } as never;
+    expect(debtPaymentCoversLinkedOutgoing(debt, linked, 10)).toBe(false);
   });
 });
