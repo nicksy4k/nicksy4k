@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.4",
+    title: "Part-payments keep the full bill visible",
+    date: "2026-09-15",
+    icon: Wallet,
+    highlights: [
+      "A small or extra debt payment no longer marks the whole linked outgoing as paid or moves its due date forward.",
+      "Several part-payments can still complete the outgoing once they cover the full scheduled amount.",
+      "Bill Money continues to include the unpaid outgoing until that scheduled amount is fully covered.",
+    ],
+  },
+  {
     version: "v3.5.3",
     title: "Bill Money covers everything due this cycle",
     date: "2026-09-14",

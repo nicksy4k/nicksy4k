@@ -30,6 +30,28 @@ export function nextDueAfterDebtPayment(
 }
 
 /**
+ * A linked outgoing is complete only when payments attributed to its current
+ * instalment, including the payment being logged, cover the scheduled amount.
+ * This keeps arbitrary extra/part-payments from rolling the outgoing forward.
+ */
+export function debtPaymentCoversLinkedOutgoing(
+  debt: Debt,
+  commitment: Commitment,
+  paymentAmount: number,
+): boolean {
+  const currentDue = commitment.next_due_date ?? null;
+  const alreadyApplied = (debt.payments ?? [])
+    .filter(
+      (payment) =>
+        payment.type !== "topup" &&
+        payment.commitment_id === commitment.id &&
+        payment.instalment_due_date === currentDue,
+    )
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  return alreadyApplied + paymentAmount >= commitment.amount - 0.001;
+}
+
+/**
  * Advance a commitment to its next payment after a debt payment is logged.
  * Marks paid + rolls next_due_date forward. Runs for EVERY linked debt kind,
  * not just pay-later plans, so logging a repayment on the debts page ticks
@@ -38,7 +60,12 @@ export function nextDueAfterDebtPayment(
 export async function syncCommitmentAfterDebtPayment(
   debt: Debt,
   paidDate: string,
-): Promise<Commitment | null> {
+  paymentAmount: number,
+): Promise<{
+  commitment: Commitment;
+  completed: boolean;
+  instalmentDueDate: string | null;
+} | null> {
   const { data: rows, error } = await supabase
     .from("commitments")
     .select("*")
@@ -46,6 +73,14 @@ export async function syncCommitmentAfterDebtPayment(
   if (error) throw error;
   const commitment = (rows ?? [])[0] as unknown as Commitment | undefined;
   if (!commitment) return null;
+
+  if (!debtPaymentCoversLinkedOutgoing(debt, commitment, paymentAmount)) {
+    return {
+      commitment,
+      completed: false,
+      instalmentDueDate: commitment.next_due_date ?? null,
+    };
+  }
 
   const currentDue = commitment.next_due_date ?? null;
   const nextDue = nextDueAfterDebtPayment(debt, currentDue, commitment.cadence);
@@ -59,7 +94,17 @@ export async function syncCommitmentAfterDebtPayment(
       next_due_date: nextDue,
     })
     .eq("id", commitment.id);
-  return { ...commitment, paid: true, last_paid_date: paidDate, prev_due_date: currentDue, next_due_date: nextDue };
+  return {
+    commitment: {
+      ...commitment,
+      paid: true,
+      last_paid_date: paidDate,
+      prev_due_date: currentDue,
+      next_due_date: nextDue,
+    },
+    completed: true,
+    instalmentDueDate: currentDue,
+  };
 }
 
 /**
