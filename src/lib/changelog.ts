@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.5.5",
+    title: "Pay-later instalments clear correctly",
+    date: "2026-09-16",
+    icon: Wallet,
+    highlights: [
+      "Pay-later totals that do not divide into exact pennies now accept the amount shown by the app as a full instalment.",
+      "The linked outgoing is marked paid and its due date moves forward, keeping Bill Money accurate.",
+      "Genuine part-payments still leave the outgoing due until the scheduled amount is covered.",
+    ],
+  },
+  {
     version: "v3.5.4",
     title: "Part-payments keep the full bill visible",
     date: "2026-09-15",

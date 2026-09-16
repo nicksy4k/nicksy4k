@@ -48,7 +48,13 @@ export function debtPaymentCoversLinkedOutgoing(
         payment.instalment_due_date === currentDue,
     )
     .reduce((sum, payment) => sum + payment.amount, 0);
-  return alreadyApplied + paymentAmount >= commitment.amount - 0.001;
+  // Payment forms and bank balances work in whole pennies, while an evenly
+  // divided BNPL amount can be stored with more precision (e.g. £100 / 3).
+  // Compare the scheduled and paid amounts at currency precision so the
+  // app's own £33.33 prefill can complete a £33.333… instalment.
+  const paidPennies = Math.round((alreadyApplied + paymentAmount) * 100);
+  const scheduledPennies = Math.round(commitment.amount * 100);
+  return paidPennies >= scheduledPennies;
 }
 
 /**
