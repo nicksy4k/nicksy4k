@@ -291,4 +291,12 @@ describe("linked debt part-payments", () => {
     } as never;
     expect(debtPaymentCoversLinkedOutgoing(debt, linked, 10)).toBe(false);
   });
+
+  it("completes an evenly split instalment using the app's penny-rounded amount", () => {
+    const payInThree = commitment({ amount: 100 / 3 });
+    expect(debtPaymentCoversLinkedOutgoing({ id: "plan", payments: [] } as never, payInThree, 33.33)).toBe(true);
+
+    const payInFour = commitment({ amount: 50.01 / 4 });
+    expect(debtPaymentCoversLinkedOutgoing({ id: "plan", payments: [] } as never, payInFour, 12.5)).toBe(true);
+  });
 });
