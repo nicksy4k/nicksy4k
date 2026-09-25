@@ -181,6 +181,8 @@ export const scanReceipt = createServerFn({ method: "POST" })
       "Discounts and vouchers may be returned as items with a negative price.",
       categoryHint,
       "confidence is 0 to 1 and reflects how legible that line was.",
+      "Delivery: set is_delivery true if the document mentions delivery, shipping, dispatch, postage, a courier, a delivery/shipping address, an estimated delivery date, or charges a delivery/shipping fee. Set it false for an in-store till receipt with no delivery wording.",
+      "If a carrier is named (Royal Mail, DPD, Evri, Hermes, Yodel, DHL, UPS, FedEx, Amazon Logistics, InPost, Parcelforce and similar), return it in courier. If a tracking, consignment or parcel reference is printed, return it in tracking_number. Use null when not shown.",
       "If something is unreadable, use null rather than inventing it.",
     ].join(" ");
 
