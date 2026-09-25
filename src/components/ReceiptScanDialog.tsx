@@ -37,6 +37,24 @@ export interface ScanApplyPayload {
   total: number | null;
   storagePath: string;
   items: ScannedItem[];
+  /** AI spotted delivery/shipping wording (or you ticked it in the review step). */
+  isDelivery: boolean;
+  courier: string;
+  trackingNumber: string;
+}
+
+/** Words on a receipt/invoice that mean the goods are being shipped to you. */
+const DELIVERY_HINT =
+  /\b(deliver(y|ed|ies)?|shipping|shipped|dispatch(ed)?|despatch(ed)?|postage|post\s*&\s*packing|p&p|courier|tracking|consignment|out for delivery|ship to|shipping address|delivery address|estimated arrival)\b/i;
+
+export function looksLikeDelivery(
+  retailer: string,
+  items: { name: string }[],
+  flagged?: boolean | null,
+): boolean {
+  if (flagged) return true;
+  if (DELIVERY_HINT.test(retailer)) return true;
+  return items.some((i) => DELIVERY_HINT.test(i.name));
 }
 
 interface Props {
