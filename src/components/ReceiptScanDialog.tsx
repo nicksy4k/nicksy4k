@@ -365,6 +365,50 @@ export function ReceiptScanDialog({
               </span>
             </div>
 
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" /> Expecting delivery
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {deliveryAuto
+                      ? "I spotted delivery or shipping details on this receipt."
+                      : "Turn this on to track the order until it arrives."}
+                  </p>
+                </div>
+                <Switch
+                  checked={isDelivery}
+                  aria-label="Expecting delivery"
+                  onCheckedChange={setIsDelivery}
+                />
+              </div>
+              {isDelivery && (
+                <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Courier (optional)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="e.g. Royal Mail, DPD"
+                      value={courier}
+                      onChange={(e) => setCourier(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Tracking number (optional)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="e.g. JD0002123456789"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+
+
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => reset()}>
                 Scan another
