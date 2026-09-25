@@ -165,7 +165,11 @@ function NewTransactionPage() {
       setIsPending(false);
       setStep(2);
     }
-    toast.success("Receipt applied — review the lines and save.");
+    toast.success(
+      payload.isDelivery
+        ? "Receipt applied — delivery tracking is on. Review the lines and save."
+        : "Receipt applied — review the lines and save.",
+    );
   }
 
   const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
