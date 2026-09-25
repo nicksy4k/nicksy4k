@@ -139,6 +139,11 @@ function NewTransactionPage() {
       setRetailer(payload.retailer);
     }
     if (payload.date) setDate(payload.date);
+    if (payload.isDelivery) {
+      setExpectingDelivery(true);
+      if (payload.courier) setCourier(payload.courier);
+      if (payload.trackingNumber) setTrackingNumber(payload.trackingNumber);
+    }
     if (payload.storagePath) {
       setReceiptAttached(true);
       setReceiptType("Digital");
