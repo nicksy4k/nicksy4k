@@ -59,7 +59,16 @@ const RECEIPT_SCHEMA = {
       },
     },
   },
-  required: ["retailer", "date", "currency", "total", "items"],
+  required: [
+    "retailer",
+    "date",
+    "currency",
+    "total",
+    "is_delivery",
+    "courier",
+    "tracking_number",
+    "items",
+  ],
 } as const;
 
 const IMAGE_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif", "gif"];
