@@ -148,11 +148,26 @@ export function ReceiptScanDialog({
         setTotal(result.total != null ? String(result.total) : "");
         setRows(parsed);
 
+        const delivery = looksLikeDelivery(
+          result.retailer ?? "",
+          parsed,
+          (result as { is_delivery?: boolean | null }).is_delivery,
+        );
+        setIsDelivery(delivery);
+        setDeliveryAuto(delivery);
+        setCourier(((result as { courier?: string | null }).courier ?? "").trim());
+        setTrackingNumber(
+          ((result as { tracking_number?: string | null }).tracking_number ?? "").trim(),
+        );
+
         if (parsed.length === 0) {
           toast.warning("No line items found — I filled in what I could read.");
         } else {
           trackEvent("receipt_scan");
           toast.success(`Found ${parsed.length} item${parsed.length === 1 ? "" : "s"}.`);
+        }
+        if (delivery) {
+          toast.info("This looks like a delivery — I've ticked the delivery option for you.");
         }
       } finally {
         if (isDemo) {
