@@ -90,6 +90,10 @@ export function ReceiptScanDialog({
   const [date, setDate] = useState("");
   const [total, setTotal] = useState("");
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [isDelivery, setIsDelivery] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [deliveryAuto, setDeliveryAuto] = useState(false);
 
   function reset() {
     setBusy(false);
@@ -98,6 +102,10 @@ export function ReceiptScanDialog({
     setDate("");
     setTotal("");
     setRows(null);
+    setIsDelivery(false);
+    setCourier("");
+    setTrackingNumber("");
+    setDeliveryAuto(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
