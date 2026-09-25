@@ -971,6 +971,18 @@ function NewTransactionPage() {
 
       {step === 2 && (
         <div className="space-y-4">
+          {expectingDelivery && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+              <p className="text-xs text-foreground">
+                <span className="font-medium">Expecting delivery</span>
+                {courier.trim() ? ` · ${courier.trim()}` : ""}
+                {trackingNumber.trim() ? ` · ${trackingNumber.trim()}` : ""}
+              </p>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setStep(1)}>
+                Edit
+              </Button>
+            </div>
+          )}
           {rankedQuick.length > 0 && (
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
               <div className="flex items-baseline justify-between gap-2">
