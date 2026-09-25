@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.6.0",
+    title: "Receipt scanner spots deliveries",
+    date: "2026-09-25",
+    icon: Truck,
+    highlights: [
+      "The receipt scanner now reads delivery, shipping and dispatch wording and ticks 'Expecting delivery' for you.",
+      "Any courier name or tracking number printed on the receipt is picked up automatically.",
+      "You can confirm or change the delivery details in the scan review before the transaction is filled in.",
+      "A delivery reminder now shows on the items step so you can see it is switched on.",
+    ],
+  },
+  {
     version: "v3.5.5",
     title: "Pay-later instalments clear correctly",
     date: "2026-09-16",
