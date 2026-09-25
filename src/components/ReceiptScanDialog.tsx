@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScanLine, Loader2, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ScanLine, Loader2, Upload, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
