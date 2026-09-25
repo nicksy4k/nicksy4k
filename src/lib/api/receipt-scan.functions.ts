@@ -30,6 +30,19 @@ const RECEIPT_SCHEMA = {
     date: { type: ["string", "null"], description: "ISO yyyy-mm-dd" },
     currency: { type: ["string", "null"] },
     total: { type: ["number", "null"] },
+    is_delivery: {
+      type: ["boolean", "null"],
+      description:
+        "true when the document mentions delivery, shipping, dispatch, postage, a courier or a delivery address",
+    },
+    courier: {
+      type: ["string", "null"],
+      description: "Carrier name if printed, e.g. Royal Mail, DPD, Evri, DHL, UPS, Yodel",
+    },
+    tracking_number: {
+      type: ["string", "null"],
+      description: "Tracking / consignment reference if printed",
+    },
     items: {
       type: "array",
       items: {
