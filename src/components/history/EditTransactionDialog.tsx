@@ -210,6 +210,11 @@ function EditTransactionDialog({
       clearError("retailer");
     }
     if (payload.date) setDate(payload.date);
+    if (payload.isDelivery) {
+      if (!deliveryStatus) setDeliveryStatus("awaiting_dispatch");
+      if (payload.courier) setCourier(payload.courier);
+      if (payload.trackingNumber) setTrackingNumber(payload.trackingNumber);
+    }
     if (payload.storagePath) {
       setReceiptAttached(true);
       setReceiptType("Digital");

@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScanLine, Loader2, Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ScanLine, Loader2, Upload, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,24 @@ export interface ScanApplyPayload {
   total: number | null;
   storagePath: string;
   items: ScannedItem[];
+  /** AI spotted delivery/shipping wording (or you ticked it in the review step). */
+  isDelivery: boolean;
+  courier: string;
+  trackingNumber: string;
+}
+
+/** Words on a receipt/invoice that mean the goods are being shipped to you. */
+const DELIVERY_HINT =
+  /\b(deliver(y|ed|ies)?|shipping|shipped|dispatch(ed)?|despatch(ed)?|postage|post\s*&\s*packing|p&p|courier|tracking|consignment|out for delivery|ship to|shipping address|delivery address|estimated arrival)\b/i;
+
+export function looksLikeDelivery(
+  retailer: string,
+  items: { name: string }[],
+  flagged?: boolean | null,
+): boolean {
+  if (flagged) return true;
+  if (DELIVERY_HINT.test(retailer)) return true;
+  return items.some((i) => DELIVERY_HINT.test(i.name));
 }
 
 interface Props {
@@ -72,6 +91,10 @@ export function ReceiptScanDialog({
   const [date, setDate] = useState("");
   const [total, setTotal] = useState("");
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [isDelivery, setIsDelivery] = useState(false);
+  const [courier, setCourier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [deliveryAuto, setDeliveryAuto] = useState(false);
 
   function reset() {
     setBusy(false);
@@ -80,6 +103,10 @@ export function ReceiptScanDialog({
     setDate("");
     setTotal("");
     setRows(null);
+    setIsDelivery(false);
+    setCourier("");
+    setTrackingNumber("");
+    setDeliveryAuto(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -122,11 +149,26 @@ export function ReceiptScanDialog({
         setTotal(result.total != null ? String(result.total) : "");
         setRows(parsed);
 
+        const delivery = looksLikeDelivery(
+          result.retailer ?? "",
+          parsed,
+          (result as { is_delivery?: boolean | null }).is_delivery,
+        );
+        setIsDelivery(delivery);
+        setDeliveryAuto(delivery);
+        setCourier(((result as { courier?: string | null }).courier ?? "").trim());
+        setTrackingNumber(
+          ((result as { tracking_number?: string | null }).tracking_number ?? "").trim(),
+        );
+
         if (parsed.length === 0) {
           toast.warning("No line items found — I filled in what I could read.");
         } else {
           trackEvent("receipt_scan");
           toast.success(`Found ${parsed.length} item${parsed.length === 1 ? "" : "s"}.`);
+        }
+        if (delivery) {
+          toast.info("This looks like a delivery — I've ticked the delivery option for you.");
         }
       } finally {
         if (isDemo) {
@@ -158,6 +200,9 @@ export function ReceiptScanDialog({
       total: Number.isFinite(receiptTotal) ? receiptTotal : null,
       storagePath: path,
       items: included.map(({ id: _id, include: _inc, ...rest }) => rest),
+      isDelivery,
+      courier: isDelivery ? courier.trim() : "",
+      trackingNumber: isDelivery ? trackingNumber.trim() : "",
     });
     reset();
     onOpenChange(false);
@@ -320,6 +365,50 @@ export function ReceiptScanDialog({
                   : "Matches the receipt total"}
               </span>
             </div>
+
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" /> Expecting delivery
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {deliveryAuto
+                      ? "I spotted delivery or shipping details on this receipt."
+                      : "Turn this on to track the order until it arrives."}
+                  </p>
+                </div>
+                <Switch
+                  checked={isDelivery}
+                  aria-label="Expecting delivery"
+                  onCheckedChange={setIsDelivery}
+                />
+              </div>
+              {isDelivery && (
+                <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Courier (optional)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="e.g. Royal Mail, DPD"
+                      value={courier}
+                      onChange={(e) => setCourier(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Tracking number (optional)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="e.g. JD0002123456789"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+
 
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => reset()}>

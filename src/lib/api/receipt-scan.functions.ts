@@ -30,6 +30,19 @@ const RECEIPT_SCHEMA = {
     date: { type: ["string", "null"], description: "ISO yyyy-mm-dd" },
     currency: { type: ["string", "null"] },
     total: { type: ["number", "null"] },
+    is_delivery: {
+      type: ["boolean", "null"],
+      description:
+        "true when the document mentions delivery, shipping, dispatch, postage, a courier or a delivery address",
+    },
+    courier: {
+      type: ["string", "null"],
+      description: "Carrier name if printed, e.g. Royal Mail, DPD, Evri, DHL, UPS, Yodel",
+    },
+    tracking_number: {
+      type: ["string", "null"],
+      description: "Tracking / consignment reference if printed",
+    },
     items: {
       type: "array",
       items: {
@@ -46,7 +59,16 @@ const RECEIPT_SCHEMA = {
       },
     },
   },
-  required: ["retailer", "date", "currency", "total", "items"],
+  required: [
+    "retailer",
+    "date",
+    "currency",
+    "total",
+    "is_delivery",
+    "courier",
+    "tracking_number",
+    "items",
+  ],
 } as const;
 
 const IMAGE_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif", "gif"];
@@ -159,6 +181,8 @@ export const scanReceipt = createServerFn({ method: "POST" })
       "Discounts and vouchers may be returned as items with a negative price.",
       categoryHint,
       "confidence is 0 to 1 and reflects how legible that line was.",
+      "Delivery: set is_delivery true if the document mentions delivery, shipping, dispatch, postage, a courier, a delivery/shipping address, an estimated delivery date, or charges a delivery/shipping fee. Set it false for an in-store till receipt with no delivery wording.",
+      "If a carrier is named (Royal Mail, DPD, Evri, Hermes, Yodel, DHL, UPS, FedEx, Amazon Logistics, InPost, Parcelforce and similar), return it in courier. If a tracking, consignment or parcel reference is printed, return it in tracking_number. Use null when not shown.",
       "If something is unreadable, use null rather than inventing it.",
     ].join(" ");
 
@@ -245,6 +269,9 @@ export const scanReceipt = createServerFn({ method: "POST" })
       date: z.string().nullable(),
       currency: z.string().nullable(),
       total: z.number().nullable(),
+      is_delivery: z.boolean().nullable().default(false),
+      courier: z.string().nullable().default(null),
+      tracking_number: z.string().nullable().default(null),
       items: z
         .array(
           z.object({
