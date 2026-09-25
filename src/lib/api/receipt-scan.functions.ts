@@ -269,6 +269,9 @@ export const scanReceipt = createServerFn({ method: "POST" })
       date: z.string().nullable(),
       currency: z.string().nullable(),
       total: z.number().nullable(),
+      is_delivery: z.boolean().nullable().default(false),
+      courier: z.string().nullable().default(null),
+      tracking_number: z.string().nullable().default(null),
       items: z
         .array(
           z.object({
