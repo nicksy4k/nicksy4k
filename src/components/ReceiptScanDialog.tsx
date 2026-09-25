@@ -199,6 +199,9 @@ export function ReceiptScanDialog({
       total: Number.isFinite(receiptTotal) ? receiptTotal : null,
       storagePath: path,
       items: included.map(({ id: _id, include: _inc, ...rest }) => rest),
+      isDelivery,
+      courier: isDelivery ? courier.trim() : "",
+      trackingNumber: isDelivery ? trackingNumber.trim() : "",
     });
     reset();
     onOpenChange(false);
