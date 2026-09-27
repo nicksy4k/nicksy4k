@@ -152,6 +152,9 @@ function NewTransactionPage() {
       setExpectingDelivery(true);
       if (payload.courier) setCourier(payload.courier);
       if (payload.trackingNumber) setTrackingNumber(payload.trackingNumber);
+      setDeliveryStatus(payload.deliveryStatus ?? "awaiting_dispatch");
+      // Open the inline editor on the items step so the details are easy to check.
+      setDeliveryEditOpen(true);
     }
     if (payload.storagePath) {
       setReceiptAttached(true);
