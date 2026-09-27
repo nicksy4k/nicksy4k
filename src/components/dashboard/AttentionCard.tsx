@@ -53,6 +53,8 @@ interface Props {
   protections: Transaction[];
   promos: Commitment[];
   deliveryCount: number;
+  /** Orders still on their way, so each can offer a direct tracking link. */
+  deliveries?: Transaction[];
   onDismiss: (id: string) => void;
   highlightedId?: string | null;
   dueSoon?: DueSoonOutgoing[];
@@ -72,6 +74,7 @@ export function AttentionCard({
   protections: allProtections,
   promos: allPromos,
   deliveryCount,
+  deliveries: deliveryList = [],
   onDismiss,
   highlightedId,
   dueSoon: allDueSoon = [],
@@ -94,6 +97,7 @@ export function AttentionCard({
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
   const deliveriesHidden = isHidden(alertKeys.deliveries());
   const deliveries = deliveriesHidden ? 0 : deliveryCount;
+  const deliveryItems = deliveriesHidden ? [] : deliveryList;
 
   const total =
     protections.length + promos.length + dueSoon.length + pending.length + (deliveries > 0 ? 1 : 0);
