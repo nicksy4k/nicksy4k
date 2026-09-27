@@ -374,6 +374,7 @@ function DashboardPage() {
         protections={alerts}
         promos={subsPromoAlerts}
         deliveryCount={awaitingDeliveryCount}
+        deliveries={awaitingDeliveries}
         onDismiss={dismiss}
         highlightedId={demo.openAlertId}
         dueSoon={dueSoon.rows}
