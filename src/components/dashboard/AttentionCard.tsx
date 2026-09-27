@@ -6,6 +6,7 @@ import {
   Check,
   CalendarClock,
   Clock3,
+  ExternalLink,
   FileText,
   Truck,
   ChevronRight,
@@ -20,6 +21,7 @@ import { fmt } from "@/lib/format";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { daysUntilPromoEnd } from "@/lib/subscriptions";
 import type { DueSoonOutgoing } from "@/lib/outgoings";
+import { deliveryMeta, trackingLink } from "@/lib/delivery";
 import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import type { Commitment, Transaction } from "@/lib/types";
@@ -53,6 +55,8 @@ interface Props {
   protections: Transaction[];
   promos: Commitment[];
   deliveryCount: number;
+  /** Orders still on their way, so each can offer a direct tracking link. */
+  deliveries?: Transaction[];
   onDismiss: (id: string) => void;
   highlightedId?: string | null;
   dueSoon?: DueSoonOutgoing[];
@@ -72,6 +76,7 @@ export function AttentionCard({
   protections: allProtections,
   promos: allPromos,
   deliveryCount,
+  deliveries: deliveryList = [],
   onDismiss,
   highlightedId,
   dueSoon: allDueSoon = [],
@@ -94,6 +99,7 @@ export function AttentionCard({
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
   const deliveriesHidden = isHidden(alertKeys.deliveries());
   const deliveries = deliveriesHidden ? 0 : deliveryCount;
+  const deliveryItems = deliveriesHidden ? [] : deliveryList;
 
   const total =
     protections.length + promos.length + dueSoon.length + pending.length + (deliveries > 0 ? 1 : 0);
@@ -200,22 +206,31 @@ export function AttentionCard({
         )}
 
         {deliveries > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Truck className="h-5 w-5 text-muted-foreground" />
-              <span>
-                <span className="font-medium tabular-nums">{deliveries}</span> order
-                {deliveries !== 1 ? "s" : ""} on the way
-              </span>
+          <div className="space-y-3 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Truck className="h-5 w-5 text-muted-foreground" />
+                <span>
+                  <span className="font-medium tabular-nums">{deliveries}</span> order
+                  {deliveries !== 1 ? "s" : ""} on the way
+                </span>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <Button asChild variant="outline" size="sm" className="shrink-0">
+                  <Link to="/history" search={{ delivery: "on_the_way" }}>
+                    View all
+                  </Link>
+                </Button>
+                <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
+              </div>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link to="/history" search={{ delivery: "on_the_way" }}>
-                  Track
-                </Link>
-              </Button>
-              <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
-            </div>
+            {deliveryItems.length > 0 && (
+              <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {deliveryItems.slice(0, 6).map((t) => (
+                  <DeliveryRow key={t.id} txn={t} onView={() => onViewTransaction?.(t)} />
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </CardContent>
@@ -269,6 +284,52 @@ function PendingRow({
           )}
           <AlertSnoozeMenu alertKey={alertKeys.pending(txn.id)} label={txn.retailer} />
         </div>
+      </div>
+    </ClickableRow>
+  );
+}
+
+function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void }) {
+  const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
+  const meta = deliveryMeta(txn.delivery_status);
+  const track = trackingLink(txn.courier, txn.tracking_number);
+
+  return (
+    <ClickableRow onClick={onView} ariaLabel={`Delivery from ${txn.retailer}`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+          <Truck className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{txn.retailer}</p>
+          <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {meta && (
+            <Badge variant="outline" className={`font-normal ${meta.className}`}>
+              {meta.label}
+            </Badge>
+          )}
+          {txn.courier && (
+            <span className="text-xs text-muted-foreground truncate">{txn.courier}</span>
+          )}
+        </div>
+        {track && (
+          <div onClick={stopPropagation}>
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <a
+                href={track.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Track ${txn.retailer} parcel`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Track
+              </a>
+            </Button>
+          </div>
+        )}
       </div>
     </ClickableRow>
   );

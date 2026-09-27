@@ -21,6 +21,19 @@ import { toast } from "sonner";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { matchRetailer, normaliseItem, itemsTotal, type ScannedItem } from "@/lib/receiptParse";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DELIVERY_STATUSES,
+  deliveryMeta,
+  trackingLink,
+  type DeliveryStatus,
+} from "@/lib/delivery";
 
 const ALLOWED = [
   "application/pdf",
@@ -42,6 +55,8 @@ export interface ScanApplyPayload {
   isDelivery: boolean;
   courier: string;
   trackingNumber: string;
+  /** Where the order is right now — new orders default to awaiting dispatch. */
+  deliveryStatus: DeliveryStatus;
 }
 
 /** Words on a receipt/invoice that mean the goods are being shipped to you. */
@@ -95,6 +110,8 @@ export function ReceiptScanDialog({
   const [courier, setCourier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [deliveryAuto, setDeliveryAuto] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("awaiting_dispatch");
+  const trackPreview = trackingLink(courier, trackingNumber);
 
   function reset() {
     setBusy(false);
@@ -107,6 +124,7 @@ export function ReceiptScanDialog({
     setCourier("");
     setTrackingNumber("");
     setDeliveryAuto(false);
+    setDeliveryStatus("awaiting_dispatch");
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -203,6 +221,7 @@ export function ReceiptScanDialog({
       isDelivery,
       courier: isDelivery ? courier.trim() : "",
       trackingNumber: isDelivery ? trackingNumber.trim() : "",
+      deliveryStatus,
     });
     reset();
     onOpenChange(false);
@@ -287,6 +306,82 @@ export function ReceiptScanDialog({
               </div>
             </div>
 
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" /> Expecting delivery
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {deliveryAuto
+                      ? "I spotted delivery or shipping details on this receipt — check them below."
+                      : "Turn this on to track the order until it arrives."}
+                  </p>
+                </div>
+                <Switch
+                  checked={isDelivery}
+                  aria-label="Expecting delivery"
+                  onCheckedChange={setIsDelivery}
+                />
+              </div>
+              {isDelivery && (
+                <div className="space-y-3 mt-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Courier (optional)</Label>
+                      <Input
+                        className="h-8"
+                        placeholder="e.g. Royal Mail, DPD"
+                        value={courier}
+                        onChange={(e) => setCourier(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Tracking number (optional)</Label>
+                      <Input
+                        className="h-8"
+                        placeholder="e.g. JD0002123456789"
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Status</Label>
+                    <Select
+                      value={deliveryStatus}
+                      onValueChange={(v) => setDeliveryStatus(v as DeliveryStatus)}
+                    >
+                      <SelectTrigger className="h-8" aria-label="Delivery status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DELIVERY_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {deliveryMeta(s)!.emoji} {deliveryMeta(s)!.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      New orders start as awaiting dispatch until the seller ships them.
+                    </p>
+                  </div>
+                  {trackPreview && (
+                    <a
+                      href={trackPreview.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs font-medium text-primary underline underline-offset-2"
+                    >
+                      Test this tracking link
+                      {trackPreview.universal ? "" : ` (${trackPreview.carrierName})`}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border divide-y divide-border">
               {rows.length === 0 && (
                 <p className="p-4 text-sm text-muted-foreground">
@@ -366,47 +461,6 @@ export function ReceiptScanDialog({
               </span>
             </div>
 
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <Label className="text-sm flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-primary" /> Expecting delivery
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {deliveryAuto
-                      ? "I spotted delivery or shipping details on this receipt."
-                      : "Turn this on to track the order until it arrives."}
-                  </p>
-                </div>
-                <Switch
-                  checked={isDelivery}
-                  aria-label="Expecting delivery"
-                  onCheckedChange={setIsDelivery}
-                />
-              </div>
-              {isDelivery && (
-                <div className="grid sm:grid-cols-2 gap-3 mt-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Courier (optional)</Label>
-                    <Input
-                      className="h-8"
-                      placeholder="e.g. Royal Mail, DPD"
-                      value={courier}
-                      onChange={(e) => setCourier(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Tracking number (optional)</Label>
-                    <Input
-                      className="h-8"
-                      placeholder="e.g. JD0002123456789"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
 
 
 
