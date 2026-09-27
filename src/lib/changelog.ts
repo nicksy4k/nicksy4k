@@ -42,6 +42,20 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.7.0",
+    title: "One-tap package tracking",
+    date: "2026-09-27",
+    icon: Truck,
+    highlights: [
+      "Any order with a tracking number now has a Track button that opens the courier's tracking page in one tap.",
+      "Royal Mail, Evri, DPD, DHL, UPS, FedEx, Yodel and Amazon are recognised, with a universal tracker for anything else.",
+      "Orders on the way are listed on the dashboard alerts card with their status and a direct Track link.",
+      "Tracking numbers can be copied with one tap from the history details.",
+      "New deliveries now start as 'Awaiting dispatch' instead of jumping to 'In transit'.",
+      "Delivery details are easier to check in the scan review, and can be edited on the items step without going back.",
+    ],
+  },
+  {
     version: "v3.6.0",
     title: "Receipt scanner spots deliveries",
     date: "2026-09-25",
