@@ -287,6 +287,52 @@ function PendingRow({
   );
 }
 
+function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void }) {
+  const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
+  const meta = deliveryMeta(txn.delivery_status);
+  const track = trackingLink(txn.courier, txn.tracking_number);
+
+  return (
+    <ClickableRow onClick={onView} ariaLabel={`Delivery from ${txn.retailer}`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10">
+          <Truck className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{txn.retailer}</p>
+          <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {meta && (
+            <Badge variant="outline" className={`font-normal ${meta.className}`}>
+              {meta.label}
+            </Badge>
+          )}
+          {txn.courier && (
+            <span className="text-xs text-muted-foreground truncate">{txn.courier}</span>
+          )}
+        </div>
+        {track && (
+          <div onClick={stopPropagation}>
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <a
+                href={track.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Track ${txn.retailer} parcel`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Track
+              </a>
+            </Button>
+          </div>
+        )}
+      </div>
+    </ClickableRow>
+  );
+}
+
 function AlertRow({
   txn,
   onDismiss,
