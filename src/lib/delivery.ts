@@ -1,15 +1,19 @@
+import { differenceInCalendarDays, parseISO } from "date-fns";
+
 import type { Transaction } from "./types";
 
 export type DeliveryStatus =
   | "awaiting_dispatch"
   | "in_transit"
   | "out_for_delivery"
+  | "delayed_claim"
   | "delivered";
 
 export const DELIVERY_STATUSES: DeliveryStatus[] = [
   "awaiting_dispatch",
   "in_transit",
   "out_for_delivery",
+  "delayed_claim",
   "delivered",
 ];
 
