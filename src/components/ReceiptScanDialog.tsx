@@ -21,6 +21,19 @@ import { toast } from "sonner";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { matchRetailer, normaliseItem, itemsTotal, type ScannedItem } from "@/lib/receiptParse";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DELIVERY_STATUSES,
+  deliveryMeta,
+  trackingLink,
+  type DeliveryStatus,
+} from "@/lib/delivery";
 
 const ALLOWED = [
   "application/pdf",
@@ -42,6 +55,8 @@ export interface ScanApplyPayload {
   isDelivery: boolean;
   courier: string;
   trackingNumber: string;
+  /** Where the order is right now — new orders default to awaiting dispatch. */
+  deliveryStatus: DeliveryStatus;
 }
 
 /** Words on a receipt/invoice that mean the goods are being shipped to you. */
@@ -95,6 +110,8 @@ export function ReceiptScanDialog({
   const [courier, setCourier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [deliveryAuto, setDeliveryAuto] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("awaiting_dispatch");
+  const trackPreview = trackingLink(courier, trackingNumber);
 
   function reset() {
     setBusy(false);
