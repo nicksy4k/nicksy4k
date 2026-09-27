@@ -184,6 +184,11 @@ function NewTransactionPage() {
     );
   }
 
+  const trackingPreview = useMemo(
+    () => trackingLink(courier, trackingNumber),
+    [courier, trackingNumber],
+  );
+
   const priceRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
