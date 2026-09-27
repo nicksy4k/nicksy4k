@@ -838,21 +838,51 @@ function NewTransactionPage() {
                 <Switch checked={expectingDelivery} onCheckedChange={setExpectingDelivery} />
               </div>
               {expectingDelivery && (
-                <div className="grid sm:grid-cols-2 gap-4 mt-3">
-                  <Field label="Courier (optional)">
-                    <Input
-                      placeholder="e.g. Royal Mail, DPD"
-                      value={courier}
-                      onChange={(e) => setCourier(e.target.value)}
-                    />
+                <div className="mt-3 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="Courier (optional)">
+                      <Input
+                        placeholder="e.g. Royal Mail, DPD"
+                        value={courier}
+                        onChange={(e) => setCourier(e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Tracking number (optional)">
+                      <Input
+                        placeholder="e.g. JD0002123456789"
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Status">
+                    <Select
+                      value={deliveryStatus}
+                      onValueChange={(v) => setDeliveryStatus(v as DeliveryStatus)}
+                    >
+                      <SelectTrigger aria-label="Delivery status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DELIVERY_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {deliveryMeta(s)!.emoji} {deliveryMeta(s)!.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </Field>
-                  <Field label="Tracking number (optional)">
-                    <Input
-                      placeholder="e.g. JD0002123456789"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                    />
-                  </Field>
+                  {trackingPreview && (
+                    <a
+                      href={trackingPreview.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs font-medium text-primary underline underline-offset-2"
+                    >
+                      Test this tracking link
+                      {trackingPreview.universal ? "" : ` (${trackingPreview.carrierName})`}
+                    </a>
+                  )}
                 </div>
               )}
             </div>
