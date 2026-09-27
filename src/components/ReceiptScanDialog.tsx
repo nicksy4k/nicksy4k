@@ -124,6 +124,7 @@ export function ReceiptScanDialog({
     setCourier("");
     setTrackingNumber("");
     setDeliveryAuto(false);
+    setDeliveryStatus("awaiting_dispatch");
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -220,6 +221,7 @@ export function ReceiptScanDialog({
       isDelivery,
       courier: isDelivery ? courier.trim() : "",
       trackingNumber: isDelivery ? trackingNumber.trim() : "",
+      deliveryStatus,
     });
     reset();
     onOpenChange(false);
