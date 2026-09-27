@@ -35,6 +35,12 @@ import { toast } from "sonner";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
 import { ReceiptScanDialog, type ScanApplyPayload } from "@/components/ReceiptScanDialog";
 import { useCanScanReceipts } from "@/lib/features";
+import {
+  DELIVERY_STATUSES,
+  deliveryMeta,
+  trackingLink,
+  type DeliveryStatus,
+} from "@/lib/delivery";
 
 import {
   ProtectionFields,
