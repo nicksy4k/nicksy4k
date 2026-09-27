@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, RotateCcw, Truck } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { AlertTriangle, Check, Copy, ExternalLink, RotateCcw, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  claimWindowStatus,
   deliveryMeta,
   nextDeliverySteps,
   trackingLink,
   type DeliveryStatus,
 } from "@/lib/delivery";
+import { DelayedClaimDialog } from "@/components/history/DelayedClaimDialog";
 import type { Transaction } from "@/lib/types";
 
 interface Props {
@@ -29,6 +32,7 @@ interface Props {
 /** One-tap delivery progress buttons, plus a courier/tracking capture dialog. */
 export function DeliveryActions({ transaction: t, onUpdate }: Props) {
   const [dispatchOpen, setDispatchOpen] = useState(false);
+  const [delayedOpen, setDelayedOpen] = useState(false);
   const [courier, setCourier] = useState(t.courier ?? "");
   const [tracking, setTracking] = useState(t.tracking_number ?? "");
   const [busy, setBusy] = useState(false);
@@ -37,11 +41,16 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
 
   const steps = nextDeliverySteps(t.delivery_status);
   const track = trackingLink(t.courier, t.tracking_number);
+  const claim = t.delivery_status === "delayed_claim" ? claimWindowStatus(t) : null;
 
   const setStatus = async (status: DeliveryStatus, extra?: Partial<Transaction>) => {
     setBusy(true);
     try {
-      await onUpdate(t.id, { delivery_status: status, ...extra });
+      const clearClaim =
+        status === "delivered"
+          ? { claim_date: null, claim_deadline: null, claim_reference: null }
+          : {};
+      await onUpdate(t.id, { delivery_status: status, ...clearClaim, ...extra });
       toast.success(`Marked as ${deliveryMeta(status)!.label.toLowerCase()}`);
       setDispatchOpen(false);
     } catch (e) {
@@ -117,6 +126,31 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
           </Button>
         ))}
 
+      {t.delivery_status !== "delivered" && (
+        <Button
+          variant={t.delivery_status === "delayed_claim" ? "secondary" : "outline"}
+          size="sm"
+          disabled={busy}
+          onClick={() => setDelayedOpen(true)}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          {t.delivery_status === "delayed_claim" ? "Edit claim dates" : "Report delayed / lost"}
+        </Button>
+      )}
+
+      {claim && (
+        <p className="basis-full text-xs text-muted-foreground">
+          {claim.phase === "upcoming"
+            ? `Claim opens ${format(parseISO(claim.claimDate!), "d MMM")} (${claim.daysUntilOpen} day${claim.daysUntilOpen === 1 ? "" : "s"})`
+            : claim.phase === "open"
+              ? claim.claimDeadline
+                ? `Claim window open — closes ${format(parseISO(claim.claimDeadline), "d MMM")}`
+                : "Claim window open"
+              : `Claim window closed ${format(parseISO(claim.claimDeadline!), "d MMM")}`}
+          {t.claim_reference ? ` · Ref ${t.claim_reference}` : ""}
+        </p>
+      )}
+
       {t.delivery_status === "delivered" && (
         <Button
           variant="ghost"
@@ -127,6 +161,14 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
           <RotateCcw className="h-4 w-4" /> Reopen
         </Button>
       )}
+
+      <DelayedClaimDialog
+        open={delayedOpen}
+        onOpenChange={setDelayedOpen}
+        transaction={t}
+        onUpdate={onUpdate}
+      />
+
 
       <Dialog open={dispatchOpen} onOpenChange={setDispatchOpen}>
         <DialogContent className="sm:max-w-md">

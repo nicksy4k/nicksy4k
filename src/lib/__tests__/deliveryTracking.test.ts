@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCarrier, trackingLink } from "@/lib/delivery";
+import { addDaysIso, claimWindowStatus, detectCarrier, trackingLink } from "@/lib/delivery";
 
 describe("detectCarrier", () => {
   it("matches on the courier name", () => {
@@ -36,5 +36,36 @@ describe("trackingLink", () => {
     const link = trackingLink("Bob's Vans", "ZZ99");
     expect(link?.universal).toBe(true);
     expect(link?.url).toContain("17track");
+  });
+});
+
+describe("claimWindowStatus", () => {
+  const now = new Date(2026, 9, 10); // 10 Oct 2026
+
+  it("returns null without claim dates", () => {
+    expect(claimWindowStatus({ claim_date: null, claim_deadline: null }, now)).toBeNull();
+  });
+
+  it("counts down to the claim opening", () => {
+    const w = claimWindowStatus({ claim_date: "2026-10-16", claim_deadline: "2026-10-18" }, now);
+    expect(w?.phase).toBe("upcoming");
+    expect(w?.daysUntilOpen).toBe(6);
+  });
+
+  it("flags an open 48 hour window", () => {
+    const w = claimWindowStatus({ claim_date: "2026-10-10", claim_deadline: "2026-10-12" }, now);
+    expect(w?.phase).toBe("open");
+    expect(w?.daysLeft).toBe(2);
+  });
+
+  it("flags an expired window", () => {
+    const w = claimWindowStatus({ claim_date: "2026-10-01", claim_deadline: "2026-10-03" }, now);
+    expect(w?.phase).toBe("expired");
+  });
+});
+
+describe("addDaysIso", () => {
+  it("adds whole days", () => {
+    expect(addDaysIso("2026-10-16", 2)).toBe("2026-10-18");
   });
 });

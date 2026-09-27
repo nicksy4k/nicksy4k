@@ -1,15 +1,19 @@
+import { differenceInCalendarDays, parseISO } from "date-fns";
+
 import type { Transaction } from "./types";
 
 export type DeliveryStatus =
   | "awaiting_dispatch"
   | "in_transit"
   | "out_for_delivery"
+  | "delayed_claim"
   | "delivered";
 
 export const DELIVERY_STATUSES: DeliveryStatus[] = [
   "awaiting_dispatch",
   "in_transit",
   "out_for_delivery",
+  "delayed_claim",
   "delivered",
 ];
 
@@ -36,6 +40,11 @@ const META: Record<DeliveryStatus, DeliveryMeta> = {
     emoji: "🛵",
     className: "border-indigo-500/40 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
   },
+  delayed_claim: {
+    label: "Delayed / Possibly Lost",
+    emoji: "⚠️",
+    className: "border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  },
   delivered: {
     label: "Received",
     emoji: "✓",
@@ -53,7 +62,8 @@ export function isAwaitingDelivery(t: Pick<Transaction, "delivery_status">): boo
   return (
     t.delivery_status === "awaiting_dispatch" ||
     t.delivery_status === "in_transit" ||
-    t.delivery_status === "out_for_delivery"
+    t.delivery_status === "out_for_delivery" ||
+    t.delivery_status === "delayed_claim"
   );
 }
 
@@ -70,9 +80,67 @@ export function nextDeliverySteps(status: string | null | undefined): DeliverySt
       return ["out_for_delivery", "delivered"];
     case "out_for_delivery":
       return ["delivered"];
+    case "delayed_claim":
+      return ["delivered"];
     default:
       return [];
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Delayed parcels & claim windows                                     */
+/* ------------------------------------------------------------------ */
+
+export type ClaimPhase = "upcoming" | "open" | "expired";
+
+export interface ClaimWindow {
+  phase: ClaimPhase;
+  /** Days until the claim window opens (0 when it opens today). */
+  daysUntilOpen: number;
+  /** Days left before the claim deadline passes (0 = last day). */
+  daysLeft: number;
+  claimDate: string | null;
+  claimDeadline: string | null;
+}
+
+type ClaimFields = Pick<Transaction, "claim_date" | "claim_deadline">;
+
+/**
+ * Where a delayed parcel sits in its claim window: waiting for the window to
+ * open, inside it (act now), or past the deadline.
+ */
+export function claimWindowStatus(
+  t: ClaimFields,
+  now: Date = new Date(),
+): ClaimWindow | null {
+  const claimDate = t.claim_date ?? null;
+  const claimDeadline = t.claim_deadline ?? null;
+  if (!claimDate && !claimDeadline) return null;
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysUntilOpen = claimDate ? differenceInCalendarDays(parseISO(claimDate), today) : 0;
+  const daysLeft = claimDeadline ? differenceInCalendarDays(parseISO(claimDeadline), today) : 0;
+
+  let phase: ClaimPhase;
+  if (daysUntilOpen > 0) phase = "upcoming";
+  else if (claimDeadline && daysLeft < 0) phase = "expired";
+  else phase = "open";
+
+  return { phase, daysUntilOpen, daysLeft, claimDate, claimDeadline };
+}
+
+/** True when a delayed parcel needs the user to act (or is about to). */
+export function needsClaimAttention(
+  t: Pick<Transaction, "delivery_status" | "claim_date" | "claim_deadline">,
+): boolean {
+  return t.delivery_status === "delayed_claim";
+}
+
+/** Add whole days to an ISO date, returning an ISO date. */
+export function addDaysIso(iso: string, days: number): string {
+  const d = parseISO(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 /* ------------------------------------------------------------------ */

@@ -8,6 +8,7 @@ import {
   Clock3,
   ExternalLink,
   FileText,
+  PackageX,
   Truck,
   ChevronRight,
 } from "lucide-react";
@@ -21,7 +22,7 @@ import { fmt } from "@/lib/format";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { daysUntilPromoEnd } from "@/lib/subscriptions";
 import type { DueSoonOutgoing } from "@/lib/outgoings";
-import { deliveryMeta, trackingLink } from "@/lib/delivery";
+import { claimWindowStatus, deliveryMeta, trackingLink } from "@/lib/delivery";
 import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import type { Commitment, Transaction } from "@/lib/types";
@@ -67,6 +68,8 @@ interface Props {
   onSettle?: (t: Transaction) => void;
   /** Open a transaction in its detail/edit card. */
   onViewTransaction?: (t: Transaction) => void;
+  /** Mark a delayed parcel as arrived, clearing its claim reminder. */
+  onMarkDelivered?: (t: Transaction) => void;
   /** Open a commitment in its detail card. */
   onViewCommitment?: (c: Commitment) => void;
 }
@@ -86,6 +89,7 @@ export function AttentionCard({
   pending: allPending = [],
   onSettle,
   onViewTransaction,
+  onMarkDelivered,
   onViewCommitment,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
@@ -98,11 +102,22 @@ export function AttentionCard({
   );
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
   const deliveriesHidden = isHidden(alertKeys.deliveries());
-  const deliveries = deliveriesHidden ? 0 : deliveryCount;
-  const deliveryItems = deliveriesHidden ? [] : deliveryList;
+  // Delayed parcels get their own urgent section and are never folded into the
+  // "on the way" count, so a claim deadline can't be missed.
+  const claims = deliveryList
+    .filter((t) => t.delivery_status === "delayed_claim" && !t.dismissed_at)
+    .sort((a, b) => (a.claim_deadline ?? a.claim_date ?? "").localeCompare(b.claim_deadline ?? b.claim_date ?? ""));
+  const onTheWay = deliveryList.filter((t) => t.delivery_status !== "delayed_claim");
+  const deliveries = deliveriesHidden ? 0 : Math.max(0, deliveryCount - claims.length);
+  const deliveryItems = deliveriesHidden ? [] : onTheWay;
 
   const total =
-    protections.length + promos.length + dueSoon.length + pending.length + (deliveries > 0 ? 1 : 0);
+    protections.length +
+    promos.length +
+    dueSoon.length +
+    pending.length +
+    claims.length +
+    (deliveries > 0 ? 1 : 0);
   if (total === 0) return null;
 
   return (
@@ -205,6 +220,24 @@ export function AttentionCard({
           </section>
         )}
 
+        {claims.length > 0 && (
+          <section className="space-y-3">
+            <SectionTitle>Delayed parcels &amp; claims</SectionTitle>
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {claims.map((t) => (
+                <ClaimRow
+                  key={t.id}
+                  txn={t}
+                  onView={() => onViewTransaction?.(t)}
+                  onMarkDelivered={onMarkDelivered ? () => onMarkDelivered(t) : undefined}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+
+
+
         {deliveries > 0 && (
           <div className="space-y-3 rounded-xl border border-border/60 bg-secondary/30 p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -288,6 +321,86 @@ function PendingRow({
     </ClickableRow>
   );
 }
+
+/** A delayed parcel with its claim-window countdown and next steps. */
+function ClaimRow({
+  txn,
+  onView,
+  onMarkDelivered,
+}: {
+  txn: Transaction;
+  onView?: () => void;
+  onMarkDelivered?: () => void;
+}) {
+  const claim = claimWindowStatus(txn);
+  const track = trackingLink(txn.courier, txn.tracking_number);
+  const urgent = claim?.phase === "open" || claim?.phase === "expired";
+
+  const label = !claim
+    ? "Delayed"
+    : claim.phase === "upcoming"
+      ? `Claim opens in ${claim.daysUntilOpen} day${claim.daysUntilOpen === 1 ? "" : "s"}${claim.claimDate ? ` (${format(parseISO(claim.claimDate), "d MMM")})` : ""}`
+      : claim.phase === "open"
+        ? claim.claimDeadline
+          ? `Claim now — ends ${format(parseISO(claim.claimDeadline), "d MMM")}`
+          : "Claim window open"
+        : `Claim window closed ${claim.claimDeadline ? format(parseISO(claim.claimDeadline), "d MMM") : ""}`;
+
+  return (
+    <ClickableRow
+      onClick={onView}
+      tone={urgent ? "amber" : undefined}
+      ariaLabel={`Delayed parcel from ${txn.retailer}`}
+    >
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${urgent ? "bg-destructive/15" : "bg-orange-500/15"}`}
+        >
+          <PackageX
+            className={`h-4 w-4 ${urgent ? "text-destructive" : "text-orange-600 dark:text-orange-400"}`}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{txn.retailer}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(txn.total_amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {txn.claim_reference ? `Ref ${txn.claim_reference}` : "Possibly lost in transit"}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1 flex-wrap">
+        <Badge
+          variant="outline"
+          className={`font-normal ${urgent ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400"}`}
+        >
+          {label}
+        </Badge>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {track && (
+            <Button asChild variant="ghost" size="sm" className="h-8">
+              <a
+                href={track.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Track ${txn.retailer} parcel`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Track
+              </a>
+            </Button>
+          )}
+          {onMarkDelivered && (
+            <Button variant="outline" size="sm" className="h-8" onClick={onMarkDelivered}>
+              <Check className="h-3.5 w-3.5" /> Arrived
+            </Button>
+          )}
+        </div>
+      </div>
+    </ClickableRow>
+  );
+}
+
 
 function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void }) {
   const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;

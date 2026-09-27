@@ -42,6 +42,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.8.0",
+    title: "Delayed parcels & claim reminders",
+    date: "2026-09-28",
+    icon: AlertTriangle,
+    highlights: [
+      "Any order that has not turned up can be marked 'Delayed / possibly lost' from its history details.",
+      "Save the date you can first raise a claim plus a deadline — 48 hours, 7, 14 or 30 days, or your own date.",
+      "The dashboard counts down to the day the claim opens, then switches to an urgent reminder before the deadline passes.",
+      "Add the case or order reference so it is to hand when you make the claim.",
+      "One tap to mark the parcel as arrived, which clears the reminder, or open it to record a refund.",
+    ],
+  },
+  {
     version: "v3.7.0",
     title: "One-tap package tracking",
     date: "2026-09-27",
