@@ -98,11 +98,22 @@ export function AttentionCard({
   );
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
   const deliveriesHidden = isHidden(alertKeys.deliveries());
-  const deliveries = deliveriesHidden ? 0 : deliveryCount;
-  const deliveryItems = deliveriesHidden ? [] : deliveryList;
+  // Delayed parcels get their own urgent section and are never folded into the
+  // "on the way" count, so a claim deadline can't be missed.
+  const claims = deliveryList
+    .filter((t) => t.delivery_status === "delayed_claim" && !t.dismissed_at)
+    .sort((a, b) => (a.claim_deadline ?? a.claim_date ?? "").localeCompare(b.claim_deadline ?? b.claim_date ?? ""));
+  const onTheWay = deliveryList.filter((t) => t.delivery_status !== "delayed_claim");
+  const deliveries = deliveriesHidden ? 0 : Math.max(0, deliveryCount - claims.length);
+  const deliveryItems = deliveriesHidden ? [] : onTheWay;
 
   const total =
-    protections.length + promos.length + dueSoon.length + pending.length + (deliveries > 0 ? 1 : 0);
+    protections.length +
+    promos.length +
+    dueSoon.length +
+    pending.length +
+    claims.length +
+    (deliveries > 0 ? 1 : 0);
   if (total === 0) return null;
 
   return (
