@@ -36,6 +36,7 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
   if (!t.delivery_status) return null;
 
   const steps = nextDeliverySteps(t.delivery_status);
+  const track = trackingLink(t.courier, t.tracking_number);
 
   const setStatus = async (status: DeliveryStatus, extra?: Partial<Transaction>) => {
     setBusy(true);
