@@ -386,7 +386,23 @@ function DashboardPage() {
         onSettle={demo.active ? undefined : setSettleTarget}
         onViewTransaction={demo.active ? undefined : setSettleTarget}
         onViewCommitment={demo.active ? undefined : setDetailsCommitment}
+        onMarkDelivered={
+          demo.active
+            ? undefined
+            : (t) => {
+                void updateTransaction(t.id, {
+                  delivery_status: "delivered",
+                  claim_date: null,
+                  claim_deadline: null,
+                  claim_reference: null,
+                }).then(
+                  () => toast.success("Marked as received"),
+                  () => toast.error("Could not update the order"),
+                );
+              }
+        }
       />
+
 
       <ConfirmResetDialog
         item={payTarget}
