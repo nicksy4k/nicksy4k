@@ -67,6 +67,8 @@ interface Props {
   onSettle?: (t: Transaction) => void;
   /** Open a transaction in its detail/edit card. */
   onViewTransaction?: (t: Transaction) => void;
+  /** Mark a delayed parcel as arrived, clearing its claim reminder. */
+  onMarkDelivered?: (t: Transaction) => void;
   /** Open a commitment in its detail card. */
   onViewCommitment?: (c: Commitment) => void;
 }
