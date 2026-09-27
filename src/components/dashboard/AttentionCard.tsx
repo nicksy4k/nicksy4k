@@ -216,6 +216,24 @@ export function AttentionCard({
           </section>
         )}
 
+        {claims.length > 0 && (
+          <section className="space-y-3">
+            <SectionTitle>Delayed parcels &amp; claims</SectionTitle>
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {claims.map((t) => (
+                <ClaimRow
+                  key={t.id}
+                  txn={t}
+                  onView={() => onViewTransaction?.(t)}
+                  onMarkDelivered={onMarkDelivered ? () => onMarkDelivered(t) : undefined}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+
+
+
         {deliveries > 0 && (
           <div className="space-y-3 rounded-xl border border-border/60 bg-secondary/30 p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
