@@ -211,7 +211,7 @@ function EditTransactionDialog({
     }
     if (payload.date) setDate(payload.date);
     if (payload.isDelivery) {
-      if (!deliveryStatus) setDeliveryStatus("awaiting_dispatch");
+      if (!deliveryStatus) setDeliveryStatus(payload.deliveryStatus ?? "awaiting_dispatch");
       if (payload.courier) setCourier(payload.courier);
       if (payload.trackingNumber) setTrackingNumber(payload.trackingNumber);
     }
