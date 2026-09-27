@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { addDays, format, parseISO } from "date-fns";
 import { useActiveCycle, isInCycle } from "@/lib/cycle";
-import { countAwaitingDelivery } from "@/lib/delivery";
+import { isAwaitingDelivery } from "@/lib/delivery";
 import { useDemoMode } from "@/lib/demoMode";
 import { usePreferences } from "@/lib/preferences";
 import { encouragementFor } from "@/lib/encouragement";
@@ -247,7 +247,8 @@ function DashboardPage() {
   const alerts = useMemo(() => urgentProtections(items), [items]);
   const pendingTransactions = useMemo(() => items.filter((t) => t.is_pending), [items]);
 
-  const awaitingDeliveryCount = useMemo(() => countAwaitingDelivery(items), [items]);
+  const awaitingDeliveries = useMemo(() => items.filter(isAwaitingDelivery), [items]);
+  const awaitingDeliveryCount = awaitingDeliveries.length;
 
   const subsPromoAlerts = useMemo(() => promoAlerts(commitments), [commitments]);
 
