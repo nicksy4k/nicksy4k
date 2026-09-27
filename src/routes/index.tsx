@@ -88,6 +88,7 @@ function DashboardPage() {
     dismiss,
     add: addTransaction,
     remove: removeTransaction,
+    update: updateTransaction,
   } = useTransactions();
   const { items: realIncomes } = useIncomes();
   const { items: realSavings, add: addSaving } = useSavings();
