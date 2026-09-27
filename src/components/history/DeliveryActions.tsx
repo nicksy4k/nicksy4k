@@ -46,7 +46,11 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
   const setStatus = async (status: DeliveryStatus, extra?: Partial<Transaction>) => {
     setBusy(true);
     try {
-      await onUpdate(t.id, { delivery_status: status, ...extra });
+      const clearClaim =
+        status === "delivered"
+          ? { claim_date: null, claim_deadline: null, claim_reference: null }
+          : {};
+      await onUpdate(t.id, { delivery_status: status, ...clearClaim, ...extra });
       toast.success(`Marked as ${deliveryMeta(status)!.label.toLowerCase()}`);
       setDispatchOpen(false);
     } catch (e) {
