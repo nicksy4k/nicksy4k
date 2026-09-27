@@ -80,9 +80,21 @@ export interface Transaction {
   /** Log of refunds against this transaction — does not mutate items/total. */
   refunds?: Refund[];
   /** Online-order tracking */
-  delivery_status?: "awaiting_dispatch" | "in_transit" | "out_for_delivery" | "delivered" | null;
+  delivery_status?:
+    | "awaiting_dispatch"
+    | "in_transit"
+    | "out_for_delivery"
+    | "delayed_claim"
+    | "delivered"
+    | null;
   courier?: string | null;
   tracking_number?: string | null;
+  /** Earliest date a lost-parcel claim can be raised (ISO yyyy-mm-dd). */
+  claim_date?: string | null;
+  /** Last date a claim can be raised (ISO yyyy-mm-dd). */
+  claim_deadline?: string | null;
+  /** Optional case/claim reference from the retailer or courier. */
+  claim_reference?: string | null;
   created_at: string;
 }
 
