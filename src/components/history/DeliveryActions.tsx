@@ -122,6 +122,31 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
           </Button>
         ))}
 
+      {t.delivery_status !== "delivered" && (
+        <Button
+          variant={t.delivery_status === "delayed_claim" ? "secondary" : "outline"}
+          size="sm"
+          disabled={busy}
+          onClick={() => setDelayedOpen(true)}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          {t.delivery_status === "delayed_claim" ? "Edit claim dates" : "Report delayed / lost"}
+        </Button>
+      )}
+
+      {claim && (
+        <p className="basis-full text-xs text-muted-foreground">
+          {claim.phase === "upcoming"
+            ? `Claim opens ${format(parseISO(claim.claimDate!), "d MMM")} (${claim.daysUntilOpen} day${claim.daysUntilOpen === 1 ? "" : "s"})`
+            : claim.phase === "open"
+              ? claim.claimDeadline
+                ? `Claim window open — closes ${format(parseISO(claim.claimDeadline), "d MMM")}`
+                : "Claim window open"
+              : `Claim window closed ${format(parseISO(claim.claimDeadline!), "d MMM")}`}
+          {t.claim_reference ? ` · Ref ${t.claim_reference}` : ""}
+        </p>
+      )}
+
       {t.delivery_status === "delivered" && (
         <Button
           variant="ghost"
@@ -132,6 +157,14 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
           <RotateCcw className="h-4 w-4" /> Reopen
         </Button>
       )}
+
+      <DelayedClaimDialog
+        open={delayedOpen}
+        onOpenChange={setDelayedOpen}
+        transaction={t}
+        onUpdate={onUpdate}
+      />
+
 
       <Dialog open={dispatchOpen} onOpenChange={setDispatchOpen}>
         <DialogContent className="sm:max-w-md">
