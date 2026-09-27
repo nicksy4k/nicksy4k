@@ -121,11 +121,9 @@ export function QuickAddSheet({ open, onOpenChange }: Props) {
           },
         ],
         payment_splits: splits,
-        delivery_status: expectingDelivery
-          ? courier.trim() || trackingNumber.trim()
-            ? "in_transit"
-            : "awaiting_dispatch"
-          : null,
+        // New orders always start as awaiting dispatch — a courier being named
+        // on the receipt doesn't mean the parcel has actually shipped yet.
+        delivery_status: expectingDelivery ? "awaiting_dispatch" : null,
         courier: expectingDelivery ? courier.trim() || null : null,
         tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
