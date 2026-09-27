@@ -8,6 +8,7 @@ import {
   Clock3,
   ExternalLink,
   FileText,
+  PackageX,
   Truck,
   ChevronRight,
 } from "lucide-react";
@@ -21,7 +22,7 @@ import { fmt } from "@/lib/format";
 import { protectionStatus, type ProtectionType } from "@/lib/protection";
 import { daysUntilPromoEnd } from "@/lib/subscriptions";
 import type { DueSoonOutgoing } from "@/lib/outgoings";
-import { deliveryMeta, trackingLink } from "@/lib/delivery";
+import { claimWindowStatus, deliveryMeta, trackingLink } from "@/lib/delivery";
 import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import type { Commitment, Transaction } from "@/lib/types";
