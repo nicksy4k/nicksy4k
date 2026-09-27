@@ -1002,15 +1002,71 @@ function NewTransactionPage() {
       {step === 2 && (
         <div className="space-y-4">
           {expectingDelivery && (
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
-              <p className="text-xs text-foreground">
-                <span className="font-medium">Expecting delivery</span>
-                {courier.trim() ? ` · ${courier.trim()}` : ""}
-                {trackingNumber.trim() ? ` · ${trackingNumber.trim()}` : ""}
-              </p>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setStep(1)}>
-                Edit
-              </Button>
+            <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-foreground">
+                  <span className="font-medium">Expecting delivery</span>
+                  {` · ${deliveryMeta(deliveryStatus)!.label}`}
+                  {courier.trim() ? ` · ${courier.trim()}` : ""}
+                  {trackingNumber.trim() ? ` · ${trackingNumber.trim()}` : ""}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeliveryEditOpen((v) => !v)}
+                >
+                  {deliveryEditOpen ? "Done" : "Edit"}
+                </Button>
+              </div>
+              {deliveryEditOpen && (
+                <div className="mt-3 space-y-3 pb-1">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <Field label="Courier (optional)">
+                      <Input
+                        placeholder="e.g. Royal Mail, DPD"
+                        value={courier}
+                        onChange={(e) => setCourier(e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Tracking number (optional)">
+                      <Input
+                        placeholder="e.g. JD0002123456789"
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Status">
+                    <Select
+                      value={deliveryStatus}
+                      onValueChange={(v) => setDeliveryStatus(v as DeliveryStatus)}
+                    >
+                      <SelectTrigger aria-label="Delivery status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DELIVERY_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {deliveryMeta(s)!.emoji} {deliveryMeta(s)!.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  {trackingPreview && (
+                    <a
+                      href={trackingPreview.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs font-medium text-primary underline underline-offset-2"
+                    >
+                      Test this tracking link
+                      {trackingPreview.universal ? "" : ` (${trackingPreview.carrierName})`}
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {rankedQuick.length > 0 && (
