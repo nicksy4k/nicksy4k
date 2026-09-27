@@ -74,3 +74,134 @@ export function nextDeliverySteps(status: string | null | undefined): DeliverySt
       return [];
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* One-tap tracking links                                              */
+/* ------------------------------------------------------------------ */
+
+export interface Carrier {
+  /** Stable key. */
+  id: string;
+  /** Friendly display name. */
+  name: string;
+  /** Words/spellings that appear in a courier field for this carrier. */
+  aliases: RegExp;
+  /** Build the public tracking URL for a code. */
+  url: (tracking: string) => string;
+}
+
+export const CARRIERS: Carrier[] = [
+  {
+    id: "royal-mail",
+    name: "Royal Mail",
+    aliases: /royal\s*mail|\brm\b|parcelforce/i,
+    url: (t) => `https://www.royalmail.com/track-your-item#/tracking-results/${t}`,
+  },
+  {
+    id: "evri",
+    name: "Evri",
+    aliases: /evri|hermes/i,
+    url: (t) => `https://www.evri.com/track/parcel/${t}/details`,
+  },
+  {
+    id: "dpd",
+    name: "DPD",
+    aliases: /\bdpd\b/i,
+    url: (t) =>
+      `https://www.dpd.co.uk/tracking/trackingSearch.do?search.searchType=0&search.parcelNumber=${t}`,
+  },
+  {
+    id: "dhl",
+    name: "DHL",
+    aliases: /\bdhl\b/i,
+    url: (t) => `https://www.dhl.com/gb-en/home/tracking.html?tracking-id=${t}`,
+  },
+  {
+    id: "ups",
+    name: "UPS",
+    aliases: /\bups\b/i,
+    url: (t) => `https://www.ups.com/track?loc=en_GB&tracknum=${t}`,
+  },
+  {
+    id: "fedex",
+    name: "FedEx",
+    aliases: /fed\s*ex/i,
+    url: (t) => `https://www.fedex.com/fedextrack/?trknbr=${t}`,
+  },
+  {
+    id: "yodel",
+    name: "Yodel",
+    aliases: /yodel/i,
+    url: (t) => `https://www.yodel.co.uk/tracking/${t}`,
+  },
+  {
+    id: "amazon",
+    name: "Amazon Logistics",
+    aliases: /amazon/i,
+    url: (t) => `https://track.amazon.co.uk/tracking/${t}`,
+  },
+];
+
+function cleanTracking(tracking: string | null | undefined): string {
+  return (tracking ?? "").replace(/\s+/g, "").trim();
+}
+
+/**
+ * Work out the carrier from the courier text, falling back to well known
+ * tracking-number shapes (UPS 1Z…, Royal Mail 2 letters + 9 digits + GB,
+ * Evri 16-digit barcodes).
+ */
+export function detectCarrier(
+  courier: string | null | undefined,
+  tracking?: string | null,
+): Carrier | null {
+  const name = (courier ?? "").trim();
+  if (name) {
+    const hit = CARRIERS.find((c) => c.aliases.test(name));
+    if (hit) return hit;
+  }
+  const code = cleanTracking(tracking);
+  if (code) {
+    if (/^1Z[0-9A-Z]{16}$/i.test(code)) return CARRIERS.find((c) => c.id === "ups") ?? null;
+    if (/^[A-Z]{2}\d{9}GB$/i.test(code)) return CARRIERS.find((c) => c.id === "royal-mail") ?? null;
+    if (/^\d{16}$/.test(code)) return CARRIERS.find((c) => c.id === "evri") ?? null;
+    if (/^JD\d{16,}$/i.test(code)) return CARRIERS.find((c) => c.id === "dhl") ?? null;
+  }
+  return null;
+}
+
+export interface TrackingLink {
+  url: string;
+  /** Carrier name, or "Track" when we fell back to a universal lookup. */
+  carrierName: string;
+  /** True when we could not match a carrier and used a universal tracker. */
+  universal: boolean;
+  tracking: string;
+}
+
+/**
+ * A direct tracking link for a parcel. Unknown couriers fall back to a
+ * universal tracker so every code still opens something useful.
+ */
+export function trackingLink(
+  courier: string | null | undefined,
+  tracking: string | null | undefined,
+): TrackingLink | null {
+  const code = cleanTracking(tracking);
+  if (!code) return null;
+  const carrier = detectCarrier(courier, code);
+  if (carrier) {
+    return {
+      url: carrier.url(encodeURIComponent(code)),
+      carrierName: carrier.name,
+      universal: false,
+      tracking: code,
+    };
+  }
+  return {
+    url: `https://t.17track.net/en#nums=${encodeURIComponent(code)}`,
+    carrierName: (courier ?? "").trim() || "Track parcel",
+    universal: true,
+    tracking: code,
+  };
+}
