@@ -88,6 +88,7 @@ export function AttentionCard({
   pending: allPending = [],
   onSettle,
   onViewTransaction,
+  onMarkDelivered,
   onViewCommitment,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
