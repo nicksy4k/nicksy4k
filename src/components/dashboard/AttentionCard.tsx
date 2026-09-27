@@ -321,6 +321,86 @@ function PendingRow({
   );
 }
 
+/** A delayed parcel with its claim-window countdown and next steps. */
+function ClaimRow({
+  txn,
+  onView,
+  onMarkDelivered,
+}: {
+  txn: Transaction;
+  onView?: () => void;
+  onMarkDelivered?: () => void;
+}) {
+  const claim = claimWindowStatus(txn);
+  const track = trackingLink(txn.courier, txn.tracking_number);
+  const urgent = claim?.phase === "open" || claim?.phase === "expired";
+
+  const label = !claim
+    ? "Delayed"
+    : claim.phase === "upcoming"
+      ? `Claim opens in ${claim.daysUntilOpen} day${claim.daysUntilOpen === 1 ? "" : "s"}${claim.claimDate ? ` (${format(parseISO(claim.claimDate), "d MMM")})` : ""}`
+      : claim.phase === "open"
+        ? claim.claimDeadline
+          ? `Claim now — ends ${format(parseISO(claim.claimDeadline), "d MMM")}`
+          : "Claim window open"
+        : `Claim window closed ${claim.claimDeadline ? format(parseISO(claim.claimDeadline), "d MMM") : ""}`;
+
+  return (
+    <ClickableRow
+      onClick={onView}
+      tone={urgent ? "amber" : undefined}
+      ariaLabel={`Delayed parcel from ${txn.retailer}`}
+    >
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${urgent ? "bg-destructive/15" : "bg-orange-500/15"}`}
+        >
+          <PackageX
+            className={`h-4 w-4 ${urgent ? "text-destructive" : "text-orange-600 dark:text-orange-400"}`}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium truncate">{txn.retailer}</p>
+            <p className="text-sm font-semibold tabular-nums shrink-0">{fmt(txn.total_amount)}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {txn.claim_reference ? `Ref ${txn.claim_reference}` : "Possibly lost in transit"}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 mt-1 flex-wrap">
+        <Badge
+          variant="outline"
+          className={`font-normal ${urgent ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400"}`}
+        >
+          {label}
+        </Badge>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {track && (
+            <Button asChild variant="ghost" size="sm" className="h-8">
+              <a
+                href={track.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Track ${txn.retailer} parcel`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Track
+              </a>
+            </Button>
+          )}
+          {onMarkDelivered && (
+            <Button variant="outline" size="sm" className="h-8" onClick={onMarkDelivered}>
+              <Check className="h-3.5 w-3.5" /> Arrived
+            </Button>
+          )}
+        </div>
+      </div>
+    </ClickableRow>
+  );
+}
+
+
 function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void }) {
   const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
   const meta = deliveryMeta(txn.delivery_status);
