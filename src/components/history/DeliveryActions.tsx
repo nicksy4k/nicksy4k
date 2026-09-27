@@ -53,6 +53,35 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
 
   return (
     <>
+      {track && (
+        <>
+          <Button asChild variant="default" size="sm">
+            <a
+              href={track.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Track package with ${track.carrierName}`}
+            >
+              <ExternalLink className="h-4 w-4" />
+              {track.universal ? "Track package" : `Track with ${track.carrierName}`}
+            </a>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Copy tracking number"
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(track.tracking)
+                .then(() => toast.success("Tracking number copied"))
+                .catch(() => toast.error("Could not copy the tracking number"));
+            }}
+          >
+            <Copy className="h-4 w-4" /> {track.tracking}
+          </Button>
+        </>
+      )}
+
       {t.delivery_status === "awaiting_dispatch" && (
         <Button
           variant="outline"
