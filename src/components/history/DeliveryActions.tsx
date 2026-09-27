@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, RotateCcw, Truck } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { AlertTriangle, Check, Copy, ExternalLink, RotateCcw, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  claimWindowStatus,
   deliveryMeta,
   nextDeliverySteps,
   trackingLink,
   type DeliveryStatus,
 } from "@/lib/delivery";
+import { DelayedClaimDialog } from "@/components/history/DelayedClaimDialog";
 import type { Transaction } from "@/lib/types";
 
 interface Props {
@@ -29,6 +32,7 @@ interface Props {
 /** One-tap delivery progress buttons, plus a courier/tracking capture dialog. */
 export function DeliveryActions({ transaction: t, onUpdate }: Props) {
   const [dispatchOpen, setDispatchOpen] = useState(false);
+  const [delayedOpen, setDelayedOpen] = useState(false);
   const [courier, setCourier] = useState(t.courier ?? "");
   const [tracking, setTracking] = useState(t.tracking_number ?? "");
   const [busy, setBusy] = useState(false);
@@ -37,6 +41,7 @@ export function DeliveryActions({ transaction: t, onUpdate }: Props) {
 
   const steps = nextDeliverySteps(t.delivery_status);
   const track = trackingLink(t.courier, t.tracking_number);
+  const claim = t.delivery_status === "delayed_claim" ? claimWindowStatus(t) : null;
 
   const setStatus = async (status: DeliveryStatus, extra?: Partial<Transaction>) => {
     setBusy(true);
