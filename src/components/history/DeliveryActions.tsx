@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, RotateCcw, Truck } from "lucide-react";
+import { Check, Copy, ExternalLink, RotateCcw, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { deliveryMeta, nextDeliverySteps, type DeliveryStatus } from "@/lib/delivery";
+import {
+  deliveryMeta,
+  nextDeliverySteps,
+  trackingLink,
+  type DeliveryStatus,
+} from "@/lib/delivery";
 import type { Transaction } from "@/lib/types";
 
 interface Props {
