@@ -787,6 +787,9 @@ export type Database = {
       }
       transactions: {
         Row: {
+          claim_date: string | null
+          claim_deadline: string | null
+          claim_reference: string | null
           commitment_id: string | null
           courier: string | null
           created_at: string
@@ -811,6 +814,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          claim_date?: string | null
+          claim_deadline?: string | null
+          claim_reference?: string | null
           commitment_id?: string | null
           courier?: string | null
           created_at?: string
@@ -835,6 +841,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          claim_date?: string | null
+          claim_deadline?: string | null
+          claim_reference?: string | null
           commitment_id?: string | null
           courier?: string | null
           created_at?: string
