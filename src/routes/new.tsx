@@ -130,6 +130,7 @@ function NewTransactionPage() {
   const [trackingNumber, setTrackingNumber] = useState("");
   // New orders start as awaiting dispatch; change it here if it already shipped.
   const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("awaiting_dispatch");
+  const [deliveryEditOpen, setDeliveryEditOpen] = useState(false);
   const [pendingEstimate, setPendingEstimate] = useState("");
   const [addCategoryForItemId, setAddCategoryForItemId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
