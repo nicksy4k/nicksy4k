@@ -434,11 +434,7 @@ function NewTransactionPage() {
           expiration_date: null,
           payment_splits: [],
           is_pending: true,
-          delivery_status: expectingDelivery
-            ? courier.trim() || trackingNumber.trim()
-              ? "in_transit"
-              : "awaiting_dispatch"
-            : null,
+          delivery_status: expectingDelivery ? deliveryStatus : null,
           courier: expectingDelivery ? courier.trim() || null : null,
           tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
         } as never);
@@ -683,11 +679,7 @@ function NewTransactionPage() {
         protection_duration: protection.enabled ? protection.duration : null,
         expiration_date: protection.enabled ? protection.expiration : null,
         payment_splits: finalSplits,
-        delivery_status: expectingDelivery
-          ? courier.trim() || trackingNumber.trim()
-            ? "in_transit"
-            : "awaiting_dispatch"
-          : null,
+        delivery_status: expectingDelivery ? deliveryStatus : null,
         courier: expectingDelivery ? courier.trim() || null : null,
         tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
