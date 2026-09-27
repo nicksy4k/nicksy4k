@@ -200,22 +200,31 @@ export function AttentionCard({
         )}
 
         {deliveries > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Truck className="h-5 w-5 text-muted-foreground" />
-              <span>
-                <span className="font-medium tabular-nums">{deliveries}</span> order
-                {deliveries !== 1 ? "s" : ""} on the way
-              </span>
+          <div className="space-y-3 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Truck className="h-5 w-5 text-muted-foreground" />
+                <span>
+                  <span className="font-medium tabular-nums">{deliveries}</span> order
+                  {deliveries !== 1 ? "s" : ""} on the way
+                </span>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <Button asChild variant="outline" size="sm" className="shrink-0">
+                  <Link to="/history" search={{ delivery: "on_the_way" }}>
+                    View all
+                  </Link>
+                </Button>
+                <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
+              </div>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link to="/history" search={{ delivery: "on_the_way" }}>
-                  Track
-                </Link>
-              </Button>
-              <AlertSnoozeMenu alertKey={alertKeys.deliveries()} label="delivery tracking" />
-            </div>
+            {deliveryItems.length > 0 && (
+              <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {deliveryItems.slice(0, 6).map((t) => (
+                  <DeliveryRow key={t.id} txn={t} onView={() => onViewTransaction?.(t)} />
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </CardContent>
