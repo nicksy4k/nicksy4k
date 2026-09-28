@@ -386,6 +386,7 @@ function DashboardPage() {
         onSettle={demo.active ? undefined : setSettleTarget}
         onViewTransaction={demo.active ? undefined : setSettleTarget}
         onViewCommitment={demo.active ? undefined : setDetailsCommitment}
+        onUpdateTransaction={demo.active ? undefined : updateTransaction}
         onMarkDelivered={
           demo.active
             ? undefined
