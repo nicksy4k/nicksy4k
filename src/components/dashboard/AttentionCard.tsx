@@ -25,6 +25,7 @@ import type { DueSoonOutgoing } from "@/lib/outgoings";
 import { claimWindowStatus, deliveryMeta, trackingLink } from "@/lib/delivery";
 import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
+import { DeliveryQuickMenu } from "@/components/dashboard/DeliveryQuickMenu";
 import type { Commitment, Transaction } from "@/lib/types";
 
 /**
@@ -70,6 +71,8 @@ interface Props {
   onViewTransaction?: (t: Transaction) => void;
   /** Mark a delayed parcel as arrived, clearing its claim reminder. */
   onMarkDelivered?: (t: Transaction) => void;
+  /** Change a parcel's delivery status / claim details in place. */
+  onUpdateTransaction?: (id: string, patch: Partial<Transaction>) => Promise<unknown>;
   /** Open a commitment in its detail card. */
   onViewCommitment?: (c: Commitment) => void;
 }
@@ -90,6 +93,7 @@ export function AttentionCard({
   onSettle,
   onViewTransaction,
   onMarkDelivered,
+  onUpdateTransaction,
   onViewCommitment,
 }: Props) {
   // Snoozed / dismissed rows are filtered out here so every section honours the
@@ -230,6 +234,7 @@ export function AttentionCard({
                   txn={t}
                   onView={() => onViewTransaction?.(t)}
                   onMarkDelivered={onMarkDelivered ? () => onMarkDelivered(t) : undefined}
+                  onUpdate={onUpdateTransaction}
                 />
               ))}
             </ul>
@@ -260,7 +265,12 @@ export function AttentionCard({
             {deliveryItems.length > 0 && (
               <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {deliveryItems.slice(0, 6).map((t) => (
-                  <DeliveryRow key={t.id} txn={t} onView={() => onViewTransaction?.(t)} />
+                  <DeliveryRow
+                    key={t.id}
+                    txn={t}
+                    onView={() => onViewTransaction?.(t)}
+                    onUpdate={onUpdateTransaction}
+                  />
                 ))}
               </ul>
             )}
@@ -327,10 +337,12 @@ function ClaimRow({
   txn,
   onView,
   onMarkDelivered,
+  onUpdate,
 }: {
   txn: Transaction;
   onView?: () => void;
   onMarkDelivered?: () => void;
+  onUpdate?: (id: string, patch: Partial<Transaction>) => Promise<unknown>;
 }) {
   const claim = claimWindowStatus(txn);
   const track = trackingLink(txn.courier, txn.tracking_number);
@@ -395,6 +407,7 @@ function ClaimRow({
               <Check className="h-3.5 w-3.5" /> Arrived
             </Button>
           )}
+          {onUpdate && <DeliveryQuickMenu txn={txn} onUpdate={onUpdate} />}
         </div>
       </div>
     </ClickableRow>
@@ -402,7 +415,15 @@ function ClaimRow({
 }
 
 
-function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void }) {
+function DeliveryRow({
+  txn,
+  onView,
+  onUpdate,
+}: {
+  txn: Transaction;
+  onView?: () => void;
+  onUpdate?: (id: string, patch: Partial<Transaction>) => Promise<unknown>;
+}) {
   const itemSummary = txn.items.length === 1 ? txn.items[0].item_name : `${txn.items.length} items`;
   const meta = deliveryMeta(txn.delivery_status);
   const track = trackingLink(txn.courier, txn.tracking_number);
@@ -418,7 +439,7 @@ function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void })
           <p className="text-xs text-muted-foreground truncate">{itemSummary}</p>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-3 mt-1">
+      <div className="flex items-center justify-between gap-3 mt-1 flex-wrap">
         <div className="flex items-center gap-1.5 flex-wrap">
           {meta && (
             <Badge variant="outline" className={`font-normal ${meta.className}`}>
@@ -429,8 +450,8 @@ function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void })
             <span className="text-xs text-muted-foreground truncate">{txn.courier}</span>
           )}
         </div>
-        {track && (
-          <div onClick={stopPropagation}>
+        <div className="flex items-center gap-1" onClick={stopPropagation}>
+          {track && (
             <Button asChild variant="outline" size="sm" className="h-8">
               <a
                 href={track.url}
@@ -441,8 +462,9 @@ function DeliveryRow({ txn, onView }: { txn: Transaction; onView?: () => void })
                 <ExternalLink className="h-3.5 w-3.5" /> Track
               </a>
             </Button>
-          </div>
-        )}
+          )}
+          {onUpdate && <DeliveryQuickMenu txn={txn} onUpdate={onUpdate} />}
+        </div>
       </div>
     </ClickableRow>
   );
