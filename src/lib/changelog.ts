@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.8.1",
+    title: "Update parcels from the dashboard",
+    date: "2026-09-28",
+    icon: Truck,
+    highlights: [
+      "Every parcel on the Needs your attention card has a Status button to move it along or mark it received.",
+      "Report a parcel as delayed / lost, or edit its claim details, without leaving the dashboard.",
+    ],
+  },
+  {
     version: "v3.8.0",
     title: "Delayed parcels & claim reminders",
     date: "2026-09-28",
