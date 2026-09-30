@@ -136,11 +136,14 @@ export function needsClaimAttention(
   return t.delivery_status === "delayed_claim";
 }
 
-/** Add whole days to an ISO date, returning an ISO date. */
+/** Add whole days to an ISO date, returning an ISO date (local-timezone safe). */
 export function addDaysIso(iso: string, days: number): string {
   const d = parseISO(iso);
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /* ------------------------------------------------------------------ */
