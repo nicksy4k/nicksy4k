@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.8.2",
+    title: "Claim deadline presets fixed",
+    date: "2026-09-30",
+    icon: CalendarClock,
+    highlights: [
+      "Fixed a bug where claim deadline presets (48 hours, 7, 14 or 30 days) saved a day early, so your claim window no longer shows as closing — or expiring — before it really does.",
+    ],
+  },
+  {
     version: "v3.8.1",
     title: "Update parcels from the dashboard",
     date: "2026-09-28",
