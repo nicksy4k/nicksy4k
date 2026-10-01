@@ -1,4 +1,4 @@
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
@@ -6,7 +6,7 @@ import { AlertTriangle } from "lucide-react";
  * Minimal per-route error boundary. Keeps the app shell (sidebar + nav)
  * intact so a single failed query on one page doesn't blank the whole app.
  */
-export function RouteError({ error, reset }: { error: Error; reset: () => void }) {
+export function RouteError({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   return (
     <div className="p-6 md:p-10 max-w-2xl mx-auto">
