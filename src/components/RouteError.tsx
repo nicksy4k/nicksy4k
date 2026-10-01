@@ -16,7 +16,7 @@ export function RouteError({ error, reset }: ErrorComponentProps) {
         </div>
         <h2 className="text-lg font-semibold mb-1">This page didn't load</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          {error?.message || "Something went wrong loading this view."}
+          {(error as Error | undefined)?.message || "Something went wrong loading this view."}
         </p>
         <Button
           size="sm"
