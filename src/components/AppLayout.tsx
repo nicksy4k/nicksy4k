@@ -18,6 +18,7 @@ import { LegalFooter } from "@/components/LegalFooter";
 import { setDemoSession } from "@/lib/analytics";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallHint } from "@/components/InstallHint";
+import { CommandPalette } from "@/components/command/CommandPalette";
 
 export function AppLayout() {
   // Master cycle-rollover engine — runs globally on every page mount so it
@@ -56,7 +57,8 @@ export function AppLayout() {
                 <SidebarTrigger className="-ml-1.5" />
                 <div className="h-6 w-px bg-border/60 mx-1 hidden md:block" />
                 <div className="text-sm font-display font-medium text-foreground/90">Ledgerly</div>
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-1.5">
+                  <CommandPalette />
                   <FeedbackDialog defaultType="bug">
                     <Button
                       variant="ghost"
