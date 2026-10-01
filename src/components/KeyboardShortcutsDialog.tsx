@@ -19,6 +19,7 @@ const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ["Tab"], label: "Move to the next field and close any open suggestions." },
   { keys: ["⌘", "Ctrl", "+ Enter"], label: "Save the transaction from anywhere in the form." },
   { keys: ["?"], label: "Open this shortcuts reference." },
+  { keys: ["⌘", "Ctrl", "+ K"], label: "Search anything, from any page." },
 ];
 
 export function ShortcutsDialog({

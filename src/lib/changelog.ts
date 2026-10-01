@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.0",
+    title: "Search anything (⌘K)",
+    date: "2026-09-30",
+    icon: Sparkles,
+    highlights: [
+      "Press ⌘K (Mac) or Ctrl+K, or tap the search button at the top, to find any purchase, item, amount, tracking number, outgoing, debt or pocket.",
+      "Quick actions right from search: log a spend, quick add, new outgoing, create a pocket, hide amounts and export.",
+      "Opening a purchase from search shows a view-only receipt first — press Edit to change anything, so nothing is changed by accident.",
+    ],
+  },
+  {
     version: "v3.8.2",
     title: "Claim deadline presets fixed",
     date: "2026-09-30",

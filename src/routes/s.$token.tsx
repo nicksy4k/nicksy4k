@@ -126,7 +126,7 @@ function Unavailable() {
 function SharedStatementPage() {
   const data = Route.useLoaderData();
 
-  if (data.status !== "ok") return <Unavailable />;
+  if (!data || data.status !== "ok") return <Unavailable />;
 
   const { loan: raw, lenderName, note, money } = data;
   const loan = raw as unknown as Loan;
