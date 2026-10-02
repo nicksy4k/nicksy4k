@@ -144,7 +144,6 @@ export function buildDemoTransactions(): Transaction[] {
       items: [
         { id: "d6-i1", item_name: "Denim jacket", price: 18.5, quantity: 1, category: "Clothing" },
       ],
-      is_delivery: true,
       delivery_status: "in_transit",
       courier: "Evri",
       tracking_number: "H01HYA0012345678",
@@ -161,7 +160,6 @@ export function buildDemoTransactions(): Transaction[] {
       items: [
         { id: "d7-i1", item_name: "Board game", price: 32.0, quantity: 1, category: "Entertainment" },
       ],
-      is_delivery: true,
       delivery_status: "delayed_claim",
       courier: "Royal Mail",
       claim_date: today(3),
