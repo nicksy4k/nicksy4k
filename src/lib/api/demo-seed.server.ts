@@ -269,11 +269,70 @@ export async function wipeAndSeedDemo(admin: AnyClient, userId: string): Promise
       ],
       protection_type: "Return Window",
       protection_duration: "30 Days",
-      expiration_date: iso(9),
+      expiration_date: isoAhead(4),
+      payment_splits: [],
+      refunds: [],
+    },
+    {
+      id: id(),
+      user_id: userId,
+      date: iso(-2),
+      retailer: "Vinted",
+      total_amount: 18.5,
+      receipt_attached: false,
+      receipt_type: "Digital",
+      receipt_location: "",
+      is_pending: false,
+      items: [{ id: id(), item_name: "Denim jacket", price: 18.5, quantity: 1, category: "Household" }],
+      delivery_status: "in_transit",
+      courier: "Evri",
+      tracking_number: "H01HYA0012345678",
+      payment_splits: [],
+      refunds: [],
+    },
+    {
+      id: id(),
+      user_id: userId,
+      date: iso(-12),
+      retailer: "eBay",
+      total_amount: 32.0,
+      receipt_attached: false,
+      receipt_type: "Digital",
+      receipt_location: "",
+      is_pending: false,
+      items: [{ id: id(), item_name: "Board game", price: 32.0, quantity: 1, category: "Entertainment" }],
+      delivery_status: "delayed_claim",
+      courier: "Royal Mail",
+      claim_date: isoAhead(3),
+      claim_deadline: isoAhead(5),
       payment_splits: [],
       refunds: [],
     },
   ]);
+
+  // 6b. Credit & debt — money lent out and a pay-later plan
+  const { error: loanErr } = await admin.from("loans").insert({
+    id: id(),
+    user_id: userId,
+    person_name: "Sam",
+    total_amount: 200,
+    start_date: iso(-20),
+    payments: [{ id: id(), date: iso(-6), amount: 50, notes: "First repayment" }],
+    notes: "Lent for concert tickets",
+  });
+  if (loanErr) console.error("[demo-seed] loans", loanErr);
+  const { error: debtErr } = await admin.from("debts").insert({
+    id: id(),
+    user_id: userId,
+    name: "Clearpay — trainers",
+    kind: "bnpl",
+    total_amount: 80,
+    installments_total: 4,
+    start_date: iso(-7),
+    installment_dates: [iso(-7), isoAhead(7), isoAhead(21), isoAhead(28)],
+    payments: [{ id: id(), date: iso(-7), amount: 20, notes: "Paid at checkout" }],
+  });
+  if (debtErr) console.error("[demo-seed] debts", debtErr);
 
   // 7. Commitments in the current cycle — one paid, one upcoming
   await admin.from("commitments").insert([
