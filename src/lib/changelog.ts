@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.1",
+    title: "Refreshed tour & demo",
+    date: "2026-10-02",
+    icon: Compass,
+    highlights: [
+      "The welcome tour now covers the Needs your attention card, Outgoings, Credit & Debt and ⌘K search.",
+      "Example data now includes a parcel on the way, a delayed parcel with a claim window, a loan and a pay-later plan.",
+      "Fixed the example return alert sometimes not showing during the tour.",
+    ],
+  },
+  {
     version: "v3.9.0",
     title: "Search anything (⌘K)",
     date: "2026-09-30",

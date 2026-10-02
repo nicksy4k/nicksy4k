@@ -97,7 +97,7 @@ export function buildDemoTransactions(): Transaction[] {
       ],
       protection_type: "Return Window",
       protection_duration: "30 Days",
-      expiration_date: today(9), // ~9 days from now → amber warning band
+      expiration_date: today(4), // inside the 7-day warning band so the alert shows
       created_at: nowIso(),
     },
     {
@@ -131,6 +131,41 @@ export function buildDemoTransactions(): Transaction[] {
           category: "Entertainment",
         },
       ],
+      created_at: nowIso(),
+    },
+    {
+      id: "demo-txn-6",
+      date: today(-2),
+      retailer: "Vinted",
+      total_amount: 18.5,
+      receipt_attached: false,
+      receipt_type: "Digital",
+      receipt_location: "",
+      items: [
+        { id: "d6-i1", item_name: "Denim jacket", price: 18.5, quantity: 1, category: "Clothing" },
+      ],
+      is_delivery: true,
+      delivery_status: "in_transit",
+      courier: "Evri",
+      tracking_number: "H01HYA0012345678",
+      created_at: nowIso(),
+    },
+    {
+      id: "demo-txn-7",
+      date: today(-12),
+      retailer: "eBay",
+      total_amount: 32.0,
+      receipt_attached: false,
+      receipt_type: "Digital",
+      receipt_location: "",
+      items: [
+        { id: "d7-i1", item_name: "Board game", price: 32.0, quantity: 1, category: "Entertainment" },
+      ],
+      is_delivery: true,
+      delivery_status: "delayed_claim",
+      courier: "Royal Mail",
+      claim_date: today(3),
+      claim_deadline: today(5),
       created_at: nowIso(),
     },
   ];

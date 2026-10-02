@@ -40,8 +40,8 @@ export const dashboardTourSteps: TourStep[] = [
   },
   {
     selector: "[data-tour='warranty-alerts']",
-    title: "Return & warranty alerts",
-    body: "Anything you tagged with a receipt and protection window shows up here as it nears expiry — so you never miss a return.",
+    title: "Needs your attention",
+    body: "One card for everything that needs you: bills due soon, pending spends, return windows closing, parcels on the way and delayed-parcel claim deadlines. Track or update a parcel right from here.",
     placement: "top",
     action: { label: "Open the first alert", doneLabel: "Opened — hit Next", kind: "open-alert" },
   },
@@ -65,10 +65,23 @@ export const dashboardTourSteps: TourStep[] = [
   },
   {
     selector: "[data-tour='nav-commitments']",
-    title: "Bills & commitments",
-    body: "Recurring bills roll forward automatically each cycle. Mark them paid, or use the +1 Month / +4 Weeks controls per bill.",
+    title: "Outgoings",
+    body: "Bills and subscriptions live together here. They roll forward each cycle, are paid from your Bills pocket, and you'll get a heads-up before promo prices end.",
     placement: "right",
     requiresSidebar: true,
+  },
+  {
+    selector: "[data-tour='nav-credit']",
+    title: "Credit & debt",
+    body: "Track money you've lent, debts and pay-later plans like Clearpay — with repayment plans and shareable statements.",
+    placement: "right",
+    requiresSidebar: true,
+  },
+  {
+    selector: "[data-tour='search']",
+    title: "Search anything (⌘K)",
+    body: "Press ⌘K or Ctrl+K, or tap here, to find any purchase, item, amount, tracking number or bill — and run quick actions.",
+    placement: "bottom",
   },
   {
     selector: "[data-tour='nav-settings']",

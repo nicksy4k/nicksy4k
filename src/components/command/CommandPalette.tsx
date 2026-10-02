@@ -128,6 +128,7 @@ export function CommandPalette() {
         onClick={() => setOpen(true)}
         className="h-8 gap-2 text-xs text-muted-foreground md:w-56 md:justify-start"
         aria-label="Search anything"
+        data-tour="search"
         title="Search anything (⌘K / Ctrl+K)"
       >
         <Search className="h-3.5 w-3.5" />

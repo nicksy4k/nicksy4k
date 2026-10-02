@@ -77,7 +77,7 @@ const groups: NavGroup[] = [
     label: "Money out",
     items: [
       { to: "/commitments", label: "Outgoings", icon: CalendarClock, tour: "nav-commitments" },
-      { to: "/credit", label: "Credit & Debt", icon: CreditCard },
+      { to: "/credit", label: "Credit & Debt", icon: CreditCard, tour: "nav-credit" },
       { to: "/history", label: "History", icon: Receipt },
     ],
   },
