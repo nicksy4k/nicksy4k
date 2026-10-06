@@ -4,7 +4,7 @@ import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
 import { RECEIPT_TYPES } from "@/lib/types";
-import { fmt } from "@/lib/format";
+import { fmt, mainExpensePortion } from "@/lib/format";
 import { sortLabels } from "@/lib/utils";
 import { colorForKey } from "@/lib/colors";
 import { PaymentSplitEditor, emptySplit, type SplitDraft } from "@/components/PaymentSplitEditor";
@@ -621,8 +621,13 @@ function HistoryPage() {
                           className={`font-semibold tabular-nums ${t.is_pending ? "text-amber-600" : ""}`}
                         >
                           {t.is_pending ? "~" : ""}
-                          {fmt(t.total_amount)}
+                          {fmt(mainExpensePortion(t))}
                         </p>
+                        {!t.is_pending && mainExpensePortion(t) < t.total_amount - 0.005 && (
+                          <p className="text-[11px] text-muted-foreground tabular-nums">
+                            +{fmt(t.total_amount - mainExpensePortion(t))} on plan
+                          </p>
+                        )}
                       </div>
                       {t.is_pending ? (
                         <span
