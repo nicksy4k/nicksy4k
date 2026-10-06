@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fmt } from "@/lib/format";
+import { fmt, mainExpensePortion } from "@/lib/format";
 import { deliveryMeta, trackingLink } from "@/lib/delivery";
 import type { PaymentSplit, Transaction } from "@/lib/types";
 
@@ -66,10 +66,17 @@ export function TransactionDetailsDialog({
             </DialogHeader>
 
             <div className="rounded-lg border border-border/60 bg-muted/30 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Total</div>
-              <div className="font-display text-3xl font-semibold tabular-nums">
-                {fmt(t.total_amount)}
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                {mainExpensePortion(t) < t.total_amount - 0.005 ? "Paid now" : "Total"}
               </div>
+              <div className="font-display text-3xl font-semibold tabular-nums">
+                {fmt(mainExpensePortion(t))}
+              </div>
+              {mainExpensePortion(t) < t.total_amount - 0.005 && (
+                <div className="text-xs text-muted-foreground mt-1 tabular-nums">
+                  +{fmt(t.total_amount - mainExpensePortion(t))} on pay-later plan · {fmt(t.total_amount)} total
+                </div>
+              )}
             </div>
 
             {t.items?.length > 0 && (

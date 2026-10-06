@@ -709,8 +709,15 @@ function DashboardPage() {
                             {t.items.length !== 1 ? "s" : ""}
                           </p>
                         </div>
-                        <span className="text-sm font-medium tabular-nums">
-                          {fmt(t.total_amount)}
+                        <span className="text-right">
+                          <span className="block text-sm font-medium tabular-nums">
+                            {fmt(mainExpensePortion(t))}
+                          </span>
+                          {mainExpensePortion(t) < t.total_amount - 0.005 && (
+                            <span className="block text-[11px] text-muted-foreground tabular-nums">
+                              +{fmt(t.total_amount - mainExpensePortion(t))} on plan
+                            </span>
+                          )}
                         </span>
                       </div>
                       {expanded && (

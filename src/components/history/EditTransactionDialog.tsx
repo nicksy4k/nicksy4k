@@ -630,15 +630,17 @@ function EditTransactionDialog({
             </div>
           )}
 
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
-            <div>
-              <Label className="text-sm">Still pending</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Turn off to settle: add real line items and the final amount.
-              </p>
+          {transaction?.is_pending && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-3">
+              <div>
+                <Label className="text-sm">Still pending</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Turn off to settle: add real line items and the final amount.
+                </p>
+              </div>
+              <Switch checked={isPending} onCheckedChange={setIsPending} />
             </div>
-            <Switch checked={isPending} onCheckedChange={setIsPending} />
-          </div>
+          )}
 
           {canScan && (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">

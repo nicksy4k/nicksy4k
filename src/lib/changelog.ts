@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.2",
+    title: "Pay-later amounts show what you actually paid",
+    date: "2026-10-06",
+    icon: Receipt,
+    highlights: [
+      "History, Recent and search now show only what left your account today, with the rest marked 'on plan'.",
+      "The 'Still pending' switch only appears on genuine pending holds, not settled purchases.",
+    ],
+  },
+  {
     version: "v3.9.1",
     title: "Refreshed tour & demo",
     date: "2026-10-02",
