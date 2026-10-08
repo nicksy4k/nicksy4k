@@ -193,11 +193,13 @@ describe("funding sources for outgoings", () => {
   it("reads the latest source per outgoing, defaulting to main", () => {
     const sources = lastFundingSources([
       tx({ commitment_id: "a", date: "2026-08-01", payment_splits: [{ source: "pocket:Bill Money", amount: 10 }] }),
-      tx({ commitment_id: "a", date: "2026-09-01", payment_splits: [] }),
+      tx({ commitment_id: "a", date: "2026-09-20", payment_splits: [] }),
       tx({ commitment_id: "b", payment_splits: [{ source: "pocket:Holiday", amount: 5 }] }),
+      tx({ commitment_id: "c", date: "2026-09-10", payment_splits: [] }),
     ]);
     expect(sources.a).toBe("main");
     expect(sources.b).toBe("pocket:Holiday");
+    expect(sources.c).toBeUndefined();
   });
 
   it("keeps rows never paid before against Bill Money", () => {

@@ -6,6 +6,8 @@ import type { Commitment, SavingsEntry, Transaction } from "@/lib/types";
 export const BILL_POCKET_NAME = "Bill Money";
 /** Encoded source meaning "straight off the main balance". */
 export const MAIN_SOURCE = "main";
+/** Auto-logged payments only record their pocket from this date onwards. */
+export const SOURCE_TAGGING_SINCE = "2026-09-14";
 
 /**
  * The funding source each outgoing was last actually paid from, keyed by
@@ -24,7 +26,10 @@ export function lastFundingSources(transactions: Transaction[]): Record<string, 
   const out: Record<string, string> = {};
   for (const [id, t] of latest) {
     const split = (t.payment_splits ?? []).find((s) => s.source?.length);
-    out[id] = split ? split.source : MAIN_SOURCE;
+    if (split) out[id] = split.source;
+    // Before pocket tagging existed, no split didn't mean "main" — leave the
+    // row unknown so it falls back to Bill Money.
+    else if ((t.date ?? "") >= SOURCE_TAGGING_SINCE) out[id] = MAIN_SOURCE;
   }
   return out;
 }
