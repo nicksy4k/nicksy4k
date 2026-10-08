@@ -30,6 +30,7 @@ import {
   isBillMoneySource,
   lastFundingSources,
   nextCyclePreview,
+  extraOccurrencesBefore,
   perCycleTotal,
   unlinkedDebtDueThisCycle,
 } from "@/lib/outgoings";
@@ -129,7 +130,31 @@ function OutgoingsPage() {
     [allItems, resetDate],
   );
 
-  const leftToPay = useMemo(() => unpaidDue.reduce((s, i) => s + i.amount, 0), [unpaidDue]);
+  // Extra instalments falling in this cycle (e.g. a fortnightly plan's 2nd
+  // payment) — counted so totals reflect everything due before payday.
+  const extraDue = useMemo(() => {
+    const debtById = new Map(debts.map((d) => [d.id, d]));
+    let bills = 0;
+    let subs = 0;
+    for (const c of allItems) {
+      const debt = c.debt_id ? debtById.get(c.debt_id) : undefined;
+      const dates = extraOccurrencesBefore(
+        c,
+        resetDate,
+        (d, cad) => advanceForCommitment(d, cad, cycle),
+        debt?.installment_dates,
+      );
+      const amt = dates.length * c.amount;
+      if (c.is_subscription) subs += amt;
+      else bills += amt;
+    }
+    return { bills, subs, total: bills + subs };
+  }, [allItems, debts, resetDate, cycle]);
+
+  const leftToPay = useMemo(
+    () => unpaidDue.reduce((s, i) => s + i.amount, 0) + extraDue.total,
+    [unpaidDue, extraDue],
+  );
 
   // Where each row was last actually paid from. Informational only: it labels
   // rows and preselects the source — it never reduces what Bill Money needs.
@@ -266,8 +291,8 @@ function OutgoingsPage() {
         cycleStart={cycle.start}
         cycleEnd={cycle.end}
         cycleOverridden={cycle.isOverridden}
-        bills={billsDue}
-        subs={subsDue}
+        bills={billsDue + extraDue.bills}
+        subs={subsDue + extraDue.subs}
         billsCount={bills.length}
         subsCount={subscriptions.length}
         paid={paidThisCycle}

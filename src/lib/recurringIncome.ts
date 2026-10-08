@@ -190,7 +190,7 @@ interface ApplyArgs {
    * Shared per-run cache of unpaid commitments (fetched once). Filtered
    * per postDate window at call time.
    */
-  commitments: Array<{ amount: number; next_due_date: string | null }>;
+  commitments: CoverCommitment[];
   /**
    * Shared per-run cache of persisted savings balances by pocket name.
    * Populated once at the start of the run and treated as immutable —
@@ -263,19 +263,40 @@ export async function applyAllocations(args: ApplyArgs): Promise<string[]> {
   return warnings;
 }
 
+export interface CoverCommitment {
+  amount: number;
+  next_due_date: string | null;
+  cadence?: string | null;
+  installment_dates?: string[] | null;
+}
+
 export function computeCoverAmount(
   pocket: string,
   from: string,
   to: string,
-  commitments: Array<{ amount: number; next_due_date: string | null }>,
+  commitments: CoverCommitment[],
   pocketBalances: Map<string, number>,
   inFlight: Map<string, number>,
 ): number {
   const need = commitments.reduce((s, c) => {
     const d = c.next_due_date;
     if (!d) return s;
-    if (d >= from && d < to) return s + Number(c.amount ?? 0);
-    return s;
+    // Count every occurrence in [from, to) — fortnightly/weekly rows and
+    // pay-later plans can fall due more than once between paydays.
+    let count = 0;
+    if (c.installment_dates && c.installment_dates.length > 0) {
+      count = c.installment_dates.filter((x) => x >= d && x >= from && x < to).length;
+    } else {
+      let cur = d;
+      for (let g = 0; g < 60 && cur < to; g++) {
+        if (cur >= from) count++;
+        if (!c.cadence || !["weekly", "fortnightly", "four-weekly", "monthly"].includes(c.cadence)) break;
+        const next = advanceByCadence(cur, c.cadence as "weekly");
+        if (next <= cur) break;
+        cur = next;
+      }
+    }
+    return s + count * Number(c.amount ?? 0);
   }, 0);
   const bal = (pocketBalances.get(pocket) ?? 0) + (inFlight.get(pocket) ?? 0);
   return Math.max(0, +(need - bal).toFixed(2));
@@ -288,14 +309,25 @@ async function loadRunCaches(userId: string) {
   const [{ data: commits }, { data: sv }] = await Promise.all([
     supabase
       .from("commitments")
-      .select("amount,next_due_date,paid")
+      .select("amount,next_due_date,paid,cadence,debt_id")
       .eq("user_id", userId)
       .eq("paid", false),
     supabase.from("savings").select("kind,amount,account").eq("user_id", userId),
   ]);
-  const commitments = (commits ?? []).map((c) => ({
+  const debtIds = (commits ?? []).map((c) => c.debt_id).filter(Boolean) as string[];
+  const dates = new Map<string, string[]>();
+  if (debtIds.length > 0) {
+    const { data: ds } = await supabase
+      .from("debts")
+      .select("id,installment_dates")
+      .in("id", debtIds);
+    for (const d of ds ?? []) dates.set(d.id, (d.installment_dates as string[] | null) ?? []);
+  }
+  const commitments: CoverCommitment[] = (commits ?? []).map((c) => ({
     amount: Number(c.amount ?? 0),
     next_due_date: c.next_due_date as string | null,
+    cadence: (c.cadence as string | null) ?? null,
+    installment_dates: c.debt_id ? (dates.get(c.debt_id) ?? null) : null,
   }));
   const pocketBalances = new Map<string, number>();
   for (const r of sv ?? []) {
