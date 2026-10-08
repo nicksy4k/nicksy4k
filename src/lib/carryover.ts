@@ -125,21 +125,27 @@ export async function syncCarryover(settings: CycleSettings): Promise<CarryoverR
 
   // Any auto-generated carryover already sitting inside the current window is
   // THE row for this cycle — one per cycle is the invariant.
-  const { data: rows } = await supabase
+  // Fetch EVERY carryover row in the window. A manual carryover anywhere in
+  // the window means the user owns this cycle's carryover — never add an
+  // auto row alongside it (that double-counted income on 2026-10-08).
+  const { data: rows, error: rowsErr } = await supabase
     .from("incomes")
     .select("id,amount,notes,source")
     .eq("user_id", uid)
     .eq("source", CARRYOVER_SOURCE)
     .gte("date", current.startISO)
     .lte("date", current.endISO)
-    .order("created_at", { ascending: true })
-    .limit(1);
+    .order("created_at", { ascending: true });
+  if (rowsErr) return { action: "skipped", amount: 0 };
+
+  const all = rows ?? [];
+  const manual = all.find((r) => !isAutoCarryoverRow(r));
+  if (manual) return { action: "skipped", amount: manual.amount };
 
   const leftover = await computePrevLeftover(uid, prev);
-  const existing = rows?.[0];
+  const existing = all[0];
 
   if (existing) {
-    if (!isAutoCarryoverRow(existing)) return { action: "skipped", amount: existing.amount };
     if (!carryoverHasDrifted(existing.amount, leftover)) {
       return { action: "ok", amount: existing.amount, windowLabel };
     }
