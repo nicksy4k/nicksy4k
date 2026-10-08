@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.4",
+    title: "No more duplicate carryovers",
+    date: "2026-10-08",
+    icon: ShieldCheck,
+    highlights: [
+      "A carryover you've set yourself is now kept as-is — the app won't add a second one or recalculate it.",
+    ],
+  },
+  {
     version: "v3.9.3",
     title: "Next cycle preview",
     date: "2026-10-08",
