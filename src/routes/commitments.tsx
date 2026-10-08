@@ -19,14 +19,21 @@ import { BellRing, Plus } from "lucide-react";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { format, parseISO, addDays } from "date-fns";
 import { toast } from "sonner";
-import { useActiveCycle } from "@/lib/cycle";
+import {
+  useActiveCycle,
+  useCycleSettings,
+  getActiveCycle,
+  advanceForCommitment,
+} from "@/lib/cycle";
 import { MoveToSubscriptionsCard } from "@/components/MoveToSubscriptionsCard";
 import {
   isBillMoneySource,
   lastFundingSources,
+  nextCyclePreview,
   perCycleTotal,
   unlinkedDebtDueThisCycle,
 } from "@/lib/outgoings";
+import { NextCyclePreviewCard } from "@/components/outgoings/NextCyclePreviewCard";
 import {
   acceptFullPricePatch,
   daysUntilPromoEnd,
@@ -144,6 +151,19 @@ function OutgoingsPage() {
   );
   const billMoneyNeeded = leftToPay + unlinkedDebtDue;
 
+  const { settings: cycleSettings } = useCycleSettings();
+  const nextCycle = useMemo(
+    () => getActiveCycle(cycleSettings, addDays(cycle.end, 1)),
+    [cycleSettings, cycle.end],
+  );
+  const nextPreview = useMemo(
+    () =>
+      nextCyclePreview(allItems, debts, nextCycle.startISO, nextCycle.endISO, (d, cad) =>
+        advanceForCommitment(d, cad, cycle),
+      ),
+    [allItems, debts, nextCycle, cycle],
+  );
+
   // Waterfall: allocate Bill Money down EVERY unpaid, due-this-cycle row by
   // date, whatever source ends up paying it.
   const fundedMap = useMemo(() => {
@@ -258,6 +278,13 @@ function OutgoingsPage() {
         billMoneyNeeded={billMoneyNeeded}
         unlinkedDebtDue={unlinkedDebtDue}
       />
+
+      <NextCyclePreviewCard
+        startISO={nextCycle.startISO}
+        endISO={nextCycle.endISO}
+        preview={nextPreview}
+      />
+
 
       {alerts.length > 0 && view !== "bills" && (
         <div className="space-y-3 mb-6">
