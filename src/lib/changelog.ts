@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.7",
+    title: "No more double carryover",
+    date: "2026-10-08",
+    icon: ShieldCheck,
+    highlights: [
+      "If you've set a carryover yourself, the app no longer adds a second automatic one on top — your balance stays true.",
+    ],
+  },
+  {
     version: "v3.9.6",
     title: "Bills default to Bill Money",
     date: "2026-10-08",
