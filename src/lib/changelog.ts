@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.5",
+    title: "Every instalment counted",
+    date: "2026-10-08",
+    icon: CalendarClock,
+    highlights: [
+      "Outgoings totals and Bill Money top-ups now include every payment due this cycle — e.g. both instalments of a fortnightly pay-later plan.",
+    ],
+  },
+  {
     version: "v3.9.4",
     title: "No more duplicate carryovers",
     date: "2026-10-08",

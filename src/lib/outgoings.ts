@@ -331,3 +331,37 @@ export function nextCyclePreview(
   const plans = sum("plan");
   return { items, bills, subs, plans, total: bills + subs + plans };
 }
+
+/**
+ * Extra occurrences of a commitment that fall before `endExclusive` beyond
+ * the one the row itself represents. Fortnightly/weekly rows (and pay-later
+ * plans) can fall due more than once per cycle, but each row only stores its
+ * next due date. Paid rows have already rolled forward, so their current
+ * next_due_date is itself an extra occurrence still to come this cycle.
+ */
+export function extraOccurrencesBefore(
+  c: Pick<Commitment, "next_due_date" | "paid" | "cadence">,
+  endExclusive: string,
+  advance: (dueISO: string, cadence: string | null | undefined) => string,
+  installmentDates?: string[] | null,
+): string[] {
+  const base = c.next_due_date;
+  if (!base) return [];
+  const out: string[] = [];
+  if (installmentDates && installmentDates.length > 0) {
+    for (const d of installmentDates.slice().sort()) {
+      if (d >= endExclusive) break;
+      if (c.paid ? d >= base : d > base) out.push(d);
+    }
+    return out;
+  }
+  if (c.paid && base < endExclusive) out.push(base);
+  let cur = base;
+  for (let guard = 0; guard < 60; guard++) {
+    const next = advance(cur, c.cadence);
+    if (next <= cur || next >= endExclusive) break;
+    out.push(next);
+    cur = next;
+  }
+  return out;
+}
