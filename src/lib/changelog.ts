@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.6",
+    title: "Bills default to Bill Money",
+    date: "2026-10-08",
+    icon: Wallet,
+    highlights: [
+      "Outgoings last paid before pocket tracking began no longer show “Paid from Main balance” — they default to Bill Money.",
+    ],
+  },
+  {
     version: "v3.9.5",
     title: "Every instalment counted",
     date: "2026-10-08",
