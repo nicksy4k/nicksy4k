@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.3",
+    title: "Next cycle preview",
+    date: "2026-10-08",
+    icon: CalendarClock,
+    highlights: [
+      "The Outgoings page now previews everything due next cycle — bills, subscriptions and pay-later instalments — so you can plan ahead.",
+    ],
+  },
+  {
     version: "v3.9.2",
     title: "Pay-later amounts show what you actually paid",
     date: "2026-10-06",

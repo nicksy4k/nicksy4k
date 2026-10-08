@@ -242,3 +242,92 @@ export function dueSoonOutgoings(
     totalDue: rows.reduce((s, r) => s + r.commitment.amount, 0),
   };
 }
+
+export interface NextCycleItem {
+  id: string;
+  name: string;
+  date: string;
+  amount: number;
+  kind: "bill" | "sub" | "plan";
+}
+
+export interface NextCyclePreview {
+  items: NextCycleItem[];
+  bills: number;
+  subs: number;
+  plans: number;
+  total: number;
+}
+
+/**
+ * Everything expected to fall due in the NEXT cycle window [startISO, endISO].
+ * Recurring rows are projected forward by their own cadence; pay-later plans
+ * use their stored instalment dates (only instalments not yet paid).
+ */
+export function nextCyclePreview(
+  commitments: Commitment[],
+  debts: DebtLike[],
+  startISO: string,
+  endISO: string,
+  advance: (dueISO: string, cadence: string | null | undefined) => string,
+): NextCyclePreview {
+  const items: NextCycleItem[] = [];
+  const debtById = new Map(debts.map((d) => [d.id, d]));
+  const linked = new Set<string>();
+
+  for (const c of commitments) {
+    if (!c.next_due_date) continue;
+    const debt = c.debt_id ? debtById.get(c.debt_id) : undefined;
+    const name = c.item_name || c.store || "Outgoing";
+    if (debt && (debt.installment_dates ?? []).length > 0) {
+      linked.add(debt.id);
+      for (const d of debt.installment_dates ?? []) {
+        if (d >= c.next_due_date && d >= startISO && d <= endISO) {
+          items.push({ id: `${c.id}:${d}`, name, date: d, amount: c.amount, kind: "plan" });
+        }
+      }
+      continue;
+    }
+    if (debt) linked.add(debt.id);
+    let cur = c.next_due_date;
+    let guard = 0;
+    while (cur <= endISO && guard < 120) {
+      if (cur >= startISO) {
+        items.push({
+          id: `${c.id}:${cur}`,
+          name,
+          date: cur,
+          amount: c.amount,
+          kind: debt ? "plan" : c.is_subscription ? "sub" : "bill",
+        });
+      }
+      const next = advance(cur, c.cadence);
+      if (next <= cur) break;
+      cur = next;
+      guard++;
+    }
+  }
+
+  // Pay-later plans without their own outgoing row.
+  for (const d of debts) {
+    if (linked.has(d.id)) continue;
+    const dates = (d.installment_dates ?? []).slice().sort();
+    const count = d.installments_total ?? dates.length;
+    if (!count || dates.length === 0) continue;
+    const per = d.total_amount / count;
+    const paidCount = (d.payments ?? []).filter((p) => (p.type ?? "payment") !== "topup").length;
+    dates.slice(paidCount).forEach((date) => {
+      if (date >= startISO && date <= endISO) {
+        items.push({ id: `${d.id}:${date}`, name: "Pay-later plan", date, amount: per, kind: "plan" });
+      }
+    });
+  }
+
+  items.sort((a, b) => a.date.localeCompare(b.date));
+  const sum = (k: NextCycleItem["kind"]) =>
+    items.filter((i) => i.kind === k).reduce((s, i) => s + i.amount, 0);
+  const bills = sum("bill");
+  const subs = sum("sub");
+  const plans = sum("plan");
+  return { items, bills, subs, plans, total: bills + subs + plans };
+}
