@@ -130,7 +130,6 @@ export async function syncCarryover(settings: CycleSettings): Promise<CarryoverR
     .select("id,amount,notes,source")
     .eq("user_id", uid)
     .eq("source", CARRYOVER_SOURCE)
-    .like("notes", `${AUTO_PREFIX}%`)
     .gte("date", current.startISO)
     .lte("date", current.endISO)
     .order("created_at", { ascending: true })
