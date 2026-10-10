@@ -122,7 +122,9 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   // an earlier extra/increase makes the final regular instalment smaller.
   const regularAmounts: number[] = [];
   const regularDates: string[] = [];
-  let date = firstDue;
+  // Generate from the plan's original start so instalments already paid keep
+  // their real dates instead of swallowing upcoming ones.
+  let date = planStart < firstDue ? planStart : firstDue;
   for (let i = 0; i < count; i++) {
     regularDates.push(date);
     regularAmounts.push(i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment);
@@ -164,10 +166,30 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   }
   entries.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.order - b.order);
 
-  let coveredPool = planPaid;
-  let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }) => {
-    const covered = Math.min(entry.amount, Math.max(0, coveredPool));
-    coveredPool -= covered;
+  // Payments explicitly linked to an instalment cover that instalment first.
+  const linkedCover = new Map<number, number>();
+  let linkedTotal = 0;
+  for (const p of loan.payments ?? []) {
+    if (p.type === "topup" || !p.instalment_due_date) continue;
+    if (!countsTowardPlan(p, planStart, loan.plan_created_at)) continue;
+    let left = p.amount;
+    for (let i = 0; i < entries.length && left > EPS; i++) {
+      const e = entries[i]!;
+      if (e.dueDate !== p.instalment_due_date) continue;
+      const already = linkedCover.get(i) ?? 0;
+      const take = Math.min(left, e.amount - already);
+      if (take <= EPS) continue;
+      linkedCover.set(i, already + take);
+      left -= take;
+      linkedTotal += take;
+    }
+  }
+  let coveredPool = Math.max(0, planPaid - linkedTotal);
+  let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }, i) => {
+    const pre = linkedCover.get(i) ?? 0;
+    const extraCover = Math.min(entry.amount - pre, Math.max(0, coveredPool));
+    coveredPool -= extraCover;
+    const covered = pre + extraCover;
     const status: ScheduleEntry["status"] =
       covered >= entry.amount - EPS
         ? "paid"
