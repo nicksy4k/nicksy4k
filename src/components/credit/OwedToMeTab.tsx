@@ -140,7 +140,7 @@ export function OwedToMeTab() {
         notes?: string;
         adjustments: LoanRepaymentAdjustment[];
       }
-    | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string }
+    | { kind: "repay"; loan: Loan; amount: number; date: string; notes?: string; instalmentDueDate?: string | null }
     | null
   >(null);
 
@@ -301,8 +301,18 @@ export function OwedToMeTab() {
                         : undefined
                     }
                     scheduledDate={plan?.nextDue?.dueDate ?? null}
-                    onSubmit={({ amount, date, notes }) =>
-                      setPending({ kind: "repay", loan: l, amount, date, notes })
+                    instalments={plan?.schedule
+                      .filter((s) => s.status !== "paid" && s.amount > 0.005)
+                      .slice(0, 3)
+                      .map((s) => ({
+                        dueDate: s.dueDate,
+                        amount: Math.round((s.amount - s.covered) * 100) / 100,
+                        label: `${format(new Date(s.dueDate), "d MMM yyyy")} · ${
+                          s.kind === "extra" ? `One-off${s.note ? ` (${s.note})` : ""}` : "Regular instalment"
+                        } · £${(s.amount - s.covered).toFixed(2)}`,
+                      }))}
+                    onSubmit={({ amount, date, notes, instalmentDueDate }) =>
+                      setPending({ kind: "repay", loan: l, amount, date, notes, instalmentDueDate })
                     }
                   />
 
@@ -561,6 +571,7 @@ export function OwedToMeTab() {
                   notes: pending.notes,
                   type: "payment",
                   source: encodeSource(choice),
+                  ...(pending.instalmentDueDate ? { instalment_due_date: pending.instalmentDueDate } : {}),
                 },
               ];
               // Advance the plan's next due date by however many *regular*
@@ -605,6 +616,7 @@ function RepaymentLauncher({
   max,
   defaultAmount,
   scheduledDate,
+  instalments,
   onSubmit,
 }: {
   disabled: boolean;
@@ -612,7 +624,8 @@ function RepaymentLauncher({
   max: number;
   defaultAmount?: number;
   scheduledDate?: string | null;
-  onSubmit: (v: { amount: number; date: string; notes?: string }) => void;
+  instalments?: { dueDate: string; label: string; amount: number }[];
+  onSubmit: (v: { amount: number; date: string; notes?: string; instalmentDueDate?: string | null }) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -627,6 +640,7 @@ function RepaymentLauncher({
         max={max}
         defaultAmount={defaultAmount}
         scheduledDate={scheduledDate}
+        instalments={instalments}
         onSave={(v) => {
           setOpen(false);
           onSubmit(v);

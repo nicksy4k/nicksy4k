@@ -203,6 +203,7 @@ export function PaymentDialog({
   scheduledDate,
   max,
   hideRemaining,
+  instalments,
   onSave,
 }: {
   open: boolean;
@@ -215,19 +216,28 @@ export function PaymentDialog({
   scheduledDate?: string | null;
   max: number;
   hideRemaining?: boolean;
-  onSave: (data: { amount: number; date: string; notes?: string }) => void | Promise<void>;
+  /** Upcoming plan instalments the payment can be counted towards. */
+  instalments?: { dueDate: string; label: string; amount: number }[];
+  onSave: (data: {
+    amount: number;
+    date: string;
+    notes?: string;
+    instalmentDueDate?: string | null;
+  }) => void | Promise<void>;
 }) {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
   const [notes, setNotes] = useState("");
+  const [target, setTarget] = useState<string>("");
 
   useEffect(() => {
     if (open) {
       setAmount(defaultAmount != null ? defaultAmount.toFixed(2) : "");
       setDate(defaultDate ?? todayISO());
       setNotes("");
+      setTarget(instalments?.[0]?.dueDate ?? "");
     }
-  }, [open, defaultAmount, defaultDate]);
+  }, [open, defaultAmount, defaultDate, instalments]);
 
   const future = date > todayISO();
 
@@ -277,6 +287,33 @@ export function PaymentDialog({
             )}
           </div>
 
+          {instalments && instalments.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Counts towards
+              </Label>
+              <div className="space-y-1">
+                {[...instalments, { dueDate: "", label: "Not a scheduled payment (extra off the balance)", amount: 0 }].map((i) => (
+                  <label
+                    key={i.dueDate || "none"}
+                    className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5 text-xs cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                  >
+                    <input
+                      type="radio"
+                      name="instalment-target"
+                      checked={target === i.dueDate}
+                      onChange={() => {
+                        setTarget(i.dueDate);
+                        if (i.amount > 0) setAmount(i.amount.toFixed(2));
+                      }}
+                    />
+                    <span className="break-words">{i.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label>
             <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -293,7 +330,12 @@ export function PaymentDialog({
                 toast.error("Enter an amount greater than 0.");
                 return;
               }
-              onSave({ amount: amt, date, notes: notes.trim() || undefined });
+              onSave({
+                amount: amt,
+                date,
+                notes: notes.trim() || undefined,
+                instalmentDueDate: instalments?.length ? target || null : undefined,
+              });
             }}
           >
             Save
