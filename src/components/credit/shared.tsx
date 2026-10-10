@@ -237,7 +237,7 @@ export function PaymentDialog({
       setNotes("");
       setTarget(instalments?.[0]?.dueDate ?? "");
     }
-  }, [open, defaultAmount, defaultDate, instalments]);
+  }, [open, defaultAmount, defaultDate, instalments?.[0]?.dueDate]);
 
   const future = date > todayISO();
 
