@@ -104,8 +104,24 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const priorPaid = (loan.payments ?? [])
     .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at))
     .reduce((s, p) => s + p.amount, 0);
-  const planPaid = Math.max(0, paid - priorPaid);
-  const baseline = Math.max(0, loan.total_amount - priorPaid);
+  // Payments linked to a regular instalment that has already rolled off
+  // (before the current next-due date) settled that instalment — treat them
+  // as history so they never spill onto upcoming instalments.
+  const extraDates = new Set(
+    (loan.repayment_adjustments ?? []).filter((a) => a.type === "extra").map((a) => a.due_date),
+  );
+  const rolledOff = (loan.payments ?? [])
+    .filter(
+      (p) =>
+        p.type !== "topup" &&
+        !!p.instalment_due_date &&
+        p.instalment_due_date < firstDue &&
+        !extraDates.has(p.instalment_due_date) &&
+        countsTowardPlan(p, planStart, loan.plan_created_at),
+    )
+    .reduce((s, p) => s + p.amount, 0);
+  const planPaid = Math.max(0, paid - priorPaid - rolledOff);
+  const baseline = Math.max(0, loan.total_amount - priorPaid - rolledOff);
   const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
   const adjustments = (loan.repayment_adjustments ?? []).filter(
     (a): a is LoanRepaymentAdjustment => a.amount > EPS && !!a.due_date,
@@ -181,10 +197,6 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
       left -= take;
       linkedTotal += take;
     }
-    // Linked to an instalment that's already rolled off (before the current
-    // next-due date): it settled that earlier instalment, so it must never
-    // spill forward onto upcoming ones.
-    if (left > EPS && p.instalment_due_date < firstDue) linkedTotal += left;
   }
   let coveredPool = Math.max(0, planPaid - linkedTotal);
   let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }, i) => {
