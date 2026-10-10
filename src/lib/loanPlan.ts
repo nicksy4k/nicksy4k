@@ -104,8 +104,24 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const priorPaid = (loan.payments ?? [])
     .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at))
     .reduce((s, p) => s + p.amount, 0);
-  const planPaid = Math.max(0, paid - priorPaid);
-  const baseline = Math.max(0, loan.total_amount - priorPaid);
+  // Payments linked to a regular instalment that has already rolled off
+  // (before the current next-due date) settled that instalment — treat them
+  // as history so they never spill onto upcoming instalments.
+  const extraDates = new Set(
+    (loan.repayment_adjustments ?? []).filter((a) => a.type === "extra").map((a) => a.due_date),
+  );
+  const rolledOff = (loan.payments ?? [])
+    .filter(
+      (p) =>
+        p.type !== "topup" &&
+        !!p.instalment_due_date &&
+        p.instalment_due_date < firstDue &&
+        !extraDates.has(p.instalment_due_date) &&
+        countsTowardPlan(p, planStart, loan.plan_created_at),
+    )
+    .reduce((s, p) => s + p.amount, 0);
+  const planPaid = Math.max(0, paid - priorPaid - rolledOff);
+  const baseline = Math.max(0, loan.total_amount - priorPaid - rolledOff);
   const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
   const adjustments = (loan.repayment_adjustments ?? []).filter(
     (a): a is LoanRepaymentAdjustment => a.amount > EPS && !!a.due_date,
@@ -164,10 +180,30 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   }
   entries.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.order - b.order);
 
-  let coveredPool = planPaid;
-  let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }) => {
-    const covered = Math.min(entry.amount, Math.max(0, coveredPool));
-    coveredPool -= covered;
+  // Payments explicitly linked to an instalment cover that instalment first.
+  const linkedCover = new Map<number, number>();
+  let linkedTotal = 0;
+  for (const p of loan.payments ?? []) {
+    if (p.type === "topup" || !p.instalment_due_date) continue;
+    if (!countsTowardPlan(p, planStart, loan.plan_created_at)) continue;
+    let left = p.amount;
+    for (let i = 0; i < entries.length && left > EPS; i++) {
+      const e = entries[i]!;
+      if (e.dueDate !== p.instalment_due_date) continue;
+      const already = linkedCover.get(i) ?? 0;
+      const take = Math.min(left, e.amount - already);
+      if (take <= EPS) continue;
+      linkedCover.set(i, already + take);
+      left -= take;
+      linkedTotal += take;
+    }
+  }
+  let coveredPool = Math.max(0, planPaid - linkedTotal);
+  let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }, i) => {
+    const pre = linkedCover.get(i) ?? 0;
+    const extraCover = Math.min(entry.amount - pre, Math.max(0, coveredPool));
+    coveredPool -= extraCover;
+    const covered = pre + extraCover;
     const status: ScheduleEntry["status"] =
       covered >= entry.amount - EPS
         ? "paid"
