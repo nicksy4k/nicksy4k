@@ -122,9 +122,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   // an earlier extra/increase makes the final regular instalment smaller.
   const regularAmounts: number[] = [];
   const regularDates: string[] = [];
-  // Generate from the plan's original start so instalments already paid keep
-  // their real dates instead of swallowing upcoming ones.
-  let date = planStart < firstDue ? planStart : firstDue;
+  let date = firstDue;
   for (let i = 0; i < count; i++) {
     regularDates.push(date);
     regularAmounts.push(i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment);
@@ -183,6 +181,10 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
       left -= take;
       linkedTotal += take;
     }
+    // Linked to an instalment that's already rolled off (before the current
+    // next-due date): it settled that earlier instalment, so it must never
+    // spill forward onto upcoming ones.
+    if (left > EPS && p.instalment_due_date < firstDue) linkedTotal += left;
   }
   let coveredPool = Math.max(0, planPaid - linkedTotal);
   let schedule: ScheduleEntry[] = entries.map(({ order: _order, ...entry }, i) => {
