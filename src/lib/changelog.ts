@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.9.8",
+    title: "Choose which instalment a repayment covers",
+    date: "2026-10-10",
+    icon: Wallet,
+    highlights: [
+      "Log Repayment now asks which scheduled payment it counts towards, so paying a day early never confuses the plan.",
+      "Payments linked to an instalment no longer spill onto later ones.",
+    ],
+  },
+  {
     version: "v3.9.7",
     title: "No more double carryover",
     date: "2026-10-08",
