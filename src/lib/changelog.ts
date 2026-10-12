@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.11.0",
+    title: "Bank statement reminders",
+    date: "2026-10-12",
+    icon: CalendarClock,
+    highlights: [
+      "Get a nudge on 'Needs your attention' to import an up-to-date bank statement.",
+      "Choose a few days before your cycle ends, a regular schedule (weekly, fortnightly, monthly or custom), or turn it off — Settings → Cycle.",
+      "'Import now' opens the importer straight away, and the reminder clears once you import.",
+    ],
+  },
+  {
     version: "v3.10.0",
     title: "Import your bank statement",
     date: "2026-10-12",
