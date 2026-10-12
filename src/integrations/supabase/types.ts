@@ -970,6 +970,8 @@ export type Database = {
           hidden_items: string[]
           hidden_retailers: string[]
           hide_category_chart: boolean
+          import_reminder_days: number
+          import_reminder_mode: string
           joy_categories: string[]
           last_carryover_cycle_key: string | null
           onboarding_completed: boolean
@@ -988,6 +990,8 @@ export type Database = {
           hidden_items?: string[]
           hidden_retailers?: string[]
           hide_category_chart?: boolean
+          import_reminder_days?: number
+          import_reminder_mode?: string
           joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
@@ -1006,6 +1010,8 @@ export type Database = {
           hidden_items?: string[]
           hidden_retailers?: string[]
           hide_category_chart?: boolean
+          import_reminder_days?: number
+          import_reminder_mode?: string
           joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean

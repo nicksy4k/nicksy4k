@@ -73,6 +73,7 @@ import {
 
 import { toast } from "sonner";
 import { CycleSettingsCard } from "@/components/CycleSettingsCard";
+import { ImportReminderCard } from "@/components/ImportReminderCard";
 import { SmartCleanupDialog } from "@/components/SmartCleanupDialog";
 import { filterHidden } from "@/lib/hiddenSuggestions";
 import { ConnectedAccountsCard } from "@/components/ConnectedAccountsCard";
@@ -239,8 +240,9 @@ function SettingsPage() {
           <ConnectedAccountsCard />
         </TabsContent>
 
-        <TabsContent value="cycle" className="mt-0">
+        <TabsContent value="cycle" className="mt-0 space-y-6">
           <CycleSettingsCard />
+          <ImportReminderCard />
         </TabsContent>
 
         <TabsContent value="categories" className="mt-0 space-y-6">

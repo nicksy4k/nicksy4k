@@ -11,6 +11,7 @@ import {
   PackageX,
   Truck,
   ChevronRight,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import { DeliveryQuickMenu } from "@/components/dashboard/DeliveryQuickMenu";
 import type { Commitment, Transaction } from "@/lib/types";
+import { useImportReminder } from "@/lib/importReminder";
 
 /**
  * Transactions whose protection needs attention right now:
@@ -105,6 +107,8 @@ export function AttentionCard({
     (r) => !isHidden(alertKeys.due(r.commitment.id, r.commitment.next_due_date)),
   );
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
+  const reminderRaw = useImportReminder();
+  const importReminder = reminderRaw && !isHidden(reminderRaw.key) ? reminderRaw : null;
   const deliveriesHidden = isHidden(alertKeys.deliveries());
   // Delayed parcels get their own urgent section and are never folded into the
   // "on the way" count, so a claim deadline can't be missed.
@@ -121,6 +125,7 @@ export function AttentionCard({
     dueSoon.length +
     pending.length +
     claims.length +
+    (importReminder ? 1 : 0) +
     (deliveries > 0 ? 1 : 0);
   if (total === 0) return null;
 
@@ -158,6 +163,27 @@ export function AttentionCard({
                 Showing 6 of {pending.length} pending transactions.
               </p>
             )}
+          </section>
+        )}
+
+        {importReminder && (
+          <section className="space-y-3">
+            <SectionTitle>Bank statement</SectionTitle>
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10">
+                <Upload className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{importReminder.title}</p>
+                <p className="text-xs text-muted-foreground">{importReminder.detail}</p>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/history" search={{ import: true }}>
+                  Import now
+                </Link>
+              </Button>
+              <AlertSnoozeMenu alertKey={importReminder.key} label="Statement reminder" />
+            </div>
           </section>
         )}
 
