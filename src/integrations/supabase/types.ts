@@ -975,6 +975,7 @@ export type Database = {
           joy_categories: string[]
           last_carryover_cycle_key: string | null
           onboarding_completed: boolean
+          safe_split: Json | null
           tutorial_completed: boolean
           updated_at: string
           user_id: string
@@ -995,6 +996,7 @@ export type Database = {
           joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
+          safe_split?: Json | null
           tutorial_completed?: boolean
           updated_at?: string
           user_id: string
@@ -1015,6 +1017,7 @@ export type Database = {
           joy_categories?: string[]
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
+          safe_split?: Json | null
           tutorial_completed?: boolean
           updated_at?: string
           user_id?: string
