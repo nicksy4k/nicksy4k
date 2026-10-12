@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.0",
+    title: "Keep-safe & play split (trial)",
+    date: "2026-10-12",
+    icon: ShieldCheck,
+    highlights: [
+      "Your 'Left to spend' now shows a Keep-safe amount for surprises and guilt-free Play money.",
+      "Try 'What if I buy…' to see if a purchase would dip into your safety net.",
+      "If you dip in, choose to keep what's left as your safety net or recalculate the split.",
+      "Adjust the percentage or switch it off in Settings → Personalise — balances are never changed.",
+    ],
+  },
+  {
     version: "v3.11.0",
     title: "Bank statement reminders",
     date: "2026-10-12",
