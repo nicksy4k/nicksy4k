@@ -161,6 +161,27 @@ export function AttentionCard({
           </section>
         )}
 
+        {importReminder && (
+          <section className="space-y-3">
+            <SectionTitle>Bank statement</SectionTitle>
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10">
+                <Upload className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{importReminder.title}</p>
+                <p className="text-xs text-muted-foreground">{importReminder.detail}</p>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/history" search={{ import: true }}>
+                  Import now
+                </Link>
+              </Button>
+              <AlertSnoozeMenu alertKey={importReminder.key} label="Statement reminder" />
+            </div>
+          </section>
+        )}
+
         {dueSoon.length > 0 && (
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
