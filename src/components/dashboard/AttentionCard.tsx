@@ -11,6 +11,7 @@ import {
   PackageX,
   Truck,
   ChevronRight,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import { alertKeys, useAlertSnoozes } from "@/lib/alertSnooze";
 import { AlertSnoozeMenu } from "@/components/dashboard/AlertSnoozeMenu";
 import { DeliveryQuickMenu } from "@/components/dashboard/DeliveryQuickMenu";
 import type { Commitment, Transaction } from "@/lib/types";
+import { useImportReminder } from "@/lib/importReminder";
 
 /**
  * Transactions whose protection needs attention right now:
@@ -105,6 +107,8 @@ export function AttentionCard({
     (r) => !isHidden(alertKeys.due(r.commitment.id, r.commitment.next_due_date)),
   );
   const pending = allPending.filter((t) => !isHidden(alertKeys.pending(t.id)));
+  const reminderRaw = useImportReminder();
+  const importReminder = reminderRaw && !isHidden(reminderRaw.key) ? reminderRaw : null;
   const deliveriesHidden = isHidden(alertKeys.deliveries());
   // Delayed parcels get their own urgent section and are never folded into the
   // "on the way" count, so a claim deadline can't be missed.
@@ -121,6 +125,7 @@ export function AttentionCard({
     dueSoon.length +
     pending.length +
     claims.length +
+    (importReminder ? 1 : 0) +
     (deliveries > 0 ? 1 : 0);
   if (total === 0) return null;
 
