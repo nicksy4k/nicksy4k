@@ -56,6 +56,7 @@ import { perCycleTotal } from "@/lib/outgoings";
 import { promoAlerts } from "@/lib/subscriptions";
 import { AttentionCard, urgentProtections } from "@/components/dashboard/AttentionCard";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { SafeSplitPanel } from "@/components/dashboard/SafeSplitPanel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -307,6 +308,7 @@ function DashboardPage() {
                   planned fun — budgeted for, guilt-free.
                 </p>
               )}
+              <SafeSplitPanel balance={stats.leftToSpend} cycleKey={String(cycle.start)} blur={blur} />
             </div>
             <Button asChild size="lg" className="shrink-0 w-full sm:w-auto">
               <Link to="/new">
