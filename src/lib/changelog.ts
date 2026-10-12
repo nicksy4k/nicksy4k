@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.1",
+    title: "Keep-safe split syncs across devices",
+    date: "2026-10-12",
+    icon: ShieldCheck,
+    highlights: [
+      "Your Keep-safe & Play percentage, on/off switch and locked cycle target now follow you to every device you sign in on.",
+    ],
+  },
+  {
     version: "v3.12.0",
     title: "Keep-safe & play split (trial)",
     date: "2026-10-12",

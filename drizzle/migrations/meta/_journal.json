@@ -15,6 +15,13 @@
       "when": 1791820180064,
       "tag": "0001_import_reminder_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791826363573,
+      "tag": "0002_safe_split_settings",
+      "breakpoints": true
     }
   ]
 }
