@@ -1,6 +1,10 @@
 // Keep-Safe & Play split — a purely visual planning layer over "Left to spend".
 // Never writes to the ledger; turning it off restores the standard dashboard.
-import { useSyncExternalStore } from "react";
+// Preferences are cached locally and synced to user_settings.safe_split so
+// every device sees the same split.
+import { useEffect, useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface SafeSplitState {
   enabled: boolean;
@@ -14,16 +18,22 @@ const DEFAULT: SafeSplitState = { enabled: true, keepPct: 40, targets: {} };
 let state: SafeSplitState = DEFAULT;
 const listeners = new Set<() => void>();
 
+function normalise(raw: unknown): SafeSplitState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Partial<SafeSplitState>;
+  return { ...DEFAULT, ...r, targets: r.targets ?? {} };
+}
+
 if (typeof window !== "undefined") {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (raw) state = { ...DEFAULT, ...raw, targets: raw.targets ?? {} };
+    const local = normalise(JSON.parse(localStorage.getItem(KEY) || "null"));
+    if (local) state = local;
   } catch {
     /* ignore */
   }
 }
 
-function set(next: SafeSplitState) {
+function applyLocal(next: SafeSplitState) {
   state = next;
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
@@ -31,6 +41,40 @@ function set(next: SafeSplitState) {
     /* ignore */
   }
   listeners.forEach((l) => l());
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+function saveRemote(next: SafeSplitState) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase
+      .from("user_settings")
+      .update({ safe_split: next as unknown as Json })
+      .eq("user_id", u.user.id);
+  }, 400);
+}
+
+function set(next: SafeSplitState) {
+  applyLocal(next);
+  saveRemote(next);
+}
+
+let loadedFor: string | null = null;
+/** Pull the account's saved split; seed the account from this device if none yet. */
+export async function loadSafeSplitFromAccount() {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user || loadedFor === u.user.id) return;
+  loadedFor = u.user.id;
+  const { data } = await supabase
+    .from("user_settings")
+    .select("safe_split")
+    .eq("user_id", u.user.id)
+    .maybeSingle();
+  const remote = normalise(data?.safe_split);
+  if (remote) applyLocal(remote);
+  else if (data) saveRemote(state);
 }
 
 export function updateSafeSplit(patch: Partial<SafeSplitState>) {
@@ -44,6 +88,9 @@ export function setCycleTarget(cycleKey: string, amount: number) {
 const round = (n: number) => Math.round(n * 100) / 100;
 
 export function useSafeSplit(): SafeSplitState {
+  useEffect(() => {
+    void loadSafeSplitFromAccount();
+  }, []);
   return useSyncExternalStore(
     (l) => {
       listeners.add(l);
