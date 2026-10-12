@@ -88,6 +88,7 @@ import { RefundDialog } from "@/components/RefundDialog";
 import { FieldError, invalidCls, focusByAriaLabel } from "@/components/FieldError";
 import { EditTransactionDialog } from "@/components/history/EditTransactionDialog";
 import { PrintableReceipt } from "@/components/PrintableReceipt";
+import { StatementImportDialog } from "@/components/history/StatementImportDialog";
 
 type ProtectionFilter = "all" | "active" | "soon" | "expired" | "dismissed";
 const PROTECTION_FILTERS: ProtectionFilter[] = ["all", "active", "soon", "expired", "dismissed"];
@@ -178,6 +179,7 @@ const PAGE_SIZE = 50;
 function HistoryPage() {
   const { items, isLoading, remove, update: updateTransaction } = useTransactions();
   const { list: categories } = useCategories();
+  const [importOpen, setImportOpen] = useState(false);
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [q, setQ] = useState("");
@@ -343,9 +345,15 @@ function HistoryPage() {
           </p>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold">History</h1>
         </div>
-        <p className="text-sm text-muted-foreground tabular-nums">
-          {hasFilters ? `${filtered.length} of ${items.length}` : `${items.length} total`}
-        </p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            Import statement
+          </Button>
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {hasFilters ? `${filtered.length} of ${items.length}` : `${items.length} total`}
+          </p>
+        </div>
+        <StatementImportDialog open={importOpen} onOpenChange={setImportOpen} />
       </header>
 
       <div className="flex flex-col gap-3 mb-6">

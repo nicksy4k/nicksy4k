@@ -59,8 +59,7 @@ export function StatementImportDialog({
   const qc = useQueryClient();
   const { items: txs } = useTransactions();
   const { items: incomes } = useIncomes();
-  const categories = useCategories();
-  const catList: string[] = (categories as unknown as { items?: string[] }).items ?? (categories as unknown as string[]) ?? [];
+  const { list: catList } = useCategories();
   const defaultCat = catList.includes("Other") ? "Other" : (catList[0] ?? "Other");
 
   const [fileName, setFileName] = useState<string | null>(null);

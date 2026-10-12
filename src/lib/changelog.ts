@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.10.0",
+    title: "Import your bank statement",
+    date: "2026-10-12",
+    icon: Download,
+    highlights: [
+      "History → Import statement reads a Revolut (or most UK bank) CSV and shows everything before saving.",
+      "Items that look already logged, pending, or pocket transfers are unticked automatically.",
+      "Every import can be undone in one tap — straight away or later from Past imports.",
+    ],
+  },
+  {
     version: "v3.9.8",
     title: "Choose which instalment a repayment covers",
     date: "2026-10-10",
