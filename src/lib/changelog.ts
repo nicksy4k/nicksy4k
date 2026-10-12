@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.2",
+    title: "Security & health check",
+    date: "2026-10-12",
+    icon: ShieldCheck,
+    highlights: [
+      "Updated the spreadsheet export engine used by Reports to a patched, more secure version.",
+    ],
+  },
+  {
     version: "v3.12.1",
     title: "Keep-safe split syncs across devices",
     date: "2026-10-12",
