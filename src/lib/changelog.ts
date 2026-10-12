@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.3",
+    title: "Tidier on phones",
+    date: "2026-10-12",
+    icon: Smartphone,
+    highlights: [
+      "History cards on phones show more of the shop name — Refund and Print live inside the opened card.",
+      "History date filters no longer get squashed on small screens.",
+      "Long debt names on Credit & Debt wrap instead of running off the screen.",
+      "Next cycle preview stacks its totals neatly on narrow phones.",
+    ],
+  },
+  {
     version: "v3.12.2",
     title: "Security & health check",
     date: "2026-10-12",
