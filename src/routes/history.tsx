@@ -127,7 +127,9 @@ type FilterValue = "none" | `p:${ProtectionFilter}` | `d:${DeliveryFilter}`;
 export const Route = createFileRoute("/history")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { protection?: ProtectionFilter; delivery?: DeliveryFilter } => {
+  ): { protection?: ProtectionFilter; delivery?: DeliveryFilter; import?: boolean } => {
+    if (search.import === true || search.import === "true" || search.import === 1)
+      return { import: true };
     const p = search.protection;
     if (PROTECTION_FILTERS.includes(p as ProtectionFilter))
       return { protection: p as ProtectionFilter };
@@ -182,6 +184,11 @@ function HistoryPage() {
   const [importOpen, setImportOpen] = useState(false);
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  useEffect(() => {
+    if (!search.import) return;
+    setImportOpen(true);
+    void navigate({ search: {}, replace: true });
+  }, [search.import, navigate]);
   const [q, setQ] = useState("");
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [fromDate, setFromDate] = useState("");
