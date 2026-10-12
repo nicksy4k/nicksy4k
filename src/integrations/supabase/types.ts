@@ -483,6 +483,45 @@ export type Database = {
         }
         Relationships: []
       }
+      import_batches: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          id: string
+          income_count: number
+          source: string
+          total_in: number
+          total_out: number
+          transaction_count: number
+          undone_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          income_count?: number
+          source?: string
+          total_in?: number
+          total_out?: number
+          transaction_count?: number
+          undone_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          income_count?: number
+          source?: string
+          total_in?: number
+          total_out?: number
+          transaction_count?: number
+          undone_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       incomes: {
         Row: {
           amount: number
@@ -490,6 +529,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          import_batch_id: string | null
           notes: string | null
           source: string
           user_id: string
@@ -500,6 +540,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          import_batch_id?: string | null
           notes?: string | null
           source: string
           user_id: string
@@ -510,11 +551,20 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          import_batch_id?: string | null
           notes?: string | null
           source?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "incomes_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loan_shares: {
         Row: {
@@ -798,6 +848,7 @@ export type Database = {
           dismissed_at: string | null
           expiration_date: string | null
           id: string
+          import_batch_id: string | null
           is_pending: boolean
           items: Json
           notes: string | null
@@ -825,6 +876,7 @@ export type Database = {
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
+          import_batch_id?: string | null
           is_pending?: boolean
           items?: Json
           notes?: string | null
@@ -852,6 +904,7 @@ export type Database = {
           dismissed_at?: string | null
           expiration_date?: string | null
           id?: string
+          import_batch_id?: string | null
           is_pending?: boolean
           items?: Json
           notes?: string | null
@@ -873,6 +926,13 @@ export type Database = {
             columns: ["commitment_id"]
             isOneToOne: false
             referencedRelation: "commitments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
             referencedColumns: ["id"]
           },
         ]
