@@ -40,7 +40,7 @@ export function NextCyclePreviewCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 text-xs">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 min-[420px]:gap-3 text-xs">
           <Mini label="Bills" value={preview.bills} />
           <Mini label="Subscriptions" value={preview.subs} />
           <Mini label="Pay-later & debts" value={preview.plans} />

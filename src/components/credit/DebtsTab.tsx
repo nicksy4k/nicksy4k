@@ -225,7 +225,7 @@ export function DebtsTab() {
 
       {/* Standard debts */}
       <section className="space-y-3">
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
           <h2 className="text-lg font-semibold">Standard debts</h2>
           <span className="text-xs text-muted-foreground">
             Open-ended balances (rent arrears, IOUs, etc.)
@@ -244,17 +244,17 @@ export function DebtsTab() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {standard.map((d) => {
               const paid = debtPaid(d);
               const remaining = debtRemaining(d);
               const settled = remaining <= 0.001;
               return (
-                <Card key={d.id} className={settled ? "border-primary/30 bg-primary/5" : ""}>
+                <Card key={d.id} className={`min-w-0 ${settled ? "border-primary/30 bg-primary/5" : ""}`}>
                   <CardContent className="p-4 md:p-5 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold truncate">{d.name}</p>
+                        <p className="font-semibold break-words line-clamp-2">{d.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Total: <span className="tabular-nums">{fmt(d.total_amount)}</span> · Paid:{" "}
                           <span className="tabular-nums">{fmt(paid)}</span>

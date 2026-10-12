@@ -424,7 +424,7 @@ function HistoryPage() {
           </Popover>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-          <div className="flex items-center gap-2 flex-1">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] sm:flex items-center gap-2 flex-1">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
               From
             </Label>
@@ -432,7 +432,7 @@ function HistoryPage() {
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="flex-1"
+              className="min-w-0 sm:flex-1"
             />
             <Label className="text-xs uppercase tracking-wider text-muted-foreground shrink-0">
               To
@@ -441,7 +441,7 @@ function HistoryPage() {
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="flex-1"
+              className="min-w-0 sm:flex-1"
             />
           </div>
           <Select value={filterValue} onValueChange={(v) => setFilterValue(v as FilterValue)}>
@@ -552,7 +552,7 @@ function HistoryPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                          <p className="font-medium truncate">{t.retailer}</p>
+                          <p className="font-medium truncate min-w-0 max-w-full">{t.retailer}</p>
                           {t.is_pending && (
                             <Badge className="font-normal bg-amber-500/15 text-amber-600 border border-amber-500/30 hover:bg-amber-500/15">
                               Pending
@@ -685,7 +685,7 @@ function HistoryPage() {
                                   setRefunding(t);
                                 }
                               }}
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-emerald-600 hover:bg-muted/50 transition-colors"
+                              className="h-8 w-8 hidden sm:inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-emerald-600 hover:bg-muted/50 transition-colors"
                             >
                               <RotateCcw className="h-4 w-4" />
                             </span>
@@ -707,7 +707,7 @@ function HistoryPage() {
                                 setPrinting(t);
                               }
                             }}
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            className="h-8 w-8 hidden sm:inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                           >
                             <Printer className="h-4 w-4" />
                           </span>
