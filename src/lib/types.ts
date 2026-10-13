@@ -222,9 +222,14 @@ export interface LoanRepaymentAdjustment {
   id: string;
   due_date: string;
   amount: number;
-  /** "extra" is a separate instalment; "increase" adds to the next regular payment. */
-  type: "extra" | "increase";
+  /** "extra" is a separate instalment; "increase" adds to the next regular payment;
+   *  "skip" is an agreed payment holiday for the regular instalment on due_date. */
+  type: "extra" | "increase" | "skip";
   note?: string;
+  /** Skip only: "extend" pushes the schedule back, "catchup" doubles the next payment. */
+  skip_mode?: "extend" | "catchup";
+  /** When the adjustment was recorded. */
+  created_at?: string;
 }
 
 export type DebtKind = "standard" | "bnpl";

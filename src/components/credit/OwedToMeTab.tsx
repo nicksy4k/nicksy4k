@@ -128,6 +128,9 @@ export function OwedToMeTab() {
   // Loan gaining a one-off, off-schedule repayment.
   const [extraFor, setExtraFor] = useState<Loan | null>(null);
 
+  // Loan getting an agreed payment holiday.
+  const [skipFor, setSkipFor] = useState<Loan | null>(null);
+
 
 
   const [pending, setPending] = useState<
@@ -275,7 +278,52 @@ export function OwedToMeTab() {
                             Add one-off payment
                           </button>
                         )}
+                        {!settled && plan.nextDue && (
+                          <button
+                            type="button"
+                            onClick={() => setSkipFor(l)}
+                            className="text-[11px] underline text-muted-foreground hover:text-foreground"
+                          >
+                            Payment holiday
+                          </button>
+                        )}
                       </div>
+                      {plan.skipped.length > 0 && (
+                        <div className="border-t border-border/60 pt-2 space-y-1">
+                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                            Agreed skips ({plan.skipped.length})
+                          </p>
+                          <ul className="space-y-1">
+                            {plan.skipped.map((k) => (
+                              <li key={k.id} className="flex items-start justify-between gap-2 text-[11px]">
+                                <span className="min-w-0 break-words">
+                                  <span className="font-medium">
+                                    {format(new Date(k.due_date), "d MMM yyyy")}
+                                  </span>{" "}
+                                  <span className="text-muted-foreground">
+                                    · {k.skip_mode === "catchup" ? "added to next payment" : "schedule pushed back"}
+                                    {k.note ? ` · ${k.note}` : ""}
+                                    {k.created_at ? ` · agreed ${format(new Date(k.created_at), "d MMM")}` : ""}
+                                  </span>
+                                </span>
+                                <button
+                                  type="button"
+                                  className="shrink-0 underline text-muted-foreground hover:text-foreground"
+                                  onClick={async () => {
+                                    if (!confirm("Undo this skip? The payment will be due again on its original date.")) return;
+                                    await update(l.id, {
+                                      repayment_adjustments: (l.repayment_adjustments ?? []).filter((a) => a.id !== k.id),
+                                    });
+                                    toast.success("Skip undone");
+                                  }}
+                                >
+                                  Undo
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
                     </div>
                   ) : (
@@ -480,6 +528,21 @@ export function OwedToMeTab() {
           });
           setExtraFor(null);
           toast.success("One-off repayment added to the plan");
+        }}
+      />
+
+      <SkipPaymentDialog
+        loan={skipFor}
+        onOpenChange={(v) => {
+          if (!v) setSkipFor(null);
+        }}
+        onSave={async (adjustment) => {
+          if (!skipFor) return;
+          await update(skipFor.id, {
+            repayment_adjustments: [...(skipFor.repayment_adjustments ?? []), adjustment],
+          });
+          setSkipFor(null);
+          toast.success("Payment holiday recorded");
         }}
       />
 
@@ -1452,6 +1515,121 @@ function StatementDialog({
           </Button>
           <Button onClick={() => printLoanStatement(loan, { note: note.trim() || undefined })}>
             <FileText className="h-4 w-4" /> Save as PDF
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SkipPaymentDialog({
+  loan,
+  onOpenChange,
+  onSave,
+}: {
+  loan: Loan | null;
+  onOpenChange: (v: boolean) => void;
+  onSave: (a: LoanRepaymentAdjustment) => Promise<void>;
+}) {
+  const plan = loan ? buildLoanPlan(loan) : null;
+  const options = (plan?.schedule ?? []).filter(
+    (s) => s.kind === "regular" && s.status !== "paid" && s.covered <= 0.005 && s.amount > 0.005,
+  ).slice(0, 6);
+  const [dueDate, setDueDate] = useState("");
+  const [mode, setMode] = useState<"extend" | "catchup">("extend");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (loan) {
+      setDueDate(options[0]?.dueDate ?? "");
+      setMode("extend");
+      setNote("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loan?.id]);
+  const chosen = options.find((o) => o.dueDate === dueDate);
+  return (
+    <Dialog open={!!loan} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Payment holiday{loan ? ` for ${loan.person_name}` : ""}</DialogTitle>
+        </DialogHeader>
+        {options.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            There are no untouched regular payments to skip. Part-paid instalments can't be skipped.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Payment to skip</Label>
+              <Select value={dueDate} onValueChange={setDueDate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a payment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((o) => (
+                    <SelectItem key={o.dueDate} value={o.dueDate}>
+                      {format(new Date(o.dueDate), "d MMM yyyy")} · {fmt(o.amount)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>What happens to the money</Label>
+              <Select value={mode} onValueChange={(v) => setMode(v as "extend" | "catchup")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="extend">Push the plan back one payment (finishes later)</SelectItem>
+                  <SelectItem value="catchup">Add it to the next payment (same end date)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="skip-note">Reason (kept on record)</Label>
+              <Textarea
+                id="skip-note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. Short this month — agreed to resume next month"
+                maxLength={300}
+              />
+            </div>
+            {chosen && (
+              <p className="text-xs text-muted-foreground">
+                Nothing will be due on {format(new Date(chosen.dueDate), "d MMM yyyy")} and it won't show as overdue.
+                The balance owed doesn't change.
+              </p>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!chosen || !note.trim() || saving}
+            onClick={async () => {
+              if (!chosen) return;
+              setSaving(true);
+              try {
+                await onSave({
+                  id: crypto.randomUUID(),
+                  type: "skip",
+                  due_date: chosen.dueDate,
+                  amount: 0,
+                  skip_mode: mode,
+                  note: note.trim(),
+                  created_at: new Date().toISOString(),
+                });
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            Record skip
           </Button>
         </DialogFooter>
       </DialogContent>

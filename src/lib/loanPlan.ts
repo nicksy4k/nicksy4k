@@ -59,6 +59,8 @@ export type LoanPlanSummary = {
   projectedClearDate: string | null;
   /** Days overdue for the next instalment (0 when not overdue). */
   overdueBy: number;
+  /** Agreed payment holidays, oldest first — a permanent record with reasons. */
+  skipped: LoanRepaymentAdjustment[];
 };
 
 const EPS = 0.005;
@@ -122,9 +124,10 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     .reduce((s, p) => s + p.amount, 0);
   const planPaid = Math.max(0, paid - priorPaid - rolledOff);
   const baseline = Math.max(0, loan.total_amount - priorPaid - rolledOff);
-  const count = Math.max(1, Math.ceil((baseline - EPS) / perPayment));
+  const skips = (loan.repayment_adjustments ?? []).filter((a) => a.type === "skip" && !!a.due_date);
+  const skipByDate = new Map(skips.map((s) => [s.due_date, s]));
   const adjustments = (loan.repayment_adjustments ?? []).filter(
-    (a): a is LoanRepaymentAdjustment => a.amount > EPS && !!a.due_date,
+    (a): a is LoanRepaymentAdjustment => a.type !== "skip" && a.amount > EPS && !!a.due_date,
   );
   const increases = new Map<string, number>();
   for (const adjustment of adjustments) {
@@ -133,16 +136,25 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     }
   }
 
-  // Start with the regular cadence, then allocate top-up instructions within
-  // that same balance. This keeps the schedule total equal to the loan total:
-  // an earlier extra/increase makes the final regular instalment smaller.
+  // Walk the cadence; agreed skips take no money on their date. "extend"
+  // simply moves on, "catchup" adds the skipped amount to the next payment.
   const regularAmounts: number[] = [];
   const regularDates: string[] = [];
   let date = firstDue;
-  for (let i = 0; i < count; i++) {
+  let left = baseline;
+  let carry = 0;
+  for (let guard = 0; guard < 1000 && (left > EPS || regularDates.length === 0); guard++) {
+    const skip = skipByDate.get(date);
+    if (skip) {
+      if (skip.skip_mode === "catchup") carry += perPayment;
+      date = stepDate(date, cadence);
+      continue;
+    }
+    const amt = Math.min(left, perPayment + carry);
+    carry = 0;
     regularDates.push(date);
-    regularAmounts.push(i === count - 1 ? Math.max(0, baseline - perPayment * (count - 1)) : perPayment);
-    regularAmounts[i] = Math.max(0, regularAmounts[i] + (increases.get(date) ?? 0));
+    regularAmounts.push(Math.max(0, amt + (increases.get(date) ?? 0)));
+    left -= amt;
     date = stepDate(date, cadence);
   }
 
@@ -222,6 +234,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   if (firstUnpaidRegular > 0) {
     let d = firstDue;
     for (let i = firstUnpaidRegular; i < regulars.length; i++) {
+      while (skipByDate.has(d)) d = stepDate(d, cadence);
       const entry = regulars[i]!;
       entry.dueDate = d;
       entry.status = entry.covered > EPS ? "part" : d <= today ? "due" : "upcoming";
@@ -259,6 +272,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     remainingCount: unpaid.length,
     projectedClearDate,
     overdueBy,
+    skipped: [...skips].sort((a, b) => a.due_date.localeCompare(b.due_date)),
   };
 }
 

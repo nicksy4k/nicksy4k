@@ -277,3 +277,23 @@ describe("nextDueAfterPayment", () => {
     expect(nextDueAfterPayment(before, after, "monthly")).toBe("2026-10-19");
   });
 });
+
+import { buildLoanPlan as _blp } from "../loanPlan";
+describe("payment holidays", () => {
+  const base = {
+    id: "l", person_name: "M", total_amount: 200, payments: [], created_at: "2026-01-01",
+    plan_amount: 50, plan_cadence: "monthly", plan_start_date: "2026-10-19", plan_next_due: "2026-10-19",
+  } as never as import("../types").Loan;
+  it("extend skips the date and pushes the end back", () => {
+    const p = _blp({ ...base, repayment_adjustments: [{ id: "s", type: "skip", due_date: "2026-10-19", amount: 0, skip_mode: "extend", note: "x" }] }, "2026-10-20")!;
+    expect(p.nextDue?.dueDate).toBe("2026-11-19");
+    expect(p.overdueBy).toBe(0);
+    expect(p.projectedClearDate).toBe("2027-02-19");
+    expect(p.skipped).toHaveLength(1);
+  });
+  it("catchup doubles the next payment and keeps the end date", () => {
+    const p = _blp({ ...base, repayment_adjustments: [{ id: "s", type: "skip", due_date: "2026-10-19", amount: 0, skip_mode: "catchup" }] }, "2026-10-20")!;
+    expect(p.nextDue?.amount).toBe(100);
+    expect(p.projectedClearDate).toBe("2027-01-19");
+  });
+});
