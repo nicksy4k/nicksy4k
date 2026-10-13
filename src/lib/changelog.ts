@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.13.1",
+    date: "2026-10-13",
+    title: "Planned items sync across devices",
+    icon: Wallet,
+    highlights: [
+      "Your Plan items scratchpad now saves to your account, so a list started on your phone shows up on your laptop too.",
+    ],
+  },
+  {
     version: "v3.13.0",
     date: "2026-10-13",
     title: "Spending planner",

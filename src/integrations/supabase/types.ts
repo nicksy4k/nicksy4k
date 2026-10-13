@@ -976,6 +976,7 @@ export type Database = {
           last_carryover_cycle_key: string | null
           onboarding_completed: boolean
           safe_split: Json | null
+          scratchpad: Json | null
           tutorial_completed: boolean
           updated_at: string
           user_id: string
@@ -997,6 +998,7 @@ export type Database = {
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
           safe_split?: Json | null
+          scratchpad?: Json | null
           tutorial_completed?: boolean
           updated_at?: string
           user_id: string
@@ -1018,6 +1020,7 @@ export type Database = {
           last_carryover_cycle_key?: string | null
           onboarding_completed?: boolean
           safe_split?: Json | null
+          scratchpad?: Json | null
           tutorial_completed?: boolean
           updated_at?: string
           user_id?: string
