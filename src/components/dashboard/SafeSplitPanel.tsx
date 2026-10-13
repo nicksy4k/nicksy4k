@@ -24,6 +24,8 @@ import {
   setCycleTarget,
   useSafeSplit,
 } from "@/lib/safeSplit";
+import { evalSpend } from "@/lib/spendMath";
+import { SpendScratchpad } from "./SpendScratchpad";
 
 export function SafeSplitPanel({
   balance,
@@ -50,8 +52,8 @@ export function SafeSplitPanel({
   if (!s.enabled) return null;
   const target = stored ?? (Math.max(0, balance) * s.keepPct) / 100;
   const split = computeSplit(balance, target);
-  const amt = parseFloat(whatIf);
-  const pv = amt > 0 ? previewPurchase(balance, target, amt) : null;
+  const amt = evalSpend(whatIf);
+  const pv = amt !== null && amt > 0 ? previewPurchase(balance, target, amt) : null;
 
   const newTarget = round2((Math.max(0, balance) * s.keepPct) / 100);
   const newSplit = computeSplit(balance, newTarget);
@@ -144,19 +146,26 @@ export function SafeSplitPanel({
       )}
 
       <div className="space-y-1.5">
-        <label className="text-xs text-muted-foreground flex items-center gap-1" htmlFor="whatif">
-          <Calculator className="h-3.5 w-3.5" /> What if I buy something for…
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-xs text-muted-foreground flex items-center gap-1" htmlFor="whatif">
+            <Calculator className="h-3.5 w-3.5" /> What if I buy something for…
+          </label>
+          <SpendScratchpad balance={balance} target={target} />
+        </div>
         <Input
           id="whatif"
           inputMode="decimal"
-          placeholder="e.g. 35"
+          placeholder="e.g. 18 + 14.50 + 9.99"
           value={whatIf}
           onChange={(e) => setWhatIf(e.target.value)}
           className="h-8"
         />
+        {whatIf.trim() && amt === null && (
+          <p className="text-xs text-muted-foreground">Keep typing — e.g. 18 + 14.50</p>
+        )}
         {pv && (
           <p className={`text-sm ${pv.intoBuffer > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+            {/[+\-*/]/.test(whatIf) && <span className="font-medium text-foreground">Total {fmt(amt!)} · </span>}
             {pv.overBalance
               ? `That's more than you have left to spend.`
               : pv.intoBuffer > 0
