@@ -44,14 +44,21 @@ function applyLocal(next: SafeSplitState) {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
+/** True once the account's saved split has been read; no remote writes before then. */
+let accountLoaded = false;
+let pendingSave = false;
 function saveRemote(next: SafeSplitState) {
   clearTimeout(saveTimer);
+  if (!accountLoaded) {
+    pendingSave = true;
+    return;
+  }
   saveTimer = setTimeout(async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     await supabase
       .from("user_settings")
-      .update({ safe_split: next as unknown as Json })
+      .update({ safe_split: state as unknown as Json })
       .eq("user_id", u.user.id);
   }, 400);
 }
@@ -61,20 +68,36 @@ function set(next: SafeSplitState) {
   saveRemote(next);
 }
 
+export function isSafeSplitLoaded() {
+  return accountLoaded;
+}
+
 let loadedFor: string | null = null;
 /** Pull the account's saved split; seed the account from this device if none yet. */
 export async function loadSafeSplitFromAccount() {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user || loadedFor === u.user.id) return;
   loadedFor = u.user.id;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_settings")
     .select("safe_split")
     .eq("user_id", u.user.id)
     .maybeSingle();
+  if (error) {
+    loadedFor = null;
+    return;
+  }
+  clearTimeout(saveTimer);
   const remote = normalise(data?.safe_split);
-  if (remote) applyLocal(remote);
-  else if (data) saveRemote(state);
+  accountLoaded = true;
+  if (remote) {
+    pendingSave = false;
+    applyLocal(remote);
+  } else {
+    applyLocal(state); // notify listeners that loading finished
+    if (data) saveRemote(state);
+  }
+  pendingSave = false;
 }
 
 export function updateSafeSplit(patch: Partial<SafeSplitState>) {
