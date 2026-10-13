@@ -132,6 +132,21 @@ export function buildLoanStatementHtml(loan: Loan, opts: StatementOptions = {}):
             <thead><tr><th>No.</th><th>Due date</th><th class="right">Amount</th><th>Status</th></tr></thead>
             <tbody>${upcoming}</tbody>
           </table>
+          ${
+            plan.skipped.length
+              ? `<h2>Agreed payment holidays</h2>
+          <table>
+            <thead><tr><th>Skipped date</th><th>Arrangement</th><th>Reason</th></tr></thead>
+            <tbody>${plan.skipped
+              .map(
+                (k) => `<tr><td>${escapeHtml(fmtDate(k.due_date))}</td><td>${escapeHtml(
+                  k.skip_mode === "catchup" ? "Added to next payment" : "Schedule pushed back",
+                )}</td><td>${escapeHtml(k.note ?? "—")}</td></tr>`,
+              )
+              .join("")}</tbody>
+          </table>`
+              : ""
+          }
         </section>`
       : "";
 

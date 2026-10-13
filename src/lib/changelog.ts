@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "3.12.5",
+    date: "2026-10-13",
+    title: "Payment holidays for loans",
+    items: [
+      "Agree to skip a repayment on money you've lent — pick the payment, choose whether the plan is pushed back or the amount added to the next payment, and note the reason.",
+      "Skipped payments never show as overdue, are listed on the loan card with their reason and date agreed, and appear on shared statements. Undo any time.",
+    ],
+  },
+  {
     version: "v3.12.4",
     title: "Keep-safe split stays in sync",
     date: "2026-10-13",
