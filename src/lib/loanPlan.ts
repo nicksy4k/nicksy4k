@@ -77,8 +77,12 @@ export function countsTowardPlan(
   p: LedgerPayment,
   planStart: string,
   planCreatedAt?: string | null,
+  extraDates?: Set<string>,
 ): boolean {
   if (p.type === "topup") return false;
+  // Payments linked to a scheduled one-off always count, even when the
+  // one-off falls before the regular plan's first due date.
+  if (p.instalment_due_date && extraDates?.has(p.instalment_due_date)) return true;
   // A link to an instalment only counts when that instalment belongs to the
   // current plan — payments linked to a previous plan's schedule are history.
   if (p.instalment_due_date) return p.instalment_due_date >= planStart;
