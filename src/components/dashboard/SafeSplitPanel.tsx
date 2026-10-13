@@ -3,7 +3,13 @@ import { ShieldCheck, Gamepad2, AlertTriangle, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fmt } from "@/lib/format";
-import { computeSplit, previewPurchase, setCycleTarget, useSafeSplit } from "@/lib/safeSplit";
+import {
+  computeSplit,
+  isSafeSplitLoaded,
+  previewPurchase,
+  setCycleTarget,
+  useSafeSplit,
+} from "@/lib/safeSplit";
 
 export function SafeSplitPanel({
   balance,
@@ -18,12 +24,14 @@ export function SafeSplitPanel({
   const [whatIf, setWhatIf] = useState("");
   const stored = s.targets[cycleKey];
 
-  // Lock a target the first time we see this cycle.
+  // Lock a target the first time we see this cycle — only after the account's
+  // saved split has loaded, so a stale device copy never overwrites it.
+  const loaded = isSafeSplitLoaded();
   useEffect(() => {
-    if (s.enabled && stored === undefined && balance > 0) {
+    if (loaded && s.enabled && stored === undefined && balance > 0) {
       setCycleTarget(cycleKey, (balance * s.keepPct) / 100);
     }
-  }, [s.enabled, stored, balance, cycleKey, s.keepPct]);
+  }, [loaded, s, s.enabled, stored, balance, cycleKey, s.keepPct]);
 
   if (!s.enabled) return null;
   const target = stored ?? (Math.max(0, balance) * s.keepPct) / 100;
