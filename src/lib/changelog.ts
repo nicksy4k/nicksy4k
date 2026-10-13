@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.4",
+    title: "Keep-safe split stays in sync",
+    date: "2026-10-13",
+    icon: ShieldCheck,
+    highlights: [
+      "Opening the app on another device no longer overwrites the Keep-safe & Play split you set elsewhere.",
+    ],
+  },
+  {
     version: "v3.12.3",
     title: "Tidier on phones",
     date: "2026-10-12",
