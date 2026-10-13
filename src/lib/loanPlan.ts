@@ -201,7 +201,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   let linkedTotal = 0;
   for (const p of loan.payments ?? []) {
     if (p.type === "topup" || !p.instalment_due_date) continue;
-    if (!countsTowardPlan(p, planStart, loan.plan_created_at)) continue;
+    if (!countsTowardPlan(p, planStart, loan.plan_created_at, extraDates)) continue;
     let left = p.amount;
     for (let i = 0; i < entries.length && left > EPS; i++) {
       const e = entries[i]!;
