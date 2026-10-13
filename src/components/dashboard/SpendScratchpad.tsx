@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { ListChecks, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -22,6 +24,9 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
   const [name, setName] = useState("");
   const [amt, setAmt] = useState("");
 
+  const loaded = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -29,7 +34,45 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
     } catch {
       /* ignore */
     }
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select("scratchpad")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      if (error) return;
+      loaded.current = true;
+      const remote = data?.scratchpad;
+      if (Array.isArray(remote)) {
+        setItems(remote as unknown as ScratchItem[]);
+        try {
+          localStorage.setItem(KEY, JSON.stringify(remote));
+        } catch {
+          /* ignore */
+        }
+      } else if (data) {
+        const local = localStorage.getItem(KEY);
+        if (local) pushRemote(JSON.parse(local));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const pushRemote = (next: ScratchItem[]) => {
+    if (!loaded.current) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase
+        .from("user_settings")
+        .update({ scratchpad: next as unknown as Json })
+        .eq("user_id", u.user.id);
+    }, 400);
+  };
+
   const save = (next: ScratchItem[]) => {
     setItems(next);
     try {
@@ -37,6 +80,7 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
     } catch {
       /* ignore */
     }
+    pushRemote(next);
   };
 
   const parsed = evalSpend(amt);
