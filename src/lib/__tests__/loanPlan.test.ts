@@ -153,6 +153,47 @@ describe("scheduled one-off repayments", () => {
   });
 });
 
+describe("paid one-off instalment dated before the regular plan starts", () => {
+  // Regression: a payment linked to a scheduled one-off extra that falls
+  // before the regular plan's first due date must still count as paid, and
+  // must not be double-counted against the regular instalments.
+  it("shows the extra as paid, keeps the regular next due date, and counts the money once", () => {
+    const l = loan({
+      total_amount: 535,
+      plan_amount: 50,
+      plan_start_date: "2026-10-19",
+      plan_next_due: "2026-10-19",
+      plan_created_at: "2026-09-01T00:00:00Z",
+      repayment_adjustments: [
+        { id: "parking", due_date: "2026-10-13", amount: 10, type: "extra" },
+      ],
+      payments: [
+        {
+          id: "p1",
+          date: "2026-10-13",
+          amount: 10,
+          type: "payment",
+          instalment_due_date: "2026-10-13",
+        },
+      ],
+    });
+    const p = buildLoanPlan(l, "2026-10-13")!;
+
+    const extra = p.schedule.find((s) => s.kind === "extra")!;
+    expect(extra.dueDate).toBe("2026-10-13");
+    expect(extra.status).toBe("paid");
+    expect(extra.covered).toBe(10);
+
+    // The regular cadence is untouched: next up is the first monthly £50.
+    expect(p.nextDue).toMatchObject({ kind: "regular", dueDate: "2026-10-19", amount: 50, covered: 0 });
+
+    // The £10 is counted exactly once: remaining is 535 - 10, not 535 - 20.
+    expect(p.paid).toBe(10);
+    expect(p.remaining).toBe(525);
+    expect(p.paidCount).toBe(1);
+  });
+});
+
 describe("applyExtraPayment", () => {
   it("shortens the plan", () => {
     const r = applyExtraPayment(loan(), 200, "2026-01-15")!;
