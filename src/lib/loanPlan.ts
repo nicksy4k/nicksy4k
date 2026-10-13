@@ -59,6 +59,8 @@ export type LoanPlanSummary = {
   projectedClearDate: string | null;
   /** Days overdue for the next instalment (0 when not overdue). */
   overdueBy: number;
+  /** Agreed payment holidays, oldest first — a permanent record with reasons. */
+  skipped: LoanRepaymentAdjustment[];
 };
 
 const EPS = 0.005;
@@ -232,6 +234,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   if (firstUnpaidRegular > 0) {
     let d = firstDue;
     for (let i = firstUnpaidRegular; i < regulars.length; i++) {
+      while (skipByDate.has(d)) d = stepDate(d, cadence);
       const entry = regulars[i]!;
       entry.dueDate = d;
       entry.status = entry.covered > EPS ? "part" : d <= today ? "due" : "upcoming";
@@ -269,6 +272,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
     remainingCount: unpaid.length,
     projectedClearDate,
     overdueBy,
+    skipped: [...skips].sort((a, b) => a.due_date.localeCompare(b.due_date)),
   };
 }
 
