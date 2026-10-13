@@ -77,8 +77,12 @@ export function countsTowardPlan(
   p: LedgerPayment,
   planStart: string,
   planCreatedAt?: string | null,
+  extraDates?: Set<string>,
 ): boolean {
   if (p.type === "topup") return false;
+  // Payments linked to a scheduled one-off always count, even when the
+  // one-off falls before the regular plan's first due date.
+  if (p.instalment_due_date && extraDates?.has(p.instalment_due_date)) return true;
   // A link to an instalment only counts when that instalment belongs to the
   // current plan — payments linked to a previous plan's schedule are history.
   if (p.instalment_due_date) return p.instalment_due_date >= planStart;
@@ -103,15 +107,15 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   const firstDue = loan.plan_next_due ?? loan.plan_start_date ?? loan.start_date ?? today;
   const planStart = loan.plan_start_date ?? loan.start_date ?? firstDue;
 
+  const extraDates = new Set(
+    (loan.repayment_adjustments ?? []).filter((a) => a.type === "extra").map((a) => a.due_date),
+  );
   const priorPaid = (loan.payments ?? [])
-    .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at))
+    .filter((p) => p.type !== "topup" && !countsTowardPlan(p, planStart, loan.plan_created_at, extraDates))
     .reduce((s, p) => s + p.amount, 0);
   // Payments linked to a regular instalment that has already rolled off
   // (before the current next-due date) settled that instalment — treat them
   // as history so they never spill onto upcoming instalments.
-  const extraDates = new Set(
-    (loan.repayment_adjustments ?? []).filter((a) => a.type === "extra").map((a) => a.due_date),
-  );
   const rolledOff = (loan.payments ?? [])
     .filter(
       (p) =>
@@ -119,7 +123,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
         !!p.instalment_due_date &&
         p.instalment_due_date < firstDue &&
         !extraDates.has(p.instalment_due_date) &&
-        countsTowardPlan(p, planStart, loan.plan_created_at),
+        countsTowardPlan(p, planStart, loan.plan_created_at, extraDates),
     )
     .reduce((s, p) => s + p.amount, 0);
   const planPaid = Math.max(0, paid - priorPaid - rolledOff);
@@ -197,7 +201,7 @@ export function buildLoanPlan(loan: Loan, today: string = todayISO()): LoanPlanS
   let linkedTotal = 0;
   for (const p of loan.payments ?? []) {
     if (p.type === "topup" || !p.instalment_due_date) continue;
-    if (!countsTowardPlan(p, planStart, loan.plan_created_at)) continue;
+    if (!countsTowardPlan(p, planStart, loan.plan_created_at, extraDates)) continue;
     let left = p.amount;
     for (let i = 0; i < entries.length && left > EPS; i++) {
       const e = entries[i]!;

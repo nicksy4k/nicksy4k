@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.6",
+    date: "2026-10-13",
+    title: "One-off loan repayments register properly",
+    icon: HandCoins,
+    highlights: [
+      "Paying a scheduled one-off repayment that falls before the regular plan starts now marks it paid straight away instead of leaving it showing as due.",
+    ],
+  },
+  {
     version: "v3.12.5",
     date: "2026-10-13",
     title: "Payment holidays for loans",
