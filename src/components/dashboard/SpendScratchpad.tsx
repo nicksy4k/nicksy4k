@@ -1,0 +1,149 @@
+import { useEffect, useState } from "react";
+import { ListChecks, Plus, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { fmt } from "@/lib/format";
+import { previewPurchase } from "@/lib/safeSplit";
+import { evalSpend, scratchTotal, type ScratchItem } from "@/lib/spendMath";
+
+const KEY = "ledgerly.scratchpad.v1";
+
+export function SpendScratchpad({ balance, target }: { balance: number; target: number }) {
+  const [items, setItems] = useState<ScratchItem[]>([]);
+  const [name, setName] = useState("");
+  const [amt, setAmt] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) setItems(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const save = (next: ScratchItem[]) => {
+    setItems(next);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const parsed = evalSpend(amt);
+  const add = () => {
+    if (!parsed || parsed <= 0) return;
+    save([...items, { id: crypto.randomUUID(), name: name.trim() || "Item", amount: parsed, on: true }]);
+    setName("");
+    setAmt("");
+  };
+
+  const total = scratchTotal(items);
+  const pv = previewPurchase(balance, target, total);
+  const playUsed = Math.min(total, pv.before.play);
+  const left = Math.max(0, balance);
+  const pct = (n: number) => (left > 0 ? Math.min(100, (n / left) * 100) : 0);
+  const status = pv.overBalance ? "over" : pv.intoBuffer > 0 ? "buffer" : "ok";
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
+          <ListChecks className="h-3.5 w-3.5 mr-1" /> Plan items
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Spending scratchpad</DialogTitle>
+          <DialogDescription>
+            Try out a few purchases before you spend. Tick and untick to mix and match — nothing is logged.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <Input placeholder="Takeaway" value={name} onChange={(e) => setName(e.target.value)} className="flex-1 min-w-0" />
+          <Input
+            placeholder="£ e.g. 12+6"
+            inputMode="decimal"
+            value={amt}
+            onChange={(e) => setAmt(e.target.value)}
+            className="w-28"
+          />
+          <Button type="submit" size="icon" disabled={!parsed || parsed <= 0} aria-label="Add item">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </form>
+
+        <ul className="space-y-1 max-h-60 overflow-y-auto">
+          {items.length === 0 && <li className="text-sm text-muted-foreground">No items yet.</li>}
+          {items.map((it) => (
+            <li key={it.id} className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5">
+              <Checkbox
+                checked={it.on}
+                onCheckedChange={(v) => save(items.map((x) => (x.id === it.id ? { ...x, on: !!v } : x)))}
+                aria-label={`Include ${it.name}`}
+              />
+              <span className={`flex-1 min-w-0 truncate text-sm ${it.on ? "" : "text-muted-foreground line-through"}`}>
+                {it.name}
+              </span>
+              <span className="text-sm tabular-nums">{fmt(it.amount)}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => save(items.filter((x) => x.id !== it.id))}
+                aria-label={`Remove ${it.name}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="space-y-2 rounded-md border border-border/60 p-3">
+          <div className="flex justify-between text-sm font-medium">
+            <span>Ticked total</span>
+            <span className="tabular-nums">{fmt(total)}</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted flex">
+            <div className="h-full bg-primary" style={{ width: `${pct(playUsed)}%` }} />
+            <div className="h-full bg-destructive" style={{ width: `${pct(Math.min(pv.intoBuffer, pv.before.keepSafe))}%` }} />
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            <span>Play left: <span className="text-foreground">{fmt(pv.after.play)}</span></span>
+            <span>Keep safe left: <span className="text-foreground">{fmt(pv.after.keepSafe)}</span></span>
+          </div>
+          <p className={`text-sm ${status === "ok" ? "text-muted-foreground" : "text-destructive"}`}>
+            {total === 0
+              ? "Add something to see how it fits."
+              : status === "over"
+                ? "That's more than you have left to spend."
+                : status === "buffer"
+                  ? `Dips ${fmt(pv.intoBuffer)} into your safety net. Try unticking something.`
+                  : "All fits within play money."}
+          </p>
+          {items.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => save([])}>
+              Clear all
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

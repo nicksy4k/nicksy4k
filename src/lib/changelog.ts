@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.13.0",
+    date: "2026-10-13",
+    title: "Spending planner",
+    icon: Wallet,
+    highlights: [
+      "The What-if box now does sums — type 18 + 14.50 + 9.99 and see the total checked against your play money.",
+      "New Plan items scratchpad: list a few purchases, tick and untick to mix and match, and see what fits before touching your safety net. Nothing is logged.",
+    ],
+  },
+  {
     version: "v3.12.7",
     date: "2026-10-13",
     title: "Re-split from the dashboard",
