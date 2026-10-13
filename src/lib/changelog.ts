@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.12.7",
+    date: "2026-10-13",
+    title: "Re-split from the dashboard",
+    icon: ShieldCheck,
+    highlights: [
+      "A Re-split button on the Keep-safe & play card recalculates the split from your current left to spend — handy when new income lands.",
+      "It always shows a before-and-after preview and asks you to confirm, so the safety net isn't changed by accident.",
+    ],
+  },
+  {
     version: "v3.12.6",
     date: "2026-10-13",
     title: "One-off loan repayments register properly",
