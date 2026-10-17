@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.13.4",
+    date: "2026-10-17",
+    title: "Payment holidays on shared statements",
+    icon: Share2,
+    highlights: [
+      "Shared loan statement links now list any agreed payment holidays, with the date and reason.",
+    ],
+  },
+  {
     version: "v3.13.3",
     date: "2026-10-17",
     title: "Quick transfers between pockets",
