@@ -57,6 +57,7 @@ import { promoAlerts } from "@/lib/subscriptions";
 import { AttentionCard, urgentProtections } from "@/components/dashboard/AttentionCard";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { SafeSplitPanel } from "@/components/dashboard/SafeSplitPanel";
+import { TransferDialog } from "@/components/dashboard/TransferDialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -325,7 +326,14 @@ function DashboardPage() {
           <CardContent className="p-4 md:p-5">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
               <span className="text-xs uppercase tracking-wider">Savings & Pockets</span>
-              <PiggyBank className="h-4 w-4" />
+              <span className="flex items-center gap-1">
+                <TransferDialog
+                  pockets={pocketBalances}
+                  mainBalance={stats.leftToSpend}
+                  disabled={demo.active}
+                />
+                <PiggyBank className="h-4 w-4" />
+              </span>
             </div>
             {pocketBalances.length > 0 ? (
               <ul className="mt-1 space-y-1 overflow-auto pr-1">

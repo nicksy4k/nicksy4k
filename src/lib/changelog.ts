@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.13.3",
+    date: "2026-10-17",
+    title: "Quick transfers between pockets",
+    icon: Wallet,
+    highlights: [
+      "New Transfer button on the dashboard Savings & Pockets card — pick From, To and an amount.",
+      "Pocket-to-pocket moves leave your Main balance untouched.",
+    ],
+  },
+  {
     version: "v3.13.2",
     date: "2026-10-17",
     title: "A clearer introduction to Ledgerly",
