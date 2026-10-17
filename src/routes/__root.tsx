@@ -103,7 +103,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Ledgerly tracks expenses, income, savings, and debt — itemized down to the line, all in one place.",
       },
-      { name: "author", content: "Lovable" },
       { property: "og:title", content: "Ledgerly — Personal Finance Tracker" },
       {
         property: "og:description",
@@ -113,23 +112,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Ledgerly" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Ledgerly — Personal Finance Tracker" },
-      {
-        name: "twitter:description",
-        content:
-          "Ledgerly tracks expenses, income, savings, and debt — itemized down to the line, all in one place.",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f1055819-5968-493a-8652-30c1d9c3c838/id-preview-06608fad--401901d1-7585-4b78-a2d9-a614c7379f32.lovable.app-1780497978794.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f1055819-5968-493a-8652-30c1d9c3c838/id-preview-06608fad--401901d1-7585-4b78-a2d9-a614c7379f32.lovable.app-1780497978794.png",
-      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

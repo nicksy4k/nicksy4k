@@ -46,20 +46,22 @@ import heroAsset from "@/assets/auth-hero.png.asset.json";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Ledgerly — Track, budget, and protect your spending" },
+      { title: "Join Ledgerly — Payday-based budgeting" },
       {
         name: "description",
         content:
-          "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence.",
+          "Try Ledgerly’s demo or create an account to budget around monthly or four-weekly pay. Plan bills and BNPL payments, organise pockets, and track spending and receipts.",
       },
-      { property: "og:title", content: "Ledgerly — Track, budget, and protect your spending" },
+      { property: "og:title", content: "Join Ledgerly — Payday-based budgeting" },
       {
         property: "og:description",
         content:
-          "Ledgerly is a personal expense tracker built around your income cycle. Log itemized purchases, attach receipts, track warranties, route income into pockets, and budget with confidence.",
+          "Try Ledgerly’s demo or create an account to budget around monthly or four-weekly pay. Plan bills and BNPL payments, organise pockets, and track spending and receipts.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Join Ledgerly — Payday-based budgeting" },
+      { name: "twitter:description", content: "Try Ledgerly’s demo or create an account to budget around monthly or four-weekly pay. Plan bills and BNPL payments, organise pockets, and track spending and receipts." },
     ],
   }),
   component: AuthPage,
