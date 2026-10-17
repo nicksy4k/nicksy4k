@@ -203,6 +203,23 @@ function SharedStatementPage() {
           </section>
         )}
 
+        {plan && plan.skipped.length > 0 && (
+          <section className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
+            <h2 className="font-semibold">Agreed payment holidays</h2>
+            <ul className="divide-y divide-border/60 text-sm">
+              {plan.skipped.map((k) => (
+                <li key={k.id} className="py-1.5 space-y-0.5">
+                  <p className="font-medium">{fmtDate(k.due_date)}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {k.skip_mode === "catchup" ? "Added to next payment" : "Schedule pushed back"}
+                    {k.note ? ` · ${k.note}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <section className="space-y-2">
           <h2 className="font-semibold">Statement of account</h2>
           <div className="rounded-xl border border-border/60 overflow-hidden">
