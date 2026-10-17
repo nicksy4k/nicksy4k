@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.13.2",
+    date: "2026-10-17",
+    title: "A clearer introduction to Ledgerly",
+    icon: Share2,
+    highlights: [
+      "Homepage and sign-in search and sharing descriptions now explain budgeting around monthly or four-weekly pay.",
+      "Removed unrelated Lovable sharing references and the old preview image without changing the page layout.",
+    ],
+  },
+  {
     version: "v3.13.1",
     date: "2026-10-13",
     title: "Planned items sync across devices",

@@ -61,18 +61,20 @@ import { SafeSplitPanel } from "@/components/dashboard/SafeSplitPanel";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Ledgerly Expense Tracker" },
+      { title: "Ledgerly — Budget around your payday" },
       {
         name: "description",
-        content: "Track itemized purchases, receipts, warranties, income and savings.",
+        content: "Budget from payday to payday with Ledgerly. Plan monthly or four-weekly income, bills and BNPL payments, organise money into pockets, and track spending and receipts.",
       },
-      { property: "og:title", content: "Dashboard — Ledgerly Expense Tracker" },
+      { property: "og:title", content: "Ledgerly — Budget around your payday" },
       {
         property: "og:description",
-        content: "Track itemized purchases, receipts, warranties, income and savings.",
+        content: "Budget from payday to payday with Ledgerly. Plan monthly or four-weekly income, bills and BNPL payments, organise money into pockets, and track spending and receipts.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Ledgerly — Budget around your payday" },
+      { name: "twitter:description", content: "Budget from payday to payday with Ledgerly. Plan monthly or four-weekly income, bills and BNPL payments, organise money into pockets, and track spending and receipts." },
     ],
   }),
   component: DashboardPage,
