@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fmt } from "@/lib/format";
-import { previewPurchase } from "@/lib/safeSplit";
+import { previewWithReserve } from "@/lib/safeSplit";
 import { evalSpend, reservedTotal, scratchTotal, type ScratchItem } from "@/lib/spendMath";
 
 const KEY = "ledgerly.scratchpad.v1";
@@ -106,12 +106,13 @@ export function SpendScratchpad({
     setAmt("");
   };
 
-  const total = scratchTotal(items);
-  const pv = previewPurchase(balance, target, total);
-  const playUsed = Math.min(total, pv.before.play);
+  // Locked items are already off play money, so don't count them twice.
+  const total = scratchTotal(items.filter((x) => !x.reserved));
+  const pv = previewWithReserve(balance, target, reservedTotal(items), total);
+  const playUsed = Math.min(total, pv.free);
   const left = Math.max(0, balance);
   const pct = (n: number) => (left > 0 ? Math.min(100, (n / left) * 100) : 0);
-  const status = pv.overBalance ? "over" : pv.intoBuffer > 0 ? "buffer" : "ok";
+  const status = pv.overBalance ? "over" : pv.intoBuffer > 0 ? "buffer" : pv.intoReserved > 0 ? "reserved" : "ok";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,16 +208,17 @@ export function SpendScratchpad({
             </div>
           )}
           <div className="flex justify-between text-sm font-medium">
-            <span>Ticked total</span>
+            <span>Ticked total (not put aside)</span>
             <span className="tabular-nums">{fmt(total)}</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted flex">
             <div className="h-full bg-primary" style={{ width: `${pct(playUsed)}%` }} />
-            <div className="h-full bg-destructive" style={{ width: `${pct(Math.min(pv.intoBuffer, pv.before.keepSafe))}%` }} />
+            <div className="h-full bg-muted-foreground" style={{ width: `${pct(pv.intoReserved)}%` }} />
+            <div className="h-full bg-destructive" style={{ width: `${pct(pv.intoBuffer)}%` }} />
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-            <span>Play left: <span className="text-foreground">{fmt(pv.after.play)}</span></span>
-            <span>Keep safe left: <span className="text-foreground">{fmt(pv.after.keepSafe)}</span></span>
+            <span>Play left: <span className="text-foreground">{fmt(pv.playAfter)}</span></span>
+            <span>Keep safe left: <span className="text-foreground">{fmt(pv.keepSafeAfter)}</span></span>
           </div>
           <p className={`text-sm ${status === "ok" ? "text-muted-foreground" : "text-destructive"}`}>
             {total === 0
@@ -225,7 +227,9 @@ export function SpendScratchpad({
                 ? "That's more than you have left to spend."
                 : status === "buffer"
                   ? `Dips ${fmt(pv.intoBuffer)} into your safety net. Try unticking something.`
-                  : "All fits within play money."}
+                  : status === "reserved"
+                    ? `Dips ${fmt(pv.intoReserved)} into your put-aside money. Try unticking something.`
+                    : "All fits within guilt-free play."}
           </p>
           {items.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => save([])}>

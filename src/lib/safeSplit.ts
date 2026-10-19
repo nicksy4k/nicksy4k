@@ -147,3 +147,27 @@ export function previewPurchase(balance: number, target: number, amount: number)
   const intoBuffer = round(Math.max(0, amount - before.play));
   return { before, after, intoBuffer, overBalance: amount > Math.max(0, balance) };
 }
+
+/**
+ * Preview a purchase taking put-aside money into account. Spending draws from
+ * guilt-free play first, then put-aside money, then Keep safe.
+ */
+export function previewWithReserve(balance: number, target: number, reserved: number, amount: number) {
+  const split = computeSplit(balance, target);
+  const res = round(Math.min(Math.max(0, reserved), split.play));
+  const free = round(split.play - res);
+  const fromPlay = Math.min(amount, free);
+  const rest = amount - fromPlay;
+  const intoReserved = round(Math.min(rest, res));
+  const intoBuffer = round(rest - intoReserved);
+  return {
+    free,
+    reserved: res,
+    playAfter: round(free - fromPlay),
+    intoReserved,
+    reservedAfter: round(res - intoReserved),
+    intoBuffer,
+    keepSafeAfter: round(Math.max(0, split.keepSafe - intoBuffer)),
+    overBalance: amount > Math.max(0, balance),
+  };
+}

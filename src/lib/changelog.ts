@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.14.2",
+    date: "2026-10-19",
+    title: "What-if checks respect put-aside money",
+    icon: ShieldCheck,
+    highlights: [
+      "'What if I buy…' now checks against your Guilt-free play, not the full play money.",
+      "It warns when a purchase would dip into your put-aside money before Keep safe.",
+      "Plan items uses the same maths and no longer counts locked items twice.",
+    ],
+  },
+  {
     version: "v3.14.1",
     date: "2026-10-19",
     title: "Guilt-free play takes centre stage",
