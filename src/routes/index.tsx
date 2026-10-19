@@ -57,6 +57,7 @@ import { promoAlerts } from "@/lib/subscriptions";
 import { AttentionCard, urgentProtections } from "@/components/dashboard/AttentionCard";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { SafeSplitPanel } from "@/components/dashboard/SafeSplitPanel";
+import { useSafeSplit } from "@/lib/safeSplit";
 import { TransferDialog } from "@/components/dashboard/TransferDialog";
 
 export const Route = createFileRoute("/")({
@@ -123,6 +124,7 @@ function DashboardPage() {
   const cycle = useActiveCycle();
   const { prefs } = usePreferences();
   const blur = prefs.blurAmounts ? "amount-blur" : "";
+  const safeSplit = useSafeSplit();
 
   const { openWelcome } = useTutorial();
   const { completed: tutorialCompleted } = useTutorialStatus();
@@ -291,27 +293,31 @@ function DashboardPage() {
         >
           <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="min-w-0">
-
-              <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
-                Left to spend
-              </p>
-              <p
-                className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}
-              >
-                {fmt(stats.leftToSpend)}
-              </p>
-              <p className={`text-sm text-muted-foreground mt-2 ${blur}`}>
+              {safeSplit.enabled ? (
+                <SafeSplitPanel balance={stats.leftToSpend} cycleKey={String(cycle.start)} blur={blur} />
+              ) : (
+                <>
+                  <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1">
+                    Left to spend
+                  </p>
+                  <p
+                    className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight ${blur} ${stats.leftToSpend >= 0 ? "text-foreground" : "text-destructive"}`}
+                  >
+                    {fmt(stats.leftToSpend)}
+                  </p>
+                </>
+              )}
+              <p className={`text-xs text-muted-foreground mt-3 ${blur}`}>
                 {fmt(stats.totalExpenses)} spent · {fmt(stats.totalIncome)} income ·{" "}
                 {fmt(stats.savingsBalance)} saved
               </p>
               {joySpend > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Including{" "}
                   <span className={`font-medium text-foreground ${blur}`}>{fmt(joySpend)}</span> of
                   planned fun — budgeted for, guilt-free.
                 </p>
               )}
-              <SafeSplitPanel balance={stats.leftToSpend} cycleKey={String(cycle.start)} blur={blur} />
             </div>
             <Button asChild size="lg" className="shrink-0 w-full sm:w-auto">
               <Link to="/new">

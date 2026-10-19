@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.14.1",
+    date: "2026-10-19",
+    title: "Guilt-free play takes centre stage",
+    icon: Wallet,
+    highlights: [
+      "The dashboard's big number is now your Guilt-free play — what you can truly spend.",
+      "Left to spend, kept safe and put-aside amounts sit underneath for context.",
+    ],
+  },
+  {
     version: "v3.14.0",
     date: "2026-10-19",
     title: "Put money aside for planned spends",
