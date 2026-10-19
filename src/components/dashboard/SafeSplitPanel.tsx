@@ -62,31 +62,32 @@ export function SafeSplitPanel({
   const newSplit = computeSplit(balance, newTarget);
 
   return (
-    <div className="mt-4 rounded-lg border border-border/60 bg-background/40 p-3 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <ShieldCheck className="h-3.5 w-3.5" /> Keep safe
-          </p>
-          <p className={`text-lg font-semibold tabular-nums ${blur}`}>{fmt(split.keepSafe)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Gamepad2 className="h-3.5 w-3.5" /> Guilt-free play
-          </p>
-          <p className={`text-lg font-semibold tabular-nums text-primary ${blur}`}>
-            {fmt(Math.max(0, split.play - reserved.total))}
-          </p>
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1.5">
+          <Gamepad2 className="h-4 w-4" /> Guilt-free play
+        </p>
+        <p className={`text-4xl md:text-5xl font-bold tabular-nums tracking-tight text-primary ${blur}`}>
+          {fmt(Math.max(0, split.play - reserved.total))}
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          from <span className={`font-medium text-foreground ${blur}`}>{fmt(balance)}</span> left to spend
+          {" · "}
+          <ShieldCheck className="inline h-3.5 w-3.5 -mt-0.5" />{" "}
+          <span className={blur}>{fmt(split.keepSafe)}</span> kept safe
           {reserved.total > 0 && (
-            <button
-              type="button"
-              onClick={() => setPadOpen(true)}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline text-left"
-            >
-              after <span className={blur}>{fmt(reserved.total)}</span> put aside ({reserved.count})
-            </button>
+            <>
+              {" · "}
+              <button
+                type="button"
+                onClick={() => setPadOpen(true)}
+                className="underline-offset-2 hover:underline"
+              >
+                <span className={blur}>{fmt(reserved.total)}</span> put aside ({reserved.count})
+              </button>
+            </>
           )}
-        </div>
+        </p>
       </div>
 
       {balance > 0 && (
