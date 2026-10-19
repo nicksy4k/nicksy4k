@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { ListChecks, Plus, Trash2 } from "lucide-react";
+import { Check, ListChecks, Lock, LockOpen, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,27 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fmt } from "@/lib/format";
 import { previewPurchase } from "@/lib/safeSplit";
-import { evalSpend, scratchTotal, type ScratchItem } from "@/lib/spendMath";
+import { evalSpend, reservedTotal, scratchTotal, type ScratchItem } from "@/lib/spendMath";
 
 const KEY = "ledgerly.scratchpad.v1";
 
-export function SpendScratchpad({ balance, target }: { balance: number; target: number }) {
+export function SpendScratchpad({
+  balance,
+  target,
+  onReservedChange,
+  open,
+  onOpenChange,
+}: {
+  balance: number;
+  target: number;
+  onReservedChange?: (total: number, count: number) => void;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}) {
   const [items, setItems] = useState<ScratchItem[]>([]);
+  useEffect(() => {
+    onReservedChange?.(reservedTotal(items), items.filter((x) => x.reserved).length);
+  }, [items, onReservedChange]);
   const [name, setName] = useState("");
   const [amt, setAmt] = useState("");
 
@@ -99,7 +114,7 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
   const status = pv.overBalance ? "over" : pv.intoBuffer > 0 ? "buffer" : "ok";
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
           <ListChecks className="h-3.5 w-3.5 mr-1" /> Plan items
@@ -109,7 +124,7 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
         <DialogHeader>
           <DialogTitle>Spending scratchpad</DialogTitle>
           <DialogDescription>
-            Try out a few purchases before you spend. Tick and untick to mix and match — nothing is logged.
+            Tick items to test what-ifs. Tap the lock to put money aside — it comes off your play money until you buy it or remove it. Nothing is logged.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,6 +163,31 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
               <span className="text-sm tabular-nums">{fmt(it.amount)}</span>
               <Button
                 size="icon"
+                variant={it.reserved ? "secondary" : "ghost"}
+                className="h-7 w-7"
+                onClick={() => save(items.map((x) => (x.id === it.id ? { ...x, reserved: !x.reserved } : x)))}
+                aria-label={it.reserved ? `Release ${it.name}` : `Put aside ${it.name}`}
+                title={it.reserved ? "Put aside — tap to release" : "Put this money aside"}
+              >
+                {it.reserved ? <Lock className="h-3.5 w-3.5 text-primary" /> : <LockOpen className="h-3.5 w-3.5" />}
+              </Button>
+              {it.reserved && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    if (confirm(`Bought ${it.name}? This clears it from put-aside money — remember to log the real spend.`))
+                      save(items.filter((x) => x.id !== it.id));
+                  }}
+                  aria-label={`Bought ${it.name}`}
+                  title="Bought it"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <Button
+                size="icon"
                 variant="ghost"
                 className="h-7 w-7"
                 onClick={() => save(items.filter((x) => x.id !== it.id))}
@@ -160,6 +200,12 @@ export function SpendScratchpad({ balance, target }: { balance: number; target: 
         </ul>
 
         <div className="space-y-2 rounded-md border border-border/60 p-3">
+          {reservedTotal(items) > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="flex items-center gap-1"><Lock className="h-3.5 w-3.5" /> Put aside</span>
+              <span className="tabular-nums">{fmt(reservedTotal(items))}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm font-medium">
             <span>Ticked total</span>
             <span className="tabular-nums">{fmt(total)}</span>

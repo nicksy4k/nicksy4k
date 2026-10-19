@@ -58,8 +58,15 @@ export interface ScratchItem {
   name: string;
   amount: number;
   on: boolean;
+  /** Put aside: locked out of the dashboard's play money until bought or removed. */
+  reserved?: boolean;
 }
 
 export function scratchTotal(items: ScratchItem[]): number {
   return Math.round(items.filter((x) => x.on).reduce((s, x) => s + (x.amount || 0), 0) * 100) / 100;
+}
+
+/** Total of items marked "put aside" (ring-fenced), regardless of the what-if tick. */
+export function reservedTotal(items: ScratchItem[]): number {
+  return Math.round(items.filter((x) => x.reserved).reduce((s, x) => s + (x.amount || 0), 0) * 100) / 100;
 }
