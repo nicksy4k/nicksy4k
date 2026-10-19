@@ -20,7 +20,7 @@ import { fmt } from "@/lib/format";
 import {
   computeSplit,
   isSafeSplitLoaded,
-  previewPurchase,
+  previewWithReserve,
   setCycleTarget,
   useSafeSplit,
 } from "@/lib/safeSplit";
@@ -56,7 +56,7 @@ export function SafeSplitPanel({
   const target = stored ?? (Math.max(0, balance) * s.keepPct) / 100;
   const split = computeSplit(balance, target);
   const amt = evalSpend(whatIf);
-  const pv = amt !== null && amt > 0 ? previewPurchase(balance, target, amt) : null;
+  const pv = amt !== null && amt > 0 ? previewWithReserve(balance, target, reserved.total, amt) : null;
 
   const newTarget = round2((Math.max(0, balance) * s.keepPct) / 100);
   const newSplit = computeSplit(balance, newTarget);
@@ -179,13 +179,15 @@ export function SafeSplitPanel({
           <p className="text-xs text-muted-foreground">Keep typing — e.g. 18 + 14.50</p>
         )}
         {pv && (
-          <p className={`text-sm ${pv.intoBuffer > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+          <p className={`text-sm ${pv.overBalance || pv.intoBuffer > 0 ? "text-destructive" : pv.intoReserved > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
             {/[+\-*/]/.test(whatIf) && <span className="font-medium text-foreground">Total {fmt(amt!)} · </span>}
             {pv.overBalance
               ? `That's more than you have left to spend.`
               : pv.intoBuffer > 0
-                ? `Dips ${fmt(pv.intoBuffer)} into Keep safe — ${fmt(pv.after.keepSafe)} left for surprises. Bills & food stay covered.`
-                : `Fine — within play money. ${fmt(pv.after.play)} play left after.`}
+                ? `Uses all play and put-aside money, then dips ${fmt(pv.intoBuffer)} into Keep safe — ${fmt(pv.keepSafeAfter)} left for surprises. Bills & food stay covered.`
+                : pv.intoReserved > 0
+                  ? `Uses all guilt-free play and dips ${fmt(pv.intoReserved)} into your ${fmt(pv.reserved)} put aside (${fmt(pv.reservedAfter)} left). Keep safe stays protected.`
+                  : `Fine — within guilt-free play. ${fmt(pv.playAfter)} play left after.`}
           </p>
         )}
       </div>
