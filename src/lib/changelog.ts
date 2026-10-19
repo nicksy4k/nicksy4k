@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.14.0",
+    date: "2026-10-19",
+    title: "Put money aside for planned spends",
+    icon: Wallet,
+    highlights: [
+      "Tap the lock on any Plan item to put that money aside — it comes off your Guilt-free play figure.",
+      "Tick Bought when you've spent it, or unlock it to release the money back to play.",
+    ],
+  },
+  {
     version: "v3.13.4",
     date: "2026-10-17",
     title: "Payment holidays on shared statements",

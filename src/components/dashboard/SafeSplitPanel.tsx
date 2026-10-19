@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, Gamepad2, AlertTriangle, Calculator, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -38,6 +38,9 @@ export function SafeSplitPanel({
 }) {
   const s = useSafeSplit();
   const [whatIf, setWhatIf] = useState("");
+  const [reserved, setReserved] = useState({ total: 0, count: 0 });
+  const [padOpen, setPadOpen] = useState(false);
+  const onReserved = useCallback((total: number, count: number) => setReserved({ total, count }), []);
   const stored = s.targets[cycleKey];
 
   // Lock a target the first time we see this cycle — only after the account's
@@ -71,7 +74,18 @@ export function SafeSplitPanel({
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Gamepad2 className="h-3.5 w-3.5" /> Guilt-free play
           </p>
-          <p className={`text-lg font-semibold tabular-nums text-primary ${blur}`}>{fmt(split.play)}</p>
+          <p className={`text-lg font-semibold tabular-nums text-primary ${blur}`}>
+            {fmt(Math.max(0, split.play - reserved.total))}
+          </p>
+          {reserved.total > 0 && (
+            <button
+              type="button"
+              onClick={() => setPadOpen(true)}
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline text-left"
+            >
+              after <span className={blur}>{fmt(reserved.total)}</span> put aside ({reserved.count})
+            </button>
+          )}
         </div>
       </div>
 
@@ -150,7 +164,7 @@ export function SafeSplitPanel({
           <label className="text-xs text-muted-foreground flex items-center gap-1" htmlFor="whatif">
             <Calculator className="h-3.5 w-3.5" /> What if I buy something for…
           </label>
-          <SpendScratchpad balance={balance} target={target} />
+          <SpendScratchpad balance={balance} target={target} onReservedChange={onReserved} open={padOpen} onOpenChange={setPadOpen} />
         </div>
         <Input
           id="whatif"
