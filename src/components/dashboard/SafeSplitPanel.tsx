@@ -179,7 +179,7 @@ export function SafeSplitPanel({
           <p className="text-xs text-muted-foreground">Keep typing — e.g. 18 + 14.50</p>
         )}
         {pv && (
-          <p className={`text-sm ${pv.overBalance || pv.intoBuffer > 0 ? "text-destructive" : pv.intoReserved > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+          <p className={`text-sm ${pv.overBalance || pv.intoBuffer > 0 ? "text-destructive" : pv.intoReserved > 0 ? "text-foreground" : "text-muted-foreground"}`}>
             {/[+\-*/]/.test(whatIf) && <span className="font-medium text-foreground">Total {fmt(amt!)} · </span>}
             {pv.overBalance
               ? `That's more than you have left to spend.`
