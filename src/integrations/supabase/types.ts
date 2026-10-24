@@ -165,6 +165,7 @@ export type Database = {
           standard_price: number | null
           store: string
           user_id: string
+          variable_amount: boolean
         }
         Insert: {
           amount?: number
@@ -187,6 +188,7 @@ export type Database = {
           standard_price?: number | null
           store?: string
           user_id: string
+          variable_amount?: boolean
         }
         Update: {
           amount?: number
@@ -209,6 +211,7 @@ export type Database = {
           standard_price?: number | null
           store?: string
           user_id?: string
+          variable_amount?: boolean
         }
         Relationships: [
           {
