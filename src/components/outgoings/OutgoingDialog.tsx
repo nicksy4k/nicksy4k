@@ -61,6 +61,7 @@ export function OutgoingDialog({
   const [promoEnds, setPromoEnds] = useState("");
   const [standardPrice, setStandardPrice] = useState("");
   const [debtId, setDebtId] = useState<string>(NO_DEBT);
+  const [variable, setVariable] = useState(false);
 
   const standardDebts = debts.filter((d) => d.kind !== "bnpl");
   const bnplLocked = !!editing?.debt_id && !standardDebts.some((d) => d.id === editing.debt_id);
@@ -90,6 +91,7 @@ export function OutgoingDialog({
       typeof editing?.standard_price === "number" ? String(editing.standard_price) : "",
     );
     setDebtId(editing?.debt_id ?? NO_DEBT);
+    setVariable(!!editing?.variable_amount);
   }, [open, editing, categories, defaultSubscription]);
 
   async function submit() {
@@ -116,6 +118,7 @@ export function OutgoingDialog({
       paid,
       is_subscription: isSub,
       cadence: isSub ? cadence : "monthly",
+      variable_amount: variable,
       promo_price: usePromo ? amt : null,
       promo_ends_on: usePromo ? promoEnds : null,
       standard_price: usePromo && std > 0 ? std : null,
@@ -238,6 +241,17 @@ export function OutgoingDialog({
                 <Label htmlFor="paid">Marked as paid</Label>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <Label htmlFor="variable-amount">Amount varies</Label>
+              <p className="text-xs text-muted-foreground">
+                For foreign-currency or metered bills. Set a slightly high estimate; you'll be asked
+                for the actual charge when marking it paid.
+              </p>
+            </div>
+            <Switch id="variable-amount" checked={variable} onCheckedChange={setVariable} />
           </div>
 
           {isSub && (

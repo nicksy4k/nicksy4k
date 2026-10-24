@@ -42,6 +42,17 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.15.0",
+    date: "2026-10-24",
+    title: "Outgoings whose price varies",
+    icon: Repeat,
+    highlights: [
+      "Turn on 'Amount varies' for foreign-currency or metered bills like a USD donation.",
+      "Marking one paid asks for the actual amount charged, so pockets match your bank to the penny.",
+      "The outgoing keeps your estimate for budgeting — set it a little high as a buffer.",
+    ],
+  },
+  {
     version: "v3.14.2",
     date: "2026-10-19",
     title: "What-if checks respect put-aside money",

@@ -74,7 +74,17 @@ export function ResetOptions({
   }, [linkedDebt, base]);
   const onPlan = linkedDebt?.kind === "bnpl";
 
-  const go = (newDue: string) => void onConfirm(item, newDue, source);
+  const variable = !!item.variable_amount;
+  const [actual, setActual] = useState(String(item.amount));
+  useEffect(() => setActual(String(item.amount)), [item.id, item.amount]);
+
+  const go = (newDue: string) => {
+    if (!variable) return void onConfirm(item, newDue, source);
+    const amt = Math.round(parseFloat(actual) * 100) / 100;
+    if (!(amt > 0)) return;
+    // Log the real charge; the outgoing keeps its estimate for future budgeting.
+    void onConfirm({ ...item, amount: amt }, newDue, source);
+  };
 
   return (
     <div className="space-y-3 text-sm">
@@ -82,6 +92,27 @@ export function ResetOptions({
         Marking <span className="font-medium text-foreground">{item.item_name}</span> as paid will
         advance its next {isSub ? "renewal" : "due"} date. Choose how to roll it forward:
       </p>
+
+      {variable && (
+        <div className="rounded-md border border-primary/40 bg-primary/5 p-3 space-y-2">
+          <Label htmlFor="actual-amount" className="text-xs uppercase tracking-wider text-muted-foreground">
+            Actual amount charged
+          </Label>
+          <Input
+            id="actual-amount"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={actual}
+            onChange={(e) => setActual(e.target.value)}
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            Estimate £{item.amount.toFixed(2)} — enter what your bank actually took so balances match.
+          </p>
+        </div>
+      )}
 
       <div className="rounded-md border border-border p-3 space-y-2">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Paid from</Label>
@@ -105,6 +136,7 @@ export function ResetOptions({
           </SelectContent>
         </Select>
       </div>
+
 
       {onPlan ? (
         <div className="space-y-2">

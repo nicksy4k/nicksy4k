@@ -171,6 +171,8 @@ export interface Commitment {
 
   /** Discounted intro price currently in effect (mirrors `amount`). */
   promo_price?: number | null;
+  /** Charge varies (e.g. FX); ask for the actual amount when marking paid. */
+  variable_amount?: boolean;
   /** Date the discounted price ends (yyyy-mm-dd). */
   promo_ends_on?: string | null;
   /** Price the subscription reverts to once the offer ends. */
