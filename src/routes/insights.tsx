@@ -33,12 +33,13 @@ const QUICK = [
   "🥤 How many energy drinks have I bought this cycle and what did they cost?",
   "🍔 How much have I spent on takeaways this cycle?",
   "🏷️ Which items have I paid different prices for, and where was cheapest?",
+  "🧸 What's my average spend on plushies per cycle?",
   "🎯 What outgoings are still due before payday?",
 ];
 
 type Msg = { role: "user" | "assistant"; text: string };
 
-function AskLedgerly({ cycleStart, cycleEnd }: { cycleStart: string; cycleEnd: string }) {
+function AskLedgerly({ cycleStart, cycleEnd, cycleType }: { cycleStart: string; cycleEnd: string; cycleType: string }) {
   const ask = useServerFn(askLedgerly);
   const [q, setQ] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -54,7 +55,7 @@ function AskLedgerly({ cycleStart, cycleEnd }: { cycleStart: string; cycleEnd: s
     setMsgs((m) => [...m, { role: "user", text: question }]);
     setQ("");
     try {
-      const res = await ask({ data: { question, cycleStart, cycleEnd, history } });
+      const res = await ask({ data: { question, cycleStart, cycleEnd, cycleType, history } });
       if (res.error) setErr(res.error);
       else setMsgs((m) => [...m, { role: "assistant", text: res.answer }]);
     } catch {
@@ -170,7 +171,7 @@ function InsightsPage() {
         </p>
       </div>
 
-      <AskLedgerly cycleStart={cycle.startISO} cycleEnd={cycle.endISO} />
+      <AskLedgerly cycleStart={cycle.startISO} cycleEnd={cycle.endISO} cycleType={cycle.type} />
 
       <Card>
         <CardHeader>
