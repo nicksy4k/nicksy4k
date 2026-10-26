@@ -14,6 +14,7 @@ import {
   Settings,
   TrendingUp,
   type LucideIcon,
+  Sparkles,
 } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
