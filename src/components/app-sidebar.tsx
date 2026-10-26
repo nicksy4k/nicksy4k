@@ -45,6 +45,7 @@ type NavItem = {
     | "/credit"
     | "/archive"
     | "/reports"
+    | "/insights"
     | "/settings";
   label: string;
   icon: LucideIcon;
@@ -84,6 +85,7 @@ const groups: NavGroup[] = [
   {
     label: "Plan & review",
     items: [
+      { to: "/insights", label: "Insights", icon: Sparkles },
       { to: "/reports", label: "Reports", icon: BarChart3 },
       { to: "/archive", label: "Past Cycles", icon: Archive },
     ],

@@ -33,6 +33,7 @@ type Path =
   | "/credit"
   | "/archive"
   | "/reports"
+  | "/insights"
   | "/settings";
 
 const moreLinks: Array<{ to: Path; label: string; icon: LucideIcon }> = [
@@ -40,7 +41,8 @@ const moreLinks: Array<{ to: Path; label: string; icon: LucideIcon }> = [
   { to: "/income", label: "Income", icon: TrendingUp },
   { to: "/savings", label: "Savings & Pockets", icon: PiggyBank },
   { to: "/credit", label: "Credit & Debt", icon: CreditCard },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/insights", label: "Insights", icon: Sparkles },
+      { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/archive", label: "Past Cycles", icon: Archive },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

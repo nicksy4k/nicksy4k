@@ -42,6 +42,18 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.16.0",
+    date: "2026-10-26",
+    title: "Insights & Ask Ledgerly",
+    icon: Sparkles,
+    highlights: [
+      "New Insights page: cycle pulse, no-spend days, daily burn and pace vs last cycle.",
+      "Habit spotlights for energy drinks, takeaways, plushies and vape supplies, matched from receipt items.",
+      "Price check shows your best and highest price for things you buy often.",
+      "Ask Ledgerly: a read-only AI helper that answers questions about your own spending.",
+    ],
+  },
+  {
     version: "v3.15.0",
     date: "2026-10-24",
     title: "Outgoings whose price varies",

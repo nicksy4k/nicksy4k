@@ -135,7 +135,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 }
 
 function InsightsPage() {
-  const { list: txs = [] } = useTransactions() as unknown as { list: import("@/lib/types").Transaction[] };
+  const { items: txs } = useTransactions();
   const cycle = useActiveCycle();
   const today = todayLocalISO();
 
