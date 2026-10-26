@@ -970,6 +970,7 @@ export type Database = {
           cycle_override_end: string | null
           cycle_override_start: string | null
           cycle_type: string
+          habits: Json | null
           hidden_items: string[]
           hidden_retailers: string[]
           hide_category_chart: boolean
@@ -992,6 +993,7 @@ export type Database = {
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          habits?: Json | null
           hidden_items?: string[]
           hidden_retailers?: string[]
           hide_category_chart?: boolean
@@ -1014,6 +1016,7 @@ export type Database = {
           cycle_override_end?: string | null
           cycle_override_start?: string | null
           cycle_type?: string
+          habits?: Json | null
           hidden_items?: string[]
           hidden_retailers?: string[]
           hide_category_chart?: boolean
