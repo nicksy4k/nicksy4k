@@ -165,3 +165,107 @@ export function priceChecks(txs: Transaction[], limit = 6): PriceCheck[] {
   }
   return out.sort((a, b) => b.buys - a.buys).slice(0, limit);
 }
+
+/** A user habit: preset or custom, optionally with a per-cycle budget. */
+export interface CustomHabit extends HabitPreset {
+  budget?: number | null;
+  /** Scratchpad item id whose amount acts as the budget. */
+  scratchId?: string | null;
+  hidden?: boolean;
+}
+
+/** Merge saved habits over the presets (saved preset rows override, hidden ones drop out). */
+export function mergeHabits(saved: CustomHabit[] | null | undefined): CustomHabit[] {
+  const list = Array.isArray(saved) ? saved : [];
+  const byId = new Map(list.map((h) => [h.id, h]));
+  const presets = HABIT_PRESETS.map((p) => ({ ...p, ...(byId.get(p.id) ?? {}) }));
+  const custom = list.filter((h) => !HABIT_PRESETS.some((p) => p.id === h.id));
+  return [...presets, ...custom].filter((h) => !h.hidden);
+}
+
+/** Keywords from a comma-separated string, trimmed, lowercased, de-duplicated. */
+export function parseKeywords(s: string): string[] {
+  return [...new Set(s.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean))];
+}
+
+/** Budget progress: pct used (can exceed 100) and amount left (never below 0). */
+export function budgetProgress(spent: number, budget: number) {
+  if (!(budget > 0)) return null;
+  const pct = Math.round((spent / budget) * 100);
+  return { pct, left: Math.max(0, Math.round((budget - spent) * 100) / 100), over: spent > budget };
+}
+
+/**
+ * Play-money runway: how many days the remaining play money lasts at the
+ * current daily burn, and whether it reaches payday.
+ */
+export function playRunway(play: number, burn: number, daysLeft: number) {
+  const safeDaily = daysLeft > 0 ? Math.round((Math.max(0, play) / daysLeft) * 100) / 100 : Math.max(0, play);
+  if (play <= 0) return { days: 0, reachesPayday: daysLeft === 0, safeDaily: 0 };
+  if (burn <= 0) return { days: Infinity, reachesPayday: true, safeDaily };
+  const days = Math.floor(play / burn);
+  return { days, reachesPayday: days >= daysLeft, safeDaily };
+}
+
+/** Line items priced at or under the threshold (default £5) in range. */
+export function smallSpends(txs: Transaction[], startISO: string, endISO: string, threshold = 5) {
+  let count = 0;
+  let total = 0;
+  const names = new Map<string, number>();
+  for (const t of usable(txs)) {
+    if (!inRange(t.date, startISO, endISO)) continue;
+    for (const it of t.items ?? []) {
+      if (!(it.price > 0) || it.price > threshold) continue;
+      const q = it.quantity ?? 1;
+      count += q;
+      total += it.price * q;
+      const n = (it.item_name ?? "").trim() || "Item";
+      names.set(n, (names.get(n) ?? 0) + it.price * q);
+    }
+  }
+  const top = [...names.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, amt]) => ({ name, total: Math.round(amt * 100) / 100 }));
+  return { count, total: Math.round(total * 100) / 100, top };
+}
+
+const PLATFORMS: { name: string; keys: string[] }[] = [
+  { name: "Just Eat", keys: ["just eat", "justeat"] },
+  { name: "Deliveroo", keys: ["deliveroo"] },
+  { name: "Uber Eats", keys: ["uber eats", "ubereats"] },
+];
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Takeaway orders grouped by platform and day of week. */
+export function takeawayBreakdown(txs: Transaction[], keywords: string[], startISO: string, endISO: string) {
+  const plat = new Map<string, { orders: number; total: number }>();
+  const days = DOW.map((d) => ({ day: d, orders: 0 }));
+  for (const t of usable(txs)) {
+    if (!inRange(t.date, startISO, endISO)) continue;
+    const r = lc(t.retailer);
+    const retailerHit = matches(t.retailer, keywords);
+    const items = (t.items ?? []).filter(
+      (it) => retailerHit || matches(it.item_name, keywords) || matches(it.category, keywords),
+    );
+    if (!items.length) continue;
+    const amt = items.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0);
+    const name = PLATFORMS.find((p) => p.keys.some((k) => r.includes(k)))?.name ?? "Direct / in-store";
+    const e = plat.get(name) ?? { orders: 0, total: 0 };
+    e.orders += 1;
+    e.total += amt;
+    plat.set(name, e);
+    days[parseISO(t.date).getDay()].orders += 1;
+  }
+  const platforms = [...plat.entries()]
+    .map(([name, e]) => ({ name, orders: e.orders, total: Math.round(e.total * 100) / 100 }))
+    .sort((a, b) => b.total - a.total);
+  return { platforms, days };
+}
+
+/** Repeat items whose latest price is above the best price seen. */
+export function priceAlerts(checks: PriceCheck[]) {
+  return checks
+    .filter((c) => c.last.price > c.low.price)
+    .map((c) => ({ ...c, extra: Math.round((c.last.price - c.low.price) * 100) / 100 }));
+}
