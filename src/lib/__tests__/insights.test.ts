@@ -37,3 +37,15 @@ describe("insights", () => {
     expect(m.high).toMatchObject({ price: 2.2, retailer: "Premier" });
   });
 });
+
+import { pastCycleWindows } from "../api/insights-ai.functions";
+describe("pastCycleWindows", () => {
+  it("steps back 28 days per four-weekly cycle with no gaps", () => {
+    const w = pastCycleWindows("2026-10-08", "2026-11-04", "four-weekly", 3);
+    expect(w).toEqual([
+      { start: "2026-10-08", end: "2026-11-04" },
+      { start: "2026-09-10", end: "2026-10-07" },
+      { start: "2026-08-13", end: "2026-09-09" },
+    ]);
+  });
+});
