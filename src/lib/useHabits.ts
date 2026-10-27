@@ -5,13 +5,22 @@ import type { CustomHabit } from "./insights";
 
 const KEY = "ledgerly.habits.v1";
 
+export interface ScratchRef {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 export function useSavedHabits() {
   const [saved, setSaved] = useState<CustomHabit[]>([]);
+  const [scratch, setScratch] = useState<ScratchRef[]>([]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setSaved(JSON.parse(raw));
+      const sp = localStorage.getItem("ledgerly.scratchpad.v1");
+      if (sp) setScratch(JSON.parse(sp));
     } catch {
       /* ignore */
     }
@@ -20,14 +29,15 @@ export function useSavedHabits() {
       if (!u.user) return;
       const { data } = await supabase
         .from("user_settings")
-        .select("habits" as never)
+        .select("habits, scratchpad" as never)
         .eq("user_id", u.user.id)
         .maybeSingle();
-      const remote = (data as { habits?: unknown } | null)?.habits;
-      if (Array.isArray(remote)) {
-        setSaved(remote as CustomHabit[]);
-        localStorage.setItem(KEY, JSON.stringify(remote));
+      const row = data as { habits?: unknown; scratchpad?: unknown } | null;
+      if (Array.isArray(row?.habits)) {
+        setSaved(row.habits as CustomHabit[]);
+        localStorage.setItem(KEY, JSON.stringify(row.habits));
       }
+      if (Array.isArray(row?.scratchpad)) setScratch(row.scratchpad as ScratchRef[]);
     })();
   }, []);
 
@@ -46,5 +56,5 @@ export function useSavedHabits() {
       .eq("user_id", u.user.id);
   };
 
-  return { saved, save };
+  return { saved, save, scratch };
 }
