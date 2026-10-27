@@ -42,6 +42,19 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.17.0",
+    date: "2026-10-26",
+    title: "Deeper Insights",
+    icon: Sparkles,
+    highlights: [
+      "Add your own habit trackers with match words, and hide the ones you don't need. They sync across devices.",
+      "Give a habit a budget per cycle, or link it to a scratchpad item, and see a progress bar.",
+      "Play money runway: see if your guilt-free play lasts to payday and a safe daily amount.",
+      "New £5 & under club and a takeaways breakdown by app and day of the week.",
+      "Price check now flags when you last paid more than your best price.",
+    ],
+  },
+  {
     version: "v3.16.0",
     date: "2026-10-26",
     title: "Insights & Ask Ledgerly",

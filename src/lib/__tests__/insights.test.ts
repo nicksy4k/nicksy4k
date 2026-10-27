@@ -49,3 +49,36 @@ describe("pastCycleWindows", () => {
     ]);
   });
 });
+
+import { budgetProgress, mergeHabits, parseKeywords, playRunway, priceAlerts, smallSpends } from "../insights";
+
+describe("deeper insights", () => {
+  it("runway: £50 play at £5/day lasts 10 days, reaching payday in 8", () => {
+    expect(playRunway(50, 5, 8)).toEqual({ days: 10, reachesPayday: true, safeDaily: 6.25 });
+  });
+  it("runway: £20 play at £5/day does not reach payday in 8 days", () => {
+    expect(playRunway(20, 5, 8).reachesPayday).toBe(false);
+  });
+  it("budget: £28.50 of £40 is 71% with £11.50 left", () => {
+    expect(budgetProgress(28.5, 40)).toEqual({ pct: 71, left: 11.5, over: false });
+  });
+  it("small spends counts only items at or under £5", () => {
+    const tx = [{ date: "2026-10-10", retailer: "Shop", total_amount: 8, is_pending: false,
+      items: [{ item_name: "Can", price: 1.5, quantity: 2 }, { item_name: "Book", price: 5.01 }] }] as never;
+    expect(smallSpends(tx, "2026-10-01", "2026-10-31")).toMatchObject({ count: 2, total: 3 });
+  });
+  it("hiding a preset removes it; custom habits are added", () => {
+    const list = mergeHabits([{ id: "vape", label: "Vape", emoji: "", keywords: [], hidden: true },
+      { id: "h_1", label: "Coffee", emoji: "☕", keywords: ["coffee"] }]);
+    expect(list.some((h) => h.id === "vape")).toBe(false);
+    expect(list.some((h) => h.id === "h_1")).toBe(true);
+  });
+  it("parses keywords", () => {
+    expect(parseKeywords(" Coffee, latte ,,coffee")).toEqual(["coffee", "latte"]);
+  });
+  it("price alert when last price is above best", () => {
+    const a = priceAlerts([{ item: "Red Bull", buys: 2, low: { price: 1.25, retailer: "Tesco" },
+      high: { price: 1.65, retailer: "Shop" }, last: { price: 1.65, retailer: "Shop", date: "2026-10-20" } }]);
+    expect(a[0].extra).toBe(0.4);
+  });
+});
