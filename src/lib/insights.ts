@@ -38,6 +38,14 @@ export const HABIT_PRESETS: HabitPreset[] = [
 
 const lc = (s: string | null | undefined) => (s ?? "").toLowerCase();
 
+/** Fees, postage, protection and discount lines — not real "items". */
+const AUX_RE =
+  /\b(postage|shipping|delivery|p\s*&\s*p|courier|buyer'?s?\s*protection|protection fee|service (fee|charge)|platform fee|small order fee|bag (fee|charge)|carrier bag|discount|voucher|promo(tion)?|coupon|tip|rider tip|fee)\b/i;
+export function isAuxiliary(it: { item_name?: string | null; category?: string | null; price?: number }): boolean {
+  if ((it.price ?? 0) < 0) return true;
+  return AUX_RE.test(it.item_name ?? "") || /^(fees?|postage|delivery|discounts?)$/i.test((it.category ?? "").trim());
+}
+
 function matches(text: string, keywords: string[]): boolean {
   const t = lc(text);
   return keywords.some((k) => t.includes(k.toLowerCase()));
