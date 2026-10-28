@@ -36,6 +36,13 @@
       "when": 1792800000000,
       "tag": "0004_variable_outgoings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793168164735,
+      "tag": "0005_harden_has_role",
+      "breakpoints": true
     }
   ]
 }
