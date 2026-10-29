@@ -82,6 +82,7 @@ export function habitStats(
     const retailerHit = matches(t.retailer, keywords);
     let hit = false;
     for (const it of t.items ?? []) {
+      if (isAuxiliary(it)) continue;
       if (retailerHit || matches(it.item_name, keywords) || matches(it.category, keywords)) {
         const q = it.quantity ?? 1;
         count += q;
@@ -157,7 +158,7 @@ export function priceChecks(txs: Transaction[], limit = 6): PriceCheck[] {
   for (const t of usable(txs)) {
     for (const it of t.items ?? []) {
       const name = (it.item_name ?? "").trim();
-      if (!name || !(it.price > 0)) continue;
+      if (!name || !(it.price > 0) || isAuxiliary(it)) continue;
       const key = name.toLowerCase();
       const e = m.get(key) ?? { item: name, rows: [] };
       e.rows.push({ price: it.price, retailer: t.retailer ?? "", date: t.date });
@@ -223,7 +224,7 @@ export function smallSpends(txs: Transaction[], startISO: string, endISO: string
   for (const t of usable(txs)) {
     if (!inRange(t.date, startISO, endISO)) continue;
     for (const it of t.items ?? []) {
-      if (!(it.price > 0) || it.price > threshold) continue;
+      if (!(it.price > 0) || it.price > threshold || isAuxiliary(it)) continue;
       const q = it.quantity ?? 1;
       count += q;
       total += it.price * q;

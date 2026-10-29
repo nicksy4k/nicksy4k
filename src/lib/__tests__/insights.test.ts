@@ -82,3 +82,12 @@ describe("deeper insights", () => {
     expect(a[0].extra).toBe(0.4);
   });
 });
+
+import { isAuxiliary } from "../insights";
+describe("auxiliary fee filter", () => {
+  it("flags postage, protection, fees and discounts", () => {
+    for (const n of ["Postage", "Buyer Protection fee", "Service fee", "Delivery fee", "Discount"]) expect(isAuxiliary({ item_name: n, price: 1 })).toBe(true);
+    expect(isAuxiliary({ item_name: "Blue husky plush", price: 2 })).toBe(false);
+    expect(isAuxiliary({ item_name: "Promo", price: -3 })).toBe(true);
+  });
+});
