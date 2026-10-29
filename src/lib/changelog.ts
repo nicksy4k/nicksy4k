@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.17.1",
+    date: "2026-10-28",
+    title: "Insights ignore fees and postage",
+    icon: Sparkles,
+    highlights: [
+      "Habit spotlights, price checks, the £5 & under club and Ask Ledgerly now leave out postage, delivery, buyer protection, service fees and discounts, so they focus on the actual items you bought.",
+    ],
+  },
+  {
     version: "v3.17.0",
     date: "2026-10-26",
     title: "Deeper Insights",
