@@ -22,8 +22,8 @@ describe("insights", () => {
     const s = habitStats(txs, ["monster"], "2026-10-08", "2026-11-04");
     expect(s).toEqual({ count: 5, orders: 2, total: 8.2, avgUnit: 1.64 });
   });
-  it("counts every item from a takeaway retailer", () => {
-    expect(habitStats(txs, ["deliveroo"], "2026-10-08", "2026-11-04").total).toBe(14.99);
+  it("counts takeaway food but not the delivery fee", () => {
+    expect(habitStats(txs, ["deliveroo"], "2026-10-08", "2026-11-04").total).toBe(12);
   });
   it("counts no-spend days in the elapsed part of the cycle", () => {
     const p = pulse(txs, "2026-10-08", "2026-11-04", "2026-10-14");
