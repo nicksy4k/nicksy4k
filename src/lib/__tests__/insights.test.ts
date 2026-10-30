@@ -91,3 +91,22 @@ describe("auxiliary fee filter", () => {
     expect(isAuxiliary({ item_name: "Promo", price: -3 })).toBe(true);
   });
 });
+
+import { matches as habitMatch, HABIT_PRESETS as PRESETS } from "../insights";
+describe("habit keyword matching", () => {
+  const energy = PRESETS.find((p) => p.id === "energy")!.keywords;
+  const vape = PRESETS.find((p) => p.id === "vape")!.keywords;
+  it("ignores energy bills and Amazon Prime", () => {
+    expect(habitMatch("OCTOPUS ENERGY", energy)).toBe(false);
+    expect(habitMatch("EDF ENERGY", energy)).toBe(false);
+    expect(habitMatch("AMAZON PRIME", energy)).toBe(false);
+  });
+  it("still counts real energy drinks", () => {
+    expect(habitMatch("Monster Energy 500ml", energy)).toBe(true);
+    expect(habitMatch("Prime Hydration", energy)).toBe(true);
+  });
+  it("vape pods but not podcasts", () => {
+    expect(habitMatch("Spotify podcast", vape)).toBe(false);
+    expect(habitMatch("Elux pods x2", vape)).toBe(true);
+  });
+});
