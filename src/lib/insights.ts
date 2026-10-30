@@ -46,9 +46,21 @@ export function isAuxiliary(it: { item_name?: string | null; category?: string |
   return AUX_RE.test(it.item_name ?? "") || /^(fees?|postage|delivery|discounts?)$/i.test((it.category ?? "").trim());
 }
 
-function matches(text: string, keywords: string[]): boolean {
+/** Bills, utilities and subscriptions that share words with habit keywords ("energy", "prime", "pod"). */
+const NOT_HABIT_RE =
+  /\b(octopus|edf|e\.?on|ovo|british gas|scottish power|sse|bulb|so energy|utility|bill|tariff|electric(ity)?|gas|amazon prime|prime video|prime membership|podcast|ipod|airpods?)\b/i;
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Whole-word, case-insensitive keyword match (prefix allowed so "plush" matches "plushie"). */
+export function matches(text: string | null | undefined, keywords: string[]): boolean {
   const t = lc(text);
-  return keywords.some((k) => t.includes(k.toLowerCase()));
+  if (!t || NOT_HABIT_RE.test(t)) return false;
+  return keywords.some((k) => {
+    const kw = k.trim().toLowerCase();
+    if (!kw) return false;
+    return new RegExp(`(^|[^a-z0-9])${escapeRe(kw)}`, "i").test(t);
+  });
 }
 
 function inRange(date: string, startISO: string, endISO: string) {
