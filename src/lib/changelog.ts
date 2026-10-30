@@ -42,10 +42,13 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
-    version: "3.17.2",
+    version: "v3.17.2",
     date: "2026-10-30",
     title: "Energy bills no longer count as energy drinks",
-    items: ["Habit trackers now match whole words and skip bills like Octopus Energy, EDF and Amazon Prime, plus podcasts for vape pods."],
+    icon: Sparkles,
+    highlights: [
+      "Habit trackers now match whole words and skip bills like Octopus Energy, EDF and Amazon Prime, and podcasts no longer count as vape pods.",
+    ],
   },
   {
     version: "v3.17.1",
