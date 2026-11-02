@@ -1,3 +1,5 @@
+import { SpendTypePill } from "@/components/SpendTypePill";
+import type { SpendType } from "@/lib/spendType";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTransactions, useCategories, useSavings } from "@/lib/store";
 import type { Category, LineItem, PaymentSplit, ReceiptType, Transaction } from "@/lib/types";
@@ -91,6 +93,7 @@ interface DraftRow {
   quantity: string;
   category: Category;
   notes: string;
+  spend_type?: SpendType | null;
 }
 
 function toDraft(i: LineItem): DraftRow {
@@ -101,6 +104,7 @@ function toDraft(i: LineItem): DraftRow {
     quantity: String(i.quantity ?? 1),
     category: i.category,
     notes: i.notes ?? "",
+    spend_type: i.spend_type ?? null,
   };
 }
 
@@ -479,6 +483,7 @@ function EditTransactionDialog({
         quantity: Math.max(1, parseInt(r.quantity, 10) || 1),
         category: r.category,
         notes: r.notes.trim() || undefined,
+        spend_type: r.spend_type ?? undefined,
       }));
 
     // Still-pending: the estimated total comes from the first row price.
@@ -918,6 +923,15 @@ function EditTransactionDialog({
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      {r.category && (
+                        <div className="mt-1.5">
+                          <SpendTypePill
+                            category={r.category}
+                            value={r.spend_type}
+                            onChange={(v) => updateRow(r.id, { spend_type: v })}
+                          />
+                        </div>
+                      )}
                     </Field>
 
                     <Field label="Notes">

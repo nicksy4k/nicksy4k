@@ -30,7 +30,6 @@ export function SpendTypePill({
       )}
     >
       {essential ? "Essential" : "Fun / Personal"}
-      {value ? " ·" : ""}
     </button>
   );
 }

@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
+import { SpendTypePill } from "@/components/SpendTypePill";
+import type { SpendType } from "@/lib/spendType";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransactions, useCategories, useSavings, useDebts, useCommitments } from "@/lib/store";
 import {
@@ -90,6 +92,7 @@ interface DraftItem {
   quantity: string;
   category: Category;
   notes: string;
+  spend_type?: SpendType | null;
 }
 
 function emptyItem(defaultCat: Category = ""): DraftItem {
@@ -510,6 +513,7 @@ function NewTransactionPage() {
         quantity: qty,
         category: i.category,
         notes: i.notes.trim() || undefined,
+        spend_type: i.spend_type ?? undefined,
       };
     });
 
@@ -1241,6 +1245,15 @@ function NewTransactionPage() {
                         </SelectContent>
                       </Select>
                       <FieldError message={errorOf(`item.${item.id}.category`)} />
+                      {item.category && (
+                        <div className="mt-1.5">
+                          <SpendTypePill
+                            category={item.category}
+                            value={item.spend_type}
+                            onChange={(v) => updateItem(item.id, { spend_type: v })}
+                          />
+                        </div>
+                      )}
                     </Field>
                   </div>
 
