@@ -32,6 +32,7 @@ import {
   type CustomHabit,
 } from "@/lib/insights";
 import { askLedgerly } from "@/lib/api/insights-ai.functions";
+import { spendSplit } from "@/lib/spendType";
 
 export const Route = createFileRoute("/insights")({
   head: () => ({
@@ -314,6 +315,10 @@ function InsightsPage() {
   const prices = useMemo(() => priceChecks(txs, 10), [txs]);
   const alerts = useMemo(() => priceAlerts(prices), [prices]);
   const small = useMemo(() => smallSpends(txs, cycle.startISO, cycle.endISO), [txs, cycle.startISO, cycle.endISO]);
+  const split = useMemo(
+    () => spendSplit(txs, cycle.startISO, cycle.endISO, today),
+    [txs, cycle.startISO, cycle.endISO, today],
+  );
   const takeawayKw = habitList.find((h) => h.id === "takeaway")?.keywords ?? HABIT_PRESETS[1].keywords;
   const takeaways = useMemo(
     () => takeawayBreakdown(txs, takeawayKw, cycle.startISO, cycle.endISO),
@@ -379,6 +384,33 @@ function InsightsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Essential vs Fun</CardTitle>
+          <CardDescription>This cycle's items, by what they were for.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Essential living</p>
+              <p className="text-xl font-semibold tabular-nums">{fmt(split.essential)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Fun / Personal</p>
+              <p className="text-xl font-semibold tabular-nums text-primary">{fmt(split.fun)}</p>
+            </div>
+          </div>
+          {split.essential + split.fun > 0 && (
+            <Progress value={(split.essential / (split.essential + split.fun)) * 100} />
+          )}
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{split.noImpulseDays}</span> of {split.elapsedDays} days
+            this cycle had no fun spending.
+          </p>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">

@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.18.0",
+    date: "2026-11-02",
+    title: "Essential vs Fun / Personal (trial)",
+    icon: Sparkles,
+    highlights: [
+      "Each item is tagged Essential or Fun / Personal based on its category; tap the tag when adding or editing to flip it.",
+      "Insights shows this cycle's Essential vs Fun split and how many days had no fun spending.",
+    ],
+  },
+  {
     version: "v3.17.3",
     date: "2026-11-02",
     title: "\"After payday\" tag on upcoming bills",
