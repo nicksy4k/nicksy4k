@@ -33,6 +33,8 @@ export interface LineItem {
   quantity?: number;
   category: Category;
   notes?: string;
+  /** Essential vs Fun/Personal override; falls back to the category default. */
+  spend_type?: "essential" | "fun" | null;
 }
 
 /** Source encoding: "main" | "pocket:<name>" | "bnpl:<debtId>" | "other" */
