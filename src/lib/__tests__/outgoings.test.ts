@@ -302,3 +302,20 @@ describe("linked debt part-payments", () => {
     expect(debtPaymentCoversLinkedOutgoing({ id: "plan", payments: [] } as never, payInFour, 12.5)).toBe(true);
   });
 });
+
+describe("dueSoonOutgoings after payday", () => {
+  it("flags rows due after the cycle end", () => {
+    const { rows } = dueSoonOutgoings(
+      [
+        commitment({ item_name: "Phone", amount: 10, next_due_date: "2026-11-03" }),
+        commitment({ item_name: "Service", amount: 60, next_due_date: "2026-11-06" }),
+      ],
+      [],
+      new Date("2026-11-02T12:00:00Z"),
+      7,
+      "Bill Money",
+      "2026-11-04",
+    );
+    expect(rows.map((r) => r.afterPayday)).toEqual([false, true]);
+  });
+});

@@ -142,8 +142,16 @@ function DashboardPage() {
 
   // Cycle-scoped slices — drive every summary, chart, and alert below.
   const dueSoon = useMemo(
-    () => dueSoonOutgoings(demo.active ? [] : commitments, realSavings),
-    [commitments, realSavings, demo.active],
+    () =>
+      dueSoonOutgoings(
+        demo.active ? [] : commitments,
+        realSavings,
+        new Date(),
+        7,
+        "Bill Money",
+        cycle.endISO,
+      ),
+    [commitments, realSavings, demo.active, cycle.endISO],
   );
 
   const cycleItems = useMemo(() => items.filter((t) => isInCycle(t.date, cycle)), [items, cycle]);
