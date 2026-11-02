@@ -42,6 +42,15 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.17.3",
+    date: "2026-11-02",
+    title: "\"After payday\" tag on upcoming bills",
+    icon: Sparkles,
+    highlights: [
+      "Bills on the Needs your attention card that fall in your next cycle now show an \"After payday\" tag instead of a scary red \"Not covered\".",
+    ],
+  },
+  {
     version: "v3.17.2",
     date: "2026-10-30",
     title: "Energy bills no longer count as energy drinks",

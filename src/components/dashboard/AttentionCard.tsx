@@ -565,11 +565,12 @@ function AlertRow({
 }
 
 function DueRow({ row, onMarkPaid, onView }: { row: DueSoonOutgoing; onMarkPaid?: (c: Commitment) => void; onView?: () => void }) {
-  const { commitment: c, daysUntil, overdue, funded } = row;
-  const tone = overdue || funded === "none" ? "destructive" : funded === "partial" ? "amber" : "emerald";
-  const chipClass = overdue || funded === "none" ? "bg-destructive/15 text-destructive border-destructive/30" : funded === "partial" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+  const { commitment: c, daysUntil, overdue, funded, afterPayday } = row;
+  const waiting = !!afterPayday && funded !== "full";
+  const tone = waiting ? undefined : overdue || funded === "none" ? "destructive" : funded === "partial" ? "amber" : "emerald";
+  const chipClass = waiting ? "bg-muted text-muted-foreground border-border" : overdue || funded === "none" ? "bg-destructive/15 text-destructive border-destructive/30" : funded === "partial" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
   const chipLabel = overdue ? `${Math.abs(daysUntil)}d late` : daysUntil === 0 ? "Today" : `${daysUntil}d`;
-  const fundedLabel = overdue ? "Overdue" : funded === "full" ? "Covered by Bill Money" : funded === "partial" ? "Only part-covered" : "Not covered";
+  const fundedLabel = overdue ? "Overdue" : waiting ? "Funded on payday" : funded === "full" ? "Covered by Bill Money" : funded === "partial" ? "Only part-covered" : "Not covered";
 
   return (
     <ClickableRow onClick={onView} tone={tone} ariaLabel={`${c.item_name} due soon`}>
@@ -586,7 +587,10 @@ function DueRow({ row, onMarkPaid, onView }: { row: DueSoonOutgoing; onMarkPaid?
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 mt-1">
-        <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`shrink-0 text-xs font-medium tabular-nums rounded-md border px-2 py-0.5 ${chipClass}`}>{chipLabel}</span>
+          {afterPayday && <Badge variant="outline" className="font-normal text-[10px] h-5 px-1.5">After payday</Badge>}
+        </div>
         <div className="flex items-center gap-1" onClick={stopPropagation}>
           {onMarkPaid && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" title="Mark paid" aria-label="Mark paid" onClick={() => onMarkPaid(c)}><Check className="h-3.5 w-3.5" /></Button>}
           <AlertSnoozeMenu alertKey={alertKeys.due(c.id, c.next_due_date)} label={c.item_name} />

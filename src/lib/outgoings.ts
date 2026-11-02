@@ -181,6 +181,8 @@ export interface DueSoonOutgoing {
   daysUntil: number;
   overdue: boolean;
   funded: FundedLevel;
+  /** Due after the current cycle ends — funded by the next payday. */
+  afterPayday?: boolean;
 }
 
 function billPocketBalance(savings: SavingsEntry[], pocket: string): number {
@@ -201,6 +203,7 @@ export function dueSoonOutgoings(
   now: Date = new Date(),
   withinDays = 7,
   pocket = "Bill Money",
+  cycleEndISO?: string,
 ): { rows: DueSoonOutgoing[]; pocketBalance: number; totalDue: number } {
   const today = startOfDay(now);
   const todayISO = format(today, "yyyy-MM-dd");
@@ -238,6 +241,7 @@ export function dueSoonOutgoings(
         daysUntil,
         overdue: due < todayISO,
         funded: funding.get(c.id) ?? "none",
+        afterPayday: !!cycleEndISO && due > cycleEndISO,
       };
     });
 
