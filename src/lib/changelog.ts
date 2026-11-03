@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.18.1",
+    date: "2026-11-03",
+    title: "Bought it → log it",
+    icon: Zap,
+    highlights: [
+      "Ticking a planned spend as bought now opens Log Transaction with its name and amount filled in.",
+      "Once you save, the item leaves your plan; back out and it stays put.",
+    ],
+  },
+  {
     version: "v3.18.0",
     date: "2026-11-02",
     title: "Essential vs Fun / Personal (trial)",

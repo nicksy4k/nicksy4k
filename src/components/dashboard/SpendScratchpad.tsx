@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { Check, ListChecks, Lock, LockOpen, Plus, Trash2 } from "lucide-react";
@@ -32,6 +33,7 @@ export function SpendScratchpad({
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
 }) {
+  const navigate = useNavigate();
   const [items, setItems] = useState<ScratchItem[]>([]);
   useEffect(() => {
     onReservedChange?.(reservedTotal(items), items.filter((x) => x.reserved).length);
@@ -178,11 +180,14 @@ export function SpendScratchpad({
                   variant="ghost"
                   className="h-7 w-7"
                   onClick={() => {
-                    if (confirm(`Bought ${it.name}? This clears it from put-aside money — remember to log the real spend.`))
-                      save(items.filter((x) => x.id !== it.id));
+                    onOpenChange?.(false);
+                    navigate({
+                      to: "/new",
+                      search: { plan: it.id, name: it.name, amount: it.amount },
+                    });
                   }}
                   aria-label={`Bought ${it.name}`}
-                  title="Bought it"
+                  title="Bought it — log the purchase"
                 >
                   <Check className="h-3.5 w-3.5" />
                 </Button>

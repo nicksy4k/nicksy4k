@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteError } from "@/components/RouteError";
+import { removeScratchItem } from "@/lib/scratchpadStore";
 import { SpendTypePill } from "@/components/SpendTypePill";
 import type { SpendType } from "@/lib/spendType";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -81,6 +82,11 @@ export const Route = createFileRoute("/new")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { plan?: string; name?: string; amount?: number } => ({
+    plan: typeof s.plan === "string" ? s.plan : undefined,
+    name: typeof s.name === "string" ? s.name : undefined,
+    amount: s.amount != null && !isNaN(Number(s.amount)) ? Number(s.amount) : undefined,
+  }),
   component: NewTransactionPage,
   errorComponent: RouteError,
 });
@@ -115,6 +121,7 @@ function NewTransactionPage() {
   const { add: addCommitment } = useCommitments();
   const { hidden } = useHiddenSuggestions();
 
+  const planSearch = Route.useSearch();
   const [step, setStep] = useState<1 | 2>(1);
   const [date, setDate] = useState(todayLocalISO());
   const [retailer, setRetailer] = useState("");
@@ -123,7 +130,17 @@ function NewTransactionPage() {
   const [receiptLocation, setReceiptLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [protection, setProtection] = useState<ProtectionValue>(emptyProtection());
-  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [items, setItems] = useState<DraftItem[]>(() =>
+    planSearch.name || planSearch.amount
+      ? [
+          {
+            ...emptyItem(),
+            item_name: planSearch.name ?? "",
+            price: planSearch.amount ? planSearch.amount.toFixed(2) : "",
+          },
+        ]
+      : [emptyItem()],
+  );
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitDraft[]>([emptySplit("main")]);
   const [saving, setSaving] = useState(false);
@@ -697,7 +714,8 @@ function NewTransactionPage() {
         tracking_number: expectingDelivery ? trackingNumber.trim() || null : null,
       });
       trackEvent("transaction_added");
-      toast.success("Transaction saved");
+      if (planSearch.plan) await removeScratchItem(planSearch.plan).catch(() => {});
+      toast.success(planSearch.plan ? "Transaction saved — removed from your plan" : "Transaction saved");
       navigate({ to: "/history" });
     } catch (err) {
       console.error(err);
