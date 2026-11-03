@@ -81,6 +81,11 @@ export const Route = createFileRoute("/new")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { plan?: string; name?: string; amount?: number } => ({
+    plan: typeof s.plan === "string" ? s.plan : undefined,
+    name: typeof s.name === "string" ? s.name : undefined,
+    amount: s.amount != null && !isNaN(Number(s.amount)) ? Number(s.amount) : undefined,
+  }),
   component: NewTransactionPage,
   errorComponent: RouteError,
 });
