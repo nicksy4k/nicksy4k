@@ -24,6 +24,8 @@ import {
   parseKeywords,
   playRunway,
   priceAlerts,
+  CATEGORY_GROUPS,
+  categoryStats,
   priceChecks,
   pulse,
   smallSpends,
@@ -314,6 +316,16 @@ function InsightsPage() {
   const merchants = useMemo(() => topMerchants(txs, cycle.startISO, cycle.endISO), [txs, cycle.startISO, cycle.endISO]);
   const prices = useMemo(() => priceChecks(txs, 10), [txs]);
   const alerts = useMemo(() => priceAlerts(prices), [prices]);
+  const groups = useMemo(() => {
+    const prev = [1, 2, 3].map((k) => ({
+      startISO: format(addDays(cycle.start, -len * k), "yyyy-MM-dd"),
+      endISO: format(addDays(cycle.start, -len * (k - 1) - 1), "yyyy-MM-dd"),
+    }));
+    return CATEGORY_GROUPS.map((g) => ({
+      ...g,
+      stats: categoryStats(txs, g.id, { startISO: cycle.startISO, endISO: cycle.endISO }, prev),
+    }));
+  }, [txs, cycle.start, cycle.startISO, cycle.endISO, len]);
   const small = useMemo(() => smallSpends(txs, cycle.startISO, cycle.endISO), [txs, cycle.startISO, cycle.endISO]);
   const split = useMemo(
     () => spendSplit(txs, cycle.startISO, cycle.endISO, today),
@@ -558,10 +570,38 @@ function InsightsPage() {
           </CardContent>
         </Card>
 
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Groceries &amp; snacks</CardTitle>
+            <CardDescription>Tracked as a whole this cycle, compared with your last 3 cycles.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {groups.map((g) => (
+              <div key={g.id} className="space-y-1 text-sm">
+                <p className="font-medium">
+                  {g.emoji} {g.label}{" "}
+                  <span className="tabular-nums">{fmt(g.stats.total)}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {g.stats.avg !== null ? `avg ${fmt(g.stats.avg)}` : "No earlier cycles yet"}
+                  {g.stats.changePct !== null && ` · ${g.stats.changePct > 0 ? "+" : ""}${g.stats.changePct}%`}
+                  {g.stats.shops > 0 && ` · ${g.stats.shops} shop${g.stats.shops === 1 ? "" : "s"}, ${fmt(g.stats.perShop)} each`}
+                </p>
+                {g.stats.byShop.map((b) => (
+                  <div key={b.name} className="flex justify-between text-xs">
+                    <span className="truncate">{b.name}</span>
+                    <span className="tabular-nums text-muted-foreground">{fmt(b.total)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Price check</CardTitle>
-            <CardDescription>Things you buy again and again.</CardDescription>
+            <CardDescription>Things you buy again and again (groceries and snacks are tracked above).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {alerts.slice(0, 3).map((a) => (

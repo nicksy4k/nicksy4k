@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.18.2",
+    title: "Groceries & snacks tracked as a whole",
+    date: "2026-11-04",
+    icon: BarChart3,
+    highlights: [
+      "Insights now shows a Groceries & snacks card: cycle total, average, shops and where you spent",
+      "Price check no longer lists every loaf of bread or bag of crisps",
+    ],
+  },
+  {
     version: "v3.18.1",
     date: "2026-11-03",
     title: "Bought it → log it",
