@@ -1,21 +1,16 @@
-# Claim details in the Edit Transaction dialog
+# Groceries on Insights: track the shop, not the loaf
 
-Right now the Edit Transaction dialog lets you pick the "Delayed / Possibly Lost" status, but the claim dates and reference can only be entered via the "Report delayed / lost" button on the History card. This makes the edit dialog self-sufficient.
+## What changes for you
+- **Price Check and Price Alerts** stop listing everyday grocery items (bread, milk, etc.). They keep showing things where the price really matters: energy drinks, plushies, takeaways and other non-grocery repeat buys.
+- **New "Groceries" card** on Insights showing:
+  - This cycle's grocery total vs your average over recent cycles (e.g. "£126 this cycle · avg £118 · +7%")
+  - Number of shops and average spend per shop
+  - Split by shop (Asda, Tesco, ...), so you can see where it goes
+- **Habit Spotlights** stay as they are. Energy drinks bought in an Asda shop still count towards your energy drinks tracker.
+- **Ask Ledgerly** can still answer about one item if you ask directly (e.g. "how much was bread last time?"). It just won't bring grocery item prices up unless you ask.
 
-## What changes
-
-**Edit Transaction dialog** (`src/components/history/EditTransactionDialog.tsx`):
-
-- When the delivery status is set to "Delayed / Possibly Lost", a claim section appears with:
-  - **Claim can be raised from** (date picker)
-  - **Claim deadline** (date picker, with the same 48 hours / 7 / 14 / 30 days quick presets used elsewhere)
-  - **Case or order reference** (optional text)
-- Saving the dialog writes these fields together with the status.
-- Switching the status away from "Delayed / Possibly Lost" (e.g. to Received) clears the claim fields so no stale reminders linger.
-- Existing values are pre-filled when editing a transaction that already has claim details.
-
-## Technical notes
-
-- Reuses the existing `claim_date`, `claim_deadline`, `claim_reference` columns and the `addDaysIso` helper from `src/lib/delivery.ts` — no database changes.
-- Mirrors the field layout of `DelayedClaimDialog.tsx` so both entry points behave identically.
-- Dated changelog entry in `src/lib/changelog.ts`.
+## Technical details
+- `src/lib/insights.ts`: add `isGroceryItem(it)` (category matches Groceries/Food). `priceChecks()` (and so `priceAlerts`) skips these by default, with an option to include them. Add `groceryStats(txs, cycles)` returning the per-cycle total, average, number of shops, average basket and per-retailer split, all excluding auxiliary lines (postage, fees, etc.).
+- `src/routes/insights.tsx`: render the Groceries card and use the filtered price checks.
+- `src/lib/api/insights-ai.functions.ts`: pass the grocery summary and tell the assistant to share grocery item prices only when asked.
+- Tests for the grocery filter and per-cycle average, plus a changelog entry.
