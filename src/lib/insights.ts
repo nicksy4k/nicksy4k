@@ -164,13 +164,14 @@ export interface PriceCheck {
   last: { price: number; retailer: string; date: string };
 }
 
-/** Items bought at least twice, with lowest/highest/latest unit price. */
-export function priceChecks(txs: Transaction[], limit = 6): PriceCheck[] {
+/** Items bought at least twice (groceries & snacks skipped unless includeTracked), with lowest/highest/latest unit price. */
+export function priceChecks(txs: Transaction[], limit = 6, includeTracked = false): PriceCheck[] {
   const m = new Map<string, { item: string; rows: { price: number; retailer: string; date: string }[] }>();
   for (const t of usable(txs)) {
     for (const it of t.items ?? []) {
       const name = (it.item_name ?? "").trim();
       if (!name || !(it.price > 0) || isAuxiliary(it)) continue;
+      if (!includeTracked && isCategoryTracked(it)) continue;
       const key = name.toLowerCase();
       const e = m.get(key) ?? { item: name, rows: [] };
       e.rows.push({ price: it.price, retailer: t.retailer ?? "", date: t.date });
@@ -289,4 +290,71 @@ export function priceAlerts(checks: PriceCheck[]) {
   return checks
     .filter((c) => c.last.price > c.low.price)
     .map((c) => ({ ...c, extra: Math.round((c.last.price - c.low.price) * 100) / 100 }));
+}
+
+/** Everyday categories tracked as a whole rather than item by item. */
+export const CATEGORY_GROUPS = [
+  { id: "groceries", label: "Groceries", emoji: "🛒", re: /^(groceries|grocery|food|food shop|food & drink)$/i },
+  { id: "snacks", label: "Snacks", emoji: "🍫", re: /^(snacks?|sweets|confectionery|treats?)$/i },
+] as const;
+export type CategoryGroupId = (typeof CATEGORY_GROUPS)[number]["id"];
+
+/** Which tracked group a line item belongs to, if any. */
+export function categoryGroupOf(it: { category?: string | null }): CategoryGroupId | null {
+  const c = (it.category ?? "").trim();
+  return CATEGORY_GROUPS.find((g) => g.re.test(c))?.id ?? null;
+}
+export const isCategoryTracked = (it: { category?: string | null }) => categoryGroupOf(it) !== null;
+
+export interface CategoryCycleStats {
+  total: number;
+  shops: number;
+  perShop: number;
+  avg: number | null; // average over previous cycles that had any spend
+  changePct: number | null;
+  byShop: { name: string; total: number }[];
+}
+
+/** Per-cycle totals for a tracked category group; `previous` are earlier cycle windows. */
+export function categoryStats(
+  txs: Transaction[],
+  group: CategoryGroupId,
+  current: { startISO: string; endISO: string },
+  previous: { startISO: string; endISO: string }[],
+): CategoryCycleStats {
+  const sumIn = (s: string, e: string) => {
+    let total = 0;
+    const shops = new Map<string, number>();
+    for (const t of usable(txs)) {
+      if (!inRange(t.date, s, e)) continue;
+      const amt = (t.items ?? [])
+        .filter((it) => it.price > 0 && !isAuxiliary(it) && categoryGroupOf(it) === group)
+        .reduce((a, it) => a + it.price * (it.quantity ?? 1), 0);
+      if (amt <= 0) continue;
+      total += amt;
+      const n = (t.retailer ?? "").trim() || "Unknown";
+      shops.set(n, (shops.get(n) ?? 0) + amt);
+    }
+    return { total, shops };
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const now = sumIn(current.startISO, current.endISO);
+  const prevTotals = previous.map((p) => sumIn(p.startISO, p.endISO).total).filter((v) => v > 0);
+  const avg = prevTotals.length ? r2(prevTotals.reduce((a, b) => a + b, 0) / prevTotals.length) : null;
+  let trips = 0;
+  for (const t of usable(txs)) {
+    if (!inRange(t.date, current.startISO, current.endISO)) continue;
+    if ((t.items ?? []).some((it) => it.price > 0 && !isAuxiliary(it) && categoryGroupOf(it) === group)) trips++;
+  }
+  return {
+    total: r2(now.total),
+    shops: trips,
+    perShop: trips ? r2(now.total / trips) : 0,
+    avg,
+    changePct: avg ? Math.round(((now.total - avg) / avg) * 100) : null,
+    byShop: [...now.shops.entries()]
+      .map(([name, total]) => ({ name, total: r2(total) }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4),
+  };
 }
