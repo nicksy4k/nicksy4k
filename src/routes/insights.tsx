@@ -270,6 +270,7 @@ function InsightsPage() {
   const [editing, setEditing] = useState<CustomHabit | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const today = todayLocalISO();
+  const [allTime, setAllTime] = useState(false);
 
   const len = differenceInCalendarDays(cycle.end, cycle.start) + 1;
   const prevStart = format(addDays(cycle.start, -len), "yyyy-MM-dd");
@@ -277,6 +278,14 @@ function InsightsPage() {
   // Same point in the previous cycle, for fair pace comparisons.
   const elapsed = Math.max(0, differenceInCalendarDays(parseISO(today), cycle.start));
   const prevSamePoint = format(addDays(parseISO(prevStart), Math.min(elapsed, len - 1)), "yyyy-MM-dd");
+
+  const firstISO = useMemo(() => txs.reduce((m, t) => (t.date && t.date < m ? t.date : m), cycle.startISO), [txs, cycle.startISO]);
+  const rangeStart = allTime ? firstISO : cycle.startISO;
+  const rangeEnd = allTime ? today : cycle.endISO;
+  const cyclesCovered = Math.max(1, Math.ceil((differenceInCalendarDays(parseISO(today), parseISO(firstISO)) + 1) / len));
+  const perCycle = (n: number) => Math.round((n / cyclesCovered) * 100) / 100;
+  const scopeWord = allTime ? "all time" : "this cycle";
+  const lifetime = useMemo(() => pulse(txs, firstISO, today, today), [txs, firstISO, today]);
 
   const p = useMemo(() => pulse(txs, cycle.startISO, cycle.endISO, today), [txs, cycle.startISO, cycle.endISO, today]);
   const prevP = useMemo(() => pulse(txs, prevStart, prevEnd, prevSamePoint), [txs, prevStart, prevEnd, prevSamePoint]);
@@ -301,7 +310,7 @@ function InsightsPage() {
       habitList.map((h) => {
         const linked = h.scratchId ? scratch.find((s) => s.id === h.scratchId) : null;
         const budget = linked ? linked.amount : (h.budget ?? 0);
-        const now = habitStats(txs, h.keywords, cycle.startISO, cycle.endISO);
+        const now = habitStats(txs, h.keywords, rangeStart, rangeEnd);
         return {
           h,
           now,
@@ -311,9 +320,9 @@ function InsightsPage() {
           progress: budgetProgress(now.total, budget),
         };
       }),
-    [habitList, scratch, txs, cycle.startISO, cycle.endISO, prevStart, prevSamePoint],
+    [habitList, scratch, txs, rangeStart, rangeEnd, prevStart, prevSamePoint],
   );
-  const merchants = useMemo(() => topMerchants(txs, cycle.startISO, cycle.endISO), [txs, cycle.startISO, cycle.endISO]);
+  const merchants = useMemo(() => topMerchants(txs, rangeStart, rangeEnd), [txs, rangeStart, rangeEnd]);
   const prices = useMemo(() => priceChecks(txs, 10), [txs]);
   const alerts = useMemo(() => priceAlerts(prices), [prices]);
   const groups = useMemo(() => {
@@ -323,18 +332,18 @@ function InsightsPage() {
     }));
     return CATEGORY_GROUPS.map((g) => ({
       ...g,
-      stats: categoryStats(txs, g.id, { startISO: cycle.startISO, endISO: cycle.endISO }, prev),
+      stats: categoryStats(txs, g.id, { startISO: rangeStart, endISO: rangeEnd }, allTime ? [] : prev),
     }));
-  }, [txs, cycle.start, cycle.startISO, cycle.endISO, len]);
-  const small = useMemo(() => smallSpends(txs, cycle.startISO, cycle.endISO), [txs, cycle.startISO, cycle.endISO]);
+  }, [txs, cycle.start, rangeStart, rangeEnd, allTime, len]);
+  const small = useMemo(() => smallSpends(txs, rangeStart, rangeEnd), [txs, rangeStart, rangeEnd]);
   const split = useMemo(
-    () => spendSplit(txs, cycle.startISO, cycle.endISO, today),
-    [txs, cycle.startISO, cycle.endISO, today],
+    () => spendSplit(txs, rangeStart, rangeEnd, today),
+    [txs, rangeStart, rangeEnd, today],
   );
   const takeawayKw = habitList.find((h) => h.id === "takeaway")?.keywords ?? HABIT_PRESETS[1].keywords;
   const takeaways = useMemo(
-    () => takeawayBreakdown(txs, takeawayKw, cycle.startISO, cycle.endISO),
-    [txs, takeawayKw, cycle.startISO, cycle.endISO],
+    () => takeawayBreakdown(txs, takeawayKw, rangeStart, rangeEnd),
+    [txs, takeawayKw, rangeStart, rangeEnd],
   );
   const maxDay = Math.max(1, ...takeaways.days.map((d) => d.orders));
   const paceDiff = Math.round((p.spent - prevP.spent) * 100) / 100;
@@ -354,15 +363,50 @@ function InsightsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Insights</h1>
-        <p className="text-sm text-muted-foreground">
-          This cycle: {format(cycle.start, "d MMM")} – {format(cycle.end, "d MMM")}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Insights</h1>
+          <p className="text-sm text-muted-foreground">
+            {allTime
+              ? `All time: ${format(parseISO(firstISO), "d MMM yyyy")} – today · ~${cyclesCovered} cycle${cyclesCovered === 1 ? "" : "s"}`
+              : `This cycle: ${format(cycle.start, "d MMM")} – ${format(cycle.end, "d MMM")}`}
+          </p>
+        </div>
+        <div role="group" aria-label="Time range" className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+          {[
+            { v: false, l: "This cycle" },
+            { v: true, l: "All time" },
+          ].map((o) => (
+            <button
+              key={o.l}
+              type="button"
+              aria-pressed={allTime === o.v}
+              onClick={() => setAllTime(o.v)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${allTime === o.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {o.l}
+            </button>
+          ))}
+        </div>
       </div>
 
       <AskLedgerly cycleStart={cycle.startISO} cycleEnd={cycle.endISO} cycleType={cycle.type} />
 
+      {allTime ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Lifetime summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Stat label="Total spent" value={fmt(lifetime.spent)} sub={`since ${format(parseISO(firstISO), "d MMM yyyy")}`} />
+              <Stat label="Per cycle" value={fmt(perCycle(lifetime.spent))} sub={`average over ~${cyclesCovered} cycles`} />
+              <Stat label="Daily burn" value={fmt(lifetime.burn)} sub="average per day" />
+              <Stat label="No-spend days" value={String(lifetime.noSpend)} sub="all time" />
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Cycle pulse</CardTitle>
@@ -396,11 +440,12 @@ function InsightsPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Essential vs Fun</CardTitle>
-          <CardDescription>This cycle's items, by what they were for.</CardDescription>
+          <CardDescription>{allTime ? "All your items since you started" : "This cycle's items"}, by what they were for.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -418,7 +463,7 @@ function InsightsPage() {
           )}
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{split.noImpulseDays}</span> of {split.elapsedDays} days
-            this cycle had no fun spending.
+            {scopeWord} had no fun spending.
           </p>
         </CardContent>
       </Card>
@@ -464,9 +509,9 @@ function InsightsPage() {
                   </p>
                   <p className="text-xl font-semibold tabular-nums">
                     {fmt(now.total)}
-                    {progress && <span className="text-sm font-normal text-muted-foreground"> of {fmt(budget)}</span>}
+                    {!allTime && progress && <span className="text-sm font-normal text-muted-foreground"> of {fmt(budget)}</span>}
                   </p>
-                  {progress && (
+                  {!allTime && progress && (
                     <div className="my-1.5">
                       <Progress value={Math.min(100, progress.pct)} className={progress.over ? "[&>div]:bg-destructive" : ""} />
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -480,7 +525,9 @@ function InsightsPage() {
                     {now.count > 0 && ` · avg ${fmt(now.avgUnit)}`}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {diff === 0 && unitDiff === 0
+                    {allTime
+                      ? `~${fmt(perCycle(now.total))} per cycle · ${Math.round((now.count / cyclesCovered) * 10) / 10} items per cycle`
+                      : diff === 0 && unitDiff === 0
                       ? "Same as last cycle so far"
                       : `${diff > 0 ? "Up" : "Down"} ${fmt(Math.abs(diff))} · ${unitDiff >= 0 ? "+" : "−"}${Math.abs(unitDiff)} items vs last cycle so far`}
                   </p>
@@ -510,7 +557,8 @@ function InsightsPage() {
           <CardContent className="space-y-2">
             <p className="text-2xl font-semibold tabular-nums">{fmt(small.total)}</p>
             <p className="text-xs text-muted-foreground">
-              {small.count} small item{small.count === 1 ? "" : "s"} this cycle
+              {small.count} small item{small.count === 1 ? "" : "s"} {scopeWord}
+              {allTime && ` · ~${fmt(perCycle(small.total))} per cycle`}
             </p>
             {small.top.map((t) => (
               <div key={t.name} className="flex justify-between text-sm">
@@ -524,10 +572,10 @@ function InsightsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Takeaways breakdown</CardTitle>
-            <CardDescription>Where and when you order this cycle.</CardDescription>
+            <CardDescription>Where and when you order {scopeWord}.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {takeaways.platforms.length === 0 && <p className="text-sm text-muted-foreground">No takeaways yet this cycle. 🎉</p>}
+            {takeaways.platforms.length === 0 && <p className="text-sm text-muted-foreground">No takeaways yet {scopeWord}. 🎉</p>}
             {takeaways.platforms.map((pl) => (
               <div key={pl.name} className="flex justify-between text-sm">
                 <span>{pl.name}</span>
@@ -555,10 +603,10 @@ function InsightsPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top places this cycle</CardTitle>
+            <CardTitle className="text-base">Top places {scopeWord}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {merchants.length === 0 && <p className="text-sm text-muted-foreground">No spending yet this cycle.</p>}
+            {merchants.length === 0 && <p className="text-sm text-muted-foreground">No spending yet {scopeWord}.</p>}
             {merchants.map((m) => (
               <div key={m.name} className="flex items-center justify-between text-sm">
                 <span className="truncate">{m.name}</span>
@@ -573,7 +621,9 @@ function InsightsPage() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">Groceries &amp; snacks</CardTitle>
-            <CardDescription>Tracked as a whole this cycle, compared with your last 3 cycles.</CardDescription>
+            <CardDescription>
+              {allTime ? "Tracked as a whole since you started." : "Tracked as a whole this cycle, compared with your last 3 cycles."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             {groups.map((g) => (
@@ -583,7 +633,7 @@ function InsightsPage() {
                   <span className="tabular-nums">{fmt(g.stats.total)}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {g.stats.avg !== null ? `avg ${fmt(g.stats.avg)}` : "No earlier cycles yet"}
+                  {allTime ? `~${fmt(perCycle(g.stats.total))} per cycle` : g.stats.avg !== null ? `avg ${fmt(g.stats.avg)}` : "No earlier cycles yet"}
                   {g.stats.changePct !== null && ` · ${g.stats.changePct > 0 ? "+" : ""}${g.stats.changePct}%`}
                   {g.stats.shops > 0 && ` · ${g.stats.shops} shop${g.stats.shops === 1 ? "" : "s"}, ${fmt(g.stats.perShop)} each`}
                 </p>
