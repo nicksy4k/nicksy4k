@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.19.0",
+    title: "Insights: All time view",
+    date: "2026-11-05",
+    icon: BarChart3,
+    highlights: [
+      "New This cycle / All time switch at the top of Insights",
+      "All time shows lifetime totals plus your average per cycle for habits, takeaways, groceries and small buys",
+    ],
+  },
+  {
     version: "v3.18.2",
     title: "Groceries & snacks tracked as a whole",
     date: "2026-11-04",
