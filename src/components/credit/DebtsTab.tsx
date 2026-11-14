@@ -346,10 +346,12 @@ export function DebtsTab() {
             {bnpl.map((d) => {
               const totalInstallments = Math.max(1, d.installments_total ?? 4);
               const defaultAmount = d.total_amount / totalInstallments;
-              const paidCount = Math.min(totalInstallments, (d.payments ?? []).length);
               const remaining = debtRemaining(d);
-              const pct = (paidCount / totalInstallments) * 100;
-              const settled = paidCount >= totalInstallments;
+              const settled = remaining <= 0.001;
+              const paidCount = bnplCoveredCount(d, totalInstallments);
+              const pct = settled
+                ? 100
+                : Math.min(100, ((d.total_amount - remaining) / Math.max(0.01, d.total_amount)) * 100);
               const dates = d.installment_dates ?? [];
               const nextDate = dates[paidCount] ?? todayISO();
               return (
@@ -360,7 +362,7 @@ export function DebtsTab() {
                         <p className="font-semibold truncate">{d.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
                           {fmt(defaultAmount)} × {totalInstallments}
-                          {dates[paidCount] && (
+                          {!settled && dates[paidCount] && (
                             <> · next {format(new Date(dates[paidCount]), "d MMM")}</>
                           )}
                         </p>
