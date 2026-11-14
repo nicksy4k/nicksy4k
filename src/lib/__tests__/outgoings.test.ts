@@ -246,6 +246,16 @@ describe("unlinkedDebtDueThisCycle", () => {
     expect(unlinkedDebtDueThisCycle([p], [], "2026-09-20")).toBe(50);
   });
 
+  it("counts nothing once a plan is paid off in one lump sum", () => {
+    const p = plan({ payments: [{ amount: 200, type: "payment" }] });
+    expect(unlinkedDebtDueThisCycle([p], [], "2026-10-20")).toBe(0);
+  });
+
+  it("treats a part lump sum as covering the instalments it pays for", () => {
+    const p = plan({ payments: [{ amount: 100, type: "payment" }] });
+    expect(unlinkedDebtDueThisCycle([p], [], "2026-10-20")).toBe(100);
+  });
+
   it("skips plans that already have a linked outgoing", () => {
     const linked = [{ id: "c1", debt_id: "d1", amount: 50 }] as never;
     expect(unlinkedDebtDueThisCycle([plan({})], linked, "2026-09-20")).toBe(0);

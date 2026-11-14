@@ -42,6 +42,16 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v3.19.1",
+    title: "Pay-later plans paid off early now settle properly",
+    date: "2026-11-14",
+    icon: Sparkles,
+    highlights: [
+      "Paying off a pay-later plan in one go (or with bigger payments) now marks it fully paid",
+      "No more phantom instalments in Bill Money or the next cycle preview after an early payoff",
+    ],
+  },
+  {
     version: "v3.19.0",
     title: "Insights: All time view",
     date: "2026-11-05",

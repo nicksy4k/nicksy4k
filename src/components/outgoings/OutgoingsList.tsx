@@ -1,3 +1,4 @@
+import { bnplCoveredCount } from "@/lib/outgoings";
 import { format, parseISO } from "date-fns";
 import { CalendarClock, Check, Repeat, Tag, Wallet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -68,7 +69,7 @@ export function OutgoingsList({
           const planTotal = plan?.kind === "bnpl" ? (plan.installments_total ?? 0) : 0;
           const planPaid =
             planTotal > 0
-              ? (plan!.payments ?? []).filter((p) => (p.type ?? "payment") === "payment").length
+              ? bnplCoveredCount(plan!, planTotal)
               : 0;
 
           return (

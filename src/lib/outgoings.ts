@@ -87,6 +87,23 @@ export interface DebtLike {
   payments?: { amount: number; type?: string | null }[];
 }
 
+/** Money still owed on a plan, by amount paid (not payment-row count). */
+export function bnplRemaining(d: DebtLike): number {
+  const paid = (d.payments ?? []).reduce((s, p) => s + p.amount, 0);
+  return Math.max(0, d.total_amount - paid);
+}
+
+/** Instalments covered by money paid, so lump sums/early payoffs count fully. */
+export function bnplCoveredCount(d: DebtLike, count: number): number {
+  if (!count) return 0;
+  if (bnplRemaining(d) <= 0.001) return count;
+  const paid = (d.payments ?? [])
+    .filter((p) => (p.type ?? "payment") !== "topup")
+    .reduce((s, p) => s + p.amount, 0);
+  const per = d.total_amount / count;
+  return Math.min(count, Math.floor((paid + 0.005) / per));
+}
+
 /**
  * Repayments falling due inside the current cycle on pay-later plans that have
  * NO linked outgoing row of their own. Without this they'd be invisible to the
@@ -105,10 +122,12 @@ export function unlinkedDebtDueThisCycle(
     const count = d.installments_total ?? dates.length;
     if (!count || dates.length === 0) continue;
     const per = d.total_amount / count;
-    const paidCount = (d.payments ?? []).filter((p) => (p.type ?? "payment") !== "topup").length;
+    const remaining = bnplRemaining(d);
+    if (remaining <= 0.001) continue;
+    const paidCount = bnplCoveredCount(d, count);
     const dueThisCycle = dates.filter((x) => x < resetDate).length;
     const outstanding = Math.max(0, dueThisCycle - paidCount);
-    total += outstanding * per;
+    total += Math.min(remaining, outstanding * per);
   }
   return total;
 }
@@ -290,6 +309,7 @@ export function nextCyclePreview(
     const name = c.item_name || c.store || "Outgoing";
     if (debt && (debt.installment_dates ?? []).length > 0) {
       linked.add(debt.id);
+      if (bnplRemaining(debt) <= 0.001) continue;
       for (const d of debt.installment_dates ?? []) {
         if (d >= c.next_due_date && d >= startISO && d <= endISO) {
           items.push({ id: `${c.id}:${d}`, name, date: d, amount: c.amount, kind: "plan" });
@@ -324,7 +344,8 @@ export function nextCyclePreview(
     const count = d.installments_total ?? dates.length;
     if (!count || dates.length === 0) continue;
     const per = d.total_amount / count;
-    const paidCount = (d.payments ?? []).filter((p) => (p.type ?? "payment") !== "topup").length;
+    if (bnplRemaining(d) <= 0.001) continue;
+    const paidCount = bnplCoveredCount(d, count);
     dates.slice(paidCount).forEach((date) => {
       if (date >= startISO && date <= endISO) {
         items.push({ id: `${d.id}:${date}`, name: "Pay-later plan", date, amount: per, kind: "plan" });
