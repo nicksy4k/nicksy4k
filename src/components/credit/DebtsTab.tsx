@@ -348,8 +348,8 @@ export function DebtsTab() {
               const totalInstallments = Math.max(1, d.installments_total ?? 4);
               const defaultAmount = d.total_amount / totalInstallments;
               const remaining = debtRemaining(d);
-              const settled = remaining <= 0.001;
               const paidCount = bnplCoveredCount(d, totalInstallments);
+              const settled = remaining <= 0.001 || paidCount >= totalInstallments;
               const pct = settled
                 ? 100
                 : Math.min(100, ((d.total_amount - remaining) / Math.max(0.01, d.total_amount)) * 100);
