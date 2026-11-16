@@ -41,6 +41,7 @@ export interface ChangelogEntry {
  * with today's date so the Settings "What's New" card stays accurate.
  */
 export const changelog: ChangelogEntry[] = [
+  { version: "v3.19.2", date: "2026-11-16", title: "Pay-later plans settle properly", icon: Sparkles, highlights: ["Plans that don't split evenly into pennies (e.g. £100 over 3) now show as fully paid after the last suggested payment."] },
   {
     version: "v3.19.1",
     title: "Pay-later plans paid off early now settle properly",

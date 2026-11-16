@@ -90,7 +90,12 @@ export interface DebtLike {
 /** Money still owed on a plan, by amount paid (not payment-row count). */
 export function bnplRemaining(d: DebtLike): number {
   const paid = (d.payments ?? []).reduce((s, p) => s + p.amount, 0);
-  return Math.max(0, d.total_amount - paid);
+  const left = Math.round((d.total_amount - paid) * 100) / 100;
+  // Penny-rounded instalments (e.g. £100 over 3 = 3 × £33.33) leave up to
+  // ~½p per instalment of residue; that's settled, not still owed.
+  const count = Math.max(1, d.installments_total ?? d.installment_dates?.length ?? 1);
+  if (left <= Math.max(0.001, Math.ceil(count * 0.005 * 100) / 100 - 0.001)) return 0;
+  return Math.max(0, left);
 }
 
 /** Instalments covered by money paid, so lump sums/early payoffs count fully. */
@@ -100,7 +105,7 @@ export function bnplCoveredCount(d: DebtLike, count: number): number {
   const paid = (d.payments ?? [])
     .filter((p) => (p.type ?? "payment") !== "topup")
     .reduce((s, p) => s + p.amount, 0);
-  const per = d.total_amount / count;
+  const per = Math.floor((d.total_amount / count) * 100) / 100 || d.total_amount / count;
   return Math.min(count, Math.floor((paid + 0.005) / per));
 }
 
